@@ -258,14 +258,20 @@ PAL = {
     'tel': dict(uni='#e4e6ea', pants='#2a2d38', vest='#2f3a55', head='hair', hair='#2a1c14', tie='#a83a3a'),
     'mgr': dict(uni='#555b68', pants='#3a3e48', vest=None, head='hair', hair='#8a8a8c', tie='#2a3a6a', skin='#caa07c'),
     'hud': dict(uni='#6d7076', pants='#2d3340', head='hood', hood='#767980', skin='#d9ab84'),
+    'rb2': dict(uni='#262c3a', pants='#1a1d26', vest='#2f4468', helm='#1c1c20', head='mask', band='#3a8bff', gloves=1),
+    'rb3': dict(uni='#262f2a', pants='#1a211d', vest='#2f5a3a', helm='#1c1c20', head='mask', band='#3fbf55', gloves=1),
+    'rb4': dict(uni='#2d2838', pants='#1f1c27', vest='#4a3466', helm='#1c1c20', head='mask', band='#a05cf0', gloves=1),
+    'hd2': dict(uni='#5d7399', pants='#2d3340', head='hood', hood='#6a82ab', skin='#d9ab84'),
+    'hd3': dict(uni='#5f8a69', pants='#2d3340', head='hood', hood='#6c9a76', skin='#d9ab84'),
+    'hd4': dict(uni='#7d6a99', pants='#2d3340', head='hood', hood='#8a76a8', skin='#d9ab84'),
     'swt': dict(uni='#23272e', pants='#171a1f', vest='#566170', helm='#14171b', head='helmet', gloves=1, pack='#2b3038', guard='#2a2d33'),
 }
-ROWS = ['pt', 'rob', 'grd', 'cva', 'cvb', 'tel', 'mgr', 'hud', 'swt']
+ROWS = ['pt', 'rob', 'grd', 'cva', 'cvb', 'tel', 'mgr', 'hud', 'swt', 'rb2', 'rb3', 'rb4', 'hd2', 'hd3', 'hd4']
 COLS = 9
 atlas = Image.new('RGBA', (128 * COLS, 128 * len(ROWS)), (0, 0, 0, 0))
 for r, key in enumerate(ROWS):
     pal = PAL[key]
-    armed = key in ('pt', 'rob', 'swt')
+    armed = key in ('pt', 'rob', 'swt', 'rb2', 'rb3', 'rb4')
     for i in range(6):
         ph = i / 6 * 2 * math.pi
         im = soldier(pal, ph) if armed else person(pal, ph)
