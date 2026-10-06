@@ -25,12 +25,13 @@ kbd{font:inherit;background:var(--panel);border:1px solid var(--line);border-rad
 <li><kbd>E</kbd> halten: Interaktion (Türen knacken, Kameras ausschalten)</li>
 <li><kbd>F</kbd> Überfall starten</li>
 <li><kbd>G</kbd> Fluchtwagen rufen (im Überfall)</li>
+<li><kbd>1</kbd> <kbd>2</kbd> Störsender, Medkit</li>
 <li>Maus zielen, Klick oder <kbd>Leertaste</kbd> schießen</li>
 <li><kbd>R</kbd> nachladen</li>
 <li><kbd>P</kbd> Pause</li>
 <li><kbd>M</kbd> Ton an/aus</li>
 <li><kbd>C</kbd> im Titel: Coop (Raum erstellen oder beitreten)</li>
-<li><kbd>Enter</kbd> Neustart nach dem Ende</li>
+<li><kbd>Enter</kbd> nach dem Ende: Shop, nächster Auftrag</li>
 </ul>
 <p class="note">Vor dem Überfall ist die Waffe verstaut. Geh erst einmal um das Gebäude herum. Hinter dem Tresen, im Büro, im Sicherheitsraum, im Tresor sowie auf der Rückseite und im Hof bist du in Sperrzone: Wer dort gesehen wird, fällt auf. Kameras kannst du einzeln ausschalten oder per Hauptschalter im Sicherheitsraum kurz lahmlegen. Wer lautlos mit Beute verschwindet, bekommt 50 % Bonus. Im Überfall bringen Geldautomaten in der Halle viel Beute, du stehst dabei aber offen im Raum, und mit <kbd>G</kbd> rufst du den Fluchtwagen früher: Er braucht 40 s, aber je länger du bleibst, desto härter kommt die Polizei. Was du erkundest, bleibt auf der Karte als Erinnerung stehen. Die Sprites liegen als PNG in <code>assets/</code> und sind selbst gezeichnete Platzhalter.</p>
 <p id="err" hidden></p>
@@ -159,7 +160,17 @@ const CFG={bag:7,slow:.05,policeAt:45,policeForced:20,waveBase:3,perPlayer:2,wav
 pol:{seats:3,carSpd:250,lead:600,exitGap:.45,run:1.7,dash:1.35,hold:10,anchorHold:45,breachT:2.5,reactD:240,react:.45},
 loiter:{warn:3,after:5,rate:14,still:28},
 wpn:{pistol:{n:'Pistole',mag:12,res:72,cool:.26,dmg:30,spread:.014,rec:.02,rl:1.1},smg:{n:'SMG',mag:30,res:120,cool:.075,dmg:20,spread:.03,rec:.008,rl:1.2},rifle:{n:'Sturmgewehr',mag:30,res:150,cool:.1,dmg:34,spread:.012,rec:.012,rl:1.3}},
-shop:{vest:100,helmF:.85,pack:2,drillF:.64,pickF:.7,radioT:28,jamT:40,medHp:40,jamMax:3,medMax:3},
+shop:{vest:100,helmF:.85,pack:2,drillF:.64,pickF:.7,radioT:28,jamT:40,medHp:40,jamMax:3,medMax:3,items:[
+{k:'smg',n:'SMG',p:15000,d:()=>'Mag '+CFG.wpn.smg.mag+', '+CFG.wpn.smg.dmg+' Schaden, schnell, streut'},
+{k:'rifle',n:'Sturmgewehr',p:30000,d:()=>'Mag '+CFG.wpn.rifle.mag+', '+CFG.wpn.rifle.dmg+' Schaden, präzise'},
+{k:'vest',n:'Weste',p:12000,d:()=>'Panzerung '+CFG.shop.vest},
+{k:'helm',n:'Helm',p:8000,d:()=>Math.round((1-CFG.shop.helmF)*100)+' % weniger Schaden'},
+{k:'pack',n:'Rucksack',p:10000,d:()=>'Tasche +'+CFG.shop.pack+' Plätze'},
+{k:'drill',n:'Bohrer',p:14000,d:()=>'Tresor aufbohren in '+Math.round(22*CFG.shop.drillF)+' s statt 22 s'},
+{k:'pick',n:'Dietrich',p:6000,d:()=>'Türen und Automaten '+Math.round((1-CFG.shop.pickF)*100)+' % schneller'},
+{k:'radio',n:'Funkgerät',p:9000,d:()=>'Fluchtwagen nach G in '+CFG.shop.radioT+' s'},
+{k:'jam',n:'Störsender',p:6000,c:1,d:()=>'Taste 1: Kameras '+CFG.shop.jamT+' s aus'},
+{k:'med',n:'Medkit',p:3000,c:1,d:()=>'Taste 2: +'+CFG.shop.medHp+' HP'}]},
 cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:.14},swat:{hp:200,dmg:10,rate:.45,spd:60,acc:.08},
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1));
@@ -420,7 +431,8 @@ if(NET.role==='host')bcast({t:'end',res});endLocal(res)}
 function endLocal(res){const share=res.score/res.n,lines=res.lines.slice();if(res.n>1)lines.push('Dein Anteil: '+fmt(share));
 SESSION.round++;
 if(res.win){SESSION.wallet+=share;SESSION.earned+=share;if(share>SESSION.best){SESSION.best=share;lines.push('Bester Auftrag der Serie!')}SESSION.cons.jam=me.jam|0;SESSION.cons.med=me.med|0;lines.push('Konto: '+fmt(SESSION.wallet))}
-else{lines.push('Serie beendet nach '+SESSION.round+(SESSION.round===1?' Auftrag':' Aufträgen')+', gesamt '+fmt(SESSION.earned));sessReset()}
+else{lines.push('Serie beendet. Überstandene Aufträge: '+(SESSION.round-1)+', Beute gesamt '+fmt(SESSION.earned));sessReset()}
+if(NET.role==='client'&&NET.conn)NET.conn.send({t:'kit',k:curKit()});
 SND.work(null,0);SND.end(res.win);ended={win:res.win,title:res.title,extra:res.extra,lines,hi:res.hi}}
 function canSee(sx,sy,sa,fov,rng,tx,ty){const dx=tx-sx,dy=ty-sy,dd=Math.hypot(dx,dy);if(dd>rng)return false;if(angd(sa,Math.atan2(dy,dx))>fov)return false;return los(sx,sy,tx,ty)}
 const camAng=(c,i)=>c.a0+Math.sin(time*c.sp+i*1.7)*c.amp;
@@ -549,7 +561,7 @@ const id=[1,2,3].find(i=>!NET.roster.some(r=>r.id===i));if(id===undefined){c.sen
 c.pid=id;c.ok=true;NET.conns.push(c);NET.roster.push({id,name:PC[id].n});
 c.onmsg=m=>hostMsg(c,m);
 c.onclose=()=>{c.ok=false;NET.conns=NET.conns.filter(x=>x!==c);const o=players[c.pid];
-if(scr==='lobby')NET.roster=NET.roster.filter(r=>r.id!==c.pid);else if(o&&!o.gone){o.gone=true;say(PC[c.pid].n+' hat das Spiel verlassen');checkEnd()}
+if(scr==='lobby'||scr==='shop')NET.roster=NET.roster.filter(r=>r.id!==c.pid);if(scr!=='lobby'&&o&&!o.gone){o.gone=true;say(PC[c.pid].n+' hat das Spiel verlassen');checkEnd()}
 bcastRoster()};
 }
 function hostMsg(c,m){const o=players[c.pid];
@@ -560,6 +572,7 @@ else if(m.t==='f'){if(scr==='play')startHeist(false)}
 else if(m.t==='g'){if(scr==='play')callVan()}
 else if(m.t==='u'){if(scr==='play')useGadget(o,m.n|0)}
 else if(m.t==='kit'){c.kit=sanKit(m.k)}
+else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);if(r){r.rdy=m.v?1:0;bcastRoster()}}
 else if(m.t==='ping')c.send({t:'pong',n:m.n})}
 function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;bcast({t:'go',n:nPl,k:buildKits()});beginPlay()}
 function joinRoom(code){netReset();NET.role='client';NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
@@ -572,11 +585,12 @@ else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='go'){nPl=m.n;kits=(m.k||[]).map(sanKit);beginPlay()}
 else if(m.t==='snap'){if(scr==='play'&&!ended)applySnap(m)}
 else if(m.t==='end'){if(scr==='play'&&!ended)endLocal(m.res)}
-else if(m.t==='rst'){if(scr==='play'){kits=(m.k||[]).map(sanKit);restartRound()}}
+else if(m.t==='rst'){if(scr==='play'||scr==='shop'){kits=(m.k||[]).map(sanKit);restartRound()}}
 else if(m.t==='pong')NET.ping=performance.now()-m.n}
 function leaveGame(msg){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
 function beginPlay(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.init();SND.resume();SND.ev('start');cv.focus()}
-function restartRound(){paused=false;clearKeys();mouse.down=0;reset();SND.ev('start')}
+function restartRound(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.ev('start')}
+function startNext(){if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcastRoster();bcast({t:'rst',k:buildKits()})}restartRound()}
 let snapT=0;
 function netHostTick(dt){if(!NET.conns.length){evq.length=0;return}snapT+=dt;if(snapT<.05)return;snapT=0;const s=buildSnap();
 for(const c of NET.conns)if(c.ok)c.send(Object.assign({ev:evq.filter(e=>e[0]===-1||e[0]===c.pid).map(e=>[e[1],e[2]])},s));evq.length=0}
@@ -667,7 +681,7 @@ hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle=
 if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText('Erkunde die Bank. Mit F ziehst du die Waffe und startest den Überfall.',480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}g.textAlign='left'}
 if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=ended.win?'#7ee34a':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
 ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.length-1?(ended.win?'#7ee34a':'#ff6a5a'):'#e6eaf0';g.font=(i===ended.hi?'bold 20px':'15px')+' monospace';g.fillText(l,480,244+i*28)});
-g.fillStyle='#8d95a1';g.font='13px monospace';g.fillText(NET.role==='client'?'Der Host startet neu.   Esc: Raum verlassen':NET.role==='host'?'Enter: noch einmal   Esc: Raum schließen':'Enter: noch einmal   Esc: Titel',480,244+ended.lines.length*28+20);g.textAlign='left'}}
+g.fillStyle='#8d95a1';g.font='13px monospace';g.fillText((ended.win?'Enter: Shop':NET.role==='client'?'Der Host startet eine neue Serie':'Enter: neue Serie')+'   Esc: '+(NET.role==='solo'?'Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'),480,244+ended.lines.length*28+20);g.textAlign='left'}}
 function startGame(){netReset();beginPlay()}
 function toTitle(){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
 function openCoop(){scr='coop';NET.msg=''}
@@ -677,13 +691,45 @@ const reqHeist=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.s
 function titleCam(){camX=Math.round(32+190*Math.sin(time*.07));camY=Math.round(-10+110*Math.sin(time*.05+1))}
 function panel(x,y,w,h,title,rows){plate(x,y,w,h);g.strokeStyle='rgba(255,176,0,.35)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,h-1);g.textAlign='left';g.font='bold 13px monospace';g.fillStyle='#ffb000';g.fillText(title,x+16,y+26);
 rows.forEach((r,i)=>{const yy=y+52+i*20;if(typeof r==='string'){g.font='12px monospace';g.fillStyle='#c9d4de';g.fillText(r,x+16,yy)}else{g.font='bold 12px monospace';g.fillStyle='#ffd27a';g.fillText(r[0],x+16,yy);g.font='12px monospace';g.fillStyle='#c9d4de';g.fillText(r[1],x+150,yy)}})}
-function titleBack(){W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(camX-2,camY-2,VW+4,VH+4);
+let shopNote={s:'',t:0},shopConf=-9;
+const SHOPKEYS='1234567890',shopBox=i=>({x:i<5?60:490,y:98+(i%5)*62,w:410,h:54}),shopGoBox={x:300,y:474,w:360,h:32};
+function shopState(it){const o=SESSION.own,c=SESSION.cons,sh=CFG.shop;
+if(it.c)return(c[it.k]|0)>=sh[it.k+'Max']?'voll':SESSION.wallet<it.p?'zu teuer':'kaufen';
+if(o[it.k])return'gekauft';if(it.k==='smg'&&o.rifle)return'ersetzt';return SESSION.wallet<it.p?'zu teuer':'kaufen'}
+function sendKit(){if(NET.role==='client'&&NET.conn)NET.conn.send({t:'kit',k:curKit()})}
+function shopBuy(i){const it=CFG.shop.items[i];if(!it)return;const st=shopState(it);
+if(st==='kaufen'){SESSION.wallet-=it.p;if(it.c)SESSION.cons[it.k]=(SESSION.cons[it.k]|0)+1;else SESSION.own[it.k]=1;SND.cash();shopNote={s:it.n+' gekauft',t:2};sendKit()}
+else{SND.ev('deny');shopNote={s:st==='zu teuer'?'Zu teuer':st==='gekauft'?'Schon gekauft':st==='voll'?'Vorrat voll':'Das Sturmgewehr ist besser',t:2}}}
+function openShop(){if(NET.role==='host'){NET.roster=NET.roster.filter(r=>r.id===0||NET.conns.some(c=>c.pid===r.id));bcastRoster()}scr='shop';paused=false;clearKeys();mouse.down=0;shopNote={s:'',t:0};shopConf=-9;sendKit()}
+function shopGo(){if(NET.role==='solo'){startNext();return}
+if(NET.role==='client'){const r=NET.roster.find(q=>q.id===NET.myId),v=r&&r.rdy?0:1;if(r)r.rdy=v;NET.conn&&NET.conn.send({t:'rdy',v,k:curKit()});return}
+if(NET.roster.some(r=>r.id!==0&&!r.rdy)&&time-shopConf>4){shopConf=time;shopNote={s:'Nicht alle sind bereit. Enter nochmal: trotzdem starten.',t:4};return}
+startNext()}
+function shopHit(){for(let i=0;i<CFG.shop.items.length;i++){const b=shopBox(i);if(mouse.sx>=b.x&&mouse.sx<=b.x+b.w&&mouse.sy>=b.y&&mouse.sy<=b.y+b.h)return i}return-1}
+function drawShop(){const sh=CFG.shop,hov=shopHit();g.textAlign='left';g.font='bold 30px monospace';g.fillStyle='#ffb000';g.fillText('SHOP',60,64);
+g.textAlign='right';g.font='bold 22px monospace';g.fillStyle='#7ee34a';g.fillText('Konto '+fmt(SESSION.wallet),900,58);g.font='12px monospace';g.fillStyle='#c9d4de';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Bester Auftrag '+fmt(SESSION.best),900,80);
+sh.items.forEach((it,i)=>{const b=shopBox(i),st=shopState(it),ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt',cnt=it.c?(SESSION.cons[it.k]|0):0;
+plate(b.x,b.y,b.w,b.h);g.strokeStyle=i===hov?(ok?'#ffb000':'#8d95a1'):'rgba(255,176,0,.25)';g.lineWidth=i===hov?2:1;g.strokeRect(b.x+.5,b.y+.5,b.w-1,b.h-1);
+g.textAlign='left';g.font='bold 12px monospace';g.fillStyle='#ffb000';g.fillText('['+SHOPKEYS[i]+']',b.x+10,b.y+21);
+g.font='bold 14px monospace';g.fillStyle=own?'#7ee34a':ok?'#ffd27a':'#8d95a1';g.fillText(it.n,b.x+46,b.y+21);
+g.font='11px monospace';g.fillStyle='#9aa6b2';g.fillText(it.d(),b.x+46,b.y+41);
+g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=ok?'#e6eaf0':'#6c7480';g.fillText(fmt(it.p),b.x+b.w-12,b.y+21);
+g.font='11px monospace';g.fillStyle=own?'#7ee34a':st==='zu teuer'?'#ff8a7a':'#9aa6b2';g.fillText(it.c?'Vorrat '+cnt+' / '+sh[it.k+'Max']+(ok?'':'  ('+st+')'):st,b.x+b.w-12,b.y+41)});
+const k=curKit(),nm=[CFG.wpn[k.w].n].concat(CFG.shop.items.filter(it=>!it.c&&it.k!=='smg'&&it.k!=='rifle'&&SESSION.own[it.k]).map(it=>it.n)),gd=[k.jam?'Störsender x'+k.jam:'',k.med?'Medkit x'+k.med:''].filter(Boolean);
+g.textAlign='center';g.font='12px monospace';g.fillStyle='#c9d4de';g.fillText('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),480,428);
+if(NET.role!=='solo'){const n=NET.roster.length,w=Math.min(150,860/n);NET.roster.forEach((r,i)=>{const x=480-n*w/2+i*w+8;g.fillStyle=PC[r.id].c;g.fillRect(x,440,9,9);g.textAlign='left';g.font='11px monospace';g.fillStyle=r.id===0||r.rdy?'#7ee34a':'#9aa6b2';g.fillText(PC[r.id].n+(r.id===0?' (Host)':r.rdy?' bereit':' kauft ein'),x+14,449)})}
+if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle='#ffd27a';g.fillText(shopNote.s,480,466)}
+const gb=shopGoBox,mine=NET.roster.find(q=>q.id===NET.myId),lab=NET.role==='solo'?'Enter: nächster Auftrag':NET.role==='host'?'Enter: Auftrag starten':mine&&mine.rdy?'Enter: doch noch nicht bereit':'Enter: bereit';
+const gh=mouse.sx>=gb.x&&mouse.sx<=gb.x+gb.w&&mouse.sy>=gb.y&&mouse.sy<=gb.y+gb.h;g.fillStyle=gh?'rgba(60,110,40,.85)':'rgba(30,70,25,.8)';g.fillRect(gb.x,gb.y,gb.w,gb.h);g.strokeStyle='#7ee34a';g.lineWidth=1;g.strokeRect(gb.x+.5,gb.y+.5,gb.w-1,gb.h-1);
+g.textAlign='center';g.font='bold 15px monospace';g.fillStyle='#7ee34a';g.fillText(lab,480,gb.y+21);g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('Zifferntasten oder Klick kaufen   Esc: '+(NET.role==='solo'?'Titel':'Raum verlassen')+'   M: Ton',480,gb.y+50);g.textAlign='left'}
+function titleBack(small){W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(camX-2,camY-2,VW+4,VH+4);
 {const sx=(camX-WX0*T)*2,sy=(camY-WY0*T)*2;g.drawImage(st,sx,sy,VW*2,VH*2,camX,camY,VW,VH)}
 S0();g.fillStyle='rgba(8,10,16,.68)';g.fillRect(0,0,VW,VH);
 const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.55)');g.fillStyle=v;g.fillRect(0,0,VW,VH);
-g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
+if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Erst erkunden, dann zuschlagen.',480,140)}
-function drawMenu(){titleBack();g.textAlign='center';
+function drawMenu(){titleBack(scr==='shop');g.textAlign='center';
+if(scr==='shop'){drawShop();return}
 if(scr==='title'){
 if(titleNote){g.font='12px monospace';g.fillStyle='#ff8a7a';g.fillText(titleNote.s,480,160)}
 panel(60,168,400,238,'AUFTRAG',['Ziel: Bankfiliale mit Tresor','Beute: Tresor bis 60.000, Automaten je 12.000','','1  Erkunden: Kameras, Wachroute, Tresorcode','2  Lautlos mit Beute raus: 50 % Bonus','3  Oder F: Überfall starten. Mit G rufst du','   den Fluchtwagen, dann zum Ostausgang.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.']);
@@ -748,7 +794,7 @@ function hostTicker(on){if(on&&!hostWk){try{hostWk=new Worker(URL.createObjectUR
 function tick(dt){
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
 if(titleNote){titleNote.t-=dt;if(titleNote.t<=0)titleNote=null}
-volT=Math.max(0,volT-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.length?Math.min(...pcs.map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});
+volT=Math.max(0,volT-dt);shopNote.t=Math.max(0,shopNote.t-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.length?Math.min(...pcs.map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});
 const cc=scr!=='play'?'pointer':focus&&!paused?'none':'crosshair';if(cc!==curCur){curCur=cc;cv.style.cursor=cc}}
 if(!opt.noLoop)requestAnimationFrame(loop);
 cv.addEventListener('focus',()=>{focus=true});cv.addEventListener('blur',()=>{focus=false;clearKeys();mouse.down=0});
@@ -761,6 +807,7 @@ if(scr==='title'){if(volKey(k,e.repeat)){e.preventDefault();return}if(!e.repeat)
 if(scr==='coop'){if(!e.repeat){if(k==='h')hostRoom();else if(k==='j'){joinText='';NET.msg='';scr='join'}else if(k==='Escape')scr='title';else if(k==='m')SND.toggleMute()}e.preventDefault();return}
 if(scr==='join'){if(!e.repeat||k==='Backspace'){if(k==='Escape')scr='coop';else if(k==='Backspace')joinText=joinText.slice(0,-1);else if(k==='Enter'){if(joinText.length===4)joinRoom(joinText)}else if(k.length===1&&joinText.length<4&&!e.metaKey&&!e.ctrlKey){const u=k.toUpperCase();if(CODECH.includes(u))joinText+=u}}e.preventDefault();return}
 if(scr==='lobby'){if(!e.repeat){if(k==='Escape'){netReset();scr='coop'}else if(k==='Enter'&&NET.role==='host')startCoop();else if(k==='l'&&NET.role==='host')copyLink();else if(k==='m')SND.toggleMute()}e.preventDefault();return}
+if(scr==='shop'){if(!e.repeat){const i=SHOPKEYS.indexOf(k);if(i>=0)shopBuy(i);else if(k==='Enter')shopGo();else if(k==='Escape'){if(NET.role==='solo')toTitle();else leaveGame('')}else if(k==='m')SND.toggleMute()}e.preventDefault();return}
 if(paused){if(volKey(k,e.repeat)){e.preventDefault();return}if(!e.repeat){if(k==='Escape'||k==='p')paused=false;else if(k==='q'){if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.')}else if(k==='m')SND.toggleMute()}e.preventDefault();return}
 keys[k]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Escape'].includes(e.key))e.preventDefault();
 if(e.repeat)return;
@@ -768,13 +815,13 @@ if(k==='m')SND.toggleMute();
 if((k==='Escape'||k==='p')&&!ended){paused=true;clearKeys();mouse.down=0}
 else if(k==='Escape'&&ended){if(NET.role==='solo')toTitle();else leaveGame('')}
 if(k==='f')reqHeist();if(k==='g')reqVan();if(k==='1')reqGadget(1);if(k==='2')reqGadget(2);
-if(k==='Enter'&&ended){if(NET.role==='host'){bcast({t:'rst',k:buildKits()});restartRound()}else if(NET.role==='solo')reset()}});
+if(k==='Enter'&&ended){if(ended.win)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo')reset()}});
 cv.addEventListener('keyup',e=>{keys[kn(e)]=0});
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
 const volMouse=()=>{const b=volBox(volDrag);volAdj(volDrag,(mouse.sx-b.x)/b.w,true)};
-cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(scr==='title'||(scr==='play'&&paused)){const i=volHit(mouse.sx,mouse.sy);if(i>=0){volSel=i;volDrag=i;volMouse();return}}if(scr==='title'){startGame();return}if(scr!=='play')return;if(paused){paused=false;return}mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;volDrag=-1});
+cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(scr==='title'||(scr==='play'&&paused)){const i=volHit(mouse.sx,mouse.sy);if(i>=0){volSel=i;volDrag=i;volMouse();return}}if(scr==='title'){startGame();return}if(scr==='shop'){const i=shopHit(),gb=shopGoBox;if(i>=0)shopBuy(i);else if(mouse.sx>=gb.x&&mouse.sx<=gb.x+gb.w&&mouse.sy>=gb.y&&mouse.sy<=gb.y+gb.h)shopGo();return}if(scr!=='play')return;if(paused){paused=false;return}mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;volDrag=-1});
 cv.addEventListener('mousemove',e=>{mpos(e);mouse.t=time;if(volDrag>=0)volMouse()});
-const dbg={SESSION,sessReset,curKit,useGadget,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
