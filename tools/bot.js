@@ -22,7 +22,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  for(let n=0;n<o.maxT*30;n++){
   const s=S(),p=s.p;if(s.ended)break;
   // Feinde in Sicht
-  let tgt=null,bd=1e9;for(const e of s.en){if(!D.los(p.x,p.y,e.x,e.y))continue;const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<430&&d<bd){bd=d;tgt=e}}
+  let tgt=null,bd=1e9;for(const e of s.en){if(!D.los(p.x,p.y,e.x,e.y)||(D.clear&&!D.clear(p.x,p.y,e.x,e.y)))continue;const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<430&&d<bd){bd=d;tgt=e}}
   for(const [e,t] of seen)if(!s.en.includes(e))seen.delete(e);
   if(tgt&&!seen.has(tgt))seen.set(tgt,s.tH);
   k.e=0;
