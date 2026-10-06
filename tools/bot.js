@@ -13,13 +13,13 @@ function steer(tx,ty){const p=S().p;k.a=k.d=k.w=k.s=0;const t=tileOf(p);if(t[0]=
 function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT:400,wait:'vault',kit:'old',cons:{},round:0},o||{});
  D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;
  if(o.seed!=null)D.buildSeed(o.seed);
- D.reset();const L=D.LAY(),exitT=[Math.round(L.exit.x/32),Math.round(L.van.y/32)],waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
+ D.reset();const L=D.LAY(),exitT=[L.exit.tx,Math.round(L.van.y/32)],waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
  const R={res:null,t:0,loot:0,hp:100,minHp:100,waves:0,kills:0,milestones:{},trace:[]};let lastTr=-99;
  let seen=new Map(),jit=0,jt=0,calledAt=null;
  const mark=(n)=>{if(R.milestones[n]==null)R.milestones[n]=+S().tH.toFixed(1)};
  const goals=[];
- if(o.extras)for(const a of L.atms.map(q=>[q[0]-1,q[1]]))goals.push({at:a,hold:true,tag:'atm'});
- goals.push({at:[L.vault.door[0]-1,L.vault.door[1]+1],hold:true,done:()=>S().vaultOpen,tag:'vault'});
+ if(o.extras)for(const a of L.atms.map(q=>[q[0]-L.vault.dir,q[1]]))goals.push({at:a,hold:true,tag:'atm'});
+ goals.push({at:[L.vault.door[0]-L.vault.dir,L.vault.door[1]+1],hold:true,done:()=>S().vaultOpen,tag:'vault'});
  for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+D.CFG.bundle.u*D.CFG.bundle.n/L.vault.bundles.length*.95,tag:'bundle'})}
  if(o.extras)for(const t of L.tills.slice().reverse())goals.push({at:t,hold:true,tag:'till'});
  let gi=0,gInit=false;
@@ -30,7 +30,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
   for(const [e,t] of seen)if(!s.en.includes(e))seen.delete(e);
   if(tgt&&!seen.has(tgt))seen.set(tgt,s.tH);
   k.e=0;
-  const vanReady=s.vanArr&&s.vanX<=L.exit.x+2;
+  const vanReady=s.vanArr&&Math.abs(s.vanX-L.van.stop)<=2;
   if(tgt&&!(vanReady&&s.units>0)&&s.tH-seen.get(tgt)>=o.react){k.a=k.d=k.w=k.s=0;jt-=dt;if(jt<=0){jit=gauss()*o.sigma;jt=.18}
    // leicht verzoegertes Ziel: Position von vor ~0.1 s
    const lx=tgt.x-(tgt.vx||0)*.1,ly=tgt.y-(tgt.vy||0)*.1;p.a=Math.atan2(ly-p.y,lx-p.x)+jit;k[' ']=1}

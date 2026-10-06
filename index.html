@@ -247,11 +247,11 @@ cams:[
 {x:19.5*T,y:-.45*T,a0:0,amp:.55,sp:.45,rng:300,fov:.5},
 {x:27.5*T,y:8*T,a0:2.55,amp:.5,sp:.5,rng:260,fov:.5}],
 tellers:[[3,4],[6,4],[9,4]],mgr:{p:[20,2],route:[[20,2],[23,4],[21,5],[20,8],[23,10],[20,10]]},theme:mkTheme(0,0,0),guards:[{p:[3,9],route:[[3,9],[9,8],[16,8],[17,9],[20,9],[23,9],[20,7],[16,10],[8,10]]}],civ:6,mission:{code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,tags:[]},
-note:[22,2],mon:[22,8],vault:{door:[12,2],pad:[11,4],bundles:[[14,2],[16,2],[14,3],[16,3],[15,4]]},
+note:[22,2],mon:[22,8],vault:{door:[12,2],pad:[11,4],dir:1,bundles:[[14,2],[16,2],[14,3],[16,3],[15,4]]},
 tills:[[3,5],[6,5],[9,5]],atms:[[17,10],[17,11]],backDoors:[[11,0],[22,0]],
-sw:{x:24*T+16,y:7*T+22},exit:{x:26*T,y0:8*T,y1:12*T},van:{y:10*T,x0:32*T},
-posts:[{x:8,y:14,a:-1.57,k:'S'},{x:27,y:8,a:3.14,k:'E'},{x:-1,y:9,a:0,k:'W'},{x:11,y:-1,a:1.57,k:'N',door:[11,0]},{x:11,y:14,a:-1.57,k:'S'},{x:27,y:11,a:3.14,k:'E'},{x:22,y:-1,a:1.57,k:'N',door:[22,0]},{x:5,y:14,a:-1.57,k:'S'},
-{x:-1,y:6,a:0,k:'W'},{x:5,y:-1,a:1.57,k:'N'},{x:14,y:14,a:-1.57,k:'S'},{x:27,y:6,a:3.14,k:'E'},{x:16,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:2,y:14,a:-1.57,k:'S'},{x:17,y:14,a:-1.57,k:'S'}],
+sw:{x:24*T+16,y:7*T+22},exit:{x:26*T,y0:8*T,y1:12*T,dir:1,tx:26},van:{y:10*T,x0:32*T,stop:26*T,dir:-1},flip:false,
+posts:[{x:8,y:14,a:-1.57,k:'S'},{x:27,y:8,a:3.14,k:'E',anchor:true},{x:-1,y:9,a:0,k:'W'},{x:11,y:-1,a:1.57,k:'N',door:[11,0]},{x:11,y:14,a:-1.57,k:'S'},{x:27,y:11,a:3.14,k:'E',anchor:true},{x:22,y:-1,a:1.57,k:'N',door:[22,0]},{x:5,y:14,a:-1.57,k:'S'},
+{x:-1,y:6,a:0,k:'W'},{x:5,y:-1,a:1.57,k:'N'},{x:14,y:14,a:-1.57,k:'S'},{x:27,y:6,a:3.14,k:'E',anchor:true},{x:16,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:2,y:14,a:-1.57,k:'S'},{x:17,y:14,a:-1.57,k:'S'}],
 slots:{W:[15,10,5,0],E:[20,25,30,35]},laneY:18*T,title:{cx:32,ax:190,cy:-10,ay:110}};
 return lay}
 /* ---- Zufallskarte: Variationen derselben Bank. Alle Groessen kommen aus den Parametern q, CLASSICP ergibt exakt die klassische Bank. ---- */
@@ -277,10 +277,27 @@ const mkTheme=(ti,di,sty)=>{const b=THEMES[ti],t=TODS[di];return Object.assign({
 const CLASSICM={code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,noteIdx:1,rot:[0,false,0,false]};
 function genMission(mr){const ri=(a,b)=>a+Math.floor(mr()*(b-a+1)),gw=mr();return{code:String(ri(1000,9999)),vault:mr()<.15?'drill':'code',guards:gw<.1?0:gw<.75?1:2,west:mr()<.7,cams:ri(5,8),civ:ri(3,9),noteIdx:ri(0,6),rot:[ri(0,8),mr()<.5,ri(0,5),mr()<.5]}}
 const rotR=(a,k,rev)=>{const b=a.slice(k%a.length).concat(a.slice(0,k%a.length));return rev?b.reverse():b};
+/* Spiegeln links/rechts als Nachbearbeitung eines fertigen Layouts: Raster, alle Koordinaten (Kachel X, Pixel XP), Winkel, Wagenseiten, Fluchtrichtung. */
+function mirrorLayout(lay){const Mx=2*WX0+W,X=x=>Mx-1-x,XP=x=>Mx*T-x,t2=a=>[X(a[0]),a[1]];
+for(const r of M)r.reverse();
+const b=lay.bld,bx0=b.x0,bx1=b.x1;b.x0=X(bx1);b.x1=X(bx0);
+lay.winN=lay.winN.map(X);lay.winS=lay.winS.map(X);
+const om=lay.mat,pf=lay.paintFloor,pt=lay.paintTop,fl=f=>s=>{s.save();s.translate(Mx*T,0);s.scale(-1,1);f(s);s.restore()};
+lay.mat=(x,y)=>om(X(x),y);lay.paintFloor=fl(pf);lay.paintTop=fl(pt);
+lay.spawn.x=XP(lay.spawn.x);lay.zones=lay.zones.map(z=>[X(z[2]),z[1],X(z[0]),z[3]]);lay.lobby=[X(lay.lobby[2]),lay.lobby[1],X(lay.lobby[0]),lay.lobby[3]];
+lay.cams.forEach(c=>{c.x=XP(c.x);c.a0=Math.PI-c.a0});
+lay.tellers=lay.tellers.map(t2);lay.mgr.p=t2(lay.mgr.p);lay.mgr.route=lay.mgr.route.map(t2);lay.guards.forEach(g=>{g.p=t2(g.p);g.route=g.route.map(t2)});
+lay.note=t2(lay.note);lay.mon=t2(lay.mon);lay.vault.door=t2(lay.vault.door);lay.vault.pad=t2(lay.vault.pad);lay.vault.bundles=lay.vault.bundles.map(t2);lay.vault.dir=-1;
+lay.tills=lay.tills.map(t2);lay.atms=lay.atms.map(t2);lay.backDoors=lay.backDoors.map(t2);
+lay.sw.x=XP(lay.sw.x);lay.exit.x=XP(lay.exit.x);lay.exit.dir=-1;lay.exit.tx=X(lay.exit.tx);
+lay.van.x0=XP(lay.van.x0)-128;lay.van.stop=XP(lay.van.stop)-128;lay.van.dir=1;
+lay.posts.forEach(p=>{p.x=X(p.x);p.a=Math.PI-p.a;if(p.door)p.door=t2(p.door)});
+lay.slots={W:lay.slots.E.map(X),E:lay.slots.W.map(X)};
+lay.theme=Object.assign({},lay.theme,{sun:Object.assign({},lay.theme.sun,{dx:-lay.theme.sun.dx})});lay.flip=true;return lay}
 function genLayout(seed,po){const r=mulberry32(seed|0),q=po||genParams(r),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),rnd=po?()=>1:r;
 const{cx,vw,ew,bd,ld,fd,wy,sd,ey,od,nt,na,nb,nbun,yw}=q;
 const mr=mulberry32((((seed|0)*2654435761)>>>0)^0x5bd1e995),ms=po?CLASSICM:genMission(mr);
-const tr=mulberry32((((seed|0)*40503)>>>0)^0x1b873593),ti=po?0:Math.floor(tr()*THEMES.length),tw=tr(),di=po?0:tw<.35?0:tw<.55?1:tw<.85?2:3,sty=po?0:Math.floor(tr()*3),pr=mulberry32((((seed|0)*69069)>>>0)^0x2545f491),pi=(a,b)=>a+Math.floor(pr()*(b-a+1));
+const tr=mulberry32((((seed|0)*40503)>>>0)^0x1b873593),ti=po?0:Math.floor(tr()*THEMES.length),tw=tr(),di=po?0:tw<.35?0:tw<.55?1:tw<.85?2:3,sty=po?0:Math.floor(tr()*3),flip=po?false:tr()<.5,pr=mulberry32((((seed|0)*69069)>>>0)^0x2545f491),pi=(a,b)=>a+Math.floor(pr()*(b-a+1));
 const mx1=cx+1+vw,ex0=mx1+2,ex1=ex0+ew-1,bx1=ex1+1,by1=bd+ld+2,ly0=bd+2,ly1=by1-1,w=6+bx1+1+yw+1,h=by1+16,oc=ex0+Math.floor(ew/2),ex2=-6+w-1;
 newGrid(w,h,-6,-5);
 fill(0,0,bx1,by1,'#');fill(1,1,bx1-1,by1-1,'.');
@@ -305,7 +322,7 @@ fill(-6,-5,-6+w-1,-5,'f');fill(-6,-5+h-1,-6+w-1,-5+h-1,'f');fill(-6,-5,-6,-5+h-1
 setc(ex2,ey,'o');setc(ex2,ey+1,'o');
 const gx=po?bx1+5:ri(bx1+4,ex2-5);fill(bx1+1,by1+1,ex2-1,by1+1,'f');setc(gx,by1+1,'o');setc(gx+1,by1+1,'o');
 // Beamten-Posten und Wagenplaetze
-const S=[fd-1,fd+2,fd-4,fd+5,fd-7,fd+8].map(x=>({x,y:by1+2,a:-1.57,k:'S'})),E=[ey-1,ey+2,ey-3].map(y=>({x:bx1+2,y,a:3.14,k:'E'})),Wp=[wy,wy-3,wy+3].map(y=>({x:-1,y,a:0,k:'W'})),
+const S=[fd-1,fd+2,fd-4,fd+5,fd-7,fd+8].map(x=>({x,y:by1+2,a:-1.57,k:'S'})),E=[ey-1,ey+2,ey-3].map(y=>({x:bx1+2,y,a:3.14,k:'E',anchor:true})),Wp=[wy,wy-3,wy+3].map(y=>({x:-1,y,a:0,k:'W'})),
 N=[{x:bd1,y:-1,a:1.57,k:'N',door:[bd1,0]},{x:bd2,y:-1,a:1.57,k:'N',door:[bd2,0]},{x:bd1-6,y:-1,a:1.57,k:'N'},{x:bd1+5,y:-1,a:1.57,k:'N'}];
 const posts=[S[0],E[0],Wp[0],N[0],S[1],E[1],N[1],S[2],Wp[1],N[2],S[3],E[2],N[3],Wp[2],S[4],S[5]].filter(po=>po.x>=-5&&po.x<=ex2-1&&!isSol(po.x,po.y));
 const slots={W:[],E:[]};for(let x=fd+6;x>=-3;x-=5)slots.W.push(x);for(let x=fd+11;x<=ex2-2;x+=5)slots.E.push(x);
@@ -346,12 +363,13 @@ zones:[[1,1,cx,bd+1],[cx+1,1,mx1,bd-1],[ex0,1,ex1,ly1],[cx-3,-99,99,-1],[bx1+1,-
 cams:camsSel,
 tellers:tills.map(t=>[t[0],bd-1]),
 mgr:{p:mgrR[0],route:mgrR},guards,civ:ms.civ,mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:ms.west,cams:camsSel.length,civ:ms.civ,tags},
-note:deskT[ms.noteIdx],mon:[oc,ly0+1],vault:{door:[cx+1,2],pad:[cx,bd-1],bundles:[]},tills,atms,backDoors:[[bd1,0],[bd2,0]],
-sw:{x:ex1*T+16,y:ly0*T+22},exit:{x:(bx1+1)*T,y0:(ey-1)*T,y1:(ey+3)*T},van:{y:(ey+1)*T,x0:(-6+w-6)*T},
+note:deskT[ms.noteIdx],mon:[oc,ly0+1],vault:{door:[cx+1,2],pad:[cx,bd-1],dir:1,bundles:[]},tills,atms,backDoors:[[bd1,0],[bd2,0]],
+sw:{x:ex1*T+16,y:ly0*T+22},exit:{x:(bx1+1)*T,y0:(ey-1)*T,y1:(ey+3)*T,dir:1,tx:bx1+1},van:{y:(ey+1)*T,x0:(-6+w-6)*T,stop:(bx1+1)*T,dir:-1},flip:false,
 posts,slots,laneY:(by1+6)*T,title:{cx:Math.round((-6*T+((-6+w)*T-VW))/2),ax:Math.floor(((-6+w)*T-VW+6*T)/2*.85),cy:-10,ay:110}};
 // Buendel im Tresor (Gitter im Innenraum)
 {const vx0=cx+2,xs=[vx0+1,vx0+3,vx0+5].filter(x=>x<=mx1),c=[];for(const y of[2,3])for(const x of xs.slice(0,2))c.push([x,y]);c.push([vx0+2,bd-1]);for(const x of xs.slice(2))c.push([x,2]);c.push([vx0+1,bd-1],[mx1-1,bd-1]);
 const seen=new Set();lay.vault.bundles=c.filter(a=>{const k=a+'';if(seen.has(k)||a[1]>bd-1)return false;seen.add(k);return true}).slice(0,nbun)}
+if(flip)mirrorLayout(lay);
 return lay}
 
 /* Gueteprueffung: alles Wichtige muss vom Spielerstart aus erreichbar sein (Tresor als offen gerechnet). */
@@ -362,14 +380,14 @@ const R=(x,y)=>!OOB(x,y)&&seen[y-WY0][x-WX0]===1,near=a=>R(a[0],a[1])||D4.some(d
 const ey=Math.round(lay.exit.y0/T)+1,sw=[Math.floor(lay.sw.x/T),Math.floor(lay.sw.y/T)];
 if(!all(lay.posts,p=>R(p.x,p.y)))return false;if(lay.posts.length<10)return false;
 if(!all(lay.vault.bundles,a=>R(a[0],a[1]))||lay.vault.bundles.length<4)return false;
-if(!R(v0.door[0]-1,2)||!R(v0.door[0]-1,3))return false;
+if(!R(v0.door[0]-v0.dir,2)||!R(v0.door[0]-v0.dir,3))return false;
 if(!near(lay.note)||!near(lay.mon)||!all(lay.tills,near)||!all(lay.atms,near)||!R(sw[0],sw[1]))return false;
-if(!R(b.x1+1,ey)||!R(b.x1+1,ey+1)||!all(lay.backDoors,a=>R(a[0],-1)))return false;
+if(!R(lay.exit.tx,ey)||!R(lay.exit.tx,ey+1)||!all(lay.backDoors,a=>R(a[0],-1)))return false;
 if(!all(lay.mgr.route,a=>R(a[0],a[1]))||!all(lay.guards,g=>all(g.route,a=>R(a[0],a[1])))||!all(lay.cams,c=>near([Math.floor(c.x/T),Math.floor(c.y/T)]))||!all(lay.tellers,a=>!isSol(a[0],a[1])))return false;
 if(!all(lay.slots.W.concat(lay.slots.E),x=>R(x,b.y1+4)))return false;
 let n=0;const l=lay.lobby;for(let y=l[1];y<=l[3];y++)for(let x=l[0];x<=l[2];x++)if(R(x,y))n++;if(n<14)return false;
 // Weglaengen wie in der Klassik halten (Schwierigkeit haengt stark daran): Start zu Tresor, Tresor zu Ausgang, Frontposten zu Tresor
-const P=(a,c)=>pathTo(a[0]*T+16,a[1]*T+16,c[0],c[1]).length,dr=[v0.door[0]-1,v0.door[1]+1],ex=[Math.round(lay.exit.x/T),Math.round(lay.van.y/T)],p0=lay.posts[0],m=CFG.map,inr=(v,r)=>v>=r[0]&&v<=r[1];
+const P=(a,c)=>pathTo(a[0]*T+16,a[1]*T+16,c[0],c[1]).length,dr=[v0.door[0]-v0.dir,v0.door[1]+1],ex=[lay.exit.tx,Math.round(lay.van.y/T)],p0=lay.posts[0],m=CFG.map,inr=(v,r)=>v>=r[0]&&v<=r[1];
 return inr(P(sp,dr),m.a)&&inr(P(dr,ex),m.b)&&inr(P([p0.x,p0.y],dr),m.c)}finally{vaultOpen=ov}}
 function layoutFor(seed){if(seed==='classic')return classicLayout();const base=seed|0;for(let k=0;k<CFG.map.tries;k++){const lay=genLayout(base+k*7919);if(validLayout(lay)){lay.seed=seed;lay.tries=k+1;return lay}}return classicLayout()}
 function buildWorld(lay){LAY=lay;SUNW=lay.winN;seed=11;
@@ -403,7 +421,7 @@ s.globalCompositeOperation='lighter';
 for(const x of SUNW){const a0=x*T+3,a1=x*T+T-3;const q=s.createLinearGradient(a0,ty0,a0+sdx,ty0+sdy);q.addColorStop(0,'rgba('+sun.c+','+sun.a+')');q.addColorStop(1,'rgba('+sun.c+',0)');s.fillStyle=q;
 [[a0,a0+12],[a0+16,a1]].forEach(p2s=>{s.beginPath();s.moveTo(p2s[0],ty0);s.lineTo(p2s[1],ty0);s.lineTo(p2s[1]+sdx,ty0+sdy);s.lineTo(p2s[0]+sdx,ty0+sdy);s.closePath();s.fill()});
 const r2=s.createRadialGradient(x*T+16,ty0+10,0,x*T+16,ty0+10,70);r2.addColorStop(0,'rgba('+sun.c2+','+sun.a2+')');r2.addColorStop(1,'rgba('+sun.c2+',0)');s.fillStyle=r2;s.fillRect(x*T-54,ty0-60,140,140)}
-for(const x of lay.winS){const q=s.createLinearGradient(x*T,by1*T,x*T-30,by1*T-110);q.addColorStop(0,'rgba(220,235,255,.22)');q.addColorStop(1,'rgba(220,235,255,0)');s.fillStyle=q;s.fillRect(x*T-20,by1*T-110,T+20,110)}
+for(const x of lay.winS){const fx=lay.flip?-1:1,q=s.createLinearGradient(x*T,by1*T,x*T-30*fx,by1*T-110);q.addColorStop(0,'rgba(220,235,255,.22)');q.addColorStop(1,'rgba(220,235,255,0)');s.fillStyle=q;s.fillRect(lay.flip?x*T:x*T-20,by1*T-110,T+20,110)}
 s.globalCompositeOperation='source-over';
 const isW=(x,y)=>{if(OOB(x,y))return false;const c=cell(x,y);return c==='#'||c==='W'||c==='V'};
 for(const w of walls){s.fillStyle=th.wall[0];s.fillRect(w[0],w[1],T,T);for(let i=0;i<14;i++){s.fillStyle='rgba('+(R()>.5?'255,255,245':'30,28,20')+','+(R()*.12)+')';s.fillRect(w[0]+R()*T,w[1]+R()*T,2,1)}
@@ -530,7 +548,7 @@ const freePost=()=>LAY.posts.find(po=>!en.some(q=>q.post===po))||null;
 function mkCar(crew,k){let side=(waveN+k)%2?'E':'W';const fs=sd=>LAY.slots[sd].findIndex((_,j)=>!pcs.some(c=>c.side===sd&&c.slot===j));let i=fs(side);if(i<0){side=side==='W'?'E':'W';i=fs(side)}if(i<0)return null;const w=side==='W';
 return{id:++eid,side,slot:i,x:w?WX0*T-CFG.pol.lead:(WX0+W)*T+CFG.pol.lead,y:LAY.laneY+(Math.random()-.5)*8,a:w?0:Math.PI,a0:w?0:Math.PI,tilt:(i%2?1:-1)*(.1+Math.random()*.1),tx:LAY.slots[side][i]*T+16,st:'in',ex:0,sk:0,crew,lead:k===0?1:0}}
 function unload(c){const sw=c.crew.shift(),e=mkCop(c.x+(Math.random()-.5)*56,c.y-44,sw),po=freePost();e.a=-1.57;
-if(po){const pa=pathTo(e.x,e.y,po.x,po.y);if(pa.length){e.post=po;e.path=pa;e.mode='run';e.rt=tH+(po.k==='E'?CFG.pol.anchorHold:CFG.pol.hold)}}
+if(po){const pa=pathTo(e.x,e.y,po.x,po.y);if(pa.length){e.post=po;e.path=pa;e.mode='run';e.rt=tH+(po.anchor?CFG.pol.anchorHold:CFG.pol.hold)}}
 en.push(e);if(c.lead){c.lead=0;say('Beamte steigen aus und umstellen die Bank')}}
 function carStep(c,dt){if(c.st==='in'){const dx=c.tx-c.x,dd=Math.abs(dx),v=Math.min(CFG.pol.carSpd,Math.max(40,dd*2.4)),m=Math.min(dd,v*dt);c.x+=Math.sign(dx)*m;c.a=c.a0+c.tilt*(1-Math.min(1,dd/260));
 if(!c.sk&&dd<230){c.sk=1;snd('skid',c.x,c.y)}if(dd<.6){c.st='park';c.ex=.5}}
@@ -628,8 +646,8 @@ if(phase===2){tH+=dt;
 for(const o of act)plCombat(o,dt);
 if(!policeShown&&tH>=policeAt)spawnWave();else if(policeShown){waveT+=dt;if(waveT>=waveGap(waveN)){waveT=0;spawnWave()}}
 if(!vanArr&&tH>=vanAt){vanArr=true;snd('van');ban('Fluchtwagen ist da!',3);say('Fluchtwagen wartet am Hinterausgang')}
-if(vanArr){vanX=Math.max(LAY.exit.x,vanX-dt*170);if(tH>vanAt+CFG.vanStay){for(const o of act)o.gone=true;checkEnd('van');return}
-for(const o of act)if(o.x>LAY.exit.x&&o.y>LAY.exit.y0&&o.y<LAY.exit.y1&&vanX<=LAY.exit.x+2)secure(o);if(ended)return;act=actv()}
+if(vanArr){vanX=LAY.van.dir<0?Math.max(LAY.van.stop,vanX-dt*170):Math.min(LAY.van.stop,vanX+dt*170);if(tH>vanAt+CFG.vanStay){for(const o of act)o.gone=true;checkEnd('van');return}
+for(const o of act)if((o.x-LAY.exit.x)*LAY.exit.dir>0&&o.y>LAY.exit.y0&&o.y<LAY.exit.y1&&Math.abs(vanX-LAY.van.stop)<=2)secure(o);if(ended)return;act=actv()}
 flowT-=dt;if(flowT<=0){flow();flowT=.2}
 for(const c of pcs)carStep(c,dt);
 for(const e of en){e.h-=dt;let tg=null,td=1e9;
@@ -780,9 +798,9 @@ const poly=visPoly();
 g.globalCompositeOperation='lighter';
 for(const x of SUNW){for(let i=0;i<6;i++){const o=(i*47+x*13)%170,u=(i*0.37+x*0.11)%1,t2=(o+time*5)%170,px=x*T+3+u*26+t2*(LAY.theme.sun.dx/170)+Math.sin(time*.7+i)*5,py=(LAY.bld.y0+1)*T+t2*(LAY.theme.sun.dy/170)+Math.cos(time*.5+i)*3,al=.55*Math.sin(Math.PI*t2/170);g.fillStyle='rgba(255,246,220,'+al+')';g.beginPath();g.arc(px,py,1.1,0,6.283);g.fill()}}
 g.globalCompositeOperation='source-over';
-if(vanArr||vanX<LAY.van.x0){g.save();g.translate(vanX+64,LAY.van.y);g.scale(-1,1);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-60,-26,128,64);g.drawImage(cars,0,0,256,128,-64,-32,128,64);g.restore()}
+if(vanArr||vanX!==LAY.van.x0){g.save();g.translate(vanX+64,LAY.van.y);if(LAY.van.dir<0)g.scale(-1,1);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(LAY.van.dir<0?-60:-68,-26,128,64);g.drawImage(cars,0,0,256,128,-64,-32,128,64);g.restore()}
 for(const c of pcs)drawCar(c);
-{const X=LAY.vault.door[0]*T,Y=LAY.vault.door[1]*T;if(vaultOpen){g.fillStyle='#5a626d';g.fillRect(X-2,Y-2,5,2*T+4);g.fillStyle='rgba(255,210,100,.14)';g.fillRect(X+T,Y,T,2*T)}else{g.fillStyle='#2a2e34';g.fillRect(X-1,Y,T+2,2*T);g.fillStyle='#707986';g.fillRect(X+1,Y+2,T-4,2*T-4);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(X+1,Y+2,T-4,3);g.strokeStyle='#2a2e34';g.lineWidth=2;g.beginPath();g.arc(X+16,Y+T,10,0,6.283);g.stroke();g.beginPath();for(let i=0;i<4;i++){const a=i*1.5708+.4;g.moveTo(X+16,Y+T);g.lineTo(X+16+Math.cos(a)*10,Y+T+Math.sin(a)*10)}g.stroke();g.fillStyle='#2a2e34';for(const yy of[6,2*T-8])for(const xx of[6,T-8]){g.beginPath();g.arc(X+xx,Y+yy,1.6,0,6.283);g.fill()}}
+{const X=LAY.vault.door[0]*T,Y=LAY.vault.door[1]*T;g.save();if(LAY.vault.dir<0){g.translate(2*X+T,0);g.scale(-1,1)}if(vaultOpen){g.fillStyle='#5a626d';g.fillRect(X-2,Y-2,5,2*T+4);g.fillStyle='rgba(255,210,100,.14)';g.fillRect(X+T,Y,T,2*T)}else{g.fillStyle='#2a2e34';g.fillRect(X-1,Y,T+2,2*T);g.fillStyle='#707986';g.fillRect(X+1,Y+2,T-4,2*T-4);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(X+1,Y+2,T-4,3);g.strokeStyle='#2a2e34';g.lineWidth=2;g.beginPath();g.arc(X+16,Y+T,10,0,6.283);g.stroke();g.beginPath();for(let i=0;i<4;i++){const a=i*1.5708+.4;g.moveTo(X+16,Y+T);g.lineTo(X+16+Math.cos(a)*10,Y+T+Math.sin(a)*10)}g.stroke();g.fillStyle='#2a2e34';for(const yy of[6,2*T-8])for(const xx of[6,T-8]){g.beginPath();g.arc(X+xx,Y+yy,1.6,0,6.283);g.fill()}}g.restore();
 g.drawImage(p2,6*64,0,64,64,LAY.vault.pad[0]*T+2,LAY.vault.pad[1]*T+2,28,28)}
 if(!code&&LAY.mission.vault==='code')g.drawImage(p2,4*64,0,64,64,LAY.note[0]*T+8,LAY.note[1]*T+8,18,18);
 for(const q of LAY.backDoors){const c=cell(q[0],q[1]),X=q[0]*T,Y=q[1]*T;if(c==='L'){g.fillStyle='#30343b';g.fillRect(X,Y+2,T,T-4);g.fillStyle='#8f97a2';g.fillRect(X+2,Y+4,T-4,3);g.fillStyle='#d4452f';g.fillRect(X+T/2-3,Y+T/2-3,6,6)}else{g.fillStyle='#30343b';g.fillRect(X+1,Y+2,5,T-4);g.fillStyle='#7ee34a';g.fillRect(X+T-9,Y+T/2-3,5,5)}}
