@@ -173,7 +173,8 @@ shop:{vest:100,helmF:.85,pack:2,drillF:.64,pickF:.7,radioT:28,jamT:40,medHp:40,j
 {k:'med',n:'Medkit',p:3000,c:1,d:()=>'Taste 2: +'+CFG.shop.medHp+' HP'}]},
 cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:.14},swat:{hp:200,dmg:10,rate:.45,spd:60,acc:.08},
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6,n:5},
-map:{a:[10,15],b:[20,23],c:[12,16],tries:40}};
+map:{a:[10,15],b:[20,23],c:[12,16],tries:40},
+series:{wave:.34,hp:0,at:3}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1));
 let M,TILES,LOBBY,SUNW,st,dcv,dc,LAY=null;
 const OOB=(x,y)=>y<WY0||y>=WY0+H||x<WX0||x>=WX0+W;
@@ -496,7 +497,7 @@ function dust(x,y,n,col){for(let i=0;i<n;i++){const a=Math.random()*6.283,v=20+M
 function sparks(x,y,n){for(let i=0;i<n;i++){const a=Math.random()*6.283,v=80+Math.random()*160;pt.push({t:'s',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.15+Math.random()*.15,m:.3,c:'255,210,120'})}}
 function hole(x,y){dc.fillStyle='rgba(28,24,18,.85)';dc.beginPath();dc.arc(x,y,1.8,0,6.283);dc.fill();dc.strokeStyle='rgba(225,220,205,.35)';dc.lineWidth=1;dc.beginPath();dc.arc(x,y,3.4,0,6.283);dc.stroke()}
 function hitPlayer(o,dm){if(o.helm)dm*=CFG.shop.helmF;if(o.ar>0){o.ar=Math.max(0,o.ar-dm*.5);o.hp-=dm*.5}else o.hp-=dm;o.hurt=.4;sndTo(o,'hurt')}
-function mkCop(x,y,sw){const c=sw?CFG.swat:CFG.cop;return{id:++eid,kind:sw?'swat':'cop',row:sw?8:0,x,y,r:9,hp:c.hp,mhp:c.hp,h:0,a:Math.random()*6.28,w:0,cool:.8,react:0,dir:Math.random()<.5?1:-1,dt:1.5,mvg:false,fl:0,dmg:c.dmg,rate:c.rate,acc:c.acc,spd:c.spd,muz:32,mode:'push',post:null,path:[],rt:0,bt:0}}
+function mkCop(x,y,sw){const c=sw?CFG.swat:CFG.cop,hp=Math.round(c.hp*(1+CFG.series.hp*SESSION.round));return{id:++eid,kind:sw?'swat':'cop',row:sw?8:0,x,y,r:9,hp,mhp:hp,h:0,a:Math.random()*6.28,w:0,cool:.8,react:0,dir:Math.random()<.5?1:-1,dt:1.5,mvg:false,fl:0,dmg:c.dmg,rate:c.rate,acc:c.acc,spd:c.spd,muz:32,mode:'push',post:null,path:[],rt:0,bt:0}}
 /* Polizei: Streifenwagen fahren in der Suedspur vor, die Beamten steigen aus, laufen auf Posten rund ums Gebaeude (Reihenfolge = Prioritaet, damit jede Seite besetzt wird) und stuermen nach der Haltezeit. */
 const freePost=()=>LAY.posts.find(po=>!en.some(q=>q.post===po))||null;
 function mkCar(crew,k){let side=(waveN+k)%2?'E':'W';const fs=sd=>LAY.slots[sd].findIndex((_,j)=>!pcs.some(c=>c.side===sd&&c.slot===j));let i=fs(side);if(i<0){side=side==='W'?'E':'W';i=fs(side)}if(i<0)return null;const w=side==='W';
@@ -507,13 +508,13 @@ en.push(e);if(c.lead){c.lead=0;say('Beamte steigen aus und umstellen die Bank')}
 function carStep(c,dt){if(c.st==='in'){const dx=c.tx-c.x,dd=Math.abs(dx),v=Math.min(CFG.pol.carSpd,Math.max(40,dd*2.4)),m=Math.min(dd,v*dt);c.x+=Math.sign(dx)*m;c.a=c.a0+c.tilt*(1-Math.min(1,dd/260));
 if(!c.sk&&dd<230){c.sk=1;snd('skid',c.x,c.y)}if(dd<.6){c.st='park';c.ex=.5}}
 else if(c.crew.length){c.ex-=dt;if(c.ex<=0){c.ex=CFG.pol.exitGap;unload(c)}}}
-function spawnWave(){waveN++;let ns=0;const n=CFG.waveBase+waveN+(players.length-1)*CFG.perPlayer,crew=[];
+function spawnWave(){waveN++;let ns=0;const n=CFG.waveBase+waveN+(players.length-1)*CFG.perPlayer+Math.floor(SESSION.round*CFG.series.wave),crew=[];
 for(let i=0;i<n;i++){const sw=waveN>=CFG.swatFrom&&i%CFG.swatEvery===CFG.swatEvery-1;if(sw)ns++;crew.push(sw)}
 let nc=0;for(let k=0;crew.length;k++){const seg=crew.splice(0,CFG.pol.seats),c=mkCar(seg,k);if(c){pcs.push(c);nc++}else{const d=pcs[pcs.length-1];if(d){d.crew.push(...seg);d.ex=Math.min(d.ex,.4)}}}
 policeShown=true;snd('wave',ns);ban(ns?'SWAT rückt an! Welle '+waveN:'Polizei! Welle '+waveN,2);say('Welle '+waveN+': '+n+' Einsatzkräfte'+(ns?' ('+ns+' SWAT)':'')+(nc?' in '+nc+' Wagen':''))}
 function startHeist(forced){if(phase!==1||ended)return;phase=2;players.forEach(o=>{o.armed=true});tH=0;waveT=0;snd('alarm',forced);ban(forced?'ENTDECKT! ALARM!':'ÜBERFALL! ALLE AUF DEN BODEN!',2.8);
 const keep=[];for(const n of npcs){if(n.k==='grd'){const gd=CFG.grd;en.push(Object.assign(mkCop(n.x,n.y,false),{kind:'grd',row:2,hp:gd.hp,mhp:gd.hp,a:n.a,cool:1.2,dmg:gd.dmg,rate:gd.rate,acc:gd.acc,spd:gd.spd,muz:16}))}else{n.st='cower';n.path=[];n.mvg=false;keep.push(n)}}
-npcs=keep;policeAt=forced?CFG.policeForced:CFG.policeAt;say(forced?'Alarm läuft schon. Polizei in '+policeAt+' s':'Stiller Alarm. Polizei in '+policeAt+' s');flowT=0}
+npcs=keep;policeAt=forced?CFG.policeForced:Math.max(CFG.policeForced,CFG.policeAt-CFG.series.at*SESSION.round);say(forced?'Alarm läuft schon. Polizei in '+policeAt+' s':'Stiller Alarm. Polizei in '+policeAt+' s');flowT=0}
 const vanT=()=>players.some(o=>live(o)&&o.kit&&o.kit.radio)?CFG.shop.radioT:CFG.vanCall;
 function useGadget(o,n){if(!o||!live(o)||ended)return;
 if(n===1){if(o.jam<=0)return sndTo(o,'ev','deny');if(phase!==1||camDown>0){sndTo(o,'ev','deny');ban(phase!==1?'Nur beim Erkunden nützlich':'Kameras sind schon gestört',1.6,o.id);return}o.jam--;camDown=CFG.shop.jamT;snd('ev','power');say('Störsender aktiv: Kameras '+CFG.shop.jamT+' s aus');ban('Kameras gestört ('+CFG.shop.jamT+' s)',2.2,o.id)}
