@@ -258,13 +258,14 @@ PAL = {
     'tel': dict(uni='#e4e6ea', pants='#2a2d38', vest='#2f3a55', head='hair', hair='#2a1c14', tie='#a83a3a'),
     'mgr': dict(uni='#555b68', pants='#3a3e48', vest=None, head='hair', hair='#8a8a8c', tie='#2a3a6a', skin='#caa07c'),
     'hud': dict(uni='#6d7076', pants='#2d3340', head='hood', hood='#767980', skin='#d9ab84'),
+    'swt': dict(uni='#23272e', pants='#171a1f', vest='#566170', helm='#14171b', head='helmet', gloves=1, pack='#2b3038', guard='#2a2d33'),
 }
-ROWS = ['pt', 'rob', 'grd', 'cva', 'cvb', 'tel', 'mgr', 'hud']
+ROWS = ['pt', 'rob', 'grd', 'cva', 'cvb', 'tel', 'mgr', 'hud', 'swt']
 COLS = 9
 atlas = Image.new('RGBA', (128 * COLS, 128 * len(ROWS)), (0, 0, 0, 0))
 for r, key in enumerate(ROWS):
     pal = PAL[key]
-    armed = key in ('pt', 'rob')
+    armed = key in ('pt', 'rob', 'swt')
     for i in range(6):
         ph = i / 6 * 2 * math.pi
         im = soldier(pal, ph) if armed else person(pal, ph)
