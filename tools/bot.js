@@ -20,7 +20,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  const goals=[];
  if(o.extras)for(const a of L.atms.map(q=>[q[0]-1,q[1]]))goals.push({at:a,hold:true,tag:'atm'});
  goals.push({at:[L.vault.door[0]-1,L.vault.door[1]+1],hold:true,done:()=>S().vaultOpen,tag:'vault'});
- for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+.99,tag:'bundle'})}
+ for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+D.CFG.bundle.u*D.CFG.bundle.n/L.vault.bundles.length*.95,tag:'bundle'})}
  if(o.extras)for(const t of L.tills.slice().reverse())goals.push({at:t,hold:true,tag:'till'});
  let gi=0,gInit=false;
  for(let n=0;n<o.maxT*30;n++){
