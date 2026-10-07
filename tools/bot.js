@@ -3,14 +3,14 @@
 // Dann: bot.batch(20,{call:null}) oder bot.run({call:10,extras:true})
 // Optionen: sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
 // nach der letzten Beute bis zum Anruf), extras (Geldautomaten und Kassen mitnehmen), wait (Wartekachel),
-// seed (Kartenseed, sonst die aktuelle Karte), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei)
+// seed (Kartenseed, sonst die aktuelle Karte), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), bar ('all' = alle Eingaenge samt Fluchttuer verbarrikadieren, 'noexit' = ohne Fluchttuer, die Fluchttuer wird zum Wagen wieder abgebaut), barLv (Stufen je Tuer, 1 oder 2), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei)
 (function(){
 const D=__dbg,k=D.keys,S=()=>D.get(),dt=1/30;
 const KITS={base:{},old:{rifle:1,vest:1},mid:{smg:1,vest:1},full:{rifle:1,vest:1,helm:1,pack:1,drill:1,pick:1,radio:1}};
 const gauss=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
 const tileOf=o=>[Math.floor(o.x/32),Math.floor(o.y/32)];
 function steer(tx,ty){const p=S().p;k.a=k.d=k.w=k.s=0;const t=tileOf(p);if(t[0]===tx&&t[1]===ty)return true;const path=D.pathTo(p.x,p.y,tx,ty);if(!path.length)return false;const q=path[0],dx=q[0]-p.x,dy=q[1]-p.y;if(dx>2)k.d=1;if(dx<-2)k.a=1;if(dy>2)k.s=1;if(dy<-2)k.w=1;return false}
-function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT:400,wait:'vault',kit:'old',cons:{},round:0},o||{});
+function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT:400,wait:'vault',kit:'old',cons:{},round:0,bar:null,barLv:1},o||{});
  D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;
  if(o.seed!=null)D.buildSeed(o.seed);
  D.reset();const L=D.LAY(),exitT=[L.exit.tx,Math.round(L.van.y/32)],waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
@@ -22,6 +22,13 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  goals.push({at:[L.vault.door[0]-L.vault.dir,L.vault.door[1]+1],hold:true,done:()=>S().vaultOpen,tag:'vault'});
  for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+D.CFG.bundle.u*D.CFG.bundle.n/L.vault.bundles.length*.95,tag:'bundle'})}
  if(o.extras)for(const t of L.tills.slice().reverse())goals.push({at:t,hold:true,tag:'till'});
+ const bars=D.bars(),prep=[];
+ if(o.bar)for(const b of bars){if(o.bar==='noexit'&&b.n==='Fluchttür')continue;
+  const inw={S:[0,-1],N:[0,1],W:[1,0],E:[-1,0]}[b.side],c0=b.cells[0],stand=[c0[0]+inw[0],c0[1]+inw[1]];
+  for(let j=0;j<o.barLv;j++){let tgt=null;prep.push({hold:true,tag:'mat',to:9,init(){const p=S().p;let bd=1e9;tgt=null;for(const it of S().its)if(it.t==='mat'&&!it.done){const d=Math.hypot(it.x-p.x,it.y-p.y);if(d<bd){bd=d;tgt=it}}
+    if(tgt){const tx=Math.floor(tgt.x/32),ty=Math.floor(tgt.y/32);this.at=[[0,1],[0,-1],[1,0],[-1,0]].map(v=>[tx+v[0],ty+v[1]]).find(t=>!D.isSol(t[0],t[1]))||[tx,ty+1]}else this.at=stand},done:()=>!tgt||tgt.done})}
+  prep.push({at:stand,hold:true,tag:'bar',to:12,done:()=>b.lv>=o.barLv})}
+ goals.unshift(...prep);
  let gi=0,gInit=false;
  for(let n=0;n<o.maxT*30;n++){
   const s=S(),p=s.p;if(s.ended)break;
@@ -39,11 +46,13 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
    const g=goals[gi];
    if(g&&s.tH<s.vanAt-5){if(!gInit){gInit=true;g.init&&g.init()}
     const there=steer(g.at[0],g.at[1]);if(there&&g.hold)k.e=1;
-    let fin=g.done?g.done():false;
+    let fin=g.done?g.done():false;if(g.to){if(g.t1==null)g.t1=s.tH;if(s.tH-g.t1>g.to)fin=true}
     if(g.tag==='till'||g.tag==='atm'){if(there&&g.t0==null)g.t0=s.tH;fin=g.t0!=null&&s.tH-g.t0>(g.tag==='atm'?D.CFG.atm.t+.6:D.CFG.till.t+.4)}
     if(fin){gi++;gInit=false}}
    else{ // Warteposition / Flucht
-    if(vanReady||(o.call!=null&&calledAt!=null&&s.vanArr))steer(exitT[0],exitT[1]);else steer(waitT[0],waitT[1]);
+    const xb=bars.find(b=>b.n==='Fluchttür');
+    if(xb&&xb.lv>0&&(s.vanArr||calledAt!=null)){const c0=xb.cells[0];if(steer(c0[0]-L.exit.dir,c0[1]))k.e=1}
+    else if(vanReady||(o.call!=null&&calledAt!=null&&s.vanArr))steer(exitT[0],exitT[1]);else steer(waitT[0],waitT[1]);
     if(o.call!=null&&calledAt==null&&(gi>=goals.length||s.tH>=s.vanAt-5)&&s.tH>=(R.milestones.looted==null?s.tH:R.milestones.looted)+o.call){D.callVan();calledAt=s.tH}
    }
    if(gi>=goals.length||s.tH>=s.vanAt-5)mark('looted')}
