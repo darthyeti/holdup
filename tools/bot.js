@@ -23,8 +23,8 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+D.CFG.bundle.u*D.CFG.bundle.n/L.vault.bundles.length*.95,tag:'bundle'})}
  if(o.extras)for(const t of L.tills.slice().reverse())goals.push({at:t,hold:true,tag:'till'});
  const bars=D.bars(),prep=[];
- if(o.bar)for(const b of bars){if(o.bar==='noexit'&&b.n==='Fluchttür')continue;
-  const inw={S:[0,-1],N:[0,1],W:[1,0],E:[-1,0]}[b.side],c0=b.cells[0],stand=[c0[0]+inw[0],c0[1]+inw[1]];
+ if(o.bar)for(const b of bars){if(!b.side||(o.bar==='noexit'&&b.n==='Fluchttür'))continue;
+  const inw=b.iv,c0=b.cells[0],stand=[c0[0]+inw[0],c0[1]+inw[1]];
   for(let j=0;j<o.barLv;j++){let tgt=null;prep.push({hold:true,tag:'mat',to:9,init(){const p=S().p;let bd=1e9;tgt=null;for(const it of S().its)if(it.t==='mat'&&!it.done){const d=Math.hypot(it.x-p.x,it.y-p.y);if(d<bd){bd=d;tgt=it}}
     if(tgt){const tx=Math.floor(tgt.x/32),ty=Math.floor(tgt.y/32);this.at=[[0,1],[0,-1],[1,0],[-1,0]].map(v=>[tx+v[0],ty+v[1]]).find(t=>!D.isSol(t[0],t[1]))||[tx,ty+1]}else this.at=stand},done:()=>!tgt||tgt.done})}
   prep.push({at:stand,hold:true,tag:'bar',to:12,done:()=>b.lv>=o.barLv})}
