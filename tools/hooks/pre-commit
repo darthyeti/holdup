@@ -1,0 +1,12 @@
+#!/bin/sh
+# Versionierung: Steckt das Spiel selbst (index.html oder assets/) im Commit, setzt dieser Hook die Build-Nummer
+# in index.html auf die laufende Nummer dieses Commits (Anzahl der Commits plus eins) und das Datum auf heute.
+# Reine Doku-Commits lassen die Nummer unberuehrt.
+# Einrichten, einmal je Klon: git config core.hooksPath tools/hooks
+top=$(git rev-parse --show-toplevel) || exit 0
+cd "$top" || exit 0
+git diff --cached --name-only | grep -qE '^(index\.html|assets/)' || exit 0
+n=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
+d=$(date +%F)
+perl -pi -e "s/^const BUILD=\{n:\d+,d:'[\d-]+'\};\/\/BUILD/const BUILD={n:$n,d:'$d'};\/\/BUILD/" index.html && git add index.html
+exit 0

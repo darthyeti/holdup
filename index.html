@@ -9,17 +9,20 @@ main{max-width:1100px;margin:0 auto;display:grid;gap:14px}
 header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
 h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 header p{margin:0;color:var(--muted)}
+.ver{margin-left:auto;font-size:12px}
 canvas{display:block;width:100%;aspect-ratio:960/544;border-radius:10px;background:#0e1014;outline:none;cursor:crosshair;border:1px solid var(--line)}
 canvas:focus-visible{border-color:var(--accent)}
 #err{color:#ff8a7a;margin:0}
 </style>
 <main>
-<header><h1>Holdup</h1><p>Erst erkunden, dann zuschlagen</p></header>
+<header><h1>Holdup</h1><p>Erst erkunden, dann zuschlagen</p><p id="ver" class="ver"></p></header>
 <canvas id="c" width="1920" height="1088" tabindex="0" aria-label="Spielfeld"></canvas>
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
 <script>
+const BUILD={n:25,d:'2026-10-08'};//BUILD
+document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Grafik konnte nicht geladen werden: '+e.message});
 /* ---- Ton: alles synthetisch (WebAudio), keine Dateien. Ohne Nutzeraktion bleibt ac=null, dann sind alle Aufrufe leer. ---- */
@@ -872,7 +875,7 @@ if(scr==='lobby'||scr==='shop')NET.roster=NET.roster.filter(r=>r.id!==c.pid);if(
 bcastRoster()};
 }
 function hostMsg(c,m){const o=players[c.pid];
-if(m.t==='hi'){if(m.ver!==VER){c.send({t:'rej',why:'Versionen passen nicht. Seite neu laden.'});setTimeout(()=>c.close(),300);return}c.kit=sanKit(m.k);c.send({t:'wel',id:c.pid,ver:VER,code:NET.code});setRoster(c.pid,m.nm);bcastRoster()}
+if(m.t==='hi'){if(m.ver!==VER||m.b!==BUILD.n){c.send({t:'rej',why:'Versionen passen nicht (Host: Build '+BUILD.n+', du: Build '+(m.b||'?')+'). Seite neu laden.'});setTimeout(()=>c.close(),300);return}c.kit=sanKit(m.k);c.send({t:'wel',id:c.pid,ver:VER,b:BUILD.n,code:NET.code});setRoster(c.pid,m.nm);bcastRoster()}
 else if(m.t==='nm'){setRoster(c.pid,m.v);bcastRoster()}
 else if(m.t==='in'){if(!o||scr!=='play'||ended)return;m.dt=clamp(+m.dt||0,0,.05);m.vx=clamp(+m.vx||0,-1,1);m.vy=clamp(+m.vy||0,-1,1);m.a=+m.a||0;
 if(live(o)){movePl(o,m);o.ack=m.s}o.inp=m;o.lastIn=performance.now()}
@@ -884,10 +887,10 @@ else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);
 else if(m.t==='ping')c.send({t:'pong',n:m.n})}
 function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;mapSeed=newSeed();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc});beginPlay()}
 function joinRoom(code){netReset();NET.role='client';NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
-NET.srv=TR.join(code,{onOpen(c){NET.conn=c;c.onmsg=clientMsg;c.onclose=()=>{if(NET.role==='client'&&NET.conn===c)leaveGame('Verbindung zum Host verloren.')};c.send({t:'hi',ver:VER,k:curKit(),nm:myName})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
+NET.srv=TR.join(code,{onOpen(c){NET.conn=c;c.onmsg=clientMsg;c.onclose=()=>{if(NET.role==='client'&&NET.conn===c)leaveGame('Verbindung zum Host verloren.')};c.send({t:'hi',ver:VER,b:BUILD.n,k:curKit(),nm:myName})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
 setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.msg='Keine Antwort. Code prüfen und erneut versuchen.'},15000)}
 function clientMsg(m){
-if(m.t==='wel'){NET.myId=m.id;if(m.ver!==VER){NET.msg='Version passt nicht. Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...'}
+if(m.t==='wel'){NET.myId=m.id;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...'}
 else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc}
 else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='go'){nPl=m.n;if(m.sc)jobSc=m.sc;kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
@@ -1178,7 +1181,7 @@ const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW
 const volMouse=()=>{const b=volBox(volDrag);volAdj(volDrag,(mouse.sx-b.x)/b.w,true)};
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(scr==='title'||(scr==='play'&&paused)){const i=volHit(mouse.sx,mouse.sy);if(i>=0){volSel=i;volDrag=i;volMouse();return}}if(scr==='title'){startGame();return}if(scr==='shop'){const i=shopHit(),gb=shopGoBox;if(i>=0)shopBuy(i);else if(mouse.sx>=gb.x&&mouse.sx<=gb.x+gb.w&&mouse.sy>=gb.y&&mouse.sy<=gb.y+gb.h)shopGo();return}if(scr==='coop'){const b=nameBox();nameEdit=mouse.sx>=b.x&&mouse.sx<=b.x+b.w&&mouse.sy>=b.y&&mouse.sy<=b.y+b.h;if(!nameEdit)saveName();return}if(scr==='lobby'){const y=294+NET.myId*28,on=mouse.sx>=300&&mouse.sx<=620&&mouse.sy>=y-14&&mouse.sy<=y+8;if(on)nameEdit=true;else if(nameEdit){nameEdit=false;saveName()}return}if(scr!=='play')return;if(paused){paused=false;return}mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;volDrag=-1});
 cv.addEventListener('mousemove',e=>{mpos(e);mouse.t=time;if(volDrag>=0)volMouse()});
-const dbg={setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),st,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={BUILD,setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),st,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
