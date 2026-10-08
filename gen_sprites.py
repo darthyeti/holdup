@@ -455,9 +455,33 @@ def car(body, roof, kind):
     return c.finish(noise=0.02, seed=61).crop((0, 64, 256, 192))
 
 
-cars = Image.new('RGBA', (256, 128 * 4), (0, 0, 0, 0))
+def truck():
+    """Panzerwagen von oben, Fahrerhaus rechts (+x), Hecktuer links."""
+    c = Canvas(256, 4)
+    for (x0, x1) in ((22, 62), (82, 122), (178, 218)):
+        c.Rr(x0, 80, x1, 92, hexc('#111214'), r=4, ow=0)
+        c.Rr(x0, 164, x1, 176, hexc('#111214'), r=4, ow=0)
+    c.Rr(6, 88, 176, 168, hexc('#59687a'), r=8, ow=2.4)
+    c.Rr(6, 88, 176, 168, (255, 255, 255, 40), ov=True, r=8)
+    c.Rr(8, 134, 174, 168, (0, 0, 0, 50), ov=True, r=8)
+    c.Rr(24, 116, 160, 140, hexc('#d9dee5'), ol=None, r=3)
+    c.Rr(24, 124, 160, 132, hexc('#2a52d0'), ol=None, r=2)
+    c.Rr(78, 98, 126, 158, hexc('#3d4a5a'), r=5, ow=1.6)
+    c.Rr(14, 92, 24, 164, hexc('#2a2f36'), r=3, ow=1.6)
+    c.Rr(178, 92, 248, 164, hexc('#33404f'), r=14, ow=2.4)
+    c.Rr(178, 92, 248, 164, (255, 255, 255, 40), ov=True, r=14)
+    c.Rr(222, 98, 240, 158, hexc('#8fb3cf'), r=5, ow=1.4)
+    c.Rr(190, 100, 214, 156, hexc('#2a3340'), r=6, ow=1.2)
+    c.Rr(242, 98, 250, 112, hexc('#fff3c2'), ol=None, r=3)
+    c.Rr(242, 144, 250, 158, hexc('#fff3c2'), ol=None, r=3)
+    c.Rr(4, 96, 10, 110, hexc('#b02a2a'), ol=None, r=2)
+    c.Rr(4, 146, 10, 160, hexc('#b02a2a'), ol=None, r=2)
+    return c.finish(noise=0.02, seed=71).crop((0, 64, 256, 192))
+
+
+cars = Image.new('RGBA', (256, 128 * 5), (0, 0, 0, 0))
 for i, im in enumerate([car('#e9ebee', '#f4f5f6', 'van'), car('#14161a', '#14161a', 'police'),
-                        car('#9a3a34', '#9a3a34', 'civ'), car('#3c5f86', '#3c5f86', 'civ')]):
+                        car('#9a3a34', '#9a3a34', 'civ'), car('#3c5f86', '#3c5f86', 'civ'), truck()]):
     cars.paste(im, (0, i * 128))
 cars.save(os.path.join(OUT, 'cars.png'))
 
