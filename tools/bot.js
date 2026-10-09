@@ -3,7 +3,7 @@
 // Dann: bot.batch(20,{call:null}) oder bot.run({call:10,extras:true})
 // Optionen: sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
 // nach der letzten Beute bis zum Anruf), extras (Geldautomaten und Kassen mitnehmen), wait (Wartekachel),
-// seed (Kartenseed, sonst die aktuelle Karte), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), bar ('all' = alle Eingaenge samt Fluchttuer verbarrikadieren, 'noexit' = ohne Fluchttuer, die Fluchttuer wird zum Wagen wieder abgebaut), barLv (Stufen je Tuer, 1 oder 2), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei)
+// seed (Kartenseed, sonst die aktuelle Karte), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), bar ('all' = alle Eingaenge samt Fluchttuer verbarrikadieren, 'noexit' = ohne Fluchttuer, die Fluchttuer wird zum Wagen wieder abgebaut), barLv (Stufen je Tuer, 1 oder 2), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei), shieldSmart (Standard an: Schild-Beamte, deren Schild zum Bot zeigt, werden nur beschossen, wenn sonst nichts in Sicht ist; false = stur auf den Naechsten, Obergrenze fuer die Wirkung der Schilde)
 (function(){
 const D=__dbg,k=D.keys,S=()=>D.get(),dt=1/30;
 const KITS={base:{},old:{rifle:1,vest:1},mid:{smg:1,vest:1},full:{rifle:1,vest:1,helm:1,pack:1,drill:1,pick:1,radio:1}};
@@ -33,7 +33,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  for(let n=0;n<o.maxT*30;n++){
   const s=S(),p=s.p;if(s.ended)break;
   // Feinde in Sicht
-  let tgt=null,bd=1e9;for(const e of s.en){if(!D.los(p.x,p.y,e.x,e.y)||(D.clear&&!D.clear(p.x,p.y,e.x,e.y)))continue;const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<430&&d<bd){bd=d;tgt=e}}
+  let tgt=null,bd=1e9;for(const e of s.en){if(!D.los(p.x,p.y,e.x,e.y)||(D.clear&&!D.clear(p.x,p.y,e.x,e.y)))continue;const d0=Math.hypot(e.x-p.x,e.y-p.y),pen=o.shieldSmart!==false&&e.kind==='shield'&&e.sh>0&&Math.abs(((Math.atan2(p.y-e.y,p.x-e.x)-e.a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)<D.CFG.shield.arc?1000:0,d=d0+pen;if(d0<430&&d<bd){bd=d;tgt=e}}
   for(const [e,t] of seen)if(!s.en.includes(e))seen.delete(e);
   if(tgt&&!seen.has(tgt))seen.set(tgt,s.tH);
   k.e=0;
