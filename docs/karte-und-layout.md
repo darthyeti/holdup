@@ -1,6 +1,6 @@
 # Karte und Layout
 
-Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Gilt für die Bank, der Geldtransporter hat eine feste Straßenkarte (siehe `docs/szenarien.md`).
+Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Gilt für die Bank. Der Geldtransporter hat eine feste Straßenkarte und der Juwelier eine feste Boutique (`jewelLayout`, beide siehe `docs/szenarien.md`), der Juwelier nutzt dieselben `LAY`-Felder wie die Bank.
 
 ## Karte, Generatoren und Optik
 

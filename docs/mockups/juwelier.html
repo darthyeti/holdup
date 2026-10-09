@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Holdup Juwelier Optik</title>
+<style>
+:root{--bg:#101318;--fg:#e8edf2;--mut:#8d95a1;--card:#171b22;--line:#2a313b;--am:#ffb000}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 ui-monospace,Menlo,Consolas,monospace}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+h1{margin:0 0 4px;font-size:22px;letter-spacing:.04em;color:var(--am)}
+h2{margin:0 0 4px;font-size:17px}
+p{margin:0 0 10px;color:#c9d4de}
+.mut{color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin:18px 0}
+canvas{width:100%;height:auto;display:block;border-radius:6px;background:#000}
+.sw{display:flex;gap:6px;margin:10px 0 6px;flex-wrap:wrap}
+.sw i{width:34px;height:22px;border-radius:4px;border:1px solid rgba(255,255,255,.18)}
+ul{margin:6px 0 0;padding-left:18px;color:#c9d4de}
+li{margin:2px 0}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;background:#222a35;color:#c9d4de;font-size:12px;margin-right:6px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.cmp{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>JUWELIER, OPTIK-ENTWÜRFE</h1>
+<p>Drei Looks für denselben Grundriss (24 x 15 Kacheln, kleine Boutique mit Schaufenster, vier Vitrineninseln, Wandvitrinen, Tresen mit Verkäufer, Hinterzimmer mit Tresor). Gezeichnet mit den echten Sprites des Spiels, nur Boden, Wände, Möbel und Licht sind neu. Phase 1: zwei Räuber unbewaffnet beim Erkunden.</p>
+<div class="card"><h2>Abgrenzung zur Bank</h2>
+<div class="cmp"><div><span class="tag">Bank</span><ul><li>große helle Halle, weite Sicht</li><li>weiße Fliesen, Holzbüros</li><li>Beute gebündelt im Tresor</li><li>Tageslicht, wenig Stimmung</li></ul></div>
+<div><span class="tag">Juwelier</span><ul><li>klein und eng, viele Blickachsen durch Glas</li><li>edle Materialien, Licht in Inseln</li><li>Beute verteilt in Vitrinen, Gier gegen Risiko</li><li>Glitzer als Erkennungszeichen</li></ul></div></div></div>
+<div id="out"></div>
+<p class="mut">Gameplay-Hooks, die alle Looks tragen: Vitrine einschlagen (laut, schnell, Alarm) oder mit Glasschneider schneiden (leise, langsam), Verkäufer überwältigen für den Schlüssel, Hinterzimmer-Tresor, Rollgitter am Eingang.</p>
+</main>
+<script>
+const T=32,W=24,H=15;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function makeGlyphs(g){const ICOL={g:'#6fe04a',r:'#ff6a5a',y:'#ffd27a',b:'#6ac4ff',x:'#9aa6b2'};
+function glyph(id,x,y,sz,fg,bg){g.save();g.translate(x,y);g.scale(sz/24,sz/24);g.translate(-12,-12);g.strokeStyle=fg;g.fillStyle=fg;g.lineWidth=2.4;g.lineCap='round';g.lineJoin='round';g.beginPath();
+if(id==='hammer'){g.lineWidth=2.8;g.moveTo(5,19);g.lineTo(14,10);g.stroke();g.beginPath();g.lineWidth=6;g.moveTo(10.5,6.5);g.lineTo(17.5,13.5);g.stroke()}
+else if(id==='axe'){g.lineWidth=2.8;g.moveTo(5,20);g.lineTo(15,9.5);g.stroke();g.beginPath();g.moveTo(9.5,5.5);g.lineTo(18.5,2.5);g.quadraticCurveTo(22.5,7,19.5,13);g.lineTo(13.5,12);g.closePath();g.fill()}
+else if(id==='drill'){g.fillRect(7.5,2.5,9,5.5);g.moveTo(9,8.5);g.lineTo(15,8.5);g.lineTo(12,21.5);g.closePath();g.fill();if(bg){g.strokeStyle=bg;g.lineWidth=1.8;for(const q of[12,15.5,19]){g.beginPath();g.moveTo(8,q+1.6);g.lineTo(16,q-1.6);g.stroke()}}}
+else if(id==='key'){g.arc(8,12,4.2,0,6.283);g.moveTo(12.2,12);g.lineTo(21,12);g.moveTo(17,12);g.lineTo(17,16);g.moveTo(20.5,12);g.lineTo(20.5,15.5);g.stroke()}
+else if(id==='coin'){g.lineWidth=2.2;g.arc(12,12,9,0,6.283);g.stroke();g.font='bold 14px monospace';g.textAlign='center';g.textBaseline='middle';g.fillText('$',12,12.8)}
+else if(id==='camoff'){g.lineWidth=2.2;g.rect(3,8,12,9);g.stroke();g.beginPath();g.moveTo(15,12.5);g.lineTo(21,8.5);g.lineTo(21,16.5);g.closePath();g.fill();if(bg){g.strokeStyle=bg;g.lineWidth=5.5;g.beginPath();g.moveTo(4,3.5);g.lineTo(20,20.5);g.stroke()}g.strokeStyle=fg;g.lineWidth=2.4;g.beginPath();g.moveTo(4,3.5);g.lineTo(20,20.5);g.stroke()}
+else if(id==='bolt'){g.moveTo(13.5,2);g.lineTo(6,13.5);g.lineTo(11.5,13.5);g.lineTo(9.5,22);g.lineTo(18,10);g.lineTo(12.5,10);g.closePath();g.fill()}
+else if(id==='mag'){g.arc(10,10,6,0,6.283);g.stroke();g.beginPath();g.lineWidth=3.2;g.moveTo(14.5,14.5);g.lineTo(21,21);g.stroke()}
+else if(id==='cross'){g.fillRect(9.5,3.5,5,17);g.fillRect(3.5,9.5,17,5)}
+else if(id==='cuffs'){g.lineWidth=2.4;g.arc(8,13,5,0,6.283);g.stroke();g.beginPath();g.arc(16,13,5,0,6.283);g.stroke();g.beginPath();g.moveTo(8,8);g.lineTo(8,4.5);g.lineTo(16,4.5);g.lineTo(16,8);g.stroke()}
+else if(id==='block'){g.arc(12,12,8.5,0,6.283);g.moveTo(6,6);g.lineTo(18,18);g.stroke()}
+else if(id==='wave'){g.arc(5,12,2,0,6.283);g.fill();g.beginPath();for(const r of[6,10.5,15]){g.moveTo(5+r*Math.cos(-.85),12+r*Math.sin(-.85));g.arc(5,12,r,-.85,.85)}g.stroke()}
+g.restore()}
+function badge(id,col,x,y,r){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,6.283);g.fill();glyph(id,x,y,r*1.5,'#10161f',col)}
+return{glyph,badge,ICOL}}
+const load=s=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=s});
+const V={
+noir:{key:'noir',name:'A · Noir Luxe',blurb:'Schwarzer Marmor, Samt und Gold. Das Licht liegt in Inseln über den Vitrinen, dazwischen Halbdunkel. Edel, ruhig, hoher Kontrast, die Auslagen leuchten.',
+ seed:11,wall:'#28222c',wallHi:'#3d3542',trim:'#d4a94a',cab:'#2a2226',frame:'#d4a94a',velvet:'#6d1424',velvet2:'#8f1f36',glass:'rgba(185,205,235,.20)',counter:'#2a2226',top:'#e8e2d6',back:'#211e25',accent:'#d4a94a',amb:.5,ambRGB:'8,5,12',light:'255,206,140',sun:.07,
+ sw:['#17151b','#28222c','#d4a94a','#6d1424','#e8e2d6'],notes:['Boden: schwarzer Marmor im Schachbrett, Goldeinlage und Raute','Licht: warme Spots über Vitrinen und Tresen, Halbdunkel dazwischen','Erkennungszeichen: Samtauslagen in Bordeaux, Gold funkelt']},
+atelier:{key:'atelier',name:'B · Altstadt-Atelier',blurb:'Warmes Würfelparkett, Läufer in Rot, Messing und dunkelgrüne Wandverkleidung. Gemütlich, familiengeführt, Tageslicht fällt weich durch die Schaufenster.',
+ seed:23,wall:'#2f4a3d',wallHi:'#46705c',trim:'#c79a4b',cab:'#4a3321',frame:'#c79a4b',velvet:'#1f3a5c',velvet2:'#2d5183',glass:'rgba(210,225,235,.22)',counter:'#4a3321',top:'#d9cdb4',back:'#b9a98c',accent:'#c79a4b',amb:.16,ambRGB:'40,22,8',light:'255,226,170',sun:.14,
+ sw:['#8c5c34','#2f4a3d','#c79a4b','#7a1d27','#1f3a5c'],notes:['Boden: Würfelparkett, roter Läufer mit Ornament','Licht: weich und warm, Sonnenstreifen durchs Schaufenster','Erkennungszeichen: Messingrahmen, dunkelgrünes Paneel, Sessel zum Anprobieren']},
+modern:{key:'modern',name:'C · Modern Glas',blurb:'Heller Terrazzo, weiße Wände, Vitrinen als Glaswürfel mit kaltem LED-Rand. Sauber, technisch, klare Linien. Der größte Kontrast zur warmen Bank.',
+ seed:37,wall:'#8c98a2',wallHi:'#b9c3cb',trim:'#2fb5b0',cab:'#f3f5f7',frame:'#9fb2bd',velvet:'#161c26',velvet2:'#243044',glass:'rgba(160,230,240,.26)',counter:'#f3f5f7',top:'#ffffff',back:'#bfc3c8',accent:'#2fb5b0',amb:0,ambRGB:'0,0,0',light:'200,240,255',sun:.10,
+ sw:['#dcdde0','#e4e7ea','#2fb5b0','#161c26','#9fb2bd'],notes:['Boden: heller Terrazzo, Leuchtband führt zum Tresen','Licht: kühl und gleichmäßig, LED-Kanten an den Glaswürfeln','Erkennungszeichen: Glaskuben, Edelstahl, Türkis als Akzentfarbe']}
+};
+const ISL=[[3,3,3,2],[8,3,3,2],[3,8,3,2],[8,8,3,2]];
+function star(c,x,y,s,col){c.save();c.fillStyle=col;c.beginPath();c.moveTo(x,y-s);c.quadraticCurveTo(x,y,x+s,y);c.quadraticCurveTo(x,y,x,y+s);c.quadraticCurveTo(x,y,x-s,y);c.quadraticCurveTo(x,y,x,y-s);c.fill();c.restore()}
+function gem(c,x,y,s,col){c.fillStyle=col;c.beginPath();c.moveTo(x,y-s);c.lineTo(x+s*.9,y-s*.1);c.lineTo(x,y+s);c.lineTo(x-s*.9,y-s*.1);c.closePath();c.fill();c.fillStyle='rgba(255,255,255,.55)';c.beginPath();c.moveTo(x-s*.45,y-s*.35);c.lineTo(x,y-s);c.lineTo(x+s*.45,y-s*.35);c.closePath();c.fill()}
+function jewels(c,x,y,w,h,R,V){const GEM=['#e8f4ff','#ff3b5c','#3bc4ff','#59e08a','#ffd34a'];const n=Math.floor(w/15),m=Math.floor(h/15);
+ for(let j=0;j<m;j++)for(let i=0;i<n;i++){const cx=x+(i+.5)*w/n,cy=y+(j+.5)*h/m,t=R();
+  if(t<.34){c.strokeStyle='#e7c25a';c.lineWidth=1.6;c.beginPath();c.arc(cx,cy+1.5,3.4,0,6.283);c.stroke();gem(c,cx,cy-3,2.4,GEM[Math.floor(R()*5)])}
+  else if(t<.6){gem(c,cx,cy,3.6,GEM[Math.floor(R()*5)])}
+  else if(t<.78){c.strokeStyle='#e7c25a';c.lineWidth=1.2;c.beginPath();c.arc(cx,cy-2,5,.25,2.9);c.stroke();gem(c,cx,cy+3,2,GEM[Math.floor(R()*5)])}
+  else if(t<.9){for(let k=0;k<4;k++){c.fillStyle='#f4efe6';c.beginPath();c.arc(cx-5+k*3.4,cy,1.7,0,6.283);c.fill()}}
+  else{c.fillStyle='#2a2f38';c.beginPath();c.arc(cx,cy,3.8,0,6.283);c.fill();c.strokeStyle='#d8c27a';c.lineWidth=1;c.stroke();c.fillStyle='#e8eef5';c.fillRect(cx-.5,cy-2.4,1,2.6)}
+  if(R()<.35)star(c,cx+R()*6-3,cy+R()*6-3,3+R()*2.5,'#fffbe8')}}
+function drawCase(c,x,y,w,h,V,R,flat){c.fillStyle='rgba(0,0,0,.28)';c.fillRect(x+4,y+5,w,h);
+ c.fillStyle=V.cab;c.fillRect(x,y,w,h);c.strokeStyle=V.frame;c.lineWidth=2;c.strokeRect(x+1,y+1,w-2,h-2);
+ const ix=x+4,iy=y+4,iw=w-8,ih=h-8;const q=c.createLinearGradient(ix,iy,ix,iy+ih);q.addColorStop(0,V.velvet2);q.addColorStop(1,V.velvet);c.fillStyle=q;c.fillRect(ix,iy,iw,ih);
+ jewels(c,ix,iy,iw,ih,R,V);
+ c.fillStyle=V.glass;c.fillRect(ix,iy,iw,ih);c.fillStyle='rgba(255,255,255,.16)';c.beginPath();c.moveTo(ix+iw*.1,iy+ih);c.lineTo(ix+iw*.32,iy);c.lineTo(ix+iw*.46,iy);c.lineTo(ix+iw*.24,iy+ih);c.closePath();c.fill();
+ c.beginPath();c.moveTo(ix+iw*.55,iy+ih);c.lineTo(ix+iw*.7,iy);c.lineTo(ix+iw*.76,iy);c.lineTo(ix+iw*.61,iy+ih);c.closePath();c.fill();
+ if(V.key==='modern'){c.save();c.shadowColor='#6ff3ff';c.shadowBlur=10;c.strokeStyle='#8ff6ff';c.lineWidth=1.5;c.strokeRect(x+1.5,y+1.5,w-3,h-3);c.restore()}}
+function wedge(c,x,y,a,fov,rng,col){const q=c.createRadialGradient(x,y,0,x,y,rng);q.addColorStop(0,'rgba('+col+',.30)');q.addColorStop(1,'rgba('+col+',0)');c.fillStyle=q;c.beginPath();c.moveTo(x,y);c.arc(x,y,rng,a-fov,a+fov);c.closePath();c.fill()}
+function rug(c,x,y,w,h,V){c.fillStyle='rgba(0,0,0,.28)';c.fillRect(x+3,y+3,w,h);c.fillStyle='#7a1d27';c.fillRect(x,y,w,h);c.fillStyle='#d9c18a';c.fillRect(x+3,y+3,w-6,h-6);c.fillStyle='#1f2a44';c.fillRect(x+6,y+6,w-12,h-12);c.fillStyle='#7a1d27';c.fillRect(x+10,y+10,w-20,h-20);
+ c.fillStyle='rgba(217,193,138,.7)';for(let yy=y+22;yy<y+h-20;yy+=26){c.beginPath();c.moveTo(x+w/2,yy-9);c.lineTo(x+w/2+9,yy);c.lineTo(x+w/2,yy+9);c.lineTo(x+w/2-9,yy);c.closePath();c.fill()}}
+function build(Vv,im,P){const {ch,pr,p2}=im;const cv=document.createElement('canvas');cv.width=W*T*2;cv.height=H*T*2;const c=cv.getContext('2d');c.scale(2,2);const R=mulberry32(Vv.seed);const F=makeGlyphs(c);const spr=(row,col,x,y,a)=>{c.save();c.translate(x,y);c.rotate(a);c.drawImage(ch,col*128,row*128,128,128,-32,-32,64,64);c.restore()};const tile=(img,col,x,y,s)=>c.drawImage(img,col*64,0,64,64,x*T,y*T,s||T,s||T);
+ // Gehweg
+ c.fillStyle='#8a867f';c.fillRect(0,14*T,W*T,T);c.strokeStyle='rgba(0,0,0,.12)';for(let x=0;x<W;x++)c.strokeRect(x*T+.5,14*T+.5,T,T);c.fillStyle='#a8a49b';c.fillRect(0,14*T+T-4,W*T,4);
+ // Boden
+ const fx=T,fy=T,fw=22*T,fh=12*T;
+ if(Vv.key==='noir'){for(let y=1;y<13;y++)for(let x=1;x<23;x++){c.fillStyle=((x+y)&1)?'#16141a':'#201d26';c.fillRect(x*T,y*T,T,T)}
+  c.lineWidth=1;for(let i=0;i<70;i++){const x=fx+R()*fw,y=fy+R()*fh;c.strokeStyle='rgba(255,255,255,'+(.03+R()*.045)+')';c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+R()*60-30,y+R()*40-20,x+R()*90-45,y+R()*60-30);c.stroke()}
+  c.strokeStyle='rgba(212,169,74,.6)';c.lineWidth=2;c.strokeRect(1.5*T,2.5*T,12*T,10*T);c.strokeRect(1.5*T+5,2.5*T+5,12*T-10,10*T-10);c.lineWidth=1;c.strokeStyle='rgba(212,169,74,.4)';c.beginPath();c.moveTo(7.5*T,4.5*T);c.lineTo(10.2*T,7.5*T);c.lineTo(7.5*T,10.5*T);c.lineTo(4.8*T,7.5*T);c.closePath();c.stroke()}
+ else if(Vv.key==='atelier'){const cols=['#8a5a32','#9a693d','#7c4f2b','#a2723f'];for(let py=T;py<13*T;py+=16)for(let px=T;px<23*T;px+=16){const o=((px/16)+(py/16))&1;for(let k=0;k<2;k++){c.fillStyle=cols[Math.floor(R()*4)];if(o)c.fillRect(px,py+k*8,16,8);else c.fillRect(px+k*8,py,8,16)}c.strokeStyle='rgba(30,16,6,.35)';c.lineWidth=1;if(o){c.strokeRect(px+.5,py+.5,15,7);c.strokeRect(px+.5,py+8.5,15,7)}else{c.strokeRect(px+.5,py+.5,7,15);c.strokeRect(px+8.5,py+.5,7,15)}}}
+ else{c.fillStyle='#d9dbde';c.fillRect(fx,fy,fw,fh);const cc=['#b3b8bf','#8e949d','#eceef1','#c4c9d0','#9db7bd','#7fa8ad'];for(let i=0;i<1000;i++){c.fillStyle=cc[Math.floor(R()*cc.length)];const s=1+R()*2.2;c.beginPath();c.ellipse(fx+R()*fw,fy+R()*fh,s,s*.7,R()*3,0,6.283);c.fill()}
+  c.strokeStyle='rgba(0,0,0,.10)';c.lineWidth=1;for(let x=T;x<=23*T;x+=64){c.beginPath();c.moveTo(x+.5,fy);c.lineTo(x+.5,13*T);c.stroke()}for(let y=T;y<=13*T;y+=64){c.beginPath();c.moveTo(fx,y+.5);c.lineTo(23*T,y+.5);c.stroke()}}
+ // Hinterzimmer-Boden
+ c.fillStyle=Vv.back;c.fillRect(15*T,1*T,8*T,5*T);if(Vv.key==='modern'){c.strokeStyle='rgba(0,0,0,.08)';for(let x=15*T;x<23*T;x+=32){c.strokeRect(x+.5,T+.5,32,32*5)}}
+ if(Vv.key==='atelier')rug(c,6*T+4,2*T+4,2*T-8,10.5*T-8,Vv);
+ if(Vv.key==='modern'){c.save();c.shadowColor='#2fe3d8';c.shadowBlur=12;c.strokeStyle='#2fe3d8';c.lineWidth=3;c.lineCap='round';c.beginPath();c.moveTo(12*T,13*T);c.lineTo(12*T,10.5*T);c.lineTo(21.5*T,10.5*T);c.stroke();c.restore()}
+ // Schatten der Moebel
+ const shadowRects=[];ISL.forEach(a=>shadowRects.push([a[0]*T,a[1]*T,a[2]*T,a[3]*T]));shadowRects.push([2*T,T,11*T,T],[14*T,7*T,T,3*T],[14*T,9*T,8*T,T],[21*T,T,2*T,2*T]);
+ for(let k=1;k<=7;k++){c.fillStyle='rgba(10,8,6,.045)';for(const r of shadowRects)c.fillRect(r[0]+k*.9,r[1]+k*1.1,r[2],r[3])}
+ // Waende
+ const wall=(x,y,side)=>{c.fillStyle=Vv.wall;c.fillRect(x*T,y*T,T,T);for(let i=0;i<10;i++){c.fillStyle='rgba('+(R()>.5?'255,255,255':'0,0,0')+','+(R()*.07)+')';c.fillRect(x*T+R()*T,y*T+R()*T,2,1)}
+  c.fillStyle=Vv.trim;if(side==='s')c.fillRect(x*T,y*T+T-3,T,3);if(side==='e')c.fillRect(x*T+T-3,y*T,3,T);if(side==='w')c.fillRect(x*T,y*T,3,T);if(side==='n')c.fillRect(x*T,y*T,T,3)};
+ for(let x=0;x<W;x++)wall(x,0,'s');for(let y=1;y<14;y++){wall(0,y,'e');wall(23,y,'w')}wall(0,13,'');wall(23,13,'');
+ for(let y=1;y<=6;y++)wall(14,y,'e');for(let x=14;x<=22;x++)if(x!==17)wall(x,6,'n');
+ // Wandschatten
+ let q=c.createLinearGradient(0,T,0,T+16);q.addColorStop(0,'rgba(0,0,0,.35)');q.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=q;c.fillRect(T,T,22*T,16);
+ q=c.createLinearGradient(T,0,T+14,0);q.addColorStop(0,'rgba(0,0,0,.3)');q.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=q;c.fillRect(T,T,14,12*T);
+ // Tuer Hinterzimmer
+ c.fillStyle=Vv.back;c.fillRect(17*T,6*T,T,T);c.fillStyle=Vv.trim;c.fillRect(17*T,6*T+3,T,2);c.fillRect(17*T+5,6*T,4,T);c.fillRect(17*T+T-9,6*T,4,T);
+ // Schaufenster
+ const win=x=>{c.fillStyle=Vv.wall;c.fillRect(x*T,13*T,T,T);const g2=c.createLinearGradient(x*T,13*T,x*T+T,14*T);g2.addColorStop(0,'rgba(190,215,235,.55)');g2.addColorStop(1,'rgba(120,150,175,.35)');c.fillStyle=g2;c.fillRect(x*T+1,13*T+5,T-2,T-10);c.strokeStyle=Vv.trim;c.lineWidth=2;c.strokeRect(x*T+1,13*T+5,T-2,T-10);c.fillStyle='rgba(255,255,255,.35)';c.beginPath();c.moveTo(x*T+4,13*T+T-5);c.lineTo(x*T+14,13*T+5);c.lineTo(x*T+19,13*T+5);c.lineTo(x*T+9,13*T+T-5);c.fill()};
+ for(let x=1;x<=10;x++)win(x);for(let x=13;x<=22;x++)win(x);
+ for(const x of[11,12]){c.fillStyle='rgba(170,200,225,.30)';c.fillRect(x*T,13*T+3,T,T-6);c.strokeStyle=Vv.trim;c.lineWidth=2;c.strokeRect(x*T+1,13*T+3,T-2,T-6);c.fillStyle=Vv.trim;c.fillRect(x*T+(x===11?T-6:2),13*T+8,4,T-16)}
+ // Schaufenster-Podeste
+ for(const x of[2,5,8,14,17,20]){const px=x*T+3,py=12*T+3,pw=2*T-6,ph=T-6;c.fillStyle='rgba(0,0,0,.28)';c.fillRect(px+3,py+4,pw,ph);c.fillStyle=Vv.velvet;c.fillRect(px,py,pw,ph);c.strokeStyle=Vv.frame;c.lineWidth=1.5;c.strokeRect(px+.5,py+.5,pw-1,ph-1);jewels(c,px+2,py+2,pw-4,ph-4,R,Vv)}
+ // Wandvitrinen
+ for(let x=2;x<=12;x+=2){const px=x*T,py=T;c.fillStyle=Vv.cab;c.fillRect(px,py,2*T,T-2);c.strokeStyle=Vv.frame;c.lineWidth=2;c.strokeRect(px+1,py+1,2*T-2,T-4);const iq=c.createLinearGradient(px,py,px,py+T);iq.addColorStop(0,Vv.velvet2);iq.addColorStop(1,Vv.velvet);c.fillStyle=iq;c.fillRect(px+4,py+4,2*T-8,T-10);jewels(c,px+4,py+4,2*T-8,T-10,R,Vv);c.fillStyle=Vv.glass;c.fillRect(px+4,py+4,2*T-8,T-10)}
+ if(Vv.key==='noir'){c.fillStyle='rgba(190,205,225,.16)';c.fillRect(T,T,T,5*T);c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=1;for(let i=0;i<6;i++){c.beginPath();c.moveTo(T+4,T+i*32+20);c.lineTo(T+24,T+i*32+4);c.stroke()}}
+ // Inseln
+ ISL.forEach(a=>drawCase(c,a[0]*T,a[1]*T,a[2]*T,a[3]*T,Vv,R));
+ // Tresen
+ c.fillStyle='rgba(0,0,0,.3)';c.fillRect(14*T+4,7*T+5,T,3*T);c.fillRect(14*T+4,9*T+5,8*T,T);
+ c.fillStyle=Vv.counter;c.fillRect(14*T,7*T,T,3*T);c.fillRect(14*T,9*T,8*T,T);c.fillStyle=Vv.top;c.fillRect(14*T+3,7*T+3,T-6,3*T-6);c.fillRect(14*T+3,9*T+3,8*T-6,T-6);
+ c.strokeStyle=Vv.frame;c.lineWidth=2;c.strokeRect(14*T+1,7*T+1,T-2,3*T-2);c.strokeRect(14*T+1,9*T+1,8*T-2,T-2);
+ drawCase(c,16*T+2,9*T+5,4*T-4,T-10,Vv,R);tile(p2,2,20,9);
+ c.fillStyle=Vv.trim;c.fillRect(22*T+4,9*T+4,3,T-8);c.fillRect(22*T+T-8,9*T+4,3,T-8);
+ // Hinterzimmer
+ c.fillStyle='rgba(0,0,0,.3)';c.fillRect(21*T+4,T+5,2*T,2*T);const sf=c.createLinearGradient(21*T,T,22*T+T,3*T);sf.addColorStop(0,'#7e8895');sf.addColorStop(1,'#4d5560');c.fillStyle=sf;c.fillRect(21*T,T,2*T,2*T);c.strokeStyle='#2a3038';c.lineWidth=2;c.strokeRect(21*T+1,T+1,2*T-2,2*T-2);c.beginPath();c.arc(22*T-2,2*T,12,0,6.283);c.fillStyle='#39414b';c.fill();c.strokeStyle='#c8d0da';c.lineWidth=2;c.stroke();c.fillStyle='#c8d0da';c.fillRect(22*T-3,2*T-9,2,9);c.fillRect(22*T+8,2*T-3,10,5);
+ tile(p2,5,15,2);tile(p2,5,16,2);tile(pr,0,15,4);tile(pr,0,16,4);
+ for(let i=0;i<3;i++){const mx=(18+i)*T+3;c.fillStyle='#0c1118';c.fillRect(mx,T+4,T-6,T-10);c.fillStyle='rgba(120,230,255,.6)';c.fillRect(mx+3,T+8,T-12,2);c.fillRect(mx+3,T+14,T-16,2);c.strokeStyle='#59616b';c.lineWidth=1.5;c.strokeRect(mx+.5,T+4.5,T-7,T-11)}
+ c.fillStyle='#59616b';for(let y=3;y<=5;y++)c.fillRect(22*T+6,y*T+4,T-10,T-8);c.fillStyle='#8a929c';for(let y=3;y<=5;y++)c.fillRect(22*T+8,y*T+7,T-14,3);
+ // Sessel und Pflanzen
+ const chair=(x,y)=>{c.fillStyle='rgba(0,0,0,.3)';c.fillRect(x+3,y+4,26,26);c.fillStyle=Vv.key==='modern'?'#f3f5f7':Vv.key==='noir'?'#6d1424':'#7a1d27';c.beginPath();c.roundRect(x,y,26,26,6);c.fill();c.fillStyle='rgba(255,255,255,.18)';c.fillRect(x+2,y+2,22,5);c.strokeStyle=Vv.accent;c.lineWidth=1.5;c.beginPath();c.roundRect(x+.5,y+.5,25,25,6);c.stroke()};
+ chair(1*T+3,5*T);chair(1*T+3,9*T-6);c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.arc(1.7*T+2,7.5*T+3,12,0,6.283);c.fill();c.fillStyle=Vv.top;c.beginPath();c.arc(1.7*T,7.5*T,12,0,6.283);c.fill();c.strokeStyle=Vv.accent;c.lineWidth=2;c.stroke();
+ tile(p2,7,10,12);tile(p2,7,13,12);tile(p2,7,1,2);tile(p2,7,13,2);
+ // Kameras
+ wedge(c,1.5*T,1.5*T,.85,.55,330,'255,70,60');wedge(c,22.3*T,7.4*T,2.35,.5,260,'255,70,60');
+ c.save();c.translate(1.5*T,1.4*T);c.rotate(.85);c.drawImage(p2,3*64,0,64,64,-14,-14,28,28);c.restore();c.save();c.translate(22.3*T,7.4*T);c.rotate(2.35);c.drawImage(p2,3*64,0,64,64,-14,-14,28,28);c.restore();
+ // Glasbruchsensoren
+ c.fillStyle='#ff3030';for(const x of[1,10,13,22]){c.beginPath();c.arc(x*T+16,13*T+8,2.2,0,6.283);c.fill()}
+ // Sonne durchs Schaufenster
+ c.globalCompositeOperation='lighter';for(let x=1;x<=22;x++){if(x===11||x===12)continue;const g3=c.createLinearGradient(x*T,13*T,x*T+70,13*T-170);g3.addColorStop(0,'rgba(255,244,215,'+Vv.sun+')');g3.addColorStop(1,'rgba(255,244,215,0)');c.fillStyle=g3;c.beginPath();c.moveTo(x*T,13*T);c.lineTo(x*T+T,13*T);c.lineTo(x*T+T+70,13*T-170);c.lineTo(x*T+70,13*T-170);c.closePath();c.fill()}c.globalCompositeOperation='source-over';
+ // Licht und Dunkelheit
+ const lights=[];ISL.forEach(a=>lights.push({x:(a[0]+a[2]/2)*T,y:(a[1]+a[3]/2)*T,r:96}));lights.push({x:18*T,y:9.5*T,r:120},{x:21.5*T,y:2*T,r:70},{x:18.5*T,y:3.5*T,r:80},{x:12*T,y:12.5*T,r:90});for(let x=3;x<=12;x+=3)lights.push({x:x*T,y:1.5*T,r:60});for(const x of[3,6,9,15,18,21])lights.push({x:x*T,y:12.5*T,r:50});
+ if(Vv.amb>0){const dk=document.createElement('canvas');dk.width=W*T;dk.height=H*T;const d=dk.getContext('2d');d.fillStyle='rgba('+Vv.ambRGB+','+Vv.amb+')';d.fillRect(0,0,W*T,H*T);d.globalCompositeOperation='destination-out';for(const L of lights){const r=d.createRadialGradient(L.x,L.y,0,L.x,L.y,L.r);r.addColorStop(0,'rgba(0,0,0,1)');r.addColorStop(.6,'rgba(0,0,0,.65)');r.addColorStop(1,'rgba(0,0,0,0)');d.fillStyle=r;d.beginPath();d.arc(L.x,L.y,L.r,0,6.283);d.fill()}c.drawImage(dk,0,0)}
+ c.globalCompositeOperation='lighter';for(const L of lights){const r=c.createRadialGradient(L.x,L.y,0,L.x,L.y,L.r);r.addColorStop(0,'rgba('+Vv.light+',.15)');r.addColorStop(1,'rgba('+Vv.light+',0)');c.fillStyle=r;c.beginPath();c.arc(L.x,L.y,L.r,0,6.283);c.fill()}c.globalCompositeOperation='source-over';
+ if(Vv.key==='modern'){const g4=c.createLinearGradient(0,0,W*T,H*T);g4.addColorStop(0,'rgba(210,235,255,.12)');g4.addColorStop(1,'rgba(210,235,255,0)');c.fillStyle=g4;c.fillRect(0,0,W*T,H*T)}
+ // Figuren
+ spr(5,6,19.4*T,8*T,2.2);spr(3,6,6.9*T,5.4*T,3.3);spr(2,6,12.9*T,9.6*T,3.14);spr(7,3,11.5*T,12.3*T,-1.57);spr(7,2,9.7*T,7.2*T,-.55);
+ // Zielring + Hinweis (neue Piktogramm-Leiste)
+ const tx=9.5*T,ty=4*T,pl=.5+.5*Math.sin(1.2);c.save();c.strokeStyle=F.ICOL.r;c.globalAlpha=.8;c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.ellipse(tx,ty,60,38,0,0,6.283);c.stroke();c.setLineDash([]);c.globalAlpha=1;F.badge('axe',F.ICOL.r,tx,ty-52,10);c.restore();
+ c.save();c.textBaseline='alphabetic';c.font='bold 14px monospace';const vw=c.measureText('Einschlagen').width;c.font='11px monospace';const nw=c.measureText('Vitrine').width;const pw=12+24+8+34+vw+10+nw+12+20+12,px0=Math.round(W*T/2-pw/2),py0=H*T-84;
+ c.fillStyle='rgba(0,0,0,.6)';c.fillRect(px0,py0,pw,36);c.strokeStyle=F.ICOL.r;c.globalAlpha=.55;c.lineWidth=1;c.strokeRect(px0+.5,py0+.5,pw-1,35);c.globalAlpha=1;let x=px0+12;c.fillStyle='#2a313b';c.fillRect(x,py0+8,24,20);c.strokeStyle='#9aa6b2';c.strokeRect(x+.5,py0+8.5,23,19);c.fillStyle='#e8edf2';c.font='bold 13px monospace';c.textAlign='center';c.fillText('E',x+12,py0+23);x+=32;F.badge('axe',F.ICOL.r,x+13,py0+18,13);x+=34;c.textAlign='left';c.font='bold 14px monospace';c.fillStyle=F.ICOL.r;c.fillText('Einschlagen',x,py0+23);x+=vw;c.font='11px monospace';c.fillStyle='#8d95a1';c.fillText('Vitrine',x+10,py0+23);x+=10+nw+12;F.glyph('wave',x+8,py0+18,20,F.ICOL.r);c.restore();
+ return cv}
+Promise.all([load('../../assets/chars.png'),load('../../assets/props.png'),load('../../assets/props2.png')]).then(([ch,pr,p2])=>{const out=document.getElementById('out');
+ for(const k of['noir','atelier','modern']){const Vv=V[k],cv=build(Vv,{ch,pr,p2});const card=document.createElement('div');card.className='card';const h=document.createElement('h2');h.textContent=Vv.name;card.appendChild(h);const p=document.createElement('p');p.textContent=Vv.blurb;card.appendChild(p);card.appendChild(cv);
+  const sw=document.createElement('div');sw.className='sw';Vv.sw.forEach(col=>{const i=document.createElement('i');i.style.background=col;sw.appendChild(i)});card.appendChild(sw);const ul=document.createElement('ul');Vv.notes.forEach(n=>{const li=document.createElement('li');li.textContent=n;ul.appendChild(li)});card.appendChild(ul);out.appendChild(card);window['__'+k]=cv}
+ window.__mockReady=true});
+</script></body></html>
