@@ -21,7 +21,7 @@ canvas:focus-visible{border-color:var(--accent)}
 </main>
 <script src="assets/peerjs.min.js"></script>
 <script>
-const BUILD={n:27,d:'2026-10-09'};//BUILD
+const BUILD={n:29,d:'2026-10-09'};//BUILD
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Grafik konnte nicht geladen werden: '+e.message});
@@ -804,7 +804,7 @@ if(phase===1&&!LAY.truck){for(const o of act)if((o.units>0||escaped>0)&&(o.y>(LA
 if(phase===2){tH+=dt;
 for(const o of act)plCombat(o,dt);
 if(!policeShown&&tH>=policeAt)spawnWave();else if(policeShown){waveT+=dt*(bars.some(b=>b.lv>0&&(b.tk||b.st==='fuse'))?CFG.bar.wave:1);if(waveT>=waveGap(waveN)){waveT=0;spawnWave()}}
-if(!vanArr&&tH>=vanAt){vanArr=true;snd('van');ban('Fluchtwagen ist da!',3);say('Fluchtwagen wartet am Hinterausgang')}
+if(!vanArr&&tH>=vanAt){vanArr=true;snd('van');ban('Fluchtwagen ist da!',3);say('Fluchtwagen wartet '+(LAY.exit.dir>0?'im Osten':'im Westen')+', der grüne Pfeil zeigt hin')}
 if(vanArr){vanX=LAY.van.dir<0?Math.max(LAY.van.stop,vanX-dt*170):Math.min(LAY.van.stop,vanX+dt*170);if(tH>vanAt+CFG.vanStay){for(const o of act)o.gone=true;checkEnd('van');return}
 for(const o of act)if((o.x-LAY.exit.x)*LAY.exit.dir>0&&o.y>LAY.exit.y0&&o.y<LAY.exit.y1&&Math.abs(vanX-LAY.van.stop)<=2)secure(o);if(ended)return;act=actv()}
 flowT-=dt;if(flowT<=0){flow();flowT=.2}
@@ -984,6 +984,7 @@ g.globalCompositeOperation='lighter';
 for(const x of SUNW){for(let i=0;i<6;i++){const o=(i*47+x*13)%170,u=(i*0.37+x*0.11)%1,t2=(o+time*5)%170,px=x*T+3+u*26+t2*(LAY.theme.sun.dx/170)+Math.sin(time*.7+i)*5,py=(LAY.bld.y0+1)*T+t2*(LAY.theme.sun.dy/170)+Math.cos(time*.5+i)*3,al=.55*Math.sin(Math.PI*t2/170);g.fillStyle='rgba(255,246,220,'+al+')';g.beginPath();g.arc(px,py,1.1,0,6.283);g.fill()}}
 g.globalCompositeOperation='source-over';
 if(vanArr||vanX!==LAY.van.x0){g.save();g.translate(vanX+64,LAY.van.y);if(LAY.van.dir<0)g.scale(-1,1);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(LAY.van.dir<0?-60:-68,-26,128,64);g.drawImage(cars,0,0,256,128,-64,-32,128,64);g.restore()}
+if(vanArr&&!ended){g.strokeStyle='rgba(126,227,74,.6)';g.lineWidth=2;g.setLineDash([8,6]);g.beginPath();g.moveTo(LAY.exit.x,LAY.exit.y0);g.lineTo(LAY.exit.x,LAY.exit.y1);g.stroke();g.setLineDash([])}
 for(const c of pcs)drawCar(c);
 drawTruck();
 if(!LAY.truck){const X=LAY.vault.door[0]*T,Y=LAY.vault.door[1]*T;g.save();if(LAY.vault.dir<0){g.translate(2*X+T,0);g.scale(-1,1)}if(vaultOpen){g.fillStyle='#5a626d';g.fillRect(X-2,Y-2,5,2*T+4);g.fillStyle='rgba(255,210,100,.14)';g.fillRect(X+T,Y,T,2*T)}else{g.fillStyle='#2a2e34';g.fillRect(X-1,Y,T+2,2*T);g.fillStyle='#707986';g.fillRect(X+1,Y+2,T-4,2*T-4);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(X+1,Y+2,T-4,3);g.strokeStyle='#2a2e34';g.lineWidth=2;g.beginPath();g.arc(X+16,Y+T,10,0,6.283);g.stroke();g.beginPath();for(let i=0;i<4;i++){const a=i*1.5708+.4;g.moveTo(X+16,Y+T);g.lineTo(X+16+Math.cos(a)*10,Y+T+Math.sin(a)*10)}g.stroke();g.fillStyle='#2a2e34';for(const yy of[6,2*T-8])for(const xx of[6,T-8]){g.beginPath();g.arc(X+xx,Y+yy,1.6,0,6.283);g.fill()}}g.restore();
@@ -1135,6 +1136,15 @@ const rows=[['WAGEN',st,!!tk&&tk.st==='stopped'],['SPERRE',nb?nb+' gebaut':pk?pk
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,46+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,46+i*15)});
 g.fillStyle='#8d95a1';g.fillText('LAGE',20,46+rows.length*15);g.fillStyle='#ffd27a';lgl.forEach((l,i)=>g.fillText(l,62,46+(rows.length+i)*15))}
 function lageLines(){const m=LAY.mission;if(!m._l){const l=[''];for(const t of m.tags){const c=l[l.length-1],n=c?c+', '+t:t;if(n.length<=28||!c)l[l.length-1]=n;else if(l.length<2)l.push(t)}if(!m.tags.length)l[0]='Standard';m._l=l}return m._l}
+/* Fluchtwagen-Zeiger: ab Anruf (gelb, Treffpunkt) und bei Ankunft (gruen) zeigt ein Pfeil am Bildrand zum Wagen, liegt er im Bild, steht ein Marker darueber. Gezeichnet im HUD, also auch durch die Dunkelzone sichtbar. */
+function vanPointer(){if(phase!==2||ended||!(vanCalled||vanArr)||p.out||p.gone)return;
+const sx=LAY.van.stop+64-camX,sy=LAY.van.y-camY,L=34,R=VW-34,Tp=112,B=VH-76,col=vanArr?'#7ee34a':'#ffb000',lab=vanArr?'FLUCHTWAGEN':'TREFFPUNKT',on=sx>=L&&sx<=R&&sy>=Tp&&sy<=B,bob=Math.sin(time*5)*3;
+g.save();g.textAlign='center';g.font='bold 11px monospace';g.fillStyle=col;g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=3;
+if(on){g.beginPath();g.moveTo(sx,sy-36+bob);g.lineTo(sx-9,sy-50+bob);g.lineTo(sx+9,sy-50+bob);g.closePath();g.fill();g.strokeText(lab,sx,sy-56+bob);g.fillText(lab,sx,sy-56+bob)}
+else{const cx=(L+R)/2,cy=(Tp+B)/2,dx=sx-cx,dy=sy-cy,k=Math.min((R-L)/2/Math.abs(dx||1e-6),(B-Tp)/2/Math.abs(dy||1e-6)),px=cx+dx*k,py=cy+dy*k,a=Math.atan2(dy,dx);
+g.globalAlpha=.8+.2*Math.sin(time*5);g.save();g.translate(px,py);g.rotate(a);g.beginPath();g.moveTo(14,0);g.lineTo(-8,-10);g.lineTo(-8,10);g.closePath();g.stroke();g.fill();g.restore();
+const lx=clamp(px-Math.cos(a)*44,70,VW-70),ly=py-Math.sin(a)*30+4;g.strokeText(lab,lx,ly);g.fillText(lab,lx,ly)}
+g.restore()}
 function hud(){const am='#ffb000';
 const lgl=lageLines();plate(10,10,250,phase===1?(LAY.truck?108+14*(lgl.length-1):152+14*(lgl.length-1)):(LAY.truck?84:56));g.font='bold 13px monospace';g.fillStyle=phase===1?'#7fe8ff':'#ff6a5a';g.fillText(phase===1?(LAY.truck?'VORBEREITUNG':'ERKUNDUNG'):'ÜBERFALL',20,28);
 if(phase===1&&LAY.truck)tkHud(lgl);else if(phase===1){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('VERDACHT',20,46);g.fillStyle='#10161f';g.fillRect(90,38,160,9);g.fillStyle=sus>60?'#ff4a3a':'#ffb000';g.fillRect(90,38,160*sus/100,9);
@@ -1143,7 +1153,7 @@ const rows=[['KAMERAS',ck+' / '+cams.length,ck===cams.length],['KAMERAS AUS',cam
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,66+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,66+i*15)});
 g.fillStyle='#8d95a1';g.fillText('LAGE',20,66+rows.length*15);g.fillStyle=LAY.mission.tags.length?'#ffd27a':'#c9d4de';lgl.forEach((l,i)=>g.fillText(l,62,66+(rows.length+i)*15))}
 else{g.font='12px monospace';g.fillStyle='#c9d4de';let l1=policeShown?'Welle '+waveN+' · nächste in '+tm(waveGap(waveN)-waveT):'Polizei in '+tm(policeAt-tH);g.fillText(l1,20,46);if(LAY.truck){g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('LADERAUM',20,64);g.fillStyle=cargoOpen?'#7ee34a':'#c9d4de';g.fillText(cargoOpen?'offen':keyTaken?'Schlüssel da':'verschlossen',120,64);g.fillStyle='#8d95a1';g.fillText('ÜBERWÄLTIGT',20,79);g.fillStyle=capt>0?'#7ee34a':'#c9d4de';g.fillText(String(capt),120,79)}}
-if(phase===2){const hint=!vanCalled&&!vanArr;plate(VW/2-120,10,240,hint?50:36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=vanArr?'#7ee34a':am;g.fillText(vanArr?'Fluchtwagen wartet '+tm(vanAt+CFG.vanStay-tH):'Fluchtwagen in '+tm(vanAt-tH),VW/2,33);if(hint){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('G: Fahrer jetzt rufen ('+vanT()+' s)',VW/2,50)}g.textAlign='left'}
+vanPointer();if(phase===2){const hint=!vanCalled&&!vanArr;plate(VW/2-120,10,240,hint?50:36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=vanArr?'#7ee34a':am;g.fillText(vanArr?'Fluchtwagen wartet '+tm(vanAt+CFG.vanStay-tH):'Fluchtwagen in '+tm(vanAt-tH),VW/2,33);if(hint){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('G: Fahrer jetzt rufen ('+vanT()+' s)',VW/2,50)}g.textAlign='left'}
 if(phase===1&&LAY.truck&&tk&&tk.st!=='gone'){plate(VW/2-120,10,240,36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=tk.st==='wait'?am:'#ff8a6a';g.fillText(tk.st==='wait'?'Panzerwagen in '+tm(LAY.mission.arrive-rT):tk.st==='drive'?'Der Panzerwagen kommt!':'Der Wagen steht',VW/2,33);g.textAlign='left'}
 feed.forEach((f,i)=>{g.font='12px monospace';const w=g.measureText(f.s).width+16;plate(VW-10-w,10+i*22,w,19);g.fillStyle='#fff';g.fillText(f.s,VW-2-w,24+i*22)});
 if(players.length>1){const y0=phase===1?172+14*(lageLines().length-1):76;plate(10,y0,206,players.length*20+10);players.forEach((o,i)=>{const y=y0+20+i*20;g.fillStyle=PC[o.id].c;g.fillRect(18,y-9,8,8);g.font='11px monospace';if(o===me){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(14,y-12,198,18)}g.fillStyle=live(o)?'#e6eaf0':'#8d95a1';g.fillText(pn(o.id)+(o===me&&pn(o.id).length<=6?' (du)':''),32,y);
