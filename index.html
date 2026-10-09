@@ -21,7 +21,7 @@ canvas:focus-visible{border-color:var(--accent)}
 </main>
 <script src="assets/peerjs.min.js"></script>
 <script>
-const BUILD={n:31,d:'2026-10-09'};//BUILD
+const BUILD={n:32,d:'2026-10-09'};//BUILD
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Grafik konnte nicht geladen werden: '+e.message});
@@ -585,16 +585,16 @@ for(const n of npcs)if(n.route){n.ri=0;n.wait=.5}}
 const till=(tx,ty)=>({t:'till',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,lab:()=>'Kasse leeren',dur:()=>CFG.till.t,ok(){return phase===2&&!this.done},act(o){if(!take(o,CFG.till.u,CFG.till.v))return;snd('ev','till');this.done=true}});
 const atm=(tx,ty)=>({t:'atm',sn:'pry',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,lab:()=>'Geldautomat aufbrechen',dur:()=>CFG.atm.t,ok(){return phase===2&&!this.done},act(o){if(!take(o,CFG.atm.u,CFG.atm.v))return;this.done=true;snd('ev','atm');evt('sp',[this.x,this.y,14])}});
 its=[];if(!LAY.truck){its=[
-{x:LAY.note[0]*T+16,y:LAY.note[1]*T+16,r:50,pr:0,lab:()=>'Notiz auf dem Schreibtisch lesen',dur:()=>1.6,ok:()=>!code&&LAY.mission.vault==='code',act(){code=true;snd('ev','paper');say('Tresorcode notiert: '+LAY.mission.code);ban('Tresorcode gefunden',2)}},
-{x:LAY.mon[0]*T+16,y:LAY.mon[1]*T+16,r:50,pr:0,lab:()=>'Überwachungsmonitore prüfen',dur:()=>2.2,ok:()=>!mon,act(){mon=true;snd('ev','monitor');cams.forEach(c=>c.k=true);npcs.forEach(n=>{if(n.route)n.rk=true});say('Kameras und Wachplan aufgedeckt');ban('Sicherheitssystem ausgekundschaftet',2.4)}},
+{t:'note',x:LAY.note[0]*T+16,y:LAY.note[1]*T+16,r:50,pr:0,lab:()=>'Notiz auf dem Schreibtisch lesen',dur:()=>1.6,ok:()=>!code&&LAY.mission.vault==='code',act(){code=true;snd('ev','paper');say('Tresorcode notiert: '+LAY.mission.code);ban('Tresorcode gefunden',2)}},
+{t:'mon',x:LAY.mon[0]*T+16,y:LAY.mon[1]*T+16,r:50,pr:0,lab:()=>'Überwachungsmonitore prüfen',dur:()=>2.2,ok:()=>!mon,act(){mon=true;snd('ev','monitor');cams.forEach(c=>c.k=true);npcs.forEach(n=>{if(n.route)n.rk=true});say('Kameras und Wachplan aufgedeckt');ban('Sicherheitssystem ausgekundschaftet',2.4)}},
 {t:'vault',x:LAY.vault.door[0]*T+16,y:(LAY.vault.door[1]+1)*T,r:58,pr:0,keep:true,sn:()=>code?'beep':'drill',lab:()=>code?'Tresor mit Code öffnen':'Tresor aufbohren',dur:()=>code?3:22,ok:()=>!vaultOpen&&(code||phase===2),act(){vaultOpen=true;snd('ev','vault');flowT=0;say(code?'Tresor leise geöffnet':'Tresor aufgebohrt')}},
 ];
 LAY.tills.forEach(c=>its.push(till(c[0],c[1])));LAY.atms.forEach(c=>its.push(atm(c[0],c[1])));
 (LAY.mission.bags||[]).forEach(c=>its.push({t:'bag',x:c[0]*T+16,y:c[1]*T+16,r:44,pr:0,done:false,at:LAY.mission.at.transport,lab:()=>'Geldsack einpacken',dur:()=>1.4,ok(){return phase===2&&!this.done&&rT>=this.at},act(o){if(!take(o,.5,6000))return;this.done=true}}));
 {const f=CFG.bundle.n/LAY.vault.bundles.length;LAY.vault.bundles.forEach(c=>its.push({t:'bundle',x:c[0]*T+16,y:c[1]*T+16,r:40,pr:0,done:false,lab:()=>'Geldbündel einpacken',dur:()=>CFG.bundle.t*f,ok(){return vaultOpen&&!this.done},act(o){if(!take(o,CFG.bundle.u*f,CFG.bundle.v*f))return;this.done=true}}))}
-cams.forEach(c=>its.push({x:c.x,y:c.y,r:50,pr:0,lab:()=>'Kamera deaktivieren',dur:()=>2.6,ok:()=>phase===1&&c.k&&!c.off,act(){c.off=true;snd('ev','cam');say('Kamera deaktiviert');ban('Kamera ausgeschaltet',1.6)}}));
+cams.forEach(c=>its.push({t:'cam',x:c.x,y:c.y,r:50,pr:0,lab:()=>'Kamera deaktivieren',dur:()=>2.6,ok:()=>phase===1&&c.k&&!c.off,act(){c.off=true;snd('ev','cam');say('Kamera deaktiviert');ban('Kamera ausgeschaltet',1.6)}}));
 LAY.spots.forEach(sp=>{if(sp.lk)its.push(lockItem(sp))});
-its.push({x:LAY.sw.x,y:LAY.sw.y,r:44,pr:0,lab:()=>'Hauptschalter: Kameras 50 s aus',dur:()=>3,ok:()=>camDown<=0,act(){camDown=50;snd('ev','power');say('Kamerasystem fährt herunter');ban('Kameras aus (50 s)',2.2)}});}
+its.push({t:'sw',x:LAY.sw.x,y:LAY.sw.y,r:44,pr:0,lab:()=>'Hauptschalter: Kameras 50 s aus',dur:()=>3,ok:()=>camDown<=0,act(){camDown=50;snd('ev','power');say('Kamerasystem fährt herunter');ban('Kameras aus (50 s)',2.2)}});}
 LAY.spots.forEach((sp,i)=>{const b={i,cells:sp.cells,x:sp.x,y:sp.y,n:sp.n,side:sp.side,iv:sp.iv,rd:!!sp.rd,g:sp.g,okc:sp.rd?'o':'DlLdg',mc:sp.rd?CFG.truck.seg.mc:sp.mc||1,bt:sp.rd?CFG.truck.seg.bt:sp.bt||1,r:sp.r||58,pv:[],lv:0,hp:0,st:'wait',tk:false,cd:0,fz:0,bp:0};bars.push(b);its.push(barItem(b))});
 if(LAY.truck)initTruck();else for(const [x,y] of TILES)if(matCell(x,y))its.push(matItem(x,y,cell(x,y)))
 camSnap();flow();
@@ -626,10 +626,11 @@ let nc=0;for(let k=0;crew.length;k++){const seg=crew.splice(0,CFG.pol.seats),c=m
 policeShown=true;snd('wave',ns);ban(ns?'SWAT rückt an! Welle '+waveN:'Polizei! Welle '+waveN,2);say('Welle '+waveN+': '+n+' Einsatzkräfte'+(ns?' ('+ns+' SWAT)':'')+(nc?' in '+nc+' Wagen':''))}
 function convGuard(n){const gd=CFG.grd;en.push(Object.assign(mkCop(n.x,n.y,false),{kind:'grd',row:2,hp:gd.hp,mhp:gd.hp,a:n.a,cool:1.2,dmg:gd.dmg,rate:gd.rate,acc:gd.acc,spd:gd.spd,muz:16}))}
 /* Personaltueren (Hintertueren, Hoftuer/Fluchttuer): in Phase 1 von aussen verriegelt. Von innen leise entriegeln (kurz), von aussen aufbrechen ist laut und loest den Alarm aus. Ab Ueberfall ist die Hoftuer offen. */
-function lockItem(sp){const ins=o=>(o.x-sp.x)*sp.iv[0]+(o.y-sp.y)*sp.iv[1]>=0;return{x:sp.x,y:sp.y,r:56,pr:0,
+function lockItem(sp){const ins=o=>(o.x-sp.x)*sp.iv[0]+(o.y-sp.y)*sp.iv[1]>=0;return{t:'lock',x:sp.x,y:sp.y,r:56,pr:0,
 sn:o=>ins(o)?'tick':'pry',ok:()=>sp.cells.every(c=>cell(c[0],c[1])==='L'),
 lab:o=>ins(o)?'Riegel zurückschieben':phase===1?'Tür aufbrechen (laut: löst den Alarm aus)':'Tür aufbrechen',
 dur:o=>ins(o)?CFG.lock.inT:CFG.lock.outT,
+pi:o=>ins(o)?{i:'key',c:'g',v:'Entriegeln',n:sp.n}:{i:'axe',c:'r',v:'Aufbrechen',n:sp.n,loud:phase===1},
 act(o){const q=ins(o);sp.cells.forEach(c=>setc(c[0],c[1],'l'));flowT=0;if(q){snd('ev','latch');say(sp.n+': Riegel offen')}else{snd('ev','crash');say(sp.n+' aufgebrochen');if(phase===1)startHeist(true)}}}}
 /* Barrikaden: Spieler zerlegen Moebel (Material, belegt Taschenplatz) und verbarrikadieren Eingaenge (nur Phase 2, Kachel 'X' solide, blickdicht, kugelsperrend).
    Polizei: Sperrfrist (zaehlt, sobald Beamte in der Naehe sind), dann legt ein Beamter eine Sprengladung (Zuendschnur), Knall schadet Spielern im Radius und der Barrikade. */
@@ -961,6 +962,54 @@ function body(c){g.save();g.globalAlpha=Math.min(1,c.t/3);g.translate(c.x,c.y);g
 function visPoly(){const o=[],lim=blk>0?CFG.ev.vis:900;for(let i=0;i<240;i++){const a=i/240*6.2832,cx=Math.cos(a),cy=Math.sin(a);let r=0;while(r<lim){r+=3;if(isOpq(Math.floor((p.x+cx*r)/T),Math.floor((p.y+cy*r)/T)))break}r+=5;o.push([p.x+cx*r,p.y+cy*r])}return o}
 function glow(x,y,r,col,a){const q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,'rgba('+col+','+a+')');q.addColorStop(1,'rgba('+col+',0)');g.fillStyle=q;g.fillRect(x-r,y-r,2*r,2*r)}
 function plate(x,y,w,h){g.fillStyle='rgba(0,0,0,.55)';g.fillRect(x,y,w,h)}
+/* Interaktionshinweise als Piktogramm: Farbe sagt die Wirkung (gruen bauen, oeffnen, helfen; rot zerstoeren, ausschalten, aufbrechen; gold Beute; blau Info), dazu ein Wort statt eines Satzes. pinfo(item,spieler) liefert {i Icon, c Farbe, v Verb, n Ziel, gain/cost Material, seg [fertig,gesamt], loud}. */
+const ICOL={g:'#6fe04a',r:'#ff6a5a',y:'#ffd27a',b:'#6ac4ff',x:'#9aa6b2'};
+function glyph(id,x,y,sz,fg,bg){g.save();g.translate(x,y);g.scale(sz/24,sz/24);g.translate(-12,-12);g.strokeStyle=fg;g.fillStyle=fg;g.lineWidth=2.4;g.lineCap='round';g.lineJoin='round';g.beginPath();
+if(id==='hammer'){g.lineWidth=2.8;g.moveTo(5,19);g.lineTo(14,10);g.stroke();g.beginPath();g.lineWidth=6;g.moveTo(10.5,6.5);g.lineTo(17.5,13.5);g.stroke()}
+else if(id==='axe'){g.lineWidth=2.8;g.moveTo(5,20);g.lineTo(15,9.5);g.stroke();g.beginPath();g.moveTo(9.5,5.5);g.lineTo(18.5,2.5);g.quadraticCurveTo(22.5,7,19.5,13);g.lineTo(13.5,12);g.closePath();g.fill()}
+else if(id==='drill'){g.fillRect(7.5,2.5,9,5.5);g.moveTo(9,8.5);g.lineTo(15,8.5);g.lineTo(12,21.5);g.closePath();g.fill();if(bg){g.strokeStyle=bg;g.lineWidth=1.8;for(const q of[12,15.5,19]){g.beginPath();g.moveTo(8,q+1.6);g.lineTo(16,q-1.6);g.stroke()}}}
+else if(id==='key'){g.arc(8,12,4.2,0,6.283);g.moveTo(12.2,12);g.lineTo(21,12);g.moveTo(17,12);g.lineTo(17,16);g.moveTo(20.5,12);g.lineTo(20.5,15.5);g.stroke()}
+else if(id==='coin'){g.lineWidth=2.2;g.arc(12,12,9,0,6.283);g.stroke();g.font='bold 14px monospace';g.textAlign='center';g.textBaseline='middle';g.fillText('$',12,12.8)}
+else if(id==='camoff'){g.lineWidth=2.2;g.rect(3,8,12,9);g.stroke();g.beginPath();g.moveTo(15,12.5);g.lineTo(21,8.5);g.lineTo(21,16.5);g.closePath();g.fill();if(bg){g.strokeStyle=bg;g.lineWidth=5.5;g.beginPath();g.moveTo(4,3.5);g.lineTo(20,20.5);g.stroke()}g.strokeStyle=fg;g.lineWidth=2.4;g.beginPath();g.moveTo(4,3.5);g.lineTo(20,20.5);g.stroke()}
+else if(id==='bolt'){g.moveTo(13.5,2);g.lineTo(6,13.5);g.lineTo(11.5,13.5);g.lineTo(9.5,22);g.lineTo(18,10);g.lineTo(12.5,10);g.closePath();g.fill()}
+else if(id==='mag'){g.arc(10,10,6,0,6.283);g.stroke();g.beginPath();g.lineWidth=3.2;g.moveTo(14.5,14.5);g.lineTo(21,21);g.stroke()}
+else if(id==='cross'){g.fillRect(9.5,3.5,5,17);g.fillRect(3.5,9.5,17,5)}
+else if(id==='cuffs'){g.lineWidth=2.4;g.arc(8,13,5,0,6.283);g.stroke();g.beginPath();g.arc(16,13,5,0,6.283);g.stroke();g.beginPath();g.moveTo(8,8);g.lineTo(8,4.5);g.lineTo(16,4.5);g.lineTo(16,8);g.stroke()}
+else if(id==='block'){g.arc(12,12,8.5,0,6.283);g.moveTo(6,6);g.lineTo(18,18);g.stroke()}
+else if(id==='wave'){g.arc(5,12,2,0,6.283);g.fill();g.beginPath();for(const r of[6,10.5,15]){g.moveTo(5+r*Math.cos(-.85),12+r*Math.sin(-.85));g.arc(5,12,r,-.85,.85)}g.stroke()}
+g.restore()}
+function badge(id,col,x,y,r){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,6.283);g.fill();glyph(id,x,y,r*1.5,'#10161f',col)}
+function pinfo(it,o){if(it.pi)return it.pi(o);const t=it.t;
+if(t==='bar'){const m=it.mode(o),b=it.b,q=b.rd?sperre(b.g):null;if(m===1)return{i:'hammer',c:'g',v:b.rd?'Sperre bauen':b.lv?'Verstärken':'Verbarrikadieren',n:b.rd?'':b.n,cost:b.mc||1,seg:q?[q.k,q.n]:null};if(m===2)return{i:'axe',c:'r',v:'Abbauen',n:b.rd?'':b.n};return{i:'block',c:'x',v:'Im Weg'}}
+if(t==='mat')return{i:'axe',c:'r',v:'Zerlegen',gain:it.cnt||1};
+if(t==='till')return{i:'coin',c:'y',v:'Leeren'};
+if(t==='atm')return{i:'axe',c:'r',v:'Aufbrechen'};
+if(t==='bag'||t==='tbag'||t==='bundle')return{i:'coin',c:'y',v:'Einpacken'};
+if(t==='vault')return code?{i:'key',c:'g',v:'Öffnen'}:{i:'drill',c:'r',v:'Aufbohren'};
+if(t==='note')return{i:'mag',c:'b',v:'Lesen'};
+if(t==='mon')return{i:'mag',c:'b',v:'Prüfen'};
+if(t==='cam')return{i:'camoff',c:'r',v:'Ausschalten'};
+if(t==='sw')return{i:'bolt',c:'r',v:'Strom aus'};
+if(t==='ckey')return{i:'key',c:'g',v:'Öffnen'};
+if(t==='cargo')return{i:'drill',c:'r',v:'Aufbohren',loud:true};
+return{c:'y',v:it.lab(o)}}
+function drawPrompt(d,prog,key){const col=ICOL[d.c]||ICOL.x;g.save();g.textBaseline='alphabetic';
+g.font='bold 14px monospace';const vw=g.measureText(d.v).width;g.font='11px monospace';const nw=d.n?g.measureText(d.n).width:0;
+let w=12+24+8+(d.i?34:0)+vw+(d.n?10+nw:0)+(d.gain||d.cost?12+38:0)+(d.seg?12+d.seg[1]*11:0)+(d.loud?12+20:0)+12;
+const x0=Math.round(VW/2-w/2),y0=VH-96,h=36;plate(x0,y0,w,h);g.strokeStyle=col;g.globalAlpha=.55;g.lineWidth=1;g.strokeRect(x0+.5,y0+.5,w-1,h-1);g.globalAlpha=1;
+let x=x0+12;g.fillStyle='#2a313b';g.fillRect(x,y0+8,24,20);g.strokeStyle='#9aa6b2';g.strokeRect(x+.5,y0+8.5,23,19);g.fillStyle='#e8edf2';g.font='bold 13px monospace';g.textAlign='center';g.fillText(key,x+12,y0+23);x+=32;
+if(d.i){badge(d.i,col,x+13,y0+18,13);x+=34}
+g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=col;g.fillText(d.v,x,y0+23);x+=vw;
+if(d.n){g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText(d.n,x+10,y0+23);x+=10+nw}
+if(d.gain||d.cost){x+=12;g.drawImage(pr,0,0,64,64,x,y0+10,16,16);g.font='bold 13px monospace';g.fillStyle=d.gain?ICOL.g:ICOL.y;g.fillText((d.gain?'+':'-')+(d.gain||d.cost),x+19,y0+23);x+=38}
+if(d.seg){x+=12;for(let i=0;i<d.seg[1];i++){g.beginPath();g.arc(x+4+i*11,y0+18,4,0,6.283);if(i<d.seg[0]){g.fillStyle=col;g.fill()}else{g.strokeStyle=col;g.lineWidth=1.5;g.stroke()}}x+=d.seg[1]*11}
+if(d.loud){x+=12;glyph('wave',x+8,y0+18,20,ICOL.r)}
+if(prog>0){g.fillStyle='#10161f';g.fillRect(x0,y0+h+2,w,5);g.fillStyle=col;g.fillRect(x0,y0+h+2,w*Math.min(1,prog),5)}g.restore()}
+function drawTarget(tg,d){const col=ICOL[d.c]||ICOL.x,pl=.5+.5*Math.sin(time*6),big=tg.t==='mat'&&tg.cnt,r=big?0:tg.t==='bar'?20:18;g.save();g.strokeStyle=col;g.globalAlpha=.45+.4*pl;g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();
+if(big)g.ellipse(tg.x,tg.y,66,36,0,0,6.283);else g.arc(tg.x,tg.y,r+pl*2,0,6.283);g.stroke();g.setLineDash([]);g.globalAlpha=1;
+if(d.i)badge(d.i,col,tg.x,tg.y-(big?44:r+14)-pl*2,9);g.restore()}
+function drawLegend(y){const L=[['hammer','g','bauen, öffnen, helfen'],['axe','r','zerstören, ausschalten'],['coin','y','Beute'],['mag','b','Info']];g.save();g.font='11px monospace';g.textAlign='left';let w=0;const ws=L.map(l=>{const t=g.measureText(l[2]).width;w+=26+t+20;return t});w+=24+g.measureText('laut').width;let x=480-w/2;
+L.forEach((l,i)=>{badge(l[0],ICOL[l[1]],x+9,y,9);g.fillStyle='#c9d4de';g.fillText(l[2],x+24,y+4);x+=26+ws[i]+20});glyph('wave',x+6,y,16,ICOL.r);g.fillStyle='#c9d4de';g.fillText('laut',x+24,y+4);g.restore()}
 function wedge(x,y,a,fov,rng,col,al){const q=g.createRadialGradient(x,y,0,x,y,rng);q.addColorStop(0,'rgba('+col+','+al+')');q.addColorStop(1,'rgba('+col+',0)');g.fillStyle=q;g.beginPath();g.moveTo(x,y);g.arc(x,y,rng,a-fov,a+fov);g.closePath();g.fill()}
 function W1(){g.setTransform(2,0,0,2,-2*camX,-2*camY)}
 function S0(){g.setTransform(2,0,0,2,0,0)}
@@ -993,6 +1042,7 @@ if(!LAY.truck){const X=LAY.vault.door[0]*T,Y=LAY.vault.door[1]*T;g.save();if(LAY
 g.drawImage(p2,6*64,0,64,64,LAY.vault.pad[0]*T+2,LAY.vault.pad[1]*T+2,28,28)}
 if(!LAY.truck&&!code&&LAY.mission.vault==='code')g.drawImage(p2,4*64,0,64,64,LAY.note[0]*T+8,LAY.note[1]*T+8,18,18);
 for(const q of LAY.lockCells){const c=cell(q[0],q[1]),X=q[0]*T,Y=q[1]*T;if(c==='L'){g.fillStyle='#30343b';g.fillRect(X,Y+2,T,T-4);g.fillStyle='#8f97a2';g.fillRect(X+2,Y+4,T-4,3);g.fillStyle='#d4452f';g.fillRect(X+T/2-3,Y+T/2-3,6,6)}else if(!q[2]){g.fillStyle='#30343b';g.fillRect(X+1,Y+2,5,T-4);g.fillStyle='#7ee34a';g.fillRect(X+T-9,Y+T/2-3,5,5)}}
+{const tg=me&&live(me)&&!ended?revTarget(me)||(LAY.truck?capTarget(me):null)||curItem:null;if(tg)drawTarget(tg,tg===curItem?pinfo(tg,me):tg.dn!==undefined?{i:'cross',c:'g'}:{i:'cuffs',c:'r'})}
 for(const b of bars)if(b.lv>0)drawBar(b);else if(b.rd&&tk&&(tk.st==='wait'||tk.st==='drive')&&(p.mat>0||sperre(b.g).k>0)){const c=b.cells[0];g.strokeStyle='rgba(255,210,122,.4)';g.lineWidth=2;g.setLineDash([5,4]);g.strokeRect(c[0]*T+2,c[1]*T+2,T-4,T-4);g.setLineDash([])}
 for(const it of its){if(it.done===true&&(it.t==='till'||it.t==='atm')){g.fillStyle='rgba(0,0,0,.4)';g.fillRect(it.x-14,it.y-14,28,28)}else if(it.done===false&&it.t==='bundle'&&vaultOpen&&los(p.x,p.y,it.x,it.y)){g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(it.x+3,it.y+7,12,5,0,0,6.283);g.fill();g.drawImage(p2,64,0,64,64,it.x-16,it.y-18,32,32)}else if(it.t==='bag'&&!it.done&&rT>=it.at&&los(p.x,p.y,it.x,it.y)){g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(it.x+3,it.y+7,12,5,0,0,6.283);g.fill();g.drawImage(p2,0,0,64,64,it.x-16,it.y-18,32,32)}}
 cams.forEach((c,i)=>{if(c.k||los(p.x,p.y,c.x,c.y)){const a=camAng(c,i);g.save();g.translate(c.x,c.y);g.rotate(a);g.drawImage(p2,3*64,0,64,64,-14,-14,28,28);g.restore();if(c.off||camDown>0){g.fillStyle='rgba(20,22,26,.6)';g.beginPath();g.arc(c.x,c.y,10,0,6.283);g.fill()}}});
@@ -1132,7 +1182,7 @@ function drawVol(){g.font='12px monospace';VOLS.forEach((v,i)=>{const b=volBox(i
 g.textAlign='right';g.fillStyle=sel?'#ffd27a':'#c9d4de';g.fillText(v[1],b.x-12,b.y+9);
 g.fillStyle='rgba(0,0,0,.65)';g.fillRect(b.x,b.y,b.w,8);g.fillStyle=sel?'#ffb000':'#b07a00';g.fillRect(b.x,b.y,b.w*val,8);g.fillStyle='#f4f1e6';g.fillRect(b.x+b.w*val-2,b.y-3,4,14);
 g.textAlign='left';g.fillStyle='#c9d4de';g.fillText(Math.round(val*100)+'%',b.x+b.w+12,b.y+9)})}
-function drawPause(){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 34px monospace';g.fillText('PAUSE',480,226);g.font='14px monospace';g.fillStyle='#cfd6de';g.fillText('Esc, P oder Klick: weiter',480,262);g.fillText('M: Ton '+(SND.isMuted()?'an':'aus')+'     Q: zurück zum Titel',480,286);drawVol();g.textAlign='center';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('Lautstärke: Maus ziehen oder Pfeiltasten',480,396);g.fillStyle='#9aa6b2';g.font='12px monospace';g.fillText('WASD / Pfeile laufen   Shift schleichen   E halten: Interaktion   Maus zielen   Klick / Leertaste schießen',480,452);g.fillText('R nachladen   F Überfall starten   G Fluchtwagen rufen   1 / 2 Störsender, Medkit',480,470);g.textAlign='left'}
+function drawPause(){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 34px monospace';g.fillText('PAUSE',480,226);g.font='14px monospace';g.fillStyle='#cfd6de';g.fillText('Esc, P oder Klick: weiter',480,262);g.fillText('M: Ton '+(SND.isMuted()?'an':'aus')+'     Q: zurück zum Titel',480,286);drawVol();g.textAlign='center';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('Lautstärke: Maus ziehen oder Pfeiltasten',480,396);g.fillStyle='#9aa6b2';g.font='12px monospace';g.fillText('WASD / Pfeile laufen   Shift schleichen   E halten: Interaktion   Maus zielen   Klick / Leertaste schießen',480,452);g.fillText('R nachladen   F Überfall starten   G Fluchtwagen rufen   1 / 2 Störsender, Medkit',480,470);drawLegend(504);g.textAlign='left'}
 function tkHud(lgl){g.font='11px monospace';const st=!tk||tk.st==='wait'?'in '+tm(tkArrive()-rT):tk.st==='drive'?'unterwegs':tk.st==='stopped'?'steht':'entkommen',gs=[...new Set(bars.filter(b=>b.rd).map(b=>b.g))].map(sperre),nb=gs.filter(q=>q.k===q.n).length,pk=Math.max(0,...gs.map(q=>q.k));
 const rows=[['WAGEN',st,!!tk&&tk.st==='stopped'],['SPERRE',nb?nb+' gebaut':pk?pk+' von '+gs[0].n+' Teilen':'keine',nb>0],['FUNK',radioDown>0?'gestört '+tm(radioDown):'frei',radioDown>0]];
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,46+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,46+i*15)});
@@ -1167,8 +1217,8 @@ plate(VW-180,VH-44,170,34);if(p.armed){const lo=Math.max(2,Math.round(p.wp.mag*.
 plate(VW/2-110,VH-44,220,34);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle='#7ee34a';g.fillText(fmt(teamLoot()),VW/2-28,VH-22);g.fillStyle='#8d95a1';g.font='11px monospace';g.fillText('Tasche '+p.units.toFixed(1)+' / '+p.bag,VW/2+64,VH-22);g.textAlign='left';
 if(p.mat>0){plate(210,VH-44,150,34);g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('MATERIAL',218,VH-22);g.font='bold 18px monospace';g.fillStyle='#d9b27a';g.fillText(p.mat,296,VH-20);g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('(0,5 Platz je)',318,VH-22)}
 if(p.jam>0||p.med>0){plate(10,VH-72,230,22);g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('[1] Störsender '+p.jam+'   [2] Medkit '+p.med,18,VH-57)}
-const rtg=live(me)&&!ended?revTarget(me):null,ctg=live(me)&&!ended&&LAY.truck&&!rtg?capTarget(me):null;let msg=null,prog=0;if(rtg){msg='E halten: '+pn(rtg.id)+' wiederbeleben';prog=rtg.rv}else if(ctg){msg='E halten: Wache überwältigen';prog=ctg.cp||0}else if(curItem&&!ended){msg='E halten: '+curItem.lab(me);prog=curItem.pr}else if(phase===1&&!ended&&live(me))msg='F: Überfall starten';
-if(msg){g.font='13px monospace';const w=g.measureText(msg).width+24;plate(VW/2-w/2,VH-86,w,26);g.fillStyle=curItem||rtg||ctg?'#ffd27a':'#c9d4de';g.textAlign='center';g.fillText(msg,VW/2,VH-68);g.textAlign='left';if((curItem||rtg||ctg)&&prog>0){g.fillStyle='#10161f';g.fillRect(VW/2-w/2,VH-58,w,5);g.fillStyle='#7ee34a';g.fillRect(VW/2-w/2,VH-58,w*Math.min(1,prog),5)}}
+const rtg=live(me)&&!ended?revTarget(me):null,ctg=live(me)&&!ended&&LAY.truck&&!rtg?capTarget(me):null;let dp=null,prog=0,pk_='E';if(rtg){dp={i:'cross',c:'g',v:'Beleben',n:pn(rtg.id)};prog=rtg.rv}else if(ctg){dp={i:'cuffs',c:'r',v:'Überwältigen'};prog=ctg.cp||0}else if(curItem&&!ended){dp=pinfo(curItem,me);prog=curItem.pr}else if(phase===1&&!ended&&live(me)){dp={c:'x',v:'Überfall starten'};pk_='F'}
+if(dp)drawPrompt(dp,prog,pk_);
 if(banner){g.globalAlpha=Math.min(1,banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(banner.s,482,154);g.fillStyle=phase===2?'#ff8a6a':'#ffd27a';g.fillText(banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
 mapSeed=DBG?'classic':rndSeed();buildWorld(layoutFor(mapSeed));reset();
 let last=performance.now(),hostWk=null;
