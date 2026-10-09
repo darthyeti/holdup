@@ -21,7 +21,7 @@ canvas:focus-visible{border-color:var(--accent)}
 </main>
 <script src="assets/peerjs.min.js"></script>
 <script>
-const BUILD={n:29,d:'2026-10-09'};//BUILD
+const BUILD={n:31,d:'2026-10-09'};//BUILD
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Grafik konnte nicht geladen werden: '+e.message});
@@ -168,7 +168,7 @@ ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
 bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40}};
 CFG.rev={bleed:25,t:3.5,r:44,hp:35,inv:1.4};
 CFG.lock={inT:1.5,outT:3.6,exit:1};
-CFG.truck={spd:150,acc:90,brake:240,gap:36,tire:100,tireSlide:170,policeAt:40,jamDelay:30,jamWin:12,crewHold:22,crew:{hp:120,dmg:8,rate:.9,spd:50,acc:.12},seg:{mc:2,bt:.8},surHp:35,capT:1.8,capBonus:6000,surPen:0,bagV:9000,bagU:1,bagT:1.4,keyT:1.8,drillT:22};
+CFG.truck={spd:150,acc:90,brake:240,gap:36,tire:100,tireSlide:170,policeAt:40,jamDelay:30,jamWin:12,crewHold:22,crew:{hp:120,dmg:8,rate:.9,spd:50,acc:.12},seg:{mc:2,bt:.8},arriveCut:12,arriveMin:35,surHp:35,capT:1.8,capBonus:6000,surPen:0,bagV:9000,bagU:1,bagT:1.4,keyT:1.8,drillT:22};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1));
 let M,TILES,LOBBY,SUNW,st,so,gone=[],dcv,dc,LAY=null;
 const OOB=(x,y)=>y<WY0||y>=WY0+H||x<WX0||x>=WX0+W;
@@ -661,10 +661,12 @@ its.push({t:'ckey',x:0,y:0,r:56,pr:0,sn:()=>'tick',lab:()=>'Laderaum mit Schlüs
 its.push({t:'cargo',x:0,y:0,r:56,pr:0,keep:true,sn:()=>'drill',lab:()=>'Laderaum aufbohren (laut)',dur:()=>C.drillT,ok:()=>!!tk&&tk.st==='stopped'&&!cargoOpen&&!keyTaken,act(){cargoOpen=true;snd('ev','vault');say('Laderaum aufgebohrt');ban('Laderaum offen',2)}});
 for(let i=0;i<LAY.mission.bagN;i++)its.push({t:'tbag',x:0,y:0,r:40,pr:0,done:false,i,lab:()=>'Geldsack einpacken',dur:()=>C.bagT,ok(){return cargoOpen&&!this.done},act(o){if(!take(o,C.bagU,C.bagV))return;this.done=true}})}
 function tkSync(){if(!tk)return;const rx=tk.x-TKL/2-16,ry=tk.y;for(const it of its){if(it.t==='ckey'||it.t==='cargo'){it.x=rx;it.y=ry}else if(it.t==='tbag'){it.x=rx-10-(it.i%3)*14;it.y=ry-18+Math.floor(it.i/3)*18}}}
+/* Ankunft des Wagens: je weiterem Mitspieler kommt er arriveCut s frueher (nicht frueher als arriveMin), solo bleibt die Missionszeit. */
+const tkArrive=()=>{const a=LAY.mission.arrive,n=Math.max(1,players.length);return Math.min(a,Math.max(CFG.truck.arriveMin,a-CFG.truck.arriveCut*(n-1)))};
 function sperre(g){let n=0,k=0;for(const b of bars)if(b.rd&&b.g===g){n++;if(b.lv>0)k++}return{n,k}}
 function tkStep(dt){const t=tk;if(!t)return;
 if(radioDown>0)radioDown=Math.max(0,radioDown-dt);
-if(t.st==='wait'){if(rT>=LAY.mission.arrive){t.st='drive';t.v=CFG.truck.spd*.6;say('Der Panzerwagen kommt die Straße entlang!');ban('Der Panzerwagen kommt!',2.4);snd('van')}return}
+if(t.st==='wait'){if(rT>=tkArrive()){t.st='drive';t.v=CFG.truck.spd*.6;say('Der Panzerwagen kommt die Straße entlang!');ban('Der Panzerwagen kommt!',2.4);snd('van')}return}
 if(t.st!=='drive')return;
 const C=CFG.truck,front=t.x+TKL/2;let stopC=1e9,why=0;
 for(const b of bars)if(b.rd&&b.lv>0){const q=sperre(b.g);if(q.k<q.n)continue;const xb=b.cells[0][0]*T;if(xb>front-10){const c=xb-C.gap-TKL/2;if(c<stopC){stopC=c;why=1}}}
@@ -1131,7 +1133,7 @@ g.textAlign='right';g.fillStyle=sel?'#ffd27a':'#c9d4de';g.fillText(v[1],b.x-12,b
 g.fillStyle='rgba(0,0,0,.65)';g.fillRect(b.x,b.y,b.w,8);g.fillStyle=sel?'#ffb000':'#b07a00';g.fillRect(b.x,b.y,b.w*val,8);g.fillStyle='#f4f1e6';g.fillRect(b.x+b.w*val-2,b.y-3,4,14);
 g.textAlign='left';g.fillStyle='#c9d4de';g.fillText(Math.round(val*100)+'%',b.x+b.w+12,b.y+9)})}
 function drawPause(){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 34px monospace';g.fillText('PAUSE',480,226);g.font='14px monospace';g.fillStyle='#cfd6de';g.fillText('Esc, P oder Klick: weiter',480,262);g.fillText('M: Ton '+(SND.isMuted()?'an':'aus')+'     Q: zurück zum Titel',480,286);drawVol();g.textAlign='center';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('Lautstärke: Maus ziehen oder Pfeiltasten',480,396);g.fillStyle='#9aa6b2';g.font='12px monospace';g.fillText('WASD / Pfeile laufen   Shift schleichen   E halten: Interaktion   Maus zielen   Klick / Leertaste schießen',480,452);g.fillText('R nachladen   F Überfall starten   G Fluchtwagen rufen   1 / 2 Störsender, Medkit',480,470);g.textAlign='left'}
-function tkHud(lgl){g.font='11px monospace';const st=!tk||tk.st==='wait'?'in '+tm(LAY.mission.arrive-rT):tk.st==='drive'?'unterwegs':tk.st==='stopped'?'steht':'entkommen',gs=[...new Set(bars.filter(b=>b.rd).map(b=>b.g))].map(sperre),nb=gs.filter(q=>q.k===q.n).length,pk=Math.max(0,...gs.map(q=>q.k));
+function tkHud(lgl){g.font='11px monospace';const st=!tk||tk.st==='wait'?'in '+tm(tkArrive()-rT):tk.st==='drive'?'unterwegs':tk.st==='stopped'?'steht':'entkommen',gs=[...new Set(bars.filter(b=>b.rd).map(b=>b.g))].map(sperre),nb=gs.filter(q=>q.k===q.n).length,pk=Math.max(0,...gs.map(q=>q.k));
 const rows=[['WAGEN',st,!!tk&&tk.st==='stopped'],['SPERRE',nb?nb+' gebaut':pk?pk+' von '+gs[0].n+' Teilen':'keine',nb>0],['FUNK',radioDown>0?'gestört '+tm(radioDown):'frei',radioDown>0]];
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,46+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,46+i*15)});
 g.fillStyle='#8d95a1';g.fillText('LAGE',20,46+rows.length*15);g.fillStyle='#ffd27a';lgl.forEach((l,i)=>g.fillText(l,62,46+(rows.length+i)*15))}
@@ -1154,7 +1156,7 @@ rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,66+i*15);g.fillSty
 g.fillStyle='#8d95a1';g.fillText('LAGE',20,66+rows.length*15);g.fillStyle=LAY.mission.tags.length?'#ffd27a':'#c9d4de';lgl.forEach((l,i)=>g.fillText(l,62,66+(rows.length+i)*15))}
 else{g.font='12px monospace';g.fillStyle='#c9d4de';let l1=policeShown?'Welle '+waveN+' · nächste in '+tm(waveGap(waveN)-waveT):'Polizei in '+tm(policeAt-tH);g.fillText(l1,20,46);if(LAY.truck){g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('LADERAUM',20,64);g.fillStyle=cargoOpen?'#7ee34a':'#c9d4de';g.fillText(cargoOpen?'offen':keyTaken?'Schlüssel da':'verschlossen',120,64);g.fillStyle='#8d95a1';g.fillText('ÜBERWÄLTIGT',20,79);g.fillStyle=capt>0?'#7ee34a':'#c9d4de';g.fillText(String(capt),120,79)}}
 vanPointer();if(phase===2){const hint=!vanCalled&&!vanArr;plate(VW/2-120,10,240,hint?50:36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=vanArr?'#7ee34a':am;g.fillText(vanArr?'Fluchtwagen wartet '+tm(vanAt+CFG.vanStay-tH):'Fluchtwagen in '+tm(vanAt-tH),VW/2,33);if(hint){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('G: Fahrer jetzt rufen ('+vanT()+' s)',VW/2,50)}g.textAlign='left'}
-if(phase===1&&LAY.truck&&tk&&tk.st!=='gone'){plate(VW/2-120,10,240,36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=tk.st==='wait'?am:'#ff8a6a';g.fillText(tk.st==='wait'?'Panzerwagen in '+tm(LAY.mission.arrive-rT):tk.st==='drive'?'Der Panzerwagen kommt!':'Der Wagen steht',VW/2,33);g.textAlign='left'}
+if(phase===1&&LAY.truck&&tk&&tk.st!=='gone'){plate(VW/2-120,10,240,36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=tk.st==='wait'?am:'#ff8a6a';g.fillText(tk.st==='wait'?'Panzerwagen in '+tm(tkArrive()-rT):tk.st==='drive'?'Der Panzerwagen kommt!':'Der Wagen steht',VW/2,33);g.textAlign='left'}
 feed.forEach((f,i)=>{g.font='12px monospace';const w=g.measureText(f.s).width+16;plate(VW-10-w,10+i*22,w,19);g.fillStyle='#fff';g.fillText(f.s,VW-2-w,24+i*22)});
 if(players.length>1){const y0=phase===1?172+14*(lageLines().length-1):76;plate(10,y0,206,players.length*20+10);players.forEach((o,i)=>{const y=y0+20+i*20;g.fillStyle=PC[o.id].c;g.fillRect(18,y-9,8,8);g.font='11px monospace';if(o===me){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(14,y-12,198,18)}g.fillStyle=live(o)?'#e6eaf0':'#8d95a1';g.fillText(pn(o.id)+(o===me&&pn(o.id).length<=6?' (du)':''),32,y);
 const stt=o.dead?(o.dn>0?'am Boden '+Math.ceil(o.dn)+' s':'ausgeschaltet'):o.out?'entkommen':o.gone?'weg':null;if(stt){g.fillStyle='#8d95a1';g.fillText(stt,116,y)}else{g.fillStyle='#10161f';g.fillRect(116,y-8,48,6);g.fillStyle=o.hp>30?'#7ee34a':'#ff5040';g.fillRect(116,y-8,48*Math.max(0,o.hp)/100,6);g.fillStyle='#c9d4de';g.fillText(o.units.toFixed(1),172,y)}})}
