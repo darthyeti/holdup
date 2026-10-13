@@ -12,7 +12,7 @@ const tileOf=o=>[Math.floor(o.x/32),Math.floor(o.y/32)];
 function steer(tx,ty){const p=S().p;k.a=k.d=k.w=k.s=0;const t=tileOf(p);if(t[0]===tx&&t[1]===ty)return true;const path=D.pathTo(p.x,p.y,tx,ty);if(!path.length)return false;const q=path[0],dx=q[0]-p.x,dy=q[1]-p.y;if(dx>2)k.d=1;if(dx<-2)k.a=1;if(dy>2)k.s=1;if(dy<-2)k.w=1;return false}
 function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT:400,wait:'vault',kit:'old',cons:{},round:0,bar:null,barLv:1},o||{});
  D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;
- if(o.seed!=null)D.buildSeed(o.seed);
+ if(o.lage!==undefined)D.setLage(o.lage);if(o.seed!=null){if(o.lage!==undefined)D.buildLay(D.layoutFor(o.seed));else D.buildSeed(o.seed)}
  D.reset();const L=D.LAY(),exitT=[L.exit.tx,Math.round(L.van.y/32)],waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
  const R={res:null,t:0,loot:0,hp:100,minHp:100,waves:0,kills:0,milestones:{},trace:[]};let lastTr=-99;
  let seen=new Map(),jit=0,jt=0,calledAt=null;
