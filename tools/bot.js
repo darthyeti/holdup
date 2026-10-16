@@ -1,7 +1,7 @@
 // Balance-Bot fuer Holdup. Nur mit index.html#debug nutzbar (setzt window.__dbg).
 // Laden im Browser: fetch('tools/bot.js').then(r=>r.text()).then(eval)
 // Dann: bot.batch(20,{call:null}) oder bot.run({call:10,extras:true})
-// Optionen: sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
+// Optionen: goodsN (nur so viele Stuecke), goods (true = Beute-Stuecke der neuen Karten einsammeln, dazu Cage-Tausch im Casino, 'cheap' = Automaten auslassen), lage (Tags erzwingen), sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
 // nach der letzten Beute bis zum Anruf), extras (Geldautomaten und Kassen mitnehmen), wait (Wartekachel),
 // seed (Kartenseed, sonst die aktuelle Karte), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), bar ('all' = alle Eingaenge samt Fluchttuer verbarrikadieren, 'noexit' = ohne Fluchttuer, die Fluchttuer wird zum Wagen wieder abgebaut), barLv (Stufen je Tuer, 1 oder 2), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei), shieldSmart (Standard an: Schild-Beamte, deren Schild zum Bot zeigt, werden nur beschossen, wenn sonst nichts in Sicht ist; false = stur auf den Naechsten, Obergrenze fuer die Wirkung der Schilde)
 (function(){
@@ -20,7 +20,11 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  const goals=[];
  if(o.extras)for(const a of L.atms.map(q=>[q[0]-L.vault.dir,q[1]]))goals.push({at:a,hold:true,tag:'atm'});
  goals.push({at:[L.vault.door[0]-L.vault.dir,L.vault.door[1]+1],hold:true,done:()=>S().vaultOpen,tag:'vault'});
- for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+D.CFG.bundle.u*D.CFG.bundle.n/L.vault.bundles.length*.95,tag:'bundle'})}
+ for(const b of L.vault.bundles){let u0=null;goals.push({at:b,hold:true,init:()=>{u0=S().units},done:()=>S().units>=u0+(L.bn||D.CFG.bundle).u*(L.bn||D.CFG.bundle).n/L.vault.bundles.length*.95,tag:'bundle'})}
+ if(o.goods){const all=S().its.filter(it=>it.t==='good'),claimed=new Set(),G=D.CFG.goods;
+  const reachTile=it=>{const p=S().p;let best=null,bd=1e9;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const tx=Math.floor(it.x/32)+dx,ty=Math.floor(it.y/32)+dy;if(D.isSol(tx,ty))continue;const d=Math.hypot(tx*32+16-it.x,ty*32+16-it.y);if(d>=(it.r||44)*.9)continue;const pl=D.pathTo(p.x,p.y,tx,ty).length;if(!pl&&!(tileOf(p)[0]===tx&&tileOf(p)[1]===ty))continue;const sc=pl+d*.05;if(sc<bd){bd=sc;best=[tx,ty]}}return best};
+  for(let i=0;i<Math.min(all.length,o.goodsN==null?all.length:o.goodsN);i++){let cur=null;goals.push({hold:true,tag:'good',to:14,init(){const p=S().p;cur=null;let bd=1e9;for(const it of all){if(it.done||claimed.has(it))continue;const gd=G[it.k];if(p.units+gd.u>p.bag+.01)continue;if(it.k==='slot'&&o.goods==='cheap')continue;const d=Math.hypot(it.x-p.x,it.y-p.y)/gd.v*1000;if(d<bd){const t=reachTile(it);if(t){bd=d;cur=it;this.at=t}}}if(cur)claimed.add(cur)},done:()=>!cur||cur.done})}
+  const cage=S().its.find(it=>it.t==='cage');if(cage)goals.push({hold:true,tag:'cage',to:45,init(){const t=reachTile(cage);this.at=t||[Math.floor(cage.x/32),Math.floor(cage.y/32)+1]},done:()=>S().p.chipV<=0})}
  if(o.extras)for(const t of L.tills.slice().reverse())goals.push({at:t,hold:true,tag:'till'});
  const bars=D.bars(),prep=[];
  if(o.bar)for(const b of bars){if(!b.side||(o.bar==='noexit'&&b.n==='Fluchttür'))continue;
@@ -45,7 +49,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
    if(s.vaultOpen&&gi<goals.length&&goals[gi].tag==='vault'){gi++;gInit=false}
    const g=goals[gi];
    if(g&&s.tH<s.vanAt-5){if(!gInit){gInit=true;g.init&&g.init()}
-    const there=steer(g.at[0],g.at[1]);if(there&&g.hold)k.e=1;
+    const there=g.at?steer(g.at[0],g.at[1]):true;if(there&&g.hold&&g.at)k.e=1;
     let fin=g.done?g.done():false;if(g.to){if(g.t1==null)g.t1=s.tH;if(s.tH-g.t1>g.to)fin=true}
     if(g.tag==='till'||g.tag==='atm'){if(there&&g.t0==null)g.t0=s.tH;fin=g.t0!=null&&s.tH-g.t0>(g.tag==='atm'?D.CFG.atm.t+.6:D.CFG.till.t+.4)}
     if(fin){gi++;gInit=false}}

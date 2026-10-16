@@ -20,6 +20,8 @@ Langzeitmotivation (besprochen, noch nicht entschieden, Till will nach dem Teste
 
 ## Karriere-Serie (Entwurf mit Till, Oktober 2026)
 
+Stand Oktober 2026: Die Karten Tankstelle, Museum und Casino sind gebaut (docs/szenarien.md), ungetestet mit Menschen. Der Zufall schaltet Museum ab Auftrag 3 und Casino ab Auftrag 5 frei (`CFG.rank`), das ist die Vorstufe zu Rang und Auftragsbörse (Punkt 3 und 4). Die Tankstelle ist der Einstieg (kleinste Beute, früheste Polizei), das Museum das Stealth-Gegenstück, das Casino das Finale.
+
 Ausgangspunkt: Szenario wählen oder auswürfeln ist ein Schalter. Es wird Fortschritt, sobald die Wahl etwas kostet oder etwas freischaltet. Bausteine, die zusammen die Karriere-Serie ergeben (Punkte 1, 2, 4 und 5 der Langzeitmotivation oben, plus Nebenziele und Heat):
 
 1. **Lage-Tags (gebaut, nach Build 39, siehe docs/karte-und-layout.md).** Dauerhafte Bedingungen je Auftrag mit Beute-Faktor als Gegenwert. Sie sind die Währung der späteren Auftragsbörse: Jeder Tag trägt schon Risiko und Aufschlag, die Börse muss sie nur anzeigen.

@@ -19,3 +19,5 @@ Teil der Projektdoku, der Kern steht in `CLAUDE.md`.
 ## Stand
 
 Coop, Schritt 1 ist gebaut (WebRTC mit Raumcode, kein eigener Server, host-autoritativ, siehe docs/coop-und-netz.md) und über die Test-Leitung sowie zwischen zwei echten Browser-Tabs geprüft. Till hat inzwischen mehrere Partien zu dritt gespielt (hat Spaß gemacht, Latenz und Router wurden nicht festgehalten). Unklar ist, ob dabei alle über das Internet verbunden waren, strenge NATs sind ungeprüft.
+
+Netzformat `VER` 13 (Oktober 2026, Tankstelle, Museum, Casino): Spielerzeile im Schnappschuss `pl` hat als letztes Feld (Index 23) `chipV` (Nennwert ungetauschter Chips), der Schnappschuss `pm` ist ein String je Zapfsäule (`1` steht, `0` explodiert, Clients setzen die Kachel frei und malen den Brandfleck). Die neuen Karten brauchen sonst nichts im Netz: Beute-Stücke laufen über die `done`-Bits der Items, Laser und Nacht stehen im Raster und in `camDown`, Lage-Tags kommen aus dem Seed.
