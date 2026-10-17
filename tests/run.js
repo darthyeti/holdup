@@ -59,11 +59,12 @@ function mkT(testFile, page, env) {
         if (err) { fail++; console.log('FAIL ' + tc.name + ' (' + sec + ' s)\n     ' + String(err instanceof Fail ? err.message : err.stack || err).split('\n').join('\n     ')); }
         else { pass++; console.log('ok   ' + tc.name + ' (' + sec + ' s)'); }
         if (t) for (const n of t.notes) console.log('       ' + n);
-        if (page) await page.ctx.close();
+        if (page) await Promise.race([page.ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]);
       }
     }
   } finally {
-    await env.browser.close();
+    // Beenden mit Zeitlimit: Chromium kehrt aus close() gelegentlich nicht zurueck (Ursache des einmaligen Haengers beim ersten Coop-Lauf), process.exit raeumt dann auf
+    await Promise.race([env.browser.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]);
     env.srv.close();
   }
   console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen (' + ((Date.now() - t0) / 1000).toFixed(0) + ' s)');

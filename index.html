@@ -22,7 +22,7 @@ canvas:focus-visible{border-color:var(--accent)}
 <script src="assets/peerjs.min.js"></script>
 <script src="js/ui.js"></script>
 <script>
-const BUILD={n:44,d:'2026-10-17'};//BUILD
+const BUILD={n:45,d:'2026-10-17'};//BUILD
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{if(typeof mkUI!=='function')throw new Error('js/ui.js fehlt');window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Spiel konnte nicht gestartet werden: '+e.message});
@@ -1101,7 +1101,8 @@ function callVan(){if(phase!==2||vanCalled||vanArr||ended)return;const vt=vanT()
 const DBG=location.hash==='#debug';try{localStorage.removeItem('holdup.save')}catch(e){}
 /* Kartenseed: Debug und Tests nutzen die klassische Bank, sonst wuerfelt der Host pro Auftrag neu. #seed=N erzwingt die erste Karte, sameMap haelt sie. */
 const rndSeed=()=>1+Math.floor(Math.random()*999999);let seedMode=DBG?'classic':'random',firstSeed=(/seed=(\d+)/.exec(location.hash)||[])[1],mapSeed=null,sameMap=false,scenario='bank',jobSc='bank';
-const SCS=['bank','truck','jewel','gas','museum','casino'],nextSc=()=>{const i=SCS.indexOf(scenario);scenario=scenario==='random'?'bank':i===SCS.length-1?'random':SCS[i+1]},scName=v=>({truck:'Geldtransporter',jewel:'Juwelier',gas:'Tankstelle',museum:'Museum',casino:'Casino',random:'Zufall'})[v]||'Bank';
+if(!DBG)try{const v=localStorage.getItem('holdup.sc');if(v==='random'||['bank','truck','jewel','gas','museum','casino'].includes(v))scenario=v}catch(e){}
+const SCS=['bank','truck','jewel','gas','museum','casino'];
 function newSeed(){if(sameMap&&LAY)return LAY.seed;jobSc=scenario==='random'?(pool=>pool[Math.floor(Math.random()*pool.length)])(SCS.filter(k=>SESSION.round>=(CFG.rank[k]||0))):scenario;if(firstSeed){const v=+firstSeed;firstSeed=null;return v}return seedMode==='random'?rndSeed():seedMode}
 let scr=DBG?'play':'title',paused=false,curCur='';
 function secure(o){secured+=o.loot-(o.chipV||0)*CFG.casino.chip.pen;if(o.chipV>0)say((players.length>1?pn(o.id)+': ':'')+'Chips nicht getauscht: Hehlerabschlag '+Math.round(CFG.casino.chip.pen*100)+' %',o.id);o.chipV=0;const got=o.loot>0;o.loot=0;o.units=0;o.mat=0;o.out=true;escaped++;if(players.length>1)say(pn(o.id)+(got?' ist mit der Beute raus':' ist raus'));checkEnd()}
@@ -1536,7 +1537,7 @@ hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle=
 if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}g.textAlign='left'}
 if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
 ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=(i===ended.hi?'bold 20px':'15px')+' monospace';g.fillText(l,480,244+i*28)});
-g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);g.font='13px monospace';g.fillText((ended.win||ended.soft?'Enter: Shop':NET.role==='client'?'Der Host startet eine neue Serie':'Enter: neue Serie')+'   Esc: '+(NET.role==='solo'?'Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'),480,244+ended.lines.length*28+20);g.textAlign='left'}}
+g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}}
 function startGame(){netReset();mapSeed=newSeed();beginPlay()}
 function toTitle(){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
 /* Spielername (nur Coop): wird in localStorage 'holdup.name' gemerkt, mit 'hi' an den Host geschickt, der prueft auf Duplikate und verteilt ihn ueber die Spielerliste (NET.roster[].name). pn(id) liefert den Anzeigenamen, ohne Namen die Farbe. */
@@ -1547,22 +1548,59 @@ const pn=id=>{const r=NET.roster.find(q=>q.id===id);return r&&r.name||PC[id].n};
 function uniqName(base,id){const n=base||PC[id].n,taken=x=>NET.roster.some(r=>r.id!==id&&String(r.name).toLowerCase()===x.toLowerCase());let c=n,k=2;while(taken(c)){c=n.slice(0,NAME_MAX-2)+' '+k;k++}return c}
 function setRoster(id,v){const r=NET.roster.find(q=>q.id===id);if(r)r.name=uniqName(cleanName(v),id)}
 function saveName(){myName=cleanName(myName);try{localStorage.setItem('holdup.name',myName)}catch(e){}if(NET.role==='client'&&NET.conn)NET.conn.send({t:'nm',v:myName});else if(NET.role==='host'){setRoster(0,myName);bcastRoster()}}
-const nameBox=()=>({x:380,y:416,w:200,h:30});
 function openCoop(){scr='coop';NET.msg='';nameEdit=false}
 const roomLink=()=>location.href.split('#')[0]+'#raum='+NET.code;
 function copyLink(){try{navigator.clipboard.writeText(roomLink()).then(()=>{NET.msg='Link kopiert.'},()=>{NET.msg='Kopieren nicht möglich. Code weitergeben.'})}catch(e){NET.msg='Kopieren nicht möglich. Code weitergeben.'}}
 const reqHeist=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'f'}):startHeist(false)},reqVan=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'g'}):callVan()},reqGadget=n=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'u',n}):useGadget(me,n)};
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
-/* Menues zeichnen: js/ui.js (mkUI). Der Kontext gibt nur lesenden Zugriff (Getter), geschrieben wird im Kern. Neue Namen im Kontext ergaenzen, sobald ein Zeichenfunktion sie braucht. */
-const UI=mkUI({get camX(){return camX},get camY(){return camY},get CFG(){return CFG},get curKit(){return curKit},get drawLegend(){return drawLegend},get errTxt(){return errTxt},
-get fmt(){return fmt},get g(){return g},get joinText(){return joinText},get mouse(){return mouse},get myName(){return myName},get nameBox(){return nameBox},
-get nameEdit(){return nameEdit},get NET(){return NET},get PC(){return PC},get plate(){return plate},get pn(){return pn},get roomLink(){return roomLink},
-get S0(){return S0},get sameMap(){return sameMap},get scenario(){return scenario},get scName(){return scName},get scr(){return scr},get shopBox(){return shopBox},
-get shopGoBox(){return shopGoBox},get shopHit(){return shopHit},get SHOPKEYS(){return SHOPKEYS},get shopNote(){return shopNote},get shopState(){return shopState},get so(){return so},
-get st(){return st},get T(){return T},get time(){return time},get titleNote(){return titleNote},get VH(){return VH},get volBox(){return volBox},
-get VOLS(){return VOLS},get volSel(){return volSel},get VW(){return VW},get W1(){return W1},get WX0(){return WX0},get WY0(){return WY0}}),{drawMenu,drawPause}=UI;
-let shopNote={s:'',t:0},shopConf=-9;
-const SHOPKEYS='1234567890-',shopBox=i=>({x:i<6?60:490,y:98+(i%6)*54,w:410,h:48}),shopGoBox={x:300,y:474,w:360,h:32};
+/* Menues als Kacheln: js/ui.js (mkUI). Der Kontext liest nur (Getter), geschrieben wird hier im Kern ueber uiAct. Neue Namen im Kontext ergaenzen, sobald ui.js sie braucht. */
+const UI=mkUI({act:uiAct,volAdj,get camX(){return camX},get camY(){return camY},get CFG(){return CFG},get curKit(){return curKit},get DBG(){return DBG},get drawLegend(){return drawLegend},
+get ended(){return ended},get errTxt(){return errTxt},get fmt(){return fmt},get g(){return g},get joinText(){return joinText},get missionFrom(){return missionFrom},
+get myName(){return myName},get nameEdit(){return nameEdit},get NET(){return NET},get paused(){return paused},get PC(){return PC},get pn(){return pn},
+get roomLink(){return roomLink},get S0(){return S0},get sameMap(){return sameMap},get scenario(){return scenario},get scLocked(){return scLocked},get scr(){return scr},
+get SESSION(){return SESSION},get SHOPKEYS(){return SHOPKEYS},get shopNote(){return shopNote},get shopState(){return shopState},get so(){return so},get st(){return st},
+get T(){return T},get time(){return time},get titleNote(){return titleNote},get unlockAll(){return unlockAll},get VH(){return VH},get VW(){return VW},
+get W1(){return W1},get WX0(){return WX0},get WY0(){return WY0}}),{drawMenu,drawPause,drawEnded}=UI;
+let shopNote={s:'',t:0},shopConf=-9,missionFrom='title',unlockAll=false;
+const SHOPKEYS='1234567890-';
+/* Aktionen der Menues (ui.js ruft sie ueber X.act): Auftragswahl mit Rang-Sperre, Coop-Wege, Shop, Pause, Ergebnis */
+const scLocked=k=>k!=='random'&&!unlockAll&&(CFG.rank[k]||0)>SESSION.round;
+function saveSc(){try{localStorage.setItem('holdup.sc',scenario)}catch(e){}}
+function openMission(from){missionFrom=from;if(scLocked(scenario))scenario='bank';nameEdit=false;shopNote={s:'',t:0};scr='mission'}
+function missionStart(){if(missionFrom==='lobby'){scr='lobby';if(NET.role==='host')bcastRoster();return}
+if(scLocked(scenario))scenario='bank';saveSc();
+if(missionFrom==='shop'){if(NET.role==='host'&&NET.roster.some(r=>r.id!==0&&!r.rdy)&&time-shopConf>4){shopConf=time;shopNote={s:'Nicht alle sind bereit. Nochmal starten: trotzdem los.',t:4};return}startNext();return}
+startGame()}
+function pasteClip(){const f=t=>{t=String(t||'').toUpperCase();const m=/RAUM=([A-Z0-9]{4})/.exec(t)||/\b([A-Z0-9]{4})\b/.exec(t);if(m){joinText=m[1].split('').filter(c=>CODECH.includes(c)).join('').slice(0,4);NET.msg=joinText.length===4?'':'Kein gültiger Code in der Zwischenablage.'}else NET.msg='Kein Code in der Zwischenablage.'};
+try{navigator.clipboard.readText().then(f,()=>{NET.msg='Einfügen nicht erlaubt. Strg oder Cmd+V benutzen.'})}catch(e){NET.msg='Einfügen nicht möglich. Strg oder Cmd+V benutzen.'}}
+function uiAct(a,v){switch(a){
+case'solo':openMission('title');break;
+case'missionOpen':openMission('lobby');break;
+case'missionBack':scr=missionFrom==='shop'?'shop':missionFrom==='lobby'?'lobby':'title';break;
+case'missionStart':missionStart();break;
+case'pick':scenario=v;saveSc();if(NET.role==='host')bcastRoster();break;
+case'same':sameMap=!sameMap;break;
+case'coop':openCoop();break;
+case'coopBack':scr='title';break;
+case'host':hostRoom();break;
+case'join':joinText='';NET.msg='';scr='join';break;
+case'joinBack':scr='coop';break;
+case'joinGo':if(joinText.length===4)joinRoom(joinText);break;
+case'paste':pasteClip();break;
+case'name':nameEdit=true;break;
+case'copyLink':copyLink();break;
+case'lobbyStart':startCoop();break;
+case'lobbyBack':netReset();scr='coop';break;
+case'buy':shopBuy(v);break;
+case'shopNext':if(NET.role==='client')shopGo();else openMission('shop');break;
+case'shopBack':if(NET.role==='solo')toTitle();else leaveGame('');break;
+case'resume':paused=false;break;
+case'leave':if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.');break;
+case'mute':SND.toggleMute();break;
+case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
+case'unlock':unlockAll=!unlockAll;break;
+case'endNext':if(ended){if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}break;
+case'endBack':if(NET.role==='solo')toTitle();else leaveGame('');break}}
 function shopState(it){const o=SESSION.own,c=SESSION.cons,sh=CFG.shop;
 if(it.c)return(c[it.k]|0)>=sh[it.k+'Max']?'voll':SESSION.wallet<it.p?'zu teuer':'kaufen';
 if(o[it.k])return'gekauft';if(it.k==='smg'&&o.rifle)return'ersetzt';return SESSION.wallet<it.p?'zu teuer':'kaufen'}
@@ -1575,12 +1613,8 @@ function shopGo(){if(NET.role==='solo'){startNext();return}
 if(NET.role==='client'){const r=NET.roster.find(q=>q.id===NET.myId),v=r&&r.rdy?0:1;if(r)r.rdy=v;NET.conn&&NET.conn.send({t:'rdy',v,k:curKit()});return}
 if(NET.roster.some(r=>r.id!==0&&!r.rdy)&&time-shopConf>4){shopConf=time;shopNote={s:'Nicht alle sind bereit. Enter nochmal: trotzdem starten.',t:4};return}
 startNext()}
-function shopHit(){for(let i=0;i<CFG.shop.items.length;i++){const b=shopBox(i);if(mouse.sx>=b.x&&mouse.sx<=b.x+b.w&&mouse.sy>=b.y&&mouse.sy<=b.y+b.h)return i}return-1}
-const VOLS=[['mus','Musik'],['sfx','Effekte']];let volSel=0,volDrag=-1,volT=0;
-const volBox=i=>scr==='title'?{x:i?600:300,y:506,w:110}:{x:380,y:330+i*34,w:200};
-function volHit(mx,my){for(let i=0;i<VOLS.length;i++){const b=volBox(i);if(mx>=b.x-8&&mx<=b.x+b.w+8&&my>=b.y-12&&my<=b.y+20)return i}return-1}
+const VOLS=[['mus','Musik'],['sfx','Effekte']];let volT=0;
 function volAdj(i,v,abs){const k=VOLS[i][0];SND.setVol(k,abs?v:SND.vol(k)+v);if(k==='sfx')SND.blip();volT=1.5}
-function volKey(k,rep){if(k==='ArrowUp'||k==='ArrowDown'){if(!rep)volSel=(volSel+1)%VOLS.length;return true}if(k==='ArrowLeft'||k==='ArrowRight'){volAdj(volSel,k==='ArrowRight'?.1:-.1);return true}return false}
 function tkHud(lgl){g.font='11px monospace';const st=!tk||tk.st==='wait'?'in '+tm(tkArrive()-rT):tk.st==='drive'?'unterwegs':tk.st==='stopped'?'steht':'entkommen',gs=[...new Set(bars.filter(b=>b.rd).map(b=>b.g))].map(sperre),nb=gs.filter(q=>q.k===q.n).length,pk=Math.max(0,...gs.map(q=>q.k));
 const rows=[['WAGEN',st,!!tk&&tk.st==='stopped'],['SPERRE',nb?nb+' gebaut':pk?pk+' von '+gs[0].n+' Teilen':'keine',nb>0],['FUNK',radioDown>0?'gestört '+tm(radioDown):'frei',radioDown>0]];
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,46+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,46+i*15)});
@@ -1632,7 +1666,7 @@ function tick(dt){
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
 if(titleNote){titleNote.t-=dt;if(titleNote.t<=0)titleNote=null}
 volT=Math.max(0,volT-dt);shopNote.t=Math.max(0,shopNote.t-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.length?Math.min(...pcs.map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});
-const cc=scr!=='play'?'pointer':focus&&!paused?'none':'crosshair';if(cc!==curCur){curCur=cc;cv.style.cursor=cc}}
+const cc=scr!=='play'||paused||ended?'pointer':focus?'none':'crosshair';if(cc!==curCur){curCur=cc;cv.style.cursor=cc}}
 if(!opt.noLoop)requestAnimationFrame(loop);
 cv.addEventListener('focus',()=>{focus=true});cv.addEventListener('blur',()=>{focus=false;clearKeys();mouse.down=0});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&scr==='play'&&!ended&&NET.role==='solo'){paused=true;clearKeys();mouse.down=0}});
@@ -1640,13 +1674,10 @@ document.addEventListener('paste',e=>{if(scr!=='join')return;const t=((e.clipboa
 window.addEventListener('beforeunload',()=>{try{netReset()}catch(e){}});
 const kn=e=>e.key.length===1?e.key.toLowerCase():e.key;
 cv.addEventListener('keydown',e=>{const k=kn(e);SND.init();SND.resume();
-if(nameEdit&&(scr==='coop'||scr==='lobby')){if(e.key==='Enter'||e.key==='Escape'||e.key==='Tab'){nameEdit=false;saveName()}else if(e.key==='Backspace')myName=myName.slice(0,-1);else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&myName.length<NAME_MAX&&/[\p{L}\p{N} _.\-]/u.test(e.key))myName+=e.key;e.preventDefault();return}
-if(scr==='title'){if(volKey(k,e.repeat)){e.preventDefault();return}if(!e.repeat){if(k==='Enter'||k===' ')startGame();else if(k==='c')openCoop();else if(k==='t')nextSc();else if(k==='m')SND.toggleMute()}e.preventDefault();return}
-if(scr==='coop'){if(!e.repeat){if(k==='n')nameEdit=true;else if(k==='h')hostRoom();else if(k==='j'){joinText='';NET.msg='';scr='join'}else if(k==='Escape')scr='title';else if(k==='m')SND.toggleMute()}e.preventDefault();return}
-if(scr==='join'){if(!e.repeat||k==='Backspace'){if(k==='Escape')scr='coop';else if(k==='Backspace')joinText=joinText.slice(0,-1);else if(k==='Enter'){if(joinText.length===4)joinRoom(joinText)}else if(k.length===1&&joinText.length<4&&!e.metaKey&&!e.ctrlKey){const u=k.toUpperCase();if(CODECH.includes(u))joinText+=u}}e.preventDefault();return}
-if(scr==='lobby'){if(!e.repeat){if(k==='n')nameEdit=true;else if(k==='t'&&NET.role==='host'){nextSc();bcastRoster()}else if(k==='Escape'){netReset();scr='coop'}else if(k==='Enter'&&NET.role==='host')startCoop();else if(k==='l'&&NET.role==='host')copyLink();else if(k==='m')SND.toggleMute()}e.preventDefault();return}
-if(scr==='shop'){if(!e.repeat){const i=SHOPKEYS.indexOf(k);if(i>=0)shopBuy(i);else if(k==='Enter')shopGo();else if(k==='Escape'){if(NET.role==='solo')toTitle();else leaveGame('')}else if(k==='k'&&NET.role!=='client')sameMap=!sameMap;else if(k==='t'&&NET.role!=='client'){nextSc();if(NET.role==='host')bcastRoster()}else if(k==='m')SND.toggleMute()}e.preventDefault();return}
-if(paused){if(volKey(k,e.repeat)){e.preventDefault();return}if(!e.repeat){if(k==='Escape'||k==='p')paused=false;else if(k==='q'){if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.')}else if(k==='m')SND.toggleMute()}e.preventDefault();return}
+if(nameEdit){if(e.key==='Enter'||e.key==='Escape'||e.key==='Tab'){nameEdit=false;saveName()}else if(e.key==='Backspace')myName=myName.slice(0,-1);else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&myName.length<NAME_MAX&&/[\p{L}\p{N} _.\-]/u.test(e.key))myName+=e.key;e.preventDefault();return}
+if(scr==='join'){if((e.ctrlKey||e.metaKey)&&k==='v')return;if(!e.ctrlKey&&!e.metaKey&&(k==='Backspace'||k.length===1)){if(!e.repeat||k==='Backspace'){if(k==='Backspace')joinText=joinText.slice(0,-1);else if(joinText.length<4){const u=k.toUpperCase();if(CODECH.includes(u))joinText+=u}}e.preventDefault();return}}
+if(UI.key(k,e)){e.preventDefault();return}
+if(scr!=='play'||paused){e.preventDefault();return}
 keys[k]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Escape'].includes(e.key))e.preventDefault();
 if(e.repeat)return;
 if(k==='m')SND.toggleMute();
@@ -1656,10 +1687,9 @@ if(k==='f'&&phase===1)reqHeist();if(k==='g')reqVan();if(k==='1')reqGadget(1);if(
 if(k==='Enter'&&ended){if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}});
 cv.addEventListener('keyup',e=>{keys[kn(e)]=0});
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
-const volMouse=()=>{const b=volBox(volDrag);volAdj(volDrag,(mouse.sx-b.x)/b.w,true)};
-cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(scr==='title'||(scr==='play'&&paused)){const i=volHit(mouse.sx,mouse.sy);if(i>=0){volSel=i;volDrag=i;volMouse();return}}if(scr==='title'){startGame();return}if(scr==='shop'){const i=shopHit(),gb=shopGoBox;if(i>=0)shopBuy(i);else if(mouse.sx>=gb.x&&mouse.sx<=gb.x+gb.w&&mouse.sy>=gb.y&&mouse.sy<=gb.y+gb.h)shopGo();return}if(scr==='coop'){const b=nameBox();nameEdit=mouse.sx>=b.x&&mouse.sx<=b.x+b.w&&mouse.sy>=b.y&&mouse.sy<=b.y+b.h;if(!nameEdit)saveName();return}if(scr==='lobby'){const y=294+NET.myId*28,on=mouse.sx>=300&&mouse.sx<=620&&mouse.sy>=y-14&&mouse.sy<=y+8;if(on)nameEdit=true;else if(nameEdit){nameEdit=false;saveName()}return}if(scr!=='play')return;if(paused){paused=false;return}mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;volDrag=-1});
-cv.addEventListener('mousemove',e=>{mpos(e);mouse.t=time;if(volDrag>=0)volMouse()});
-const dbg={BUILD,LAGE,scen:()=>scenario,setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(nameEdit){nameEdit=false;saveName()}if(UI.down(mouse.sx,mouse.sy))return;if(scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
+cv.addEventListener('mousemove',e=>{mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
+const dbg={BUILD,LAGE,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
