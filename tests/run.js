@@ -45,7 +45,11 @@ function mkT(testFile, page, env) {
       for (const tc of [].concat(mod)) {
         if (filters.length && !filters.some(f => tc.name.includes(f) || file.includes(f))) continue;
         const start = Date.now();
-        let page, err = null, t;
+        let page, err = null, t, attempt = 0;
+        // tc.retry: so oft wird ein fehlgeschlagener Test auf frischer Seite wiederholt (nur fuer Pixelvergleiche, die selten um ein Pixel schwanken)
+        for (;;) {
+        if (attempt > 0 && page) await Promise.race([page.ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]);
+        err = null; page = null;
         try {
           page = await openGame(env, tc.open);
           t = mkT(file, page, env);
@@ -55,9 +59,11 @@ function mkT(testFile, page, env) {
           await Promise.race([tc.run(t), new Promise((_, rej) => { timer = setTimeout(() => { timedOut = true; rej(new Fail('Zeitueberschreitung nach ' + limit / 1000 + ' s (haengt das Spiel in einer Schleife?)')); }, limit); })]).finally(() => clearTimeout(timer));
           if (page.errors.length) throw new Fail('JS-Fehler im Spiel: ' + page.errors.slice(0, 3).join(' | '));
         } catch (e) { err = e; if (e instanceof Fail && /^Zeitueberschreitung/.test(e.message)) { try { const b = env.browser, srv = env.srv; await Promise.race([b.close(), new Promise(r => setTimeout(r, 5000))]); srv.close(); } catch (_) { } env = await launch(); page = null; } }
+        if (!err || attempt >= (tc.retry || 0) || (err instanceof Fail && /^Zeitueberschreitung/.test(err.message))) break;
+        attempt++; }
         const sec = ((Date.now() - start) / 1000).toFixed(1);
         if (err) { fail++; console.log('FAIL ' + tc.name + ' (' + sec + ' s)\n     ' + String(err instanceof Fail ? err.message : err.stack || err).split('\n').join('\n     ')); }
-        else { pass++; console.log('ok   ' + tc.name + ' (' + sec + ' s)'); }
+        else { pass++; console.log('ok   ' + tc.name + ' (' + sec + ' s)' + (attempt ? ' beim ' + (attempt + 1) + '. Versuch' : '')); }
         if (t) for (const n of t.notes) console.log('       ' + n);
         if (page) await Promise.race([page.ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]);
       }

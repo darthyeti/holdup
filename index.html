@@ -20,12 +20,13 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/ui.js?v=46"></script>
 <script>
-const BUILD={n:45,d:'2026-10-17'};//BUILD
+const BUILD={n:46,d:'2026-10-17'};//BUILD
+const UI_API=2;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
-Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{if(typeof mkUI!=='function')throw new Error('js/ui.js fehlt');window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Spiel konnte nicht gestartet werden: '+e.message});
+Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{if(typeof mkUI!=='function'||mkUI.api!==UI_API)throw new Error('js/ui.js fehlt oder ist veraltet (Browser-Cache). Seite hart neu laden: Strg+Umschalt+R, am Mac Cmd+Umschalt+R.');window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Spiel konnte nicht gestartet werden: '+e.message});
 /* ---- Ton: alles synthetisch (WebAudio), keine Dateien. Ohne Nutzeraktion bleibt ac=null, dann sind alle Aufrufe leer. ---- */
 const SND=(()=>{
 let ac=null,mg=null,sfx=null,mus=null,nb=null,muted=false,pz=false,lx=0,ly=0,boost=0;const last={};

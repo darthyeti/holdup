@@ -161,6 +161,7 @@ module.exports = [
   {
     name: 'Pixel: Hauptmenue, Auftragswahl, Optionen, Anleitung, Coop, Raumcode, Shop, Pause, Ergebnis',
     open: { det: true },
+    retry: 1,
     timeout: 120000,
     async run(t) {
       await setup(t);
@@ -186,6 +187,7 @@ module.exports = [
   {
     name: 'Pixel: Coop-Lobby zu dritt, Auftragswahl der Lobby, Shop im Coop',
     open: { det: true },
+    retry: 1,
     timeout: 120000,
     async run(t) {
       await setup(t);

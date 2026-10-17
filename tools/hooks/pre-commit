@@ -1,6 +1,7 @@
 #!/bin/sh
 # Versionierung: Steckt das Spiel selbst (index.html, js/ oder assets/) im Commit, setzt dieser Hook die Build-Nummer
 # in index.html auf die laufende Nummer dieses Commits (Anzahl der Commits plus eins) und das Datum auf heute.
+# Dieselbe Nummer steht im Skript-Tag js/ui.js?v=N, damit der Browser nie eine alte ui.js zur neuen index.html laedt (Cache).
 # Reine Doku-Commits lassen die Nummer unberuehrt.
 # Einrichten, einmal je Klon: git config core.hooksPath tools/hooks
 top=$(git rev-parse --show-toplevel) || exit 0
@@ -8,5 +9,5 @@ cd "$top" || exit 0
 git diff --cached --name-only | grep -qE '^(index\.html|assets/|js/)' || exit 0
 n=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
 d=$(date +%F)
-perl -pi -e "s/^const BUILD=\{n:\d+,d:'[\d-]+'\};\/\/BUILD/const BUILD={n:$n,d:'$d'};\/\/BUILD/" index.html && git add index.html
+perl -pi -e "s/^const BUILD=\{n:\d+,d:'[\d-]+'\};\/\/BUILD/const BUILD={n:$n,d:'$d'};\/\/BUILD/; s/js\/ui\.js\?v=\d+/js\/ui.js?v=$n/" index.html && git add index.html
 exit 0
