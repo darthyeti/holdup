@@ -20,9 +20,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=48"></script>
+<script src="js/ui.js?v=49"></script>
 <script>
-const BUILD={n:48,d:'2026-10-18'};//BUILD
+const BUILD={n:49,d:'2026-10-18'};//BUILD
 const UI_API=2;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
@@ -587,31 +587,40 @@ function lageTags(ms,ev,evTag,camN,camBase,extra){const tags=[];if(ms.vault==='d
 const titleBox=()=>({cx:Math.round((WX0*T+((WX0+W)*T-VW))/2),ax:Math.floor(((WX0+W)*T-VW-WX0*T)/2*.85),cy:-10,ay:110});
 /* ---- Szenario Tankstelle: kleiner Laden (Gebaeude x0..15, y0..10) mit Vorfeld und Zapfsaeulen im Sueden, Lager und Safe im Nordwesten, Kasse mit Zigarettenregal im Nordosten.
    Eingaenge: Vordertuer (Glas, Sueden), Hintertuer ins Lager (Norden, Personaltuer) und Osttuer (Glas, Fluchttuer zum Hof). Die Polizei kommt frueh (CFG.gas.pol), die Zapfsaeulen explodieren. ---- */
-const GAS_ROWS=["#######L########","#..#ee..m#CCCCC#","#..V.....#.....#","#..V..kk.d.....#","#..#..kq.#.....#","##########gCrCC#","W..............#","W..CCCC..CCCC..D","W..............D","W..............W","#WWWWWWDDWWWWWW#"];
+/* Tankstelle, Verkaufsraeume (aus dem Seed, eigener Strom, wie JW_HALLS beim Juwelier): sh = vier Regalstuecke [x,y,w,h] (je 800), lg = vier Kisten im Lager [x,y,Zeichen], pu = Zapfsaeuleninseln [x,y] (je zwei Saeulen nebeneinander, y immer 12), route = Wachroute.
+   Verkaufsraum x1..14, y6..9. Frei bleiben der Eingangsbereich (x6..9, y8..9), die Zeile y6 am Tresen (x10..14, Gatter bei 10 und Kasse bei 12), die Osttuer (x13..14, y7..8). Die Beute bleibt gleich (5 Zigarettenstuecke, 4 Regalstuecke, gleiche Werte).
+   Bauregeln (mit dem Bot gemessen, siehe docs/szenarien.md): (1) Lager: immer der 2x2-Block bei x6..7, y3..4 (nur die Fass-Position wechselt). Er ist Deckung zwischen Lagertuer und Safe, mit anderen Formen (Reihe, T) verlor der Safe-Camper-Bot im Gierig-Lauf von 97 auf 33 bis 47 %. Eine Kiste bei x5 liegt in der Reichweite des Tresor-Standplatzes (4,3) und nimmt der Taste E den Tresor weg. (2) Routenpunkte mindestens 5 Kacheln vom Eingang (8,9): jeder kann Startpunkt der Wache beim Alarm sein, und eine Wache neben der Tuer steht dem Bot auf den Fuessen (Kugeln starten hinter ihr). (3) Zapfsaeulen: die innere Saeule hoechstens bei x4 links und mindestens bei x11 rechts, die Explosion reicht 3 Kacheln. (4) Regale an der Suedwand (vor den Fenstern) machten den Gierig-Lauf von 97 auf 82 %, an der Nordwand sind sie sicherer. */
+const GS_SHOPS=[
+{n:'Klassik',sh:[[3,7,2,1],[5,7,2,1],[9,7,2,1],[11,7,2,1]],lg:[[6,3,'k'],[7,3,'k'],[6,4,'k'],[7,4,'q']],pu:[[3,12],[11,12]],route:[[13,9],[13,6],[2,6],[2,9]]},
+{n:'Insel',sh:[[3,7,2,1],[5,7,2,1],[3,8,2,1],[5,8,2,1]],lg:[[6,3,'q'],[7,3,'k'],[6,4,'k'],[7,4,'k']],pu:[[2,12],[12,12]],route:[[13,9],[13,6],[2,6],[2,9]]},
+{n:'Wandregale',sh:[[2,6,2,1],[4,6,2,1],[6,6,2,1],[8,6,2,1]],lg:[[6,3,'k'],[7,3,'k'],[6,4,'q'],[7,4,'k']],pu:[[1,12],[13,12]],route:[[13,7],[13,9],[2,9],[2,7]]},
+{n:'Gänge',sh:[[3,7,1,2],[5,7,1,2],[9,7,1,2],[11,7,1,2]],lg:[[6,3,'k'],[7,3,'q'],[6,4,'k'],[7,4,'k']],pu:[[3,12],[13,12]],route:[[13,9],[13,6],[4,6],[2,9]]}];
+const GAS_ROWS=["#######L########","#..#ee..m#CCCCC#","#..V.....#.....#","#..V.....d.....#","#..#.....#.....#","##########gCrCC#","W..............#","W..............D","W..............D","W..............W","#WWWWWWDDWWWWWW#"];
 function gsBoxes(c,x,y,w,h,r,pal){const n=Math.max(2,Math.floor(w/6)),m=Math.max(1,Math.floor(h/9));c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x+2,y+h-4,w-4,3);for(let j=0;j<m;j++)for(let i=0;i<n;i++){c.fillStyle=pal[Math.floor(r()*pal.length)];c.fillRect(x+3+i*(w-6)/n,y+3+j*(h-6)/m,(w-6)/n-1.5,(h-6)/m-1.5)}}
 function gasLayout(sd){const sn=typeof sd==='number'?sd:7;frameWorld(44,30,-6,-6,13);setc(37,7,'o');setc(37,8,'o');
-asc(GAS_ROWS,0,0);[[3,12],[4,12],[11,12],[12,12]].forEach(a=>setc(a[0],a[1],'u'));
+const hr=mulberry32((((sn)*7919)>>>0)^0x3a1f5c27),H=GS_SHOPS[Math.floor(hr()*GS_SHOPS.length)],PU=[].concat(...H.pu.map(a=>[[a[0],a[1]],[a[0]+1,a[1]]]));
+asc(GAS_ROWS,0,0);H.sh.forEach(a=>fill(a[0],a[1],a[0]+a[2]-1,a[1]+a[3]-1,'C'));H.lg.forEach(a=>setc(a[0],a[1],a[2]));PU.forEach(a=>setc(a[0],a[1],'u'));
 [[18,1],[19,1],[18,2],[-2,-3],[24,10],[28,4]].forEach(a=>setc(a[0],a[1],'k'));[[20,5],[21,9],[17,11],[26,8],[-2,5],[-2,10],[10,-3]].forEach(a=>setc(a[0],a[1],'q'));[[2,22],[9,22],[16,22],[24,22],[31,22],[0,15],[15,15]].forEach(a=>setc(a[0],a[1],'p'));
 const winS=[];for(let x=1;x<=14;x++)if(x!==7&&x!==8)winS.push(x);
 const mr=mulberry32((((sn)*2654435761)>>>0)^0x5bd1e995),ms=genMission(mr,'g',sn),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593),ti=tr()<.5?2:0,tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
 ms.civ=Math.max(1,Math.min(3,Math.round(ms.civ*.4)));ms.guards=ms.lg.includes('sicher')?2:Math.min(ms.guards,1);ms.cams=Math.max(2,Math.min(4,ms.cams-4));
-const R0=[[13,9],[13,6],[2,6],[2,9]],guards=[];
-if(ms.guards>=1){const rt=rotR(R0,ms.rot[0]%4,ms.rot[1]);guards.push({p:rt[0],route:rt})}
-if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+2)%4,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
+const R0=H.route,NR=R0.length,guards=[];
+if(ms.guards>=1){const rt=rotR(R0,ms.rot[0]%NR,ms.rot[1]);guards.push({p:rt[0],route:rt})}
+if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+(NR>>1))%NR,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
 const camc=[{x:1.5*T,y:6.4*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:14.5*T,y:6.4*T,a0:2.4,amp:.6,sp:.55,rng:300,fov:.5},{x:1.5*T,y:9.5*T,a0:-.7,amp:.55,sp:.5,rng:290,fov:.5},{x:6.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:12.5*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:200,fov:.55},{x:8*T,y:10.4*T,a0:1.57,amp:.7,sp:.5,rng:320,fov:.6}];
 const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
-if(ev.includes('wache'))extra.push({p:[7,9],route:rotR(R0,2,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
+if(ev.includes('wache'))extra.push({p:[7,9],route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,3);
 const deskT=[[4,1],[5,1]],goods=[];
 for(let x=10;x<=14;x++)goods.push({k:'cig',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
-[3,5,9,11].forEach(x=>goods.push({k:'shelf',x:(x+1)*T,y:7*T+16,rc:[x*T,7*T,2*T,T],r:50}));
-return{seed:sd,gas:true,theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:15,y1:10},winN:[],winS,
+H.sh.forEach(a=>goods.push({k:'shelf',x:(a[0]+a[2]/2)*T,y:(a[1]+a[3]/2)*T,rc:[a[0]*T,a[1]*T,a[2]*T,a[3]*T],r:50}));
+return{seed:sd,gas:true,hall:H.n,theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:15,y1:10},winN:[],winS,
 mat:(x,y)=>{if(x>=0&&x<=15&&y>=0&&y<=10)return(y<=4&&x!==9)?'w':'m';
 if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>15)return'a';return'y'},
 paintFloor(s){const r=mulberry32(sn*7+1);
 for(let i=0;i<40;i++){const x=T+r()*13*T,y=11*T+r()*3*T,q=s.createRadialGradient(x,y,0,x,y,10+r()*14);q.addColorStop(0,'rgba(25,22,20,.28)');q.addColorStop(1,'rgba(25,22,20,0)');s.fillStyle=q;s.fillRect(x-24,y-24,48,48)}
-for(const a of[[2.4,11.55],[10.4,11.55]]){s.fillStyle='#7c828a';s.fillRect(a[0]*T,a[1]*T,3.2*T,1.9*T);s.fillStyle='#aeb4bb';s.fillRect(a[0]*T+3,a[1]*T+3,3.2*T-6,1.9*T-6)}
+for(const a of H.pu.map(q=>[q[0]-.6,q[1]-.45])){s.fillStyle='#7c828a';s.fillRect(a[0]*T,a[1]*T,3.2*T,1.9*T);s.fillStyle='#aeb4bb';s.fillRect(a[0]*T+3,a[1]*T+3,3.2*T-6,1.9*T-6)}
 s.strokeStyle='rgba(235,200,60,.7)';s.lineWidth=2;s.strokeRect(1.2*T,11.2*T,13.6*T,2.6*T);
 s.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++)s.fillRect(16.5*T+i*0,2*T+i*T*1.6,3*T,2)},
 paintTop(s){const r=mulberry32(sn*13+5),PAL=['#c4402f','#e8b84a','#3a7fc4','#59a65a','#d8d4c8','#8a4fc4'];
@@ -628,11 +637,18 @@ note:deskT[ms.noteIdx%2],mon:[8,1],vault:{door:[3,2],pad:[4,4],dir:-1,bundles:[[
 sw:{x:6*T+16,y:1*T+22},exit:{x:16*T,y0:6*T,y1:10*T,dir:1,tx:16},van:{y:8*T,x0:22*T,stop:16*T,dir:-1},flip:false,
 posts:[{x:4,y:15,a:-1.57,k:'S'},{x:18,y:6,a:3.14,k:'E',anchor:true},{x:-1,y:8,a:0,k:'W'},{x:7,y:-1,a:1.57,k:'N',door:[7,0]},{x:10,y:15,a:-1.57,k:'S'},{x:18,y:9,a:3.14,k:'E',anchor:true},{x:3,y:-1,a:1.57,k:'N'},{x:14,y:15,a:-1.57,k:'S'},{x:-1,y:4,a:0,k:'W'},{x:12,y:-1,a:1.57,k:'N'},{x:7,y:15,a:-1.57,k:'S'},{x:19,y:4,a:3.14,k:'E',anchor:true},{x:5,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:12,y:15,a:-1.57,k:'S'},{x:2,y:15,a:-1.57,k:'S'}],
 slots:{W:[12,7,2,-3],E:[17,22,27,32]},laneY:19*T,title:titleBox(),bn:CFG.gas.bn,polAt:CFG.gas.pol,wb:CFG.gas.wb,goods,
-pumps:[[3,12],[4,12],[11,12],[12,12]].map(a=>({x:a[0],y:a[1],hp:CFG.gas.pump.hp}))}}
+pumps:PU.map(a=>({x:a[0],y:a[1],hp:CFG.gas.pump.hp}))}}
 /* ---- Szenario Museum bei Nacht: Gebaeude x0..27, y0..17. Westgalerie mit vier Gemaelden, Atrium mit Infotresen, Sicherheitsraum (Monitore, Hauptschalter, Hintertuer) im Norden, Ostgalerie mit Statue und Reliktvitrinen hinter einem Lasertor, Depot im Nordosten hinter einem zweiten Laser.
    Eingaenge: Haupteingang (Glas, Sueden), Hintertuer (Norden, direkt in den Sicherheitsraum) und Osttuer (Fluchttuer in der Ostgalerie, von innen leise zu entriegeln, so kommt man an den Lasern vorbei raus). Laser (LAY.lasers) loesen in Phase 1 Alarm aus, solange die Kameras laufen. ---- */
 const THEME_MUSEUM={n:'museum',f:{t:[206,204,198,186,184,180,120],k:[88,60,70],w:[150,104,70],m:[176,174,170],l:[60,98,56],s:[150,148,142],a:[54,56,60],y:[110,108,104]},wall:['#6e6a66','#8d8984','#7b7772','#3f3c39','#48453f'],glass:['#bfd6ea','#6b8fb0'],counter:['#3c3430','#b9a98a'],pillar:['#5a5650','#9a948a'],door:['#3a3430','#7a7a82']};
-const MUSEUM_ROWS=["#############L##############","#.........#mmm..e#...#.....#","#.........#.....e#...V.....#","#.........#......#...V.....#","#.........#......#...#.....#","#.........###d####...#######","#p.......p#p....p#.........W","W.........#......#.CC...CC.#","W....b.....................D","#..........................D","#.....................CC...#","#.........#.b..b.#....CC...#","#....b....#......#.........W","#.........#......#...bb....W","W.........#..CCC.#.CC...CC.#","W........p#......#.........#","#.........#p....p#.........#","##WW#WW#W####DD####WW#WW#WW#"];
+/* Museum, Raeume (aus dem Seed, eigener Strom, wie JW_HALLS beim Juwelier): art = vier Gemaelde [x,y,Wand] (x,y = linke obere Bodenkachel der zwei Kacheln langen Hangung, Wand N/S/W/E = Seite der Wand oder Trennwand), ben = sechs Baenke (zerlegbares Material), pl = Pflanzen, pil = Saeulen (blickdicht, kugelsperrend), part = Trennwaende [x,y,w,h], desk = Infotresen [x,y,Laenge], rel = vier Reliktvitrinen [x,y] (2x1), st = Sockel der Statue [x,y] (2x2), pool = Lichtkegel im Westsaal [x,y,r], route = Wachroute (Westgalerie und Atrium, geschlossene Schleife).
+   Festbleiben: Huelle, Atrium-Durchgaenge (x10 und x17, Zeilen 8..10), die Zeilen 8 und 9 der Ostgalerie bis zur Osttuer (Fluchtweg unter dem Lasertor), Eingang (13..14, 16), Sicherheitsraum und Depot samt Laser. Die Beute bleibt gleich (4 Gemaelde, Statue, 4 Reliktvitrinen, zwei Kassetten, gleiche Werte, 6 Baenke). Neuer Raum: Eintrag ergaenzen, Routen und Wachwechsel-Start (13,16) begehbar halten. */
+const MU_HALLS=[
+{n:'Klassik',art:[[1,3,'W'],[1,11,'W'],[4,1,'N'],[7,1,'N']],ben:[[5,8],[5,12],[12,11],[15,11],[21,13],[22,13]],pl:[[1,6],[9,6],[9,15],[11,6],[16,6],[11,16],[16,16]],pil:[],part:[],desk:[13,14,3],rel:[[19,7],[24,7],[19,14],[24,14]],st:[22,10],pool:[[5,9,120]],route:[[4,15],[4,7],[8,7],[9,9],[14,9],[14,15]]},
+{n:'Kabinette',art:[[4,1,'N'],[7,1,'N'],[2,6,'N'],[6,11,'S']],ben:[[5,8],[5,10],[12,8],[15,8],[19,11],[19,12]],pl:[[9,6],[1,16],[9,13],[11,6],[16,6],[11,16],[16,16]],pil:[],part:[[1,5,6,1],[4,12,6,1]],desk:[12,13,4],rel:[[19,15],[21,15],[23,15],[25,15]],st:[22,11],pool:[[5,3,110],[5,9,110],[5,14,110]],route:[[8,3],[3,3],[2,9],[3,14],[9,9],[14,12]]},
+{n:'Säulenhalle',art:[[1,3,'W'],[1,11,'W'],[4,1,'N'],[7,1,'N']],ben:[[5,5],[5,11],[12,7],[15,7],[18,12],[18,13]],pl:[[1,6],[9,6],[9,15],[1,16],[11,6],[16,6],[11,16],[16,16]],pil:[[3,3],[7,3],[3,8],[7,8],[3,13],[7,13],[12,12],[15,12],[21,10],[24,10],[21,13],[24,13]],part:[],desk:[13,14,3],rel:[[19,7],[24,7],[19,14],[24,14]],st:[22,11],pool:[[5,9,120]],route:[[5,15],[2,11],[2,5],[8,2],[9,10],[14,10]]},
+{n:'Ring',art:[[4,1,'N'],[7,1,'N'],[3,7,'E'],[7,7,'W']],ben:[[3,14],[7,14],[12,11],[15,11],[24,7],[25,7]],pl:[[1,16],[9,16],[1,4],[9,4],[11,6],[16,6],[11,16],[16,16]],pil:[],part:[[4,5,3,7]],desk:[13,14,3],rel:[[19,12],[19,13],[19,14],[19,15]],st:[23,12],pool:[[2,9,90],[8,9,90]],route:[[2,15],[2,3],[8,3],[9,9],[14,9],[14,13],[8,15]]}];
+const MUSEUM_ROWS=["#############L##############","#.........#mmm..e#...#.....#","#.........#.....e#...V.....#","#.........#......#...V.....#","#.........#......#...#.....#","#.........###d####...#######","#.........#......#.........W","W.........#......#.........#","W..........................D","#..........................D","#..........................#","#.........#......#.........#","#.........#......#.........W","#.........#......#.........W","W.........#......#.........#","W.........#......#.........#","#.........#......#.........#","##WW#WW#W####DD####WW#WW#WW#"];
 function muArt(c,x,y,w,h,r){c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x+2,y+3,w,h);c.fillStyle='#8a6a2e';c.fillRect(x,y,w,h);c.fillStyle='#d8b45a';c.fillRect(x+1,y+1,w-2,h-2);const ix=x+3,iy=y+3,iw=w-6,ih=h-6,q=c.createLinearGradient(ix,iy,ix,iy+ih),hue=Math.floor(r()*360);q.addColorStop(0,'hsl('+hue+',45%,62%)');q.addColorStop(1,'hsl('+(hue+40)+',40%,34%)');c.fillStyle=q;c.fillRect(ix,iy,iw,ih);
 const long=iw>ih;for(let i=0;i<3;i++){c.fillStyle='hsla('+(hue+90+i*30)+',35%,'+(24+i*8)+'%,.8)';c.beginPath();const bx=ix+r()*iw,by=iy+ih*(.5+i*.15);c.ellipse(bx,by,(long?iw:ih)*.3,(long?ih:iw)*.28,0,0,6.283);c.fill()}
 c.fillStyle='rgba(255,255,255,.18)';c.fillRect(ix,iy,iw,2)}
@@ -641,40 +657,41 @@ function muCase(c,x,y,w,h,r){c.fillStyle='rgba(0,0,0,.3)';c.fillRect(x+3,y+4,w,h
 for(let i=0;i<3;i++){const cx=x+10+i*(w-20)/2,cy=y+h/2;const t=r();if(t<.4){c.fillStyle='#d8b45a';c.beginPath();c.ellipse(cx,cy,5,7,0,0,6.283);c.fill();c.fillStyle='#9a7a2a';c.fillRect(cx-3,cy-9,6,3)}else if(t<.75){c.fillStyle='#c9a24a';c.beginPath();c.arc(cx,cy,6,0,6.283);c.fill();c.fillStyle='#e8cc7a';c.beginPath();c.arc(cx,cy,3.4,0,6.283);c.fill()}else{c.fillStyle='#6fa7b8';c.fillRect(cx-5,cy-6,10,12);c.fillStyle='#a8d4e0';c.fillRect(cx-3,cy-6,3,12)}}
 c.fillStyle='rgba(185,205,235,.16)';c.fillRect(x+4,y+4,w-8,h-8)}
 function museumLayout(sd){const sn=typeof sd==='number'?sd:7;frameWorld(44,34,-6,-6,17);setc(37,7,'o');setc(37,8,'o');
-asc(MUSEUM_ROWS,0,0);fill(30,0,33,1,'v');fill(32,13,35,14,'v');
+const hr=mulberry32((((sn)*7919)>>>0)^0x51d2e8b3),H=MU_HALLS[Math.floor(hr()*MU_HALLS.length)];
+asc(MUSEUM_ROWS,0,0);H.part.forEach(a=>fill(a[0],a[1],a[0]+a[2]-1,a[1]+a[3]-1,'#'));H.pil.forEach(a=>setc(a[0],a[1],'P'));H.pl.forEach(a=>setc(a[0],a[1],'p'));H.ben.forEach(a=>setc(a[0],a[1],'b'));
+fill(H.desk[0],H.desk[1],H.desk[0]+H.desk[2]-1,H.desk[1],'C');fill(H.st[0],H.st[1],H.st[0]+1,H.st[1]+1,'C');H.rel.forEach(a=>fill(a[0],a[1],a[0]+1,a[1],'C'));fill(30,0,33,1,'v');fill(32,13,35,14,'v');
 [[31,4],[33,6],[-2,-3],[6,-2],[22,-3],[29,12],[35,2]].forEach(a=>setc(a[0],a[1],'k'));[[33,3],[35,11],[-2,6],[-2,12],[16,-3],[36,-2]].forEach(a=>setc(a[0],a[1],'q'));[[2,26],[9,26],[16,26],[24,26],[31,26],[4,18],[23,18]].forEach(a=>setc(a[0],a[1],'p'));
 const winS=[2,3,5,6,8,19,20,22,23,25,26];
 const mr=mulberry32((((sn)*2654435761)>>>0)^0x5bd1e995),ms=genMission(mr,'m',sn),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593);tr();
 ms.civ=0;const nG=Math.min(3,1+(ms.guards>=2?1:0)+(ms.lg.includes('sicher')?1:0));ms.guards=nG;
-const R0=[[4,15],[4,7],[8,7],[9,9],[14,9],[14,15]],guards=[];
-for(let i=0;i<nG;i++){const rt=rotR(R0,(ms.rot[0]+i*2)%6,i%2?!ms.rot[1]:ms.rot[1]);guards.push({p:rt[0],route:rt})}
+const R0=H.route,NR=R0.length,guards=[];
+for(let i=0;i<nG;i++){const rt=rotR(R0,(ms.rot[0]+i*2)%NR,i%2?!ms.rot[1]:ms.rot[1]);guards.push({p:rt[0],route:rt})}
 const camc=[{x:1.5*T,y:1.5*T,a0:.78,amp:.6,sp:.6,rng:290,fov:.5},{x:9.5*T,y:1.5*T,a0:2.3,amp:.6,sp:.55,rng:290,fov:.5},{x:1.5*T,y:16.4*T,a0:-.78,amp:.55,sp:.5,rng:290,fov:.5},{x:9.5*T,y:16.4*T,a0:-2.3,amp:.55,sp:.5,rng:290,fov:.5},{x:11.5*T,y:6.5*T,a0:.75,amp:.6,sp:.5,rng:260,fov:.5},{x:16.5*T,y:16.4*T,a0:-2.35,amp:.55,sp:.5,rng:260,fov:.5},{x:18.5*T,y:6.5*T,a0:.7,amp:.6,sp:.55,rng:260,fov:.5},{x:26.4*T,y:6.5*T,a0:2.4,amp:.55,sp:.5,rng:280,fov:.5},{x:26.4*T,y:16.4*T,a0:-2.4,amp:.55,sp:.5,rng:280,fov:.5}];
 const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'&&e!=='feiertag'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe'},extra=[];ms.ev=ev;
-if(ev.includes('wache'))extra.push({p:[13,16],route:rotR(R0,3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Nachtwächter beginnt seine Runde.'});
+if(ev.includes('wache'))extra.push({p:[13,16],route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Nachtwächter beginnt seine Runde.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,7,['Nacht']);
 const deskT=[[16,1],[16,2]],goods=[];
-[[1,3],[1,11]].forEach(a=>goods.push({k:'art',x:T+14,y:(a[1]+1)*T,rc:[T,a[1]*T,12,2*T],r:50}));
-[[4,1],[7,1]].forEach(a=>goods.push({k:'art',x:(a[0]+1)*T,y:T+14,rc:[a[0]*T,T,2*T,12],r:50}));
-goods.push({k:'statue',x:23*T,y:11*T,rc:[22*T,10*T,2*T,2*T],r:58});
-[[19,7],[24,7],[19,14],[24,14]].forEach(a=>goods.push({k:'relic',x:(a[0]+1)*T,y:a[1]*T+16,rc:[a[0]*T,a[1]*T,2*T,T],r:50}));
+H.art.filter(a=>a[2]==='W').concat(H.art.filter(a=>a[2]!=='W')).forEach(a=>{const x=a[0],y=a[1],d=a[2];goods.push(d==='N'?{k:'art',x:(x+1)*T,y:y*T+14,rc:[x*T,y*T,2*T,12],r:50}:d==='S'?{k:'art',x:(x+1)*T,y:(y+1)*T-14,rc:[x*T,(y+1)*T-12,2*T,12],r:50}:d==='W'?{k:'art',x:x*T+14,y:(y+1)*T,rc:[x*T,y*T,12,2*T],r:50}:{k:'art',x:(x+1)*T-14,y:(y+1)*T,rc:[(x+1)*T-12,y*T,12,2*T],r:50})});
+goods.push({k:'statue',x:(H.st[0]+1)*T,y:(H.st[1]+1)*T,rc:[H.st[0]*T,H.st[1]*T,2*T,2*T],r:58});
+H.rel.forEach(a=>goods.push({k:'relic',x:(a[0]+1)*T,y:a[1]*T+16,rc:[a[0]*T,a[1]*T,2*T,T],r:50}));
 const artR=goods.filter(q=>q.k==='art');
-return{seed:sd,museum:true,theme:mkThemeOf(THEME_MUSEUM,4,0),bld:{x0:0,y0:0,x1:27,y1:17},winN:[],winS,
+return{seed:sd,museum:true,hall:H.n,theme:mkThemeOf(THEME_MUSEUM,4,0),bld:{x0:0,y0:0,x1:27,y1:17},winN:[],winS,
 mat:(x,y)=>{if(x>=0&&x<=27&&y>=0&&y<=17){if(x>=10&&x<=17)return y<=4?'k':'m';if(x>=21&&y<=4)return'k';return'w'}
 if(y>=26)return'l';if(y>=24)return's';if(y>=20)return'a';if(y>=18)return's';if(x>27)return'a';return'y'},
 paintFloor(s){const r=mulberry32(sn*7+1);
 for(let i=0;i<40;i++){const x=T+r()*26*T,y=T+r()*16*T;s.strokeStyle='rgba(255,255,255,'+(.025+r()*.03)+')';s.beginPath();s.moveTo(x,y);s.quadraticCurveTo(x+r()*60-30,y+r()*40-20,x+r()*90-45,y+r()*60-30);s.stroke()}
 s.strokeStyle='rgba(212,180,110,.45)';s.lineWidth=2;s.strokeRect(11.5*T,7.5*T,5*T,8*T);s.beginPath();s.arc(14*T,11.5*T,1.6*T,0,6.283);s.stroke();
-s.globalCompositeOperation='lighter';const pools=artR.map(q=>[q.x,q.y,q.rc[2]>q.rc[3]?110:130]).concat([[23*T,11*T,150],[14*T,11*T,130],[5*T,9*T,120],[13.5*T,2.5*T,90],[24*T,2.5*T,90],[20*T,7*T,90],[20*T,14*T,90],[25*T,14*T,90],[25*T,7*T,90]]);
+s.globalCompositeOperation='lighter';const pools=artR.map(q=>[q.x,q.y,q.rc[2]>q.rc[3]?110:130]).concat([[(H.st[0]+1)*T,(H.st[1]+1)*T,150],[14*T,11*T,130]],H.pool.map(a=>[a[0]*T,a[1]*T,a[2]]),[[13.5*T,2.5*T,90],[24*T,2.5*T,90]],H.rel.map(a=>[(a[0]+1)*T,a[1]*T,90]));
 for(const L of pools){const g2=s.createRadialGradient(L[0],L[1],0,L[0],L[1],L[2]);g2.addColorStop(0,'rgba(255,224,170,.20)');g2.addColorStop(1,'rgba(255,224,170,0)');s.fillStyle=g2;s.beginPath();s.arc(L[0],L[1],L[2],0,6.283);s.fill()}s.globalCompositeOperation='source-over'},
 paintTop(s){const r=mulberry32(sn*13+5);
 s.fillStyle='rgba(0,0,0,.28)';s.fillRect(2*T+4,20*T+6,4*T,2*T-8);s.fillRect(17*T+4,20*T+6,4*T,2*T-8);s.fillRect(30*T+4,0*T+6,4*T,2*T-8);s.fillRect(32*T+4,13*T+6,4*T,2*T-8);
 s.drawImage(cars,0,3*128,256,128,2*T,20*T,128,64);s.drawImage(cars,0,2*128,256,128,17*T,20*T,128,64);s.drawImage(cars,0,2*128,256,128,30*T,0,128,64);s.drawImage(cars,0,3*128,256,128,32*T,13*T,128,64);
 for(const q of artR)muArt(s,q.rc[0],q.rc[1],q.rc[2],q.rc[3],r);
-muStatue(s,22*T,10*T,2*T,2*T);for(const q of goods)if(q.k==='relic')muCase(s,q.rc[0],q.rc[1],q.rc[2],q.rc[3],r);
+muStatue(s,H.st[0]*T,H.st[1]*T,2*T,2*T);for(const q of goods)if(q.k==='relic')muCase(s,q.rc[0],q.rc[1],q.rc[2],q.rc[3],r);
 s.fillStyle='#3b4048';s.fillRect(14*T+8,1*T+2,16,10);s.fillStyle='#e0b020';s.fillRect(14*T+14,1*T+5,4,4);
 s.fillStyle='rgba(180,200,230,.35)';for(let x=11;x<=13;x++)s.fillRect(x*T+4,T+4,T-8,T-10);
-s.fillStyle='#d4b46a';s.fillRect(13*T+6,14*T+6,3*T-12,5);
+s.fillStyle='#d4b46a';s.fillRect(H.desk[0]*T+6,H.desk[1]*T+6,H.desk[2]*T-12,5);
 s.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<4;i++)s.fillRect(0*T+10+i*30,22*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(12*T+i*30,22*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(26*T+i*30,22*T+14,12,2)},
 spawn:{x:13.9*T,y:19.4*T},
 zones:[[11,1,16,4],[22,1,26,4],[18,1,20,4],[0,-99,99,-1],[28,-99,99,17]],lobby:[11,6,16,16],
@@ -688,51 +705,60 @@ slots:{W:[17,12,7,2],E:[22,27,32]},laneY:23*T,title:titleBox(),bn:CFG.museum.bn,
 /* ---- Szenario Casino: Gebaeude x0..39, y0..23. Spielhalle mit zwoelf Tischen (Chips), Automatenreihen, Bar, VIP-Salon mit Schliessfaechern (Nordwesten), Sicherheitsraum (Norden), Cage mit Tresor (Nordosten), Geldautomaten und Osttuer (Fluchttuer).
    Beute: Chips sind leicht (viel Wert je Platz), zaehlen beim Abgang aber nur zur Haelfte, wenn man sie nicht am Cage tauscht (Tausch nur im Ueberfall, dauert je Stapel CFG.casino.chip.exT s). Viele Gaeste, vier bis sechs Sicherheitsleute, sechs Angestellte (Croupiers, Cage). ---- */
 const THEME_CASINO={n:'casino',f:{t:[214,204,190,190,180,166,130],k:[96,24,38],w:[120,78,50],m:[196,192,186],l:[58,96,54],s:[150,146,140],a:[52,54,58],y:[108,106,102]},wall:['#4a3a3e','#6a5258','#5a464b','#2a2024','#33282c'],glass:['#c4d8ea','#6f8fb4'],counter:['#2c1c20','#c9a45a'],pillar:['#4a3a3e','#8a6a40'],door:['#2c1c20','#8a7a6a']};
-const CASINO_ROWS=["###################L##########L#########","#p.C.C.C..p#...#mmm...ee##.ee......#...#","#..........#...#........##.........V...#","#..........#...#........##.........V...#","#..........d...#........##.........#...#","#.bb....bb.d...#........##.........#...#","#..........#...####dd#####CCCCCCCCg#####","#..........#...........................#","#p........p#...........................#","######dd####.CCCC..CCCC..CCCC..CCCC...p#","#............CCCC..CCCC..CCCC..CCCC....#","#p.....................................#","#.CCCC................................A#","#............CCCC..CCCC..CCCC..CCCC...A#","#............CCCC..CCCC..CCCC..CCCC....#","#.CCCC.................................#","#......................................D","#............CCCC..CCCC..CCCC..CCCC....D","#.CCCCCCC....CCCC..CCCC..CCCC..CCCC....#","#.....................................b#","#..b.b.b..............................b#","#......................................#","#p.......p..p.........................p#","###WW##WW###WW#####DDD#####WW##WW###WW##"];
+/* Casino, Spielhallen (aus dem Seed, eigener Strom, wie JW_HALLS beim Juwelier): tb = Tischreihen [y,[x...]] (zwoelf Tische 4x2, Chipstapel an der Suedseite, unter jedem Tisch muss eine Kachel frei sein), sl = acht Automaten [x,y], bar = Theke [x,y] (7 lang) mit Hockern st, ben = Baenke, pl = Pflanzen, pil = Saeulen, vip = drei Schliessfaecher im VIP-Salon, vb und vp = Baenke und Pflanzen im VIP-Salon, dl = vier Croupiers, rt = drei Wachrouten (sechs Punkte, geschlossene Schleifen), lp = Lichtkegel im Boden [x,y,r].
+   Festbleiben: Huelle, Eingaenge, Cage mit Tresor, Sicherheitsraum, Geldautomaten (38,12 und 38,13), die beiden Zeilen 7 und 8 (Cage-Tausch und Sicherheitsraumtuer), der Weg zur Osttuer (x36..38, Zeilen 15..18), die Tuerbereiche des VIP-Salons und der Eingang (x19..21, y22). Die Beute bleibt gleich (12 Chipstapel, 8 Automaten, 3 Schliessfaecher, fuenf Buendel, gleiche Werte, 9 Baenke). Bauregeln (mit dem Bot gemessen, siehe docs/szenarien.md): Tische enden bei x34 und jede Reihe hat eine Luecke (sonst eine Mauer und ein Ostgang von einer Kachel), Automaten nur eine Kachel tief, Routenpunkte nicht in Zeile 21 am Eingang (jeder kann Startpunkt der Wache beim Alarm sein). Neue Halle: Eintrag ergaenzen, alle Routenpunkte und den Wachwechsel-Start (20,22) begehbar halten. */
+const CS_A=[[2,21],[2,10],[12,8],[36,8],[37,21],[18,21]],CS_C=[[13,7],[26,7],[36,8],[36,16],[26,16],[13,16]];
+const CS_FLOORS=[
+{n:'Klassik',tb:[[9,[13,19,25,31]],[13,[13,19,25,31]],[17,[13,19,25,31]]],sl:[[2,12],[2,15],[3,12],[3,15],[4,12],[4,15],[5,12],[5,15]],bar:[2,18],st:[[3,20],[5,20],[7,20]],ben:[[38,19],[38,20]],pl:[[38,9],[1,11],[1,22],[9,22],[12,22],[38,22]],pil:[],vip:[[3,1],[5,1],[7,1]],vb:[[2,5],[3,5],[8,5],[9,5]],vp:[[1,1],[10,1],[1,8],[10,8]],dl:[[14,8],[20,8],[26,8],[32,8]],rt:[CS_A,[[17,12],[17,20],[23,20],[23,12],[29,12],[29,20]],CS_C],lp:[[4,13.5,110],[5,19,90]]},
+{n:'Promenade',tb:[[9,[13,17,27,31]],[13,[13,17,27,31]],[17,[13,17,27,31]]],sl:[[1,12],[3,12],[1,13],[3,13],[1,14],[3,14],[1,15],[3,15]],bar:[30,20],st:[[31,22],[33,22],[35,22]],ben:[[38,19],[38,20]],pl:[[38,9],[1,11],[1,22],[9,22],[12,22],[38,22]],pil:[[22,11],[25,11],[22,15],[25,15]],vip:[[1,2],[1,4],[1,6]],vb:[[4,3],[5,3],[7,6],[8,6]],vp:[[1,1],[10,1],[1,8],[10,8]],dl:[[14,8],[18,8],[28,8],[32,8]],rt:[CS_A,[[23,8],[23,13],[23,19],[36,19],[36,11],[36,8]],CS_C],lp:[[2,13.5,110],[33,21,90]]},
+{n:'Reihen',tb:[[10,[9,13,17,23,27,31]],[15,[9,13,17,23,27,31]]],sl:[[3,12],[4,12],[3,13],[4,13],[3,16],[4,16],[3,17],[4,17]],bar:[26,19],st:[[27,21],[29,21],[31,21]],ben:[[38,19],[38,20]],pl:[[38,9],[1,11],[1,22],[9,22],[12,22],[38,22]],pil:[[15,19],[23,19]],vip:[[8,1],[9,1],[10,1]],vb:[[2,5],[3,5],[8,5],[9,5]],vp:[[1,1],[5,1],[1,8],[10,8]],dl:[[13,9],[19,9],[25,9],[32,9]],rt:[CS_A,[[12,13],[36,13],[36,18],[28,18],[12,18],[12,9]],[[13,7],[26,7],[36,8],[36,17],[26,13],[13,13]]],lp:[[4,14.5,110],[28,19,90]]},
+{n:'Staffel',tb:[[9,[13,19,25,31]],[13,[11,17,23,29]],[17,[13,19,25,31]]],sl:[[1,11],[1,12],[1,13],[1,14],[1,15],[1,16],[1,17],[1,18]],bar:[5,20],st:[[6,22],[8,22],[10,22]],ben:[[38,19],[38,20]],pl:[[38,9],[1,22],[14,22],[26,22],[38,22],[12,11]],pil:[],vip:[[2,8],[3,8],[4,8]],vb:[[3,3],[4,3],[7,3],[8,3]],vp:[[1,1],[10,1],[1,6],[10,6]],dl:[[14,8],[20,8],[26,8],[32,8]],rt:[CS_A,[[18,8],[19,12],[18,16],[24,20],[30,16],[31,12]],CS_C],lp:[[1.5,14,110],[8,20,90]]}];
+const CASINO_ROWS=["###################L##########L#########","#..........#...#mmm...ee##.ee......#...#","#..........#...#........##.........V...#","#..........#...#........##.........V...#","#..........d...#........##.........#...#","#..........d...#........##.........#...#","#..........#...####dd#####CCCCCCCCg#####","#..........#...........................#","#..........#...........................#","######dd####...........................#","#......................................#","#......................................#","#.....................................A#","#.....................................A#","#......................................#","#......................................#","#......................................D","#......................................D","#......................................#","#......................................#","#......................................#","#......................................#","#......................................#","###WW##WW###WW#####DDD#####WW##WW###WW##"];
 function csTable(c,x,y,w,h,r){c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x+3,y+4,w,h);c.fillStyle='#5a3a24';c.fillRect(x,y,w,h);c.fillStyle='#7a5434';c.fillRect(x+1,y+1,w-2,3);c.fillStyle='#1c5a3a';c.fillRect(x+4,y+5,w-8,h-9);c.strokeStyle='rgba(235,225,160,.55)';c.lineWidth=1;c.strokeRect(x+6.5,y+7.5,w-13,h-15);
 if(r()<.5){c.beginPath();c.arc(x+w/2,y+h*.45,h*.3,0,6.283);c.stroke()}else{c.beginPath();c.arc(x+w/2,y+4,w*.28,.2,2.94);c.stroke()}}
 function csChips(c,x,y,w,h,r){const COL=['#d9423a','#3a7fd9','#e8e8e8','#2a2a2e','#59c26a','#e8b84a'],n=3;for(let i=0;i<n;i++){const cx=x+8+i*(w-16)/(n-1),cy=y+h/2;const k=2+Math.floor(r()*3);for(let j=0;j<k;j++){c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(cx+1,cy-j*2+2,6,3.4,0,0,6.283);c.fill();c.fillStyle=COL[Math.floor(r()*COL.length)];c.beginPath();c.ellipse(cx,cy-j*2,6,3.4,0,0,6.283);c.fill();c.strokeStyle='rgba(255,255,255,.55)';c.lineWidth=1;c.stroke()}}}
 function csSlot(c,x,y,r){c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x+3,y+4,T-2,T-2);c.fillStyle='#2a1c24';c.fillRect(x+2,y+2,T-4,T-4);c.fillStyle='#a8283c';c.fillRect(x+4,y+4,T-8,7);c.fillStyle='#10161f';c.fillRect(x+5,y+13,T-10,9);const COL=['#ffd34a','#59e08a','#ff5a6a'];for(let i=0;i<3;i++){c.fillStyle=COL[Math.floor(r()*3)];c.fillRect(x+6+i*7,y+15,5,5)}c.fillStyle='#d4b46a';c.fillRect(x+6,y+24,T-12,2);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(x+4,y+4,T-8,1)}
 function csCage(c,x,y,w){c.fillStyle='rgba(0,0,0,.3)';c.fillRect(x,y+T-2,w,5);c.fillStyle='#2c1c20';c.fillRect(x,y,w,T);c.fillStyle='#c9a45a';c.fillRect(x+1,y+1,w-2,4);c.strokeStyle='rgba(201,164,90,.8)';c.lineWidth=2;for(let i=0;i<w/T*3;i++){c.beginPath();c.moveTo(x+4+i*T/3,y+7);c.lineTo(x+4+i*T/3,y+T-6);c.stroke()}c.fillStyle='#e8cc7a';c.fillRect(x+w/2-12,y+T-9,24,5)}
 function casinoLayout(sd){const sn=typeof sd==='number'?sd:7;frameWorld(56,40,-6,-6,23);setc(49,11,'o');setc(49,12,'o');
-asc(CASINO_ROWS,0,0);fill(44,0,47,1,'v');fill(44,26-6,47,27-6,'v');
+const hr=mulberry32((((sn)*7919)>>>0)^0x6e4a9d15),H=CS_FLOORS[Math.floor(hr()*CS_FLOORS.length)],tT=[];H.tb.forEach(r=>r[1].forEach(x=>tT.push([x,r[0]])));
+asc(CASINO_ROWS,0,0);tT.forEach(a=>fill(a[0],a[1],a[0]+3,a[1]+1,'C'));H.sl.forEach(a=>setc(a[0],a[1],'C'));fill(H.bar[0],H.bar[1],H.bar[0]+6,H.bar[1],'C');H.st.concat(H.ben,H.vb).forEach(a=>setc(a[0],a[1],'b'));H.pl.concat(H.vp).forEach(a=>setc(a[0],a[1],'p'));H.pil.forEach(a=>setc(a[0],a[1],'P'));H.vip.forEach(a=>setc(a[0],a[1],'C'));fill(44,0,47,1,'v');fill(44,26-6,47,27-6,'v');
 [[43,4],[45,7],[-2,-3],[6,-2],[24,-3],[42,22],[47,3]].forEach(a=>setc(a[0],a[1],'k'));[[44,9],[46,11],[-2,6],[-2,14],[16,-3],[48,-2]].forEach(a=>setc(a[0],a[1],'q'));[[2,32],[9,32],[16,32],[24,32],[31,32],[40,32],[6,24],[33,24]].forEach(a=>setc(a[0],a[1],'p'));
 const winS=[3,4,7,8,12,13,27,28,31,32,36,37];
 const mr=mulberry32((((sn)*2654435761)>>>0)^0x5bd1e995),ms=genMission(mr,'c',sn),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593);tr();const tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
 const nG=Math.min(6,3+ms.guards+(ms.lg.includes('sicher')?1:0));ms.guards=nG;ms.cams=Math.min(10,ms.cams+3);const civBase=Math.round(9+ms.civ*1.6);ms.civ=civBase;
-const RT=[[[2,21],[2,10],[12,8],[36,8],[37,21],[18,21]],[[17,12],[17,20],[23,20],[23,12],[29,12],[29,20]],[[13,7],[26,7],[36,8],[36,16],[26,16],[13,16]]],guards=[];
+const RT=H.rt,guards=[];
 for(let i=0;i<nG;i++){const base=RT[i%3],rt=rotR(base,(ms.rot[0]+i)%base.length,(i>>1)%2?!ms.rot[1]:ms.rot[1]);guards.push({p:rt[0],route:rt})}
 const camc=[{x:1.5*T,y:10.5*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:1.5*T,y:22.4*T,a0:-.75,amp:.55,sp:.5,rng:300,fov:.5},{x:12.5*T,y:7.4*T,a0:.6,amp:.6,sp:.55,rng:300,fov:.5},{x:25.5*T,y:7.4*T,a0:2.5,amp:.6,sp:.5,rng:300,fov:.5},{x:38.4*T,y:7.4*T,a0:2.4,amp:.55,sp:.5,rng:300,fov:.5},{x:38.4*T,y:22.4*T,a0:-2.4,amp:.55,sp:.5,rng:300,fov:.5},{x:19.5*T,y:22.4*T,a0:-1.57,amp:.7,sp:.5,rng:330,fov:.55},{x:17.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:30.5*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:240,fov:.55},{x:6*T,y:1.4*T,a0:1.0,amp:.6,sp:.55,rng:260,fov:.55}];
 const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
 if(ev.includes('wache'))extra.push({p:[20,22],route:rotR(RT[1],3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zusätzlicher Sicherheitsmann betritt die Halle.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,8,[nG+' Wachen']);
-const deskT=[[22,1],[23,1],[27,1],[28,1]],goods=[],tT=[];
-for(const ty of[9,13,17])for(const tx of[13,19,25,31]){tT.push([tx,ty]);goods.push({k:'chips',x:(tx+2)*T,y:(ty+1)*T+16,rc:[(tx+1)*T,(ty+1)*T+3,2*T,T-6],r:46})}
-for(const x of[2,3,4,5])for(const y of[12,15])goods.push({k:'slot',x:x*T+16,y:y*T+16,rc:[x*T,y*T,T,T],r:46});
-for(const x of[3,5,7])goods.push({k:'vip',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
+const deskT=[[22,1],[23,1],[27,1],[28,1]],goods=[];
+for(const a of tT)goods.push({k:'chips',x:(a[0]+2)*T,y:(a[1]+1)*T+16,rc:[(a[0]+1)*T,(a[1]+1)*T+3,2*T,T-6],r:46});
+for(const a of H.sl)goods.push({k:'slot',x:a[0]*T+16,y:a[1]*T+16,rc:[a[0]*T,a[1]*T,T,T],r:46});
+for(const a of H.vip)goods.push({k:'vip',x:a[0]*T+16,y:a[1]*T+16,rc:[a[0]*T,a[1]*T,T,T],r:46});
 const civN=ev.includes('feiertag')?Math.min(30,Math.round(ms.civ*1.5)):ms.civ;
-return{seed:sd,casino:true,theme:mkThemeOf(THEME_CASINO,di,0),bld:{x0:0,y0:0,x1:39,y1:23},winN:[],winS,
+return{seed:sd,casino:true,hall:H.n,theme:mkThemeOf(THEME_CASINO,di,0),bld:{x0:0,y0:0,x1:39,y1:23},winN:[],winS,
 mat:(x,y)=>{if(x>=0&&x<=39&&y>=0&&y<=23){if(x>=16&&x<=24&&y<=5)return'm';if(x<=10&&y<=8)return'w';if(x>=12&&x<=14&&y<=8)return't';if(y>=19&&x>=15&&x<=25)return'm';return'k'}
 if(y>=32)return'l';if(y>=30)return's';if(y>=26)return'a';if(y>=24)return's';if(x>39)return'a';return'y'},
 paintFloor(s){const r=mulberry32(sn*7+1);
 s.strokeStyle='rgba(212,169,74,.38)';s.lineWidth=1.5;for(let i=0;i<22;i++){for(let j=0;j<11;j++){const cx=(2+i*1.7)*T,cy=(10.5+j*1.1)*T;if(cx>38*T)continue;s.beginPath();s.moveTo(cx,cy-9);s.lineTo(cx+9,cy);s.lineTo(cx,cy+9);s.lineTo(cx-9,cy);s.closePath();s.stroke()}}
 s.strokeStyle='rgba(212,169,74,.6)';s.lineWidth=3;s.strokeRect(1.4*T,7.4*T,37.2*T,15.2*T);
 s.globalCompositeOperation='lighter';for(const t of tT){const g2=s.createRadialGradient((t[0]+2)*T,(t[1]+1)*T,0,(t[0]+2)*T,(t[1]+1)*T,120);g2.addColorStop(0,'rgba(255,214,150,.20)');g2.addColorStop(1,'rgba(255,214,150,0)');s.fillStyle=g2;s.beginPath();s.arc((t[0]+2)*T,(t[1]+1)*T,120,0,6.283);s.fill()}
-for(const L of[[20*T,2.5*T,100],[30*T,3*T,120],[5*T,4*T,140],[4*T,13.5*T,110],[5*T,19*T,90]]){const g2=s.createRadialGradient(L[0],L[1],0,L[0],L[1],L[2]);g2.addColorStop(0,'rgba(255,214,150,.16)');g2.addColorStop(1,'rgba(255,214,150,0)');s.fillStyle=g2;s.beginPath();s.arc(L[0],L[1],L[2],0,6.283);s.fill()}s.globalCompositeOperation='source-over'},
+for(const L of[[20*T,2.5*T,100],[30*T,3*T,120],[5*T,4*T,140]].concat(H.lp.map(a=>[a[0]*T,a[1]*T,a[2]]))){const g2=s.createRadialGradient(L[0],L[1],0,L[0],L[1],L[2]);g2.addColorStop(0,'rgba(255,214,150,.16)');g2.addColorStop(1,'rgba(255,214,150,0)');s.fillStyle=g2;s.beginPath();s.arc(L[0],L[1],L[2],0,6.283);s.fill()}s.globalCompositeOperation='source-over'},
 paintTop(s){const r=mulberry32(sn*13+5);
 s.fillStyle='rgba(0,0,0,.28)';s.fillRect(2*T+4,26*T+6,4*T,2*T-8);s.fillRect(23*T+4,26*T+6,4*T,2*T-8);s.fillRect(44*T+4,0*T+6,4*T,2*T-8);s.fillRect(44*T+4,20*T+6,4*T,2*T-8);
 s.drawImage(cars,0,3*128,256,128,2*T,26*T,128,64);s.drawImage(cars,0,2*128,256,128,23*T,26*T,128,64);s.drawImage(cars,0,2*128,256,128,44*T,0,128,64);s.drawImage(cars,0,3*128,256,128,44*T,20*T,128,64);
 for(const t of tT)csTable(s,t[0]*T,t[1]*T,4*T,2*T,r);
 for(const q of goods){if(q.k==='chips')csChips(s,q.rc[0],q.rc[1],q.rc[2],q.rc[3],r);else if(q.k==='slot')csSlot(s,q.rc[0],q.rc[1],r);else if(q.k==='vip'){s.fillStyle='rgba(0,0,0,.3)';s.fillRect(q.rc[0]+3,q.rc[1]+4,T,T);s.fillStyle='#3a2c30';s.fillRect(q.rc[0],q.rc[1],T,T);s.fillStyle='#c9a45a';s.fillRect(q.rc[0]+2,q.rc[1]+2,T-4,3);s.fillStyle='#8a7a6a';s.fillRect(q.rc[0]+6,q.rc[1]+10,T-12,12);s.fillStyle='#e8cc7a';s.fillRect(q.rc[0]+T/2-2,q.rc[1]+14,4,4)}}
 csCage(s,26*T,6*T,8*T);
-s.fillStyle='#3a2a1e';s.fillRect(2*T,18*T,7*T,T);s.fillStyle='#c9a45a';s.fillRect(2*T,18*T,7*T,3);s.fillStyle='rgba(255,236,190,.25)';s.fillRect(2*T+2,18*T+5,7*T-4,3);
+s.fillStyle='#3a2a1e';s.fillRect(H.bar[0]*T,H.bar[1]*T,7*T,T);s.fillStyle='#c9a45a';s.fillRect(H.bar[0]*T,H.bar[1]*T,7*T,3);s.fillStyle='rgba(255,236,190,.25)';s.fillRect(H.bar[0]*T+2,H.bar[1]*T+5,7*T-4,3);
 s.fillStyle='#3b4048';s.fillRect(20*T+8,1*T+2,16,10);s.fillStyle='#e0b020';s.fillRect(20*T+14,1*T+5,4,4);
 s.fillStyle='rgba(180,200,230,.35)';for(let x=16;x<=18;x++)s.fillRect(x*T+4,T+4,T-8,T-10);
 s.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<4;i++)s.fillRect(0*T+10+i*30,28*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(18*T+i*30,28*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(34*T+i*30,28*T+14,12,2)},
 spawn:{x:20.4*T,y:25.2*T},
 zones:[[16,1,23,5],[26,1,34,5],[36,1,38,5],[0,-99,99,-1],[41,-99,99,23]],lobby:[1,10,38,22],
-cams:camsSel,tellers:[[29,5],[32,5],[14,8],[20,8],[26,8],[32,8]],mgr:{p:[20,3],route:[[20,3],[20,5],[22,3],[18,3]]},guards,civ:civN,
+cams:camsSel,tellers:[[29,5],[32,5]].concat(H.dl),mgr:{p:[20,3],route:[[20,3],[20,5],[22,3],[18,3]]},guards,civ:civN,
 mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:false,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],at:ms.at,extra,bags:[],blackoutAt:ev.includes('strom')?ms.at.strom:null},
 note:deskT[ms.noteIdx%4],mon:[16,1],vault:{door:[35,2],pad:[34,4],dir:1,bundles:[[36,1],[38,1],[36,4],[38,4],[37,3]]},tills:[],atms:[[38,12],[38,13]],backDoors:[[19,0],[30,0]],
 sw:{x:20*T+16,y:1*T+22},exit:{x:40*T,y0:15*T,y1:19*T,dir:1,tx:40},van:{y:17*T,x0:46*T,stop:40*T,dir:-1},flip:false,cage:{x:30*T,y:7*T+16,r:60},

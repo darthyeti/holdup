@@ -1,6 +1,6 @@
 // Balance-Bot fuer Holdup. Nur mit index.html#debug nutzbar (setzt window.__dbg).
 // Laden im Browser: fetch('tools/bot.js').then(r=>r.text()).then(eval)
-// Dann: bot.batch(20,{call:null}) oder bot.run({call:10,extras:true})
+// Dann: bot.batch(20,{call:null}) oder bot.run({call:10,extras:true}), je Grundriss bot.batchHalls(n,o,from,halls)
 // Optionen: goodsN (nur so viele Stuecke), goods (true = Beute-Stuecke der neuen Karten einsammeln, dazu Cage-Tausch im Casino, 'cheap' = Automaten auslassen), lage (Tags erzwingen), sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
 // nach der letzten Beute bis zum Anruf), extras (Geldautomaten und Kassen mitnehmen), wait (Wartekachel),
 // seed (Kartenseed, sonst die aktuelle Karte), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), bar ('all' = alle Eingaenge samt Fluchttuer verbarrikadieren, 'noexit' = ohne Fluchttuer, die Fluchttuer wird zum Wagen wieder abgebaut), barLv (Stufen je Tuer, 1 oder 2), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei), shieldSmart (Standard an: Schild-Beamte, deren Schild zum Bot zeigt, werden nur beschossen, wenn sonst nichts in Sicht ist; false = stur auf den Naechsten, Obergrenze fuer die Wirkung der Schilde)
@@ -71,5 +71,11 @@ function batch(n,o){const out=[];for(let i=0;i<n;i++)out.push(run(o));const w=ou
 function batchSeeds(n,o,from){const out=[],per={};for(let i=0;i<n;i++){const sd=(from||1)+i,r=run(Object.assign({},o,{seed:sd}));out.push(r);per[sd]=r.res}const w=out.filter(r=>r.res==='WIN');
  const avg=(a,f)=>a.length?Math.round(a.reduce((x,r)=>x+f(r),0)/a.length):null;
  return{n,winRate:w.length/n,avgT:avg(w,r=>r.t),avgLoot:avg(w,r=>r.loot),avgMinHp:avg(out,r=>r.minHp),avgWaves:avg(out,r=>r.waves),lost:Object.keys(per).filter(k=>per[k]!=='WIN').join(',')}}
-window.bot={run,batch,batchSeeds};
+/* Bot je Grundriss (LAY.hall, Tankstelle, Museum, Casino, Juwelier): die ersten n Seeds ab from (Standard 5000) je Grundriss, o wie bei run. Liefert je Grundriss Siegquote, Rest-HP, Beute und Zeit der Siege, Zeit bis alles geplündert, frühe Verluste (unter 30 s) und die verlorenen Seeds mit Zeit. Gebrauch: bot.batchHalls(100,{sigma:.05,react:.35,kit:'old',call:0},5000,['Klassik','Insel']) (halls weglassen = alle, die vorkommen). */
+function batchHalls(n,o,from,halls){const D2=__dbg,seeds={};from=from||5000;const want=h=>!halls||halls.includes(h);
+ for(let s=from;s<from+4000;s++){const h=D2.layoutFor(s).hall||'-';if(!want(h))continue;seeds[h]=seeds[h]||[];if(seeds[h].length<n)seeds[h].push(s);if(!halls&&s>from+400&&Object.values(seeds).every(a=>a.length>=n))break;if(halls&&halls.every(x=>(seeds[x]||[]).length>=n))break}
+ const out={};for(const h of Object.keys(seeds)){const rs=seeds[h].map(sd=>run(Object.assign({},o,{seed:sd}))),w=rs.filter(r=>r.res==='WIN'),avg=(a,f)=>a.length?Math.round(a.reduce((x,r)=>x+f(r),0)/a.length):0;
+  out[h]={n:rs.length,win:Math.round(100*w.length/rs.length),hp:avg(rs,r=>r.minHp),loot:avg(w,r=>r.loot),t:avg(w,r=>r.t),looted:avg(rs,r=>r.milestones.looted||0),early:rs.filter(r=>r.res!=='WIN'&&r.t<30).length,lost:rs.map((r,i)=>r.res!=='WIN'?seeds[h][i]+'@'+r.t:null).filter(Boolean)}}
+ return out}
+window.bot={run,batch,batchSeeds,batchHalls};
 })();
