@@ -9,13 +9,14 @@ const { chromium } = require('playwright-core');
 const ROOT = path.resolve(__dirname, '..');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.json': 'application/json', '.md': 'text/plain; charset=utf-8' };
 
-function serve() {
+function serve(root) {
+  root = root || ROOT;
   return new Promise(res => {
     const srv = http.createServer((req, rsp) => {
       const u = decodeURIComponent(req.url.split('?')[0]);
       if (u === '/favicon.ico') { rsp.writeHead(204); rsp.end(); return; }
-      const f = path.join(ROOT, u === '/' ? 'index.html' : u);
-      if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { rsp.writeHead(404); rsp.end('nicht gefunden'); return; }
+      const f = path.join(root, u === '/' ? 'index.html' : u);
+      if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { rsp.writeHead(404); rsp.end('nicht gefunden'); return; }
       rsp.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-store' });
       fs.createReadStream(f).pipe(rsp);
     });
@@ -41,8 +42,9 @@ function findChrome() {
   return undefined;
 }
 
-async function launch() {
-  const { srv, url } = await serve();
+// opts.root: anderer Projektordner (zum Beispiel ein alter Stand fuer tests/altneu.js), Standard ist der eigene
+async function launch(opts) {
+  const { srv, url } = await serve(opts && opts.root && path.resolve(opts.root));
   const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
   return { srv, url, browser };
 }

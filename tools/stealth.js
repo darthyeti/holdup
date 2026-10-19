@@ -18,8 +18,10 @@ function spotFor(it){const L=D.LAY();let best=1e9,at=null;for(let dy=-3;dy<=3;dy
  const pl=D.pathTo(L.spawn.x,L.spawn.y,tx,ty).length;if(!pl)continue;const sc=pl+d*.05;if(sc<best){best=sc;at=[cx,cy]}}return at}
 function route(a,b){const p=D.pathTo(a[0],a[1],Math.floor(b[0]/T),Math.floor(b[1]/T));let d=0,x=a[0],y=a[1];for(const q of p){d+=Math.hypot(q[0]-x,q[1]-y);x=q[0];y=q[1]}return{d,p}}
 function samples(a,p,speed){const out=[];let x=a[0],y=a[1];for(const q of p){const d=Math.hypot(q[0]-x,q[1]-y),n=Math.max(1,Math.round(d/speed*HZ));for(let i=1;i<=n;i++)out.push([x+(q[0]-x)*i/n,y+(q[1]-y)*i/n]);x=q[0];y=q[1]}return out}
+// Ziel des Laufs: die Kachel vor der Vordertuer (offene Tuer an der Strassenseite), Mitte in px
+function frontOut(L){const ln=D.LANE(),fd=L.spots.find(q=>q.side===ln.side&&!q.lk&&!q.ex),c=fd.cells[0];return[(c[0]-fd.iv[0])*T+16,(c[1]-fd.iv[1])*T+16]}
 function measure(o){o=Object.assign({runs:2,secs:150,k:3,cut:6,sneak:true},o||{});const L=D.LAY(),rm=o.sneak?.65:1,kf=o.sneak?.8:1,speed=o.sneak?50:85,sight=D.lgM('sight');
- const items=D.get().its.filter(i=>i.t==='vit'),spots=items.map(i=>({it:i,at:spotFor(i)})).filter(s=>s.at),exitT=[11*T+16,14*T+16],win=Math.ceil((o.cut+1)*HZ),N=o.secs*HZ;
+ const items=D.get().its.filter(i=>i.t==='vit'),spots=items.map(i=>({it:i,at:spotFor(i)})).filter(s=>s.at),exitT=frontOut(L),win=Math.ceil((o.cut+1)*HZ),N=o.secs*HZ;
  const R={guards:D.get().npcs.filter(q=>q.k==='grd').length,vit:items.length,spots:spots.length,win:0,unseen:0,wait:0,naive:0,timed:0,timedT:0,maxWin:0,n:0};
  for(let r=0;r<o.runs;r++){const rec=record(o.secs),cache=new Map();
   const vis=(i,x,y)=>{const key=((i%N)*64+Math.floor(y/T)+8)*128+Math.floor(x/T)+8;let v=cache.get(key);if(v===undefined){const g=rec[i%rec.length];v=g.some(q=>D.canSee(q[0],q[1],q[2],q[3],q[4]*rm*sight,x,y));cache.set(key,v)}return v};

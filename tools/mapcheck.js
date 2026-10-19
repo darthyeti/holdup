@@ -5,10 +5,12 @@
 // Dazu validate/vsweep/autocmp fuer den Kartenvertrag (validateMap, autoPosts), siehe docs/karte-und-layout.md.
 (function(){
 const D=__dbg,T=32;
-function build(sc,seed,lage){D.setScenario(sc);D.setSeedMode('random');if(lage!==undefined)D.setLage(lage);D.buildLay(D.layoutFor(seed))}
+// turn: Strasse auf eine andere Seite legen (turnLayout), 'E', 'N', 'W' oder mit '+' dahinter fuer zusaetzliches Spiegeln laengs der Strasse ('E+')
+function lay0(sc,seed,lage,turn){D.setScenario(sc);D.setSeedMode('random');if(lage!==undefined)D.setLage(lage);const l=D.layoutFor(seed);return turn?D.turnLayout(l,turn[0],turn[1]==='+'):l}
+function build(sc,seed,lage,turn){D.buildLay(lay0(sc,seed,lage,turn))}
 function fill(sx,sy,pass){const w=D.world(),seen=new Set([sx+','+sy]),q=[[sx,sy]];let h=0;
  while(h<q.length){const c=q[h++];for(const v of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=c[0]+v[0],ny=c[1]+v[1],k=nx+','+ny;if(seen.has(k)||!pass(nx,ny))continue;seen.add(k);q.push([nx,ny])}}return seen}
-function check(sc,seed,lage){build(sc,seed,lage);const w=D.world(),L=D.LAY(),G=D.get(),rep={sc,seed,lg:L.mission.lg,err:[],info:{}};
+function check(sc,seed,lage,turn){build(sc,seed,lage,turn);const w=D.world(),L=D.LAY(),G=D.get(),rep={sc,seed,lg:L.mission.lg,err:[],info:{}};
  const pass=(x,y)=>{if(w.isSol(x,y)){const c=w.cell(x,y);return c==='L'||c==='V'||c==='u'&&false}return true};
  const st=[Math.floor(L.spawn.x/T),Math.floor(L.spawn.y/T)],R=fill(st[0],st[1],pass);
  const has=(tx,ty)=>R.has(tx+','+ty);
@@ -18,13 +20,13 @@ function check(sc,seed,lage){build(sc,seed,lage);const w=D.world(),L=D.LAY(),G=D
  let n=0;for(const it of G.its){if(it.t==='bar'||it.t==='wbar'||it.t==='lock'||it.t==='cam'&&false)continue;n++;if(!near(it.x,it.y,it.r||44))rep.err.push('Item nicht erreichbar: '+it.t+(it.k?'/'+it.k:'')+' bei '+Math.round(it.x/T*10)/10+','+Math.round(it.y/T*10)/10)}
  rep.info.items=n;
  // Polizei: Aussteigepunkt und Posten
- const lane=[Math.floor(120/T),Math.floor((L.laneY-44)/T)];
- const sidewalk=fill(Math.floor(L.slots.E[0]*1),Math.floor((L.laneY-44)/T),pass);
+ const LN=D.LANE(),curb=(LN.slots.find(q=>q.end===LN.ends[1])||LN.slots[0]).curb;   // Aussteigepunkt des ersten Platzes am hohen Ende der Strasse
+ const sidewalk=fill(curb[0],curb[1],pass);
  for(const p of L.posts){const k=p.x+','+p.y;if(w.isSol(p.x,p.y))rep.err.push('Posten steht in Festem: '+k);else if(!sidewalk.has(k))rep.err.push('Posten von der Strasse nicht erreichbar: '+k)}
  // Der Wagen steht mit der Mitte auf slot*T+16 und ist 4 Kacheln breit (slot-1 .. slot+2)
- const sl=[].concat(L.slots.W,L.slots.E);for(const x of sl)for(let k=-1;k<=2;k++)if(w.isSol(x+k,Math.floor(L.laneY/T))){rep.err.push('Wagenplatz blockiert: '+x);break}
+ for(const q of LN.slots)for(let k=-1;k<=2;k++){const c=LN.pt(q.u+k,LN.row);if(w.isSol(c[0],c[1])){rep.err.push('Wagenplatz blockiert: '+q.u);break}}
  // Fluchtzone und Wagen
- const ex=[L.exit.tx+2,Math.floor(L.van.y/T)];if(!has(ex[0],ex[1]))rep.err.push('Fluchtzone nicht erreichbar');
+ const ex=LN.pt(LN.exit.tx+2,Math.floor(LN.van.pos/T));if(!has(ex[0],ex[1]))rep.err.push('Fluchtzone nicht erreichbar');
  // Routen, Kassierer, Tresor, Kameras
  const pt=(a,nm)=>{if(!a)return;if(w.isSol(a[0],a[1])||!has(a[0],a[1]))rep.err.push(nm+' nicht begehbar: '+a)};
  (L.guards||[]).forEach((g,i)=>g.route.forEach(r=>pt(r,'Wachroute '+i)));if(L.mgr)L.mgr.route.forEach(r=>pt(r,'Managerroute'));(L.tellers||[]).forEach(t=>pt(t,'Kassierer'));
@@ -41,8 +43,8 @@ function ascii(x0,y0,x1,y1){const w=D.world(),rows=[];const X0=x0==null?w.WX0:x0
  let hdr='    ';for(let x=X0;x<=X1;x++)hdr+=(x%10===0?String(Math.abs(x)%100/10|0):' ');rows.push(hdr);hdr='    ';for(let x=X0;x<=X1;x++)hdr+=Math.abs(x)%10;rows.push(hdr);
  for(let y=Y0;y<=Y1;y++){let r=String(y).padStart(3)+' ';for(let x=X0;x<=X1;x++)r+=w.cell(x,y)==='o'?'.':w.cell(x,y);rows.push(r)}return rows.join('\n')}
 // ---- Kartenvertrag (docs/karte-und-layout.md): validateMap, laneOf und autoPosts aus dem Debug-Hook ----
-// validate(sc,seed,o): o.light prueft direkt nach layoutFor (ohne Aufbau, 1 ms statt 40 ms), o.lage erzwingt Lage-Tags. Gibt den Bericht von validateMap zurueck.
-function validate(sc,seed,o){o=o||{};let lay;if(o.light){D.setScenario(sc);D.setSeedMode('random');if(o.lage!==undefined)D.setLage(o.lage);lay=D.layoutFor(seed)}else{build(sc,seed,o.lage);lay=D.LAY()}return D.validateMap(lay)}
+// validate(sc,seed,o): o.light prueft direkt nach layoutFor (ohne Aufbau, 1 ms statt 40 ms), o.lage erzwingt Lage-Tags, o.turn legt die Strasse auf eine andere Seite ('N', 'E', 'W', mit '+' auch laengs gespiegelt). Gibt den Bericht von validateMap zurueck.
+function validate(sc,seed,o){o=o||{};let lay;if(o.light){lay=lay0(sc,seed,o.lage,o.turn)}else{build(sc,seed,o.lage,o.turn);lay=D.LAY()}return D.validateMap(lay)}
 // vsweep(sc,n,from,o): n Seeds (Schritt 37), je Regel Anzahl, erste Seeds und eine Beispielmeldung, dazu Eingangs-Listen und Spannen der Kennzahlen
 function vsweep(sc,n,from,o){const out={sc,n,ok:0,err:{},warn:{},entries:{},range:{}},add=(m,r,seed)=>{const e=m[r.r]=m[r.r]||{n:0,seeds:[],ex:r.m};e.n++;if(e.seeds.length<4)e.seeds.push(seed)};
  for(let i=0;i<n;i++){const seed=(from||1)+i*37,r=validate(sc,seed,o);if(r.ok)out.ok++;r.err.forEach(e=>add(out.err,e,seed));r.warn.forEach(e=>add(out.warn,e,seed));
@@ -50,12 +52,12 @@ function vsweep(sc,n,from,o){const out={sc,n,ok:0,err:{},warn:{},entries:{},rang
   for(const [k,v] of[['pathSV',r.info.pathSV],['pathVE',r.info.pathVE],['loot',r.info.loot&&r.info.loot.v],['cams',r.info.cams],['guards',r.info.guards],['mat',r.info.mat&&r.info.mat[0]-r.info.mat[1]],['slots',r.info.slots],['posts',r.info.posts]])if(v!=null){const g=out.range[k]=out.range[k]||[v,v];g[0]=Math.min(g[0],v);g[1]=Math.max(g[1],v)}}
  return out}
 // autocmp(sc,seed,o): abgeleitete Posten und Wagenplaetze (autoPosts) gegen die Handliste der Karte. Ein Posten gilt als getroffen, wenn der andere Typ innerhalb von 1,5 Kacheln liegt, shiftW/shiftE sind je Hand-Platz die Verschiebung (abgeleitet minus Hand) zum naechsten abgeleiteten Platz.
-function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){D.setScenario(sc);D.setSeedMode('random');lay=D.layoutFor(seed)}else{build(sc,seed);lay=D.LAY()}
+function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){lay=lay0(sc,seed,undefined,o.turn)}else{build(sc,seed,undefined,o.turn);lay=D.LAY()}
  const A=D.autoPosts(lay),H=lay.posts,P=A.posts,d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),by=l=>{const c={};l.forEach(p=>c[p.k]=(c[p.k]||0)+1);return c},str=l=>l.map(p=>p.x+','+p.y+p.k);
  const um=H.filter(h=>!P.some(a=>d(a,h)<=1.5)),ex=P.filter(a=>!H.some(h=>d(a,h)<=1.5)),um3=H.filter(h=>!P.some(a=>d(a,h)<=3));
- const sh=end=>lay.slots[end].map(u=>{const c=A.slots[end];return c.length?c.map(v=>v-u).reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a):null});
+ const R=D.roadOf(lay),ln=D.laneOf(lay),sh=k=>R.slots[k].map(u=>{const c=A.slots[ln.ends[k]];return c.length?c.map(v=>v-u).reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a):null});
  return{sc,seed,flip:!!lay.flip,hall:lay.hall||null,hand:H.length,auto:P.length,bySide:{hand:by(H),auto:by(P)},hit:H.length-um.length,hit3:H.length-um3.length,handMiss:str(um),autoExtra:str(ex),
   doors:{hand:str(H.filter(p=>p.door)),auto:str(P.filter(p=>p.door))},anchors:{hand:str(H.filter(p=>p.anchor)),auto:str(P.filter(p=>p.anchor))},
-  slots:{hand:lay.slots,auto:A.slots,shiftW:sh('W'),shiftE:sh('E')},order:{hand:H.slice(0,8).map(p=>p.k).join(''),auto:P.slice(0,8).map(p=>p.k).join('')}}}
+  slots:{hand:lay.slots||R.slots,auto:A.slots,shiftW:sh(0),shiftE:sh(1)},order:{hand:H.slice(0,8).map(p=>p.k).join(''),auto:P.slice(0,8).map(p=>p.k).join('')}}}
 window.mapcheck={check,sweep,ascii,build,validate,vsweep,autocmp};
 })();
