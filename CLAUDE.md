@@ -10,7 +10,7 @@ Sprache mit Till: Deutsch. Er mag empathisch, lösungsorientiert, ehrlichen Wide
 
 Diese Datei ist der Kern: Idee, Arbeitsweise, Dateiübersicht, Grundregeln, Stand und Todos. Die Einzelheiten stehen in `docs/`, lies nur, was die aktuelle Aufgabe braucht:
 
-- `docs/karte-und-layout.md`: Karte und `LAY`, Zufallskarten und Generatoren, Auftragslage, Optik, Spiegelung, Tausch Büro und Sicherheitsraum, Auftrags-Ereignisse, statische Ebene.
+- `docs/karte-und-layout.md`: Karte und `LAY`, Zufallskarten und Generatoren, Auftragslage, Optik, Spiegelung, Tausch Büro und Sicherheitsraum, Auftrags-Ereignisse, statische Ebene, Karten-Vertrag (feste Annahmen, Entscheidungen, Plan für neue Karten und freie Straße, Bank mit nur einer Hintertür).
 - `docs/polizei-und-barrikaden.md`: KI, Polizei, Barrikaden, Personaltüren.
 - `docs/szenarien.md`: Geldtransporter (Aufbau und Ablauf), Juwelier (Karte, Eingänge, Beute), Tankstelle, Museum und Casino (gebaut, Zapfsäulen, Laser, Chips und Cage) und die Planung der Auftragsarten (Transporter Schritt B bis D). Die Optik-Entwürfe für den Juwelier liegen in `docs/mockups/`.
 - `docs/coop-und-netz.md`: Netz, Transport, Spielername, Am Boden und Wiederbeleben, Coop-Spielablauf.
