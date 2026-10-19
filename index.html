@@ -3,9 +3,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Holdup</title>
 <style>
-:root{--bg:#14161b;--fg:#dde1e7;--muted:#8d95a1;--accent:#ffb000;--panel:#1c1f26;--line:#2b303a;color-scheme:dark}
+:root{--bg:#14161b;--fg:#dde1e7;--muted:#8d95a1;--accent:#ffb000;--panel:#1c1f26;--line:#2b303a;--vh:100vh;--chrome:104px;color-scheme:dark}
+@supports (height:100dvh){:root{--vh:100dvh}}
 body{background:var(--bg);color:var(--fg);font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding-inline:16px;padding-block:20px}
 main{max-width:1100px;margin:0 auto;display:grid;gap:14px}
+/* Bildgroesse (VIEW im Skript): Voreinstellung "auto" fuellt das Fenster im Seitenverhaeltnis 960:544, "fix" (html[data-view=fix]) haelt das Bild bei hoechstens 1100 px.
+   --chrome ist die Hoehe von Rand und Kopfzeile ueber und unter dem Bild. Vollbild (html[data-fs]) blendet die Kopfzeile aus und passt das Bild an den Bildschirm an. */
+html:not([data-view=fix]) main{max-width:none;width:min(100%,max(480px,calc((var(--vh) - var(--chrome))*960/544)))}
+html[data-fs]{background:var(--bg)}
+html[data-fs] body{margin:0;padding:0;min-height:var(--vh);display:grid;place-items:center}
+html[data-fs] header{display:none}
+html[data-fs] main{max-width:none;width:min(100vw,calc(var(--vh)*960/544))}
+html[data-fs] canvas{border:0;border-radius:0}
 header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
 h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 header p{margin:0;color:var(--muted)}
@@ -20,11 +29,23 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=49"></script>
+<script src="js/ui.js?v=50"></script>
 <script>
-const BUILD={n:49,d:'2026-10-18'};//BUILD
+const BUILD={n:50,d:'2026-10-19'};//BUILD
 const UI_API=2;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
+/* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
+   Vollbild gilt fuer die ganze Seite (nicht fuers Canvas: object-fit dehnt es dort, dann stimmt das Zielen nicht mehr). Alles ist CSS ueber html[data-view] und html[data-fs],
+   die Spiellogik bleibt unberuehrt (Maus rechnet ueber getBoundingClientRect um). Menues greifen wie bei SND ueber den globalen Namen darauf zu. */
+const VIEW=(()=>{const de=document.documentElement,fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement,
+can=!!(de.requestFullscreen||de.webkitRequestFullscreen)&&document.fullscreenEnabled!==false&&document.webkitFullscreenEnabled!==false;
+let mode='auto';try{if(localStorage.getItem('holdup.view')==='fix')mode='fix'}catch(e){}
+const sync=()=>{de.dataset.view=mode;if(fsEl())de.dataset.fs='1';else delete de.dataset.fs};
+const onFs=()=>{sync();const c=document.getElementById('c');if(c)c.focus({preventScroll:true})};
+document.addEventListener('fullscreenchange',onFs);document.addEventListener('webkitfullscreenchange',onFs);sync();
+return{get mode(){return mode},get full(){return !!fsEl()},get can(){return can},
+cycle(){mode=mode==='auto'?'fix':'auto';sync();try{localStorage.setItem('holdup.view',mode)}catch(e){}return mode},
+toggleFull(){if(!can)return false;try{if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else{const r=(de.requestFullscreen||de.webkitRequestFullscreen).call(de);if(r&&r.catch)r.catch(()=>{})}}catch(e){}return true}}})();
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{if(typeof mkUI!=='function'||mkUI.api!==UI_API)throw new Error('js/ui.js fehlt oder ist veraltet (Browser-Cache). Seite hart neu laden: Strg+Umschalt+R, am Mac Cmd+Umschalt+R.');window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Spiel konnte nicht gestartet werden: '+e.message});
 /* ---- Ton: alles synthetisch (WebAudio), keine Dateien. Ohne Nutzeraktion bleibt ac=null, dann sind alle Aufrufe leer. ---- */
@@ -1641,6 +1662,8 @@ case'shopBack':if(NET.role==='solo')toTitle();else leaveGame('');break;
 case'resume':paused=false;break;
 case'leave':if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.');break;
 case'mute':SND.toggleMute();break;
+case'view':VIEW.cycle();break;
+case'full':VIEW.toggleFull();break;
 case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
 case'unlock':unlockAll=!unlockAll;break;
 case'endNext':if(ended){if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}break;
