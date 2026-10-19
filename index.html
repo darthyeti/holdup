@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=51"></script>
+<script src="js/ui.js?v=52"></script>
 <script>
-const BUILD={n:51,d:'2026-10-19'};//BUILD
+const BUILD={n:52,d:'2026-10-19'};//BUILD
 const UI_API=2;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -196,6 +196,7 @@ cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:
 shield:{from:3,every:8,hp:110,dmg:8,rate:.55,spd:50,acc:.11,arc:1.05,pool:120,follow:.85,cover:80},
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6,n:5},
 map:{a:[10,15],b:[20,23],bs:[24,28],c:[12,16],tries:40,back:'vault'},
+val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,30],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2}},
 series:{wave:.34,hp:0,at:3},
 ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
 bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40},
@@ -805,7 +806,7 @@ out.forEach(o=>{o.ex=!!o.side&&Math.abs(o.x-ex.x)<2*T&&o.y>ex.y0-T&&o.y<ex.y1+T;
 out.forEach(o=>{ix[o.nm]=(ix[o.nm]||0)+1;o.n=o.nm+(cnt[o.nm]>1?' '+ix[o.nm]:'');o.lk=!!o.side&&(o.cells.every(c=>bd.has(c[0]+','+c[1]))||(o.ex&&!!CFG.lock.exit))});
 lay.spots=out;lay.lockCells=[];out.forEach(o=>{if(o.lk)o.cells.forEach(c=>lay.lockCells.push([c[0],c[1],o.ex]))})}
 /* Zerlegbare Dinge (Moebel in der Bank, Kisten und Faesser am Transporter, dazu die geparkten Autos) liegen nicht in der statischen Ebene `st`, sondern in `so`. Zerlegt man eines, wird die Kachel frei (setc 'o') und `so` neu gemalt, `gone` merkt sich die Kacheln fuer reset(). */
-const matCell=(x,y)=>{const c=cell(x,y);if(LAY.truck)return c==='k'||c==='q';if(LAY.gas&&(c==='k'||c==='q'))return true;return(c==='e'||c==='m'||c==='b')&&!(x===LAY.note[0]&&y===LAY.note[1])&&!(x===LAY.mon[0]&&y===LAY.mon[1])};
+const matCell=(x,y,l=LAY)=>{const c=cell(x,y);if(l.truck)return c==='k'||c==='q';if(l.gas&&(c==='k'||c==='q'))return true;return(c==='e'||c==='m'||c==='b')&&!(l.note&&x===l.note[0]&&y===l.note[1])&&!(l.mon&&x===l.mon[0]&&y===l.mon[1])};
 function paintObjs(){const s=so.getContext('2d');s.setTransform(1,0,0,1,0,0);s.clearRect(0,0,so.width,so.height);s.setTransform(2,0,0,2,-2*WX0*T,-2*WY0*T);
 const pq=(LAY.parked||[]).filter(c=>!c.gone),ct=[];for(const c of pq)for(let j=0;j<2;j++)for(let i=0;i<4;i++)ct.push([(c.x+i)*T,(c.y+j)*T]);
 for(let k=6;k>=1;k--){s.fillStyle='rgba(15,12,8,.03)';for(const w of ct)s.fillRect(w[0]-k,w[1]-k,T+2*k,T+2*k)}
@@ -828,6 +829,119 @@ for(const side of['S','N','W','E']){const sw=ws.filter(w=>w.side===side);if(!sw.
  for(const r of runs){if(n>=2)break;const m=r[r.length>>1];let ok=null;
   for(const k of[8,9,7,6,10,5,4,3]){for(const d of[0,3,-3,6,-6,9,-9]){const tx=m.x+o[0]*k+tg[0]*d,ty=m.y+o[1]*k+tg[1]*d;if(isSol(tx,ty))continue;if(clearSn(tx*T+16,ty*T+16,m.px,m.py)){ok={x:tx*T+16,y:ty*T+16};break}}if(ok)break}
   if(ok){lay.snp.push({x:ok.x,y:ok.y,a:Math.atan2(m.py-ok.y,m.px-ok.x),side});n++}}}}
+/* ---- Karten-Vertrag (docs/karte-und-layout.md, Abschnitt Karten-Vertrag): Felder, Strasse, Pruefung, abgeleitete Posten.
+   Gilt fuer Gebaeude-Karten (Bank, Juwelier, Tankstelle, Museum, Casino). Der Transporter ist eine Strassenkarte und wird uebersprungen.
+   Alle Pruefungen lesen die Strasse nur ueber laneOf(lay), nie ueber laneY/slots/exit/van: die freie Strasse ersetzt dann nur laneOf. ---- */
+// Felder von LAY: [Name, Gruppe, Leser]. Gruppe P Pflicht, O optional laut Vertrag (g: der Spielcode prueft heute auf null), E Erweiterung einer Kartenart, A abgeleitet in buildWorld (nie von Hand).
+const MAP_FIELDS=[
+['seed','P','layoutFor, reset, Netz, Nebenziel'],['bld','P','findSpots, deriveWins, hostStep (Innen/Aussen, lautlose Flucht), buildWorld (Schatten, Licht)'],
+['spawn','P','mkPl'],['zones','P','restricted (Verdacht)'],['lobby','P','buildWorld (LOBBY, Zivilisten)'],['civ','P','reset'],['mission','P','reset, Lage, Ereignisse, Nebenziel, Briefing'],
+['exit','P','hostStep (secure), findSpots (Fluchttuer), vanPointer, Zeichnen'],['van','P','reset, hostStep, vanPointer, Zeichnen'],['laneY','P','mkCar (Polizeiwagen)'],['slots','P','mkCar'],
+['posts','P','freePost, unload (Polizeiposten)'],['backDoors','P','findSpots (Personaltueren, lockCells)'],['mat','P','buildWorld (Bodenmaterial)'],['paintFloor','P','buildWorld'],['paintTop','P','buildWorld'],
+['theme','P','buildWorld, draw'],['title','P','titleCam'],['winN','P','buildWorld (Sonnenstrahlen)'],['winS','P','buildWorld (Lichtkegel)'],['flip','P','draw (Spiegelung)'],
+['vault','O','reset (Items vault und bundle), draw (Tresortuer), Bot'],['note','O','reset (Item note), matCell'],['mon','O','reset (Item mon), matCell'],['sw','O','reset (Item sw)'],
+['tellers','O','reset (Kassierer)'],['mgr','O','reset (Manager)',1],['tills','O','reset (Kassen)'],['atms','O','reset (Automaten)'],['guards','O','reset (Wachen)'],['cams','O','reset (Kameras)'],
+['vit','E','reset (Vitrinen, Juwelier)'],['goods','E','reset (Beute-Stuecke)'],['cage','E','reset (Cage, Casino)'],['pumps','E','reset, Zeichnen (Zapfsaeulen, Tankstelle)'],['lasers','E','hostStep, Zeichnen (Museum)'],
+['bn','E','reset (Tresorbeute abweichend)'],['polAt','E','startHeist'],['wb','E','spawnWave'],['stl','E','finish (Lautlos-Bonus)'],['gAll','E','hostStep (Wachen sehen ueberall, Museum)'],['cone','E','Zeichnen (Sichtkegel der Wache)'],
+['hall','E','Anzeige, Tests (Name des Grundrisses)'],['jewel','E','Kennzeichen Juwelier'],['gas','E','Kennzeichen Tankstelle'],['museum','E','Kennzeichen Museum'],['casino','E','Kennzeichen Casino'],
+['q','E','Bank-Zufallskarte: Parameter (Tausch Buero und Sicherheitsraum, Tests)'],['tries','E','layoutFor (Zahl der Versuche der Zufallskarte)'],['truck','E','Kennzeichen Strassenkarte Transporter'],['parked','E','Zeichnen, Material (geparkte Autos am Transporter)'],
+['spots','A','Eingaenge (findSpots), Barrikaden, startHeist'],['lockCells','A','reset, Netz'],['wins','A','Fenster (deriveWins), Netz'],['snp','A','Scharfschuetzen (deriveWins)']];
+// Beute-Ziele: mindestens eines muss es geben. Jedes wird als {k,x,y,r,v,u} in Pixeln beschrieben (r Reichweite zum Nehmen, v Wert, u Platzbedarf in der Tasche).
+function lootOf(lay){const o=[],V=lay.vault,bn=lay.bn||CFG.bundle,jw=!!lay.jewel,c=a=>[a[0]*T+16,a[1]*T+16];
+(lay.tills||[]).forEach(a=>o.push({k:'till',x:c(a)[0],y:c(a)[1],r:48,v:CFG.till.v,u:CFG.till.u}));(lay.atms||[]).forEach(a=>o.push({k:'atm',x:c(a)[0],y:c(a)[1],r:48,v:CFG.atm.v,u:CFG.atm.u}));
+if(V&&V.bundles&&V.bundles.length){const f=bn.n/V.bundles.length;V.bundles.forEach(a=>o.push({k:'bundle',x:c(a)[0],y:c(a)[1],r:40,v:jw?CFG.jewel.boxV:bn.v*f,u:jw?CFG.jewel.boxU:bn.u*f}))}
+(lay.vit||[]).forEach(v=>o.push({k:'vit',x:v.x,y:v.y,r:44,v:CFG.jewel[v.k],u:CFG.jewel.u}));(lay.goods||[]).forEach(v=>{const G=CFG.goods[v.k];o.push({k:'good:'+v.k,x:v.x,y:v.y,r:v.r||44,v:G.v,u:G.u})});return o}
+// Abstrakte Strasse. Heute: Achse x, Strasse im Sueden des Gebaeudes, Normale zum Gebaeude -y. box() ist die einzige Stelle, die Achse und Kachelkoordinaten verbindet.
+function laneOf(lay){const ex=lay.exit,vn=lay.van,tl=v=>Math.floor(v/T),L={axis:'x',n:[0,-1],side:'S',pos:lay.laneY,row:tl(lay.laneY)};
+// Kacheln eines Rechtecks: laengs der Achse von s0 bis s1, quer um die Lage c plus/minus h (alles in px)
+L.box=(s0,s1,c,h)=>{const o=[];for(let a=tl(s0);a<=tl(s1-1);a++)for(let b=tl(c-h);b<=tl(c+h-1);b++)o.push([a,b]);return o};
+// Wagenplaetze: Mitte u*T+16, 128 x 64 px (Sprite), Aussteigepunkt 44 px zum Gebaeude hin
+L.slots=[];for(const end of['W','E'])lay.slots[end].forEach((u,i)=>L.slots.push({end,i,u,cells:L.box(u*T-48,u*T+80,lay.laneY,32),curb:[tl(u*T+16),tl(lay.laneY+L.n[1]*44)]}));
+// Fluchtwagen: x0 und stop sind die linke Sprite-Kante, die Fahrt geht von x0 nach stop, danach bleibt der Rest bis zum Weltrand
+const v0=Math.min(vn.x0,vn.stop),v1=Math.max(vn.x0,vn.stop)+128,east=vn.dir<0;
+L.van={dir:vn.dir,from:vn.x0,stop:vn.stop,pos:vn.y,swept:L.box(v0,v1,vn.y,32),rest:east?L.box(v1,(WX0+W)*T,vn.y,32):L.box(WX0*T,v0,vn.y,32)};
+// Fluchtzone: Streifen hinter der Linie x (Richtung dir, vier Kacheln tief), quer die Spanne y0 bis y1
+L.exit={dir:ex.dir,line:ex.x,span:[ex.y0,ex.y1],tx:ex.tx,cells:L.box(Math.min(ex.tx,ex.tx+ex.dir*3)*T,(Math.max(ex.tx,ex.tx+ex.dir*3)+1)*T,(ex.y0+ex.y1)/2,(ex.y1-ex.y0)/2)};return L}
+// Pruefung einer Karte. Das Raster muss zur Karte passen: direkt nach layoutFor(seed) oder buildWorld(lay) aufrufen. Ergebnis {cls, ok, err, warn, info, skipped}: err sind harte Regeln ({r: Regel, m: Meldung}), warn Kennzahlen und Hinweise.
+// Klasse Gebaeude: alle Regeln. Klasse Strasse (Transporter): nur Welt, Start, Fluchtzone, Fluchtwagen-Weg, Wagenplaetze und Posten, der Rest setzt ein Gebaeude mit Eingaengen, Beute und Personal voraus.
+function validateMap(lay){const V=CFG.val,street=!!lay.truck,rep={cls:street?'street':'building',err:[],warn:[],info:{}},E=(r,m)=>rep.err.push({r,m}),Wn=(r,m)=>rep.warn.push({r,m});
+if(street)rep.skipped='Strassenkarte: Eingaenge, Vordertuer, Beute, Routen, Lobby, Material und Kennzahlen entfallen (kein Gebaeude, keine Beute im Raster)';
+if(!lay.spots)findSpots(lay);
+const B=lay.bld,ln=laneOf(lay),tl=v=>Math.floor(v/T),at=(x,y)=>(y-WY0)*W+(x-WX0),inB=(x,y)=>x>=B.x0&&x<=B.x1&&y>=B.y0&&y<=B.y1,nm=(a,b)=>Math.round(a/T*10)/10+','+Math.round(b/T*10)/10;
+// Pflichtfelder und optionale Felder
+const miss=MAP_FIELDS.filter(f=>f[1]==='P'&&(lay[f[0]]==null)).map(f=>f[0]);if(miss.length){E('feld','Pflichtfeld fehlt: '+miss.join(', '));rep.ok=false;return rep}
+const opt=street?[]:MAP_FIELDS.filter(f=>f[1]==='O'&&lay[f[0]]==null);rep.info.optAbsent=opt.map(f=>f[0]);const unsafe=opt.filter(f=>!f[3]).map(f=>f[0]);if(unsafe.length)Wn('optional-fehlt','Optionales Feld fehlt, der Spielcode liest es heute noch unbedingt: '+unsafe.join(', '));
+// Welt und Start
+rep.info.world=[W,H];if(W<V.minW||H<V.minH)E('welt','Welt zu klein: '+W+' x '+H+' statt mindestens '+V.minW+' x '+V.minH);
+const sp=[tl(lay.spawn.x),tl(lay.spawn.y)];if(OOB(sp[0],sp[1])||isSol(sp[0],sp[1]))E('spawn','Spawn steht in Festem oder ausserhalb: '+sp);else if(inB(sp[0],sp[1]))E('spawn','Spawn liegt im Gebaeude: '+sp);
+// Erreichbarkeit vom Start: RL mit verriegelten Tueren (L) und Tresortuer (V) als offen, RS ohne
+const fl=(sx,sy,pass)=>{const s=new Uint8Array(W*H);if(OOB(sx,sy)||!pass(sx,sy))return s;const q=[[sx,sy]];s[at(sx,sy)]=1;for(let h=0;h<q.length;h++){const c=q[h];for(const d of D4){const nx=c[0]+d[0],ny=c[1]+d[1];if(OOB(nx,ny)||s[at(nx,ny)]||!pass(nx,ny))continue;s[at(nx,ny)]=1;q.push([nx,ny])}}return s},hs=(s,x,y)=>!OOB(x,y)&&s[at(x,y)]===1;
+const open=(x,y)=>!isSol(x,y)||cell(x,y)==='L'||cell(x,y)==='V',RL=fl(sp[0],sp[1],open),RS=fl(sp[0],sp[1],(x,y)=>!isSol(x,y));
+// near(): auf einer erreichbaren Kachel kann man so stehen, dass der Abstand zu (x,y) unter r bleibt
+const near=(x,y,r)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const tx=tl(x)+dx,ty=tl(y)+dy;if(!hs(RL,tx,ty))continue;const cx=Math.max(tx*T+3,Math.min(tx*T+T-3,x)),cy=Math.max(ty*T+3,Math.min(ty*T+T-3,y));if(Math.hypot(cx-x,cy-y)<r*.95)return true}return false};
+let ext=[],stand=null,v=lay.vault;
+if(!street){
+// Eingaenge: Tuer-Gruppen am Gebaeuderand (findSpots), die Fluchttuer zaehlt mit
+ext=lay.spots.filter(s=>s.side);rep.info.entries=ext.map(s=>s.n+' ('+s.side+')');
+if(ext.length<V.doorMin||ext.length>V.doorMax)E('eingaenge','Aussen-Eingaenge: '+ext.length+' ('+ext.map(s=>s.n).join(', ')+') statt '+V.doorMin+' bis '+V.doorMax);
+if(!ext.some(s=>s.ex))Wn('fluchttuer','Keine Fluchttuer in der Naehe der Fluchtlinie');
+const front=ext.filter(s=>s.side===ln.side&&!s.lk&&!s.ex);
+if(!front.length)E('vordertuer','Keine offene Vordertuer an der Strassenseite ('+ln.side+')');
+else if(!front.some(s=>s.cells.some(c=>!isSol(c[0],c[1])&&hs(RS,c[0]-s.iv[0],c[1]-s.iv[1])&&hs(RS,c[0]+s.iv[0],c[1]+s.iv[1]))))E('vordertuer','Vordertuer von draussen nicht begehbar: '+front.map(s=>s.n).join(', '));
+for(const s of ext){const o=c=>[c[0]-s.iv[0],c[1]-s.iv[1]],i=c=>[c[0]+s.iv[0],c[1]+s.iv[1]],ok=(q,m)=>hs(RL,q[0],q[1])||m&&matCell(q[0],q[1],lay);
+ if(s.cells.some(c=>ok(o(c))&&ok(i(c))))continue;
+ if(s.cells.some(c=>ok(o(c),1)&&ok(i(c),1)))Wn('eingang-verstellt',s.n+' liegt hinter zerlegbarem Moebel (Phase 2: zerlegen)');else E('eingang-weg',s.n+' ist nicht von beiden Seiten erreichbar')}
+// Beute: mindestens ein Ziel, alle Stuecke erreichbar. Optionale Dinge (Notiz, Monitor, Schalter, Tresor) nur, wenn vorhanden
+const loot=lootOf(lay);if(!loot.length)E('beute-ziel','Kein Beute-Ziel (Kassen, Automaten, Tresorbuendel, Vitrinen oder Beute-Stuecke)');
+const lost=loot.filter(l=>!near(l.x,l.y,l.r));if(lost.length)E('beute-stueck','Beute nicht erreichbar: '+lost.slice(0,4).map(l=>l.k+' '+nm(l.x,l.y)).join('; ')+(lost.length>4?' (+'+(lost.length-4)+')':''));
+rep.info.loot={n:loot.length,reach:loot.length-lost.length,v:Math.round(loot.reduce((a,l)=>a+l.v,0)),u:Math.round(loot.reduce((a,l)=>a+l.u,0)*10)/10};
+if(lay.cage&&!near(lay.cage.x,lay.cage.y,lay.cage.r||52))E('beute-stueck','Cage nicht erreichbar');
+for(const [k,a] of[['note',lay.note],['mon',lay.mon]])if(a&&!near(a[0]*T+16,a[1]*T+16,50))E('feld-weg',k+' nicht erreichbar: '+a);
+if(lay.sw&&!near(lay.sw.x,lay.sw.y,44))E('feld-weg','Hauptschalter nicht erreichbar');
+stand=v&&v.door?[v.door[0]-v.dir,v.door[1]+1]:null;if(stand&&!hs(RL,stand[0],stand[1]))E('feld-weg','Tresor-Standkachel nicht erreichbar: '+stand)}
+// Fluchtzone, Fluchtwagen-Weg, Wagenplaetze (Kacheln ausserhalb der Welt zaehlen nicht: der Wagen faehrt von draussen an)
+const zc=ln.exit.cells,zr=zc.filter(c=>hs(RL,c[0],c[1])).length;rep.info.zone=[zr,zc.length];if(!zr)E('fluchtzone','Fluchtzone nicht erreichbar: '+zc.length+' Kacheln hinter der Fluchtlinie, keine begehbar');
+const blk=cs=>cs.filter(c=>!OOB(c[0],c[1])&&isSol(c[0],c[1])).slice(0,3).map(c=>c+':'+cell(c[0],c[1]));
+let b=blk(ln.van.swept);if(b.length)E('fluchtweg','Fluchtwagen-Weg blockiert (Fahrstrecke): '+b.join(' '));b=blk(ln.van.rest);if(b.length)E('fluchtweg-rand','Fluchtwagen-Weg bis zum Weltrand blockiert: '+b.join(' '));
+rep.info.slots=ln.slots.length;for(const s of ln.slots){b=blk(s.cells);if(b.length)E('wagenplatz','Wagenplatz '+s.end+(s.i+1)+' (Kachel '+s.u+') blockiert: '+b.join(' '));if(isSol(s.curb[0],s.curb[1]))E('aussteigen','Aussteigepunkt von Wagenplatz '+s.end+(s.i+1)+' steht in Festem: '+s.curb)}
+// Posten: frei und von jedem Aussteigepunkt aus erreichbar
+const comps=[];for(const s of ln.slots){if(isSol(s.curb[0],s.curb[1]))continue;let c=comps.find(q=>hs(q.set,s.curb[0],s.curb[1]));if(!c){c={set:fl(s.curb[0],s.curb[1],(x,y)=>!isSol(x,y)),from:s.end+(s.i+1)};comps.push(c)}}
+rep.info.posts=lay.posts.length;for(const p of lay.posts){if(isSol(p.x,p.y)){E('posten','Posten steht in Festem: '+p.x+','+p.y);continue}const bad=comps.filter(c=>!hs(c.set,p.x,p.y));if(bad.length)E('posten','Posten '+p.x+','+p.y+' von der Strasse nicht erreichbar (ab Wagenplatz '+bad.map(c=>c.from).join(', ')+')')}
+if(!street){
+// Routen (Wachen, Manager, Wachwechsel), Kassierer, Kameras: begehbar und erreichbar, aufeinanderfolgende Punkte verbunden
+const pt=(a,n)=>{if(!a)return;if(isSol(a[0],a[1])||!hs(RL,a[0],a[1]))E('route',n+' nicht begehbar: '+a)},rt=(r,n)=>{r.forEach(a=>pt(a,n));for(let i=0;i<r.length;i++){const a=r[i],c=r[(i+1)%r.length];if((a[0]!==c[0]||a[1]!==c[1])&&!isSol(a[0],a[1])&&!isSol(c[0],c[1])&&!pathTo(a[0]*T+16,a[1]*T+16,c[0],c[1]).length)E('route',n+': kein Weg von '+a+' nach '+c)}};
+(lay.guards||[]).forEach((g,i)=>rt(g.route,'Wachroute '+i));if(lay.mgr)rt(lay.mgr.route,'Managerroute');(lay.mission.extra||[]).forEach((x,i)=>{pt(x.p,'Wachwechsel-Start');rt(x.route,'Wachwechsel-Route '+i)});
+(lay.tellers||[]).forEach(a=>pt(a,'Kassierer'));if(v&&v.bundles)v.bundles.forEach(a=>pt(a,'Tresorbuendel'));(lay.mission.bags||[]).forEach(a=>pt(a,'Geldsack'));
+for(const c of lay.cams||[])if(!near(c.x,c.y,50))E('kamera','Kamera nicht erreichbar: '+nm(c.x,c.y));
+// Lobby
+const lb=lay.lobby;let nl=0;for(let y=lb[1];y<=lb[3];y++)for(let x=lb[0];x<=lb[2];x++)if(hs(RL,x,y))nl++;rep.info.lobby=nl;if(lay.civ>0&&nl<1)E('lobby','Zivilisten ohne begehbare Lobby');else if(nl<lay.civ*2)Wn('lobby','Lobby klein: '+nl+' Kacheln fuer '+lay.civ+' Zivilisten');
+// Material: Moebel gibt Material, jeder Aussen-Eingang kostet eine Barrikade (mc, Standard 1)
+let mat=0;for(const [x,y] of TILES)if(matCell(x,y,lay)&&near(x*T+16,y*T+16,46))mat++;const need=ext.reduce((a,s)=>a+(s.mc||1),0);rep.info.mat=[mat,need];if(mat<need)E('material','Zu wenig Material: '+mat+' erreichbare Teile fuer '+need+' Aussen-Eingaenge');
+// Kennzahlen mit Warnung statt harter Grenze (Wege ohne Rueckblick auf verriegelte Tueren: L zaehlt als offen)
+const P=(a,c)=>{const dd=new Int16Array(W*H).fill(-1),q=[a];if(OOB(a[0],a[1]))return 0;dd[at(a[0],a[1])]=0;for(let h=0;h<q.length;h++){const q0=q[h];if(q0[0]===c[0]&&q0[1]===c[1])return dd[at(q0[0],q0[1])];for(const d of D4){const nx=q0[0]+d[0],ny=q0[1]+d[1];if(OOB(nx,ny)||dd[at(nx,ny)]>=0||!(!isSol(nx,ny)||cell(nx,ny)==='L'))continue;dd[at(nx,ny)]=dd[at(q0[0],q0[1])]+1;q.push([nx,ny])}}return 0};
+if(stand){const sv=P(sp,stand),ve=P(stand,[lay.exit.tx,Math.round(lay.van.y/T)]);rep.info.pathSV=sv;rep.info.pathVE=ve;
+ if(!sv)Wn('weg','Kein Weg vom Start zum Tresor');else if(sv<V.pathSV[0]||sv>V.pathSV[1])Wn('weg-start-tresor','Weg Start zu Tresor '+sv+' Schritte (Richtwert '+V.pathSV.join(' bis ')+')');
+ if(!ve)Wn('weg','Kein Weg vom Tresor zum Ausgang');else if(ve<V.pathVE[0]||ve>V.pathVE[1])Wn('weg-tresor-ausgang','Weg Tresor zu Ausgang '+ve+' Schritte (Richtwert '+V.pathVE.join(' bis ')+')')}
+if(rep.info.loot.v<V.loot[0]||rep.info.loot.v>V.loot[1])Wn('beute-summe','Beute-Summe '+rep.info.loot.v+' ausserhalb '+V.loot.join(' bis '));
+rep.info.cams=(lay.cams||[]).length;rep.info.guards=(lay.guards||[]).length;if(rep.info.cams>V.cams)Wn('kameras',rep.info.cams+' Kameras (Richtwert hoechstens '+V.cams+')');if(rep.info.guards>V.guards)Wn('wachen',rep.info.guards+' Wachen (Richtwert hoechstens '+V.guards+')')}
+rep.ok=!rep.err.length;return rep}
+// Posten und Wagenplaetze aus Geometrie (Gebaeude, Tueren, Strasse, Fluchttuer). Nur zum Vergleich mit der Handliste (LAY.posts, LAY.slots): ersetzt nichts.
+// Wagenplaetze: ab der Gebaeudemitte alle slotStep Kacheln nach beiden Seiten, solange der Wagen in die Welt und auf freie Spur passt.
+// Posten: eine Kachel vor jeder verriegelten Aussentuer (Aufbruch, door), gleichmaessig an der Strassenseite und den Seitenwaenden, an der Fluchtseite nur drei Anker in der Fluchtzone, Reihenfolge reihum.
+function autoPosts(lay){if(!lay.spots)findSpots(lay);const B=lay.bld,ln=laneOf(lay),V=CFG.val,tl=v=>Math.floor(v/T),ex=lay.exit,free=(x,y)=>!OOB(x,y)&&!isSol(x,y),out={slots:{W:[],E:[]},posts:[]};
+const c=Math.floor((B.x0+B.x1)/2),wx1=WX0+W-1,fits=u=>ln.box(u*T-48,u*T+80,lay.laneY,32).every(q=>free(q[0],q[1]));
+for(let u=c;u-2>=WX0;u-=V.slotStep)if(fits(u))out.slots.W.push(u);for(let u=c+V.slotStep;u+2<=wx1;u+=V.slotStep)if(fits(u))out.slots.E.push(u);
+const xs=ex.dir>0?'E':'W',os=ex.dir>0?'W':'E',A={S:[],N:[],E:[],W:[]},ang={S:-Math.PI/2,N:Math.PI/2,W:0,E:Math.PI};
+const pick=(x,y,hor)=>{for(const k of[0,1,-1,2,-2]){const px=hor?x+k:x,py=hor?y:y+k;if(free(px,py))return[px,py]}return null};
+for(const sp of lay.spots)if(sp.side&&sp.lk&&!sp.ex){const c0=sp.cells[0],p=[c0[0]-sp.iv[0],c0[1]-sp.iv[1]];if(free(p[0],p[1]))A[sp.side].push({x:p[0],y:p[1],a:ang[sp.side],k:sp.side,door:[c0[0],c0[1]]})}
+const wall=(s,line,a0,a1,hor)=>{const n=Math.max(2,Math.round((a1-a0)/V.postStep[s==='N'?'N':s==='S'?'S':'W']));for(let i=0;i<n;i++){const t=Math.round(a0+(a1-a0)*(i+.5)/n),p=hor?pick(t,line,true):pick(line,t,false);if(p)A[s].push({x:p[0],y:p[1],a:ang[s],k:s})}};
+const fd=lay.spots.find(q=>q.side==='S'&&!q.lk&&!q.ex),nS=Math.max(4,Math.round((B.x1-B.x0)/V.postStep.S));
+if(fd)for(let i=0;i<nS;i++){const k=i>>1,x=fd.cells[0][0]+(i%2?V.postGap*k+2:-(V.postGap*k+1)),p=x>=B.x0-1&&x<=B.x1+1?pick(x,B.y1+V.off.S,true):null;if(p)A.S.push({x:p[0],y:p[1],a:ang.S,k:'S'})}
+else wall('S',B.y1+V.off.S,B.x0,B.x1,true);
+wall('N',B.y0-V.off.N,B.x0,B.x1,true);wall(os,os==='W'?B.x0-V.off.W:B.x1+V.off.W,B.y0,B.y1,false);
+const r0=tl(ex.y0),r1=tl(ex.y1)-1,ax=ex.tx+ex.dir*V.off.E;for(const y of[r0,r1,r0-2]){const p=pick(ax,y,false);if(p)A[xs].push({x:p[0],y:p[1],a:ang[xs],k:xs,anchor:true})}
+const ord=['S',xs,os,'N'];for(let i=0;ord.some(s=>A[s].length>i);i++)for(const s of ord)if(A[s][i])out.posts.push(A[s][i]);
+return out}
 function buildWorld(lay){LAY=lay;SUNW=lay.winN;seed=11;if(!lay.truck){findSpots(lay);deriveWins(lay)}else{lay.wins=[];lay.snp=[]}
 LOBBY=[];{const l=lay.lobby;for(let y=l[1];y<=l[3];y++)for(let x=l[0];x<=l[2];x++)if(!isSol(x,y))LOBBY.push([x,y])}
 const th=lay.theme,P=th.f,sun=th.sun;
@@ -1757,7 +1871,7 @@ cv.addEventListener('keyup',e=>{keys[kn(e)]=0});
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(nameEdit){nameEdit=false;saveName()}if(UI.down(mouse.sx,mouse.sy))return;if(scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}

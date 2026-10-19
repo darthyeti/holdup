@@ -2,6 +2,7 @@
 // Laden im Browser: fetch('tools/mapcheck.js').then(r=>r.text()).then(eval)
 // Dann: mapcheck.check('gas',123) liefert einen Bericht, mapcheck.sweep('gas',60) prueft viele Seeds, mapcheck.ascii() zeigt das Raster.
 // Geprueft wird per Flutfuellung vom Spielerstart (Tresortuer und Hintertueren zaehlen als offen): Items, Posten, Wagenplaetze, Fluchtzone, Wachrouten, Kassierer, Kameras, dazu die Beute-Summe.
+// Dazu validate/vsweep/autocmp fuer den Kartenvertrag (validateMap, autoPosts), siehe docs/karte-und-layout.md.
 (function(){
 const D=__dbg,T=32;
 function build(sc,seed,lage){D.setScenario(sc);D.setSeedMode('random');if(lage!==undefined)D.setLage(lage);D.buildLay(D.layoutFor(seed))}
@@ -39,5 +40,22 @@ function sweep(sc,n,from){const out={n,fail:0,errs:{},tags:{}};for(let i=0;i<n;i
 function ascii(x0,y0,x1,y1){const w=D.world(),rows=[];const X0=x0==null?w.WX0:x0,Y0=y0==null?w.WY0:y0,X1=x1==null?w.WX0+w.W-1:x1,Y1=y1==null?w.WY0+w.H-1:y1;
  let hdr='    ';for(let x=X0;x<=X1;x++)hdr+=(x%10===0?String(Math.abs(x)%100/10|0):' ');rows.push(hdr);hdr='    ';for(let x=X0;x<=X1;x++)hdr+=Math.abs(x)%10;rows.push(hdr);
  for(let y=Y0;y<=Y1;y++){let r=String(y).padStart(3)+' ';for(let x=X0;x<=X1;x++)r+=w.cell(x,y)==='o'?'.':w.cell(x,y);rows.push(r)}return rows.join('\n')}
-window.mapcheck={check,sweep,ascii,build};
+// ---- Kartenvertrag (docs/karte-und-layout.md): validateMap, laneOf und autoPosts aus dem Debug-Hook ----
+// validate(sc,seed,o): o.light prueft direkt nach layoutFor (ohne Aufbau, 1 ms statt 40 ms), o.lage erzwingt Lage-Tags. Gibt den Bericht von validateMap zurueck.
+function validate(sc,seed,o){o=o||{};let lay;if(o.light){D.setScenario(sc);D.setSeedMode('random');if(o.lage!==undefined)D.setLage(o.lage);lay=D.layoutFor(seed)}else{build(sc,seed,o.lage);lay=D.LAY()}return D.validateMap(lay)}
+// vsweep(sc,n,from,o): n Seeds (Schritt 37), je Regel Anzahl, erste Seeds und eine Beispielmeldung, dazu Eingangs-Listen und Spannen der Kennzahlen
+function vsweep(sc,n,from,o){const out={sc,n,ok:0,err:{},warn:{},entries:{},range:{}},add=(m,r,seed)=>{const e=m[r.r]=m[r.r]||{n:0,seeds:[],ex:r.m};e.n++;if(e.seeds.length<4)e.seeds.push(seed)};
+ for(let i=0;i<n;i++){const seed=(from||1)+i*37,r=validate(sc,seed,o);if(r.ok)out.ok++;r.err.forEach(e=>add(out.err,e,seed));r.warn.forEach(e=>add(out.warn,e,seed));
+  if(r.info.entries){const k=r.info.entries.join(' | ');out.entries[k]=(out.entries[k]||0)+1}
+  for(const [k,v] of[['pathSV',r.info.pathSV],['pathVE',r.info.pathVE],['loot',r.info.loot&&r.info.loot.v],['cams',r.info.cams],['guards',r.info.guards],['mat',r.info.mat&&r.info.mat[0]-r.info.mat[1]],['slots',r.info.slots],['posts',r.info.posts]])if(v!=null){const g=out.range[k]=out.range[k]||[v,v];g[0]=Math.min(g[0],v);g[1]=Math.max(g[1],v)}}
+ return out}
+// autocmp(sc,seed,o): abgeleitete Posten und Wagenplaetze (autoPosts) gegen die Handliste der Karte. Ein Posten gilt als getroffen, wenn der andere Typ innerhalb von 1,5 Kacheln liegt, shiftW/shiftE sind je Hand-Platz die Verschiebung (abgeleitet minus Hand) zum naechsten abgeleiteten Platz.
+function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){D.setScenario(sc);D.setSeedMode('random');lay=D.layoutFor(seed)}else{build(sc,seed);lay=D.LAY()}
+ const A=D.autoPosts(lay),H=lay.posts,P=A.posts,d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),by=l=>{const c={};l.forEach(p=>c[p.k]=(c[p.k]||0)+1);return c},str=l=>l.map(p=>p.x+','+p.y+p.k);
+ const um=H.filter(h=>!P.some(a=>d(a,h)<=1.5)),ex=P.filter(a=>!H.some(h=>d(a,h)<=1.5)),um3=H.filter(h=>!P.some(a=>d(a,h)<=3));
+ const sh=end=>lay.slots[end].map(u=>{const c=A.slots[end];return c.length?c.map(v=>v-u).reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a):null});
+ return{sc,seed,flip:!!lay.flip,hall:lay.hall||null,hand:H.length,auto:P.length,bySide:{hand:by(H),auto:by(P)},hit:H.length-um.length,hit3:H.length-um3.length,handMiss:str(um),autoExtra:str(ex),
+  doors:{hand:str(H.filter(p=>p.door)),auto:str(P.filter(p=>p.door))},anchors:{hand:str(H.filter(p=>p.anchor)),auto:str(P.filter(p=>p.anchor))},
+  slots:{hand:lay.slots,auto:A.slots,shiftW:sh('W'),shiftE:sh('E')},order:{hand:H.slice(0,8).map(p=>p.k).join(''),auto:P.slice(0,8).map(p=>p.k).join('')}}}
+window.mapcheck={check,sweep,ascii,build,validate,vsweep,autocmp};
 })();
