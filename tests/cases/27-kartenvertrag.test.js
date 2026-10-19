@@ -92,6 +92,28 @@ module.exports = [
     },
   },
   {
+    // Tills Fund (Oktober 2026): Auf dem Parkplatz der Bank stand ein Auto genau vor dem Zauntor, von der Strasse kam man nicht auf den Platz.
+    // Ohne CFG.map.gate waren es 39 von 1000 Seeds ganz zugestellt (26 davon gespiegelt) und 70 mit nur einer freien Kachel. CFG.map.gate haelt die zwei Reihen vor dem Zaun frei.
+    name: 'Kartenvertrag: Bank-Parkplatztor ist in 1000 Seeds nie zugestellt (Auto, Kiste, Fass, Pflanze, auch gespiegelt)',
+    timeout: 240000,
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
+        const bad = []; let flip = 0;
+        for (let sd = 1; sd <= 1000; sd++) {
+          const lay = D.layoutFor(sd), v = D.validateMap(lay);
+          if (lay.flip) flip++;
+          if (v.info.gates !== 1) bad.push(sd + ': ' + v.info.gates + ' Tore');
+          if (v.err.some(e => e.r === 'tor-verstellt') || v.warn.some(e => e.r === 'tor-eng')) bad.push(sd + ': Tor verstellt');
+        }
+        return { flip, nb: bad.length, bad: bad.slice(0, 5) };
+      });
+      t.eq(r.bad, [], 'Seeds mit verstelltem oder fehlendem Tor (' + r.nb + ')');
+      t.ok(r.flip > 300, 'gespiegelte Karten kamen vor: ' + r.flip);
+      t.note('1000 Seeds (' + r.flip + ' gespiegelt), Tor immer frei');
+    },
+  },
+  {
     name: 'Kartenvertrag: alle Grundrisse von Juwelier, Tankstelle, Museum und Casino bestehen (je 5 Seeds)',
     timeout: 240000,
     async run(t) {
@@ -166,6 +188,12 @@ module.exports = [
         run('weg-warnung', (c, l) => { D.CFG.val.pathSV = [60, 70]; });
         D.CFG.val.pathSV = [8, 30];
         const sv = D.CFG.val.minW; D.CFG.val.minW = 100; run('welt', () => { }); D.CFG.val.minW = sv;
+        // Zauntor der Bank (Parkplatz): ein Auto davor stellt es zu (Fehler), ein halb verstelltes Tor ist eine Warnung
+        D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
+        const gate = f => { const lay = D.layoutFor(5), w = D.world(), B = lay.bld, gy = B.y1 + 1; let gx = -1; for (let x = B.x1 + 1; x < w.WX0 + w.W - 1; x++) if (!D.isSol(x, gy)) { gx = x; break; } f(w.setc, gx, gy); const rep = D.validateMap(lay); return { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) }; };
+        out['tor-ganz'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); c(gx + 1, gy - 1, 'v'); });
+        out['tor-halb'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); });
+        out['tor-frei'] = gate(() => { });
         return out;
       });
       t.eq(r.ohne, { err: [], warn: [] }, 'der unveraenderte Juwelier ist sauber');
@@ -173,6 +201,9 @@ module.exports = [
       for (const [k, rule] of Object.entries(want)) t.ok(r[k].err.includes(rule), k + ': Regel "' + rule + '" muss anschlagen, bekam ' + JSON.stringify(r[k]));
       t.ok(r['eingang-verstellt'].warn.includes('eingang-verstellt') && !r['eingang-verstellt'].err.includes('eingang-weg'), 'Tuer hinter zerlegbarem Moebel ist nur eine Warnung: ' + JSON.stringify(r['eingang-verstellt']));
       t.ok(r['weg-warnung'].warn.includes('weg-start-tresor'), 'Weg Start zu Tresor ausserhalb des Richtwerts warnt: ' + JSON.stringify(r['weg-warnung']));
+      t.ok(r['tor-ganz'].err.includes('tor-verstellt'), 'Auto vor dem Zauntor ist ein Fehler: ' + JSON.stringify(r['tor-ganz']));
+      t.ok(r['tor-halb'].warn.includes('tor-eng') && !r['tor-halb'].err.includes('tor-verstellt'), 'halb verstelltes Zauntor ist nur eine Warnung: ' + JSON.stringify(r['tor-halb']));
+      t.ok(!r['tor-frei'].err.includes('tor-verstellt') && !r['tor-frei'].warn.includes('tor-eng'), 'freies Zauntor ist sauber: ' + JSON.stringify(r['tor-frei']));
     },
   },
   {
