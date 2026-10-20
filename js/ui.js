@@ -19,9 +19,9 @@ const JOBS=[
 {k:'museum',n:'Museum',i:'museum',be:3,ri:2,s:'Nacht, Laser, Lichtkegel',d:['Im Lichtkegel einer Wache fällst du sofort auf, Laser lösen bei Berührung Alarm aus (Schalter: 50 s aus).','Gemälde, Statue, Relikte, Depot. Lautlos mit Beute raus: 100 % Bonus. Schwere Stücke machen langsam.']},
 {k:'casino',n:'Casino',i:'casino',be:3,ri:3,s:'Chips und Cage',d:['Viele Wachen und Kameras. Chips zählen nur halb, wenn du sie nicht am Cage tauschst (dauert).','Chips, Automaten, VIP-Fächer, Tresor. Erst kämpft der Hausdienst, dann die Polizei.']}],
 RANDOM={k:'random',n:'Zufall',i:'dice',s:'Würfelt unter allem, was dein Rang freischaltet',d:['Jeder Auftrag wird neu gewürfelt, unter allem, was dein Rang freischaltet.','Bank, Juwelier, Transporter und Tankstelle von Anfang an, Museum ab Auftrag 3, Casino ab Auftrag 5.']};
-const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['Esc, P','Pause'],['M','Ton an/aus']];
+const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','zielen, loslassen: Blend, Rauch, Ablenker'],['Esc, P','Pause'],['M','Ton an/aus']];
 const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.'];
-const SHOPGRP=[['WAFFEN',['smg','rifle']],['SCHUTZ',['vest','helm','mask']],['WERKZEUG',['pack','drill','pick']],['EINSATZ',['radio','jam','med']]];
+const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH',['jam','med','ad','bt']],['WURFGERÄTE',['fl','sm','dc']]];
 
 /* ---------- Hilfen ---------- */
 function fit(t,w,font){const{g}=X;g.font=font;t=String(t);if(g.measureText(t).width<=w)return t;while(t.length>1&&g.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
@@ -130,22 +130,27 @@ else{g.font='12px monospace';g.fillStyle='#6c7480';g.fillText('wartet auf',t.x+3
 function sShop(){const{CFG,NET,SESSION,fmt,shopState,SHOPKEYS}=X,items=CFG.shop.items,t=[],host=NET.role==='host',client=NET.role==='client',mine=NET.roster.find(q=>q.id===NET.myId);
 const cols=SHOPGRP.map(([n,ks])=>({n,ix:ks.map(k=>items.findIndex(it=>it.k===k)).filter(i=>i>=0)}));
 items.forEach((it,i)=>{if(!cols.some(c=>c.ix.includes(i)))cols[cols.length-1].ix.push(i)});
-cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*90,w:204,h:82,act:'buy',arg:i,key:SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
+cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);
 g.textAlign='right';g.font='bold 22px monospace';g.fillStyle=G;g.fillText('Konto '+fmt(SESSION.wallet),900,58);g.font='12px monospace';g.fillStyle=TX;g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Bester Auftrag '+fmt(SESSION.best),900,80);
 g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;cols.forEach((c,ci)=>g.fillText(c.n,60+ci*212,96));
-const k=curKit(),nm=[CFG.wpn[k.w].n].concat(items.filter(it=>!it.c&&it.k!=='smg'&&it.k!=='rifle'&&SESSION.own[it.k]).map(it=>it.n)),gd=[k.jam?'Störsender x'+k.jam:'',k.med?'Medkit x'+k.med:''].filter(Boolean);
-g.textAlign='center';g.font='12px monospace';g.fillStyle=TX;g.fillText(fit('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),840,'12px monospace'),480,388);
-if(NET.role!=='solo'){const n=NET.roster.length,w=Math.min(150,860/n);NET.roster.forEach((r,i)=>{const x=480-n*w/2+i*w+8;g.fillStyle=PC[r.id].c;g.fillRect(x,402,9,9);g.textAlign='left';g.font='11px monospace';g.fillStyle=r.id===0||r.rdy?G:SU;g.fillText(pn(r.id)+(r.id===0?' (Host)':r.rdy?' bereit':' kauft ein'),x+14,411)})}
-if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle=Y;g.fillText(shopNote.s,480,440)}g.textAlign='left'}}}
-function paintItem(t){const{g,fmt,CFG,SHOPKEYS}=X,it=t.item,st=t.st,ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt',i=CFG.shop.items.indexOf(it),cnt=it.c?(SESSION.cons[it.k]|0):0;
-g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=A;g.fillText('['+SHOPKEYS[i]+']',t.x+10,t.y+20);
-g.font='bold 13px monospace';g.fillStyle=own?G:ok?Y:MU;g.fillText(fit(it.n,t.w-100,g.font),t.x+38,t.y+20);
-g.textAlign='right';g.font='bold 13px monospace';g.fillStyle=ok?'#e6eaf0':'#6c7480';g.fillText(fmt(it.p),t.x+t.w-10,t.y+20);
-g.textAlign='left';g.font='11px monospace';g.fillStyle=SU;wrap(it.d(),t.w-20,'11px monospace',2).forEach((l,k)=>g.fillText(l,t.x+10,t.y+40+k*13));
-g.font='11px monospace';g.fillStyle=own?G:st==='zu teuer'?RD:SU;g.fillText(it.c?'Vorrat '+cnt+' / '+CFG.shop[it.k+'Max']+(ok?'':'  ('+st+')'):st,t.x+10,t.y+t.h-9)}
+const k=curKit(),nm=[CFG.wpn[k.w].n].concat(items.filter(it=>it.t&&k[it.k]).map(it=>it.n+' '+k[it.k]),k.mask?['Gasmaske']:[]),gd=[['jam','Stör'],['med','Med'],['fl','Blend'],['sm','Rauch'],['dc','Ablenker'],['ad','Adrenalin'],['bt','Bretter']].filter(q=>k[q[0]]).map(q=>q[1]+' x'+k[q[0]]);
+const fi=focus&&/^buy:/.test(focus)?items[+focus.slice(4)]:null;
+if(fi){const lv=fi.t?(SESSION.own[fi.k]|0):0,nx=fi.t?Math.min(3,lv+1):0;g.textAlign='left';g.font='bold 12px monospace';g.fillStyle=A;g.fillText(fi.n+(fi.t?(lv>=3?' (Stufe 3, höchste)':' (Stufe '+nx+')'):''),60,428);g.font='12px monospace';g.fillStyle=TX;g.fillText(fit(fi.d(fi.t?nx:0)+(fi.t&&lv>0&&lv<3?'   jetzt: '+fi.d(lv):''),840,'12px monospace'),60,444)}else{g.textAlign='left';g.font='12px monospace';g.fillStyle=MU;g.fillText('Posten wählen (Pfeiltasten oder Maus): hier steht seine Beschreibung.',60,436)}
+g.textAlign='center';g.font='11px monospace';g.fillStyle=SU;g.fillText(fit('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),840,'11px monospace'),480,462);
+if(NET.role!=='solo'){const n=NET.roster.length,w=Math.min(150,860/n);NET.roster.forEach((r,i)=>{const x=480-n*w/2+i*w+8;g.fillStyle=PC[r.id].c;g.fillRect(x,474,9,9);g.textAlign='left';g.font='11px monospace';g.fillStyle=r.id===0||r.rdy?G:SU;g.fillText(pn(r.id)+(r.id===0?' (Host)':r.rdy?' bereit':' kauft ein'),x+14,483)})}
+if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle=Y;g.fillText(shopNote.s,480,500)}g.textAlign='left'}}}
+function paintItem(t){const{g,fmt,CFG,SESSION,itemPrice,repCost}=X,it=t.item,st=t.st,ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt'||st==='heil',lv=it.t?(SESSION.own[it.k]|0):0,cnt=it.c?(SESSION.cons[it.k]|0):0,price=it.r?repCost():itemPrice(it);
+g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=A;if(t.key)g.fillText('['+String(t.key).toUpperCase()+']',t.x+10,t.y+20);
+g.font='bold 13px monospace';g.fillStyle=own?G:ok?Y:MU;g.fillText(fit(it.n,t.w-110,g.font),t.x+(t.key?38:10),t.y+20);
+g.textAlign='right';g.font='bold 13px monospace';g.fillStyle=ok?'#e6eaf0':'#6c7480';if(!(st==='gekauft'||st==='heil'||st==='ersetzt'))g.fillText(fmt(price),t.x+t.w-10,t.y+20);
+g.textAlign='left';g.font='11px monospace';g.fillStyle=own?G:st==='zu teuer'?RD:SU;
+if(it.t){for(let q=0;q<3;q++){g.fillStyle=q<lv?(own?G:A):'rgba(255,255,255,.18)';g.fillRect(t.x+10+q*14,t.y+t.h-20,10,10)}
+ const w=it.k==='vest'?SESSION.wear.vest:it.k==='helm'?SESSION.wear.helm:null,mx=lv?(it.k==='vest'?CFG.shop.tier.vest[lv-1]:it.k==='helm'?CFG.shop.helmHits[lv-1]:0):0;
+ g.fillStyle=own?G:st==='zu teuer'?RD:SU;g.fillText((lv?'Stufe '+lv:'nicht gekauft')+(w!=null&&mx?'  Zustand '+Math.round(Math.max(0,w)/mx*100)+' %':'')+(ok?'':'  ('+st+')'),t.x+58,t.y+t.h-11)}
+else g.fillText(it.c?'Vorrat '+cnt+' / '+CFG.shop[it.k+'Max']+(ok?'':'  ('+st+')'):it.r?(st==='heil'?'alles heil':st==='zu teuer'?'Kosten '+fmt(price)+'  (zu teuer)':'Weste und Helm'):st,t.x+10,t.y+t.h-11)}
 function sPause(){const{NET}=X;
 return{def:'resume',back:'resume',t:[
 {id:'resume',x:330,y:158,w:300,h:50,kind:'p',key:'p',act:'resume',title:'Weiter',chip:'P'},
@@ -244,4 +249,4 @@ const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
 return{drawMenu,drawPause,drawEnded,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus})):[]}}}
-mkUI.api=2;
+mkUI.api=3;

@@ -7,7 +7,8 @@ const BASE = { sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt' };
 const cases = [
   { name: 'Bank klassisch', sc: 'bank', n: 12, min: .75, opt: { wait: [15, 4] }, classic: true },
   { name: 'Bank Zufallskarten', sc: 'bank', n: 12, min: .7, opt: {}, from: 5000 },
-  { name: 'Juwelier', sc: 'jewel', n: 10, min: .5, opt: {}, from: 5000 },
+  // Juwelier: gemessen 55 bis 60 % (n=60, mit und ohne Polizei-Abstand), bei n=10 streut die Quote um 15 Punkte und ein Schwellwert von 50 % war ein Muenzwurf, deshalb n=30 und 35 %
+  { name: 'Juwelier', sc: 'jewel', n: 30, min: .35, opt: {}, from: 5000 },
   { name: 'Tankstelle (nur Tresor)', sc: 'gas', n: 10, min: .7, opt: {}, from: 5000 },
   { name: 'Museum (zwei Kassetten)', sc: 'museum', n: 10, min: .7, opt: { goods: true, goodsN: 2 }, from: 5000 },
   { name: 'Casino (nur Tresor)', sc: 'casino', n: 10, min: .7, opt: {}, from: 5000 },
