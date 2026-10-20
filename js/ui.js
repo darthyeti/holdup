@@ -161,7 +161,9 @@ return{t:[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(NET.ro
 /* ---------- Modals: Optionen, Anleitung, Rueckfrage ---------- */
 function mOptions(){const{scr,DBG,unlockAll,myName,nameEdit,time,CFG}=X,title=scr==='title',rows=[];
 rows.push({id:'vmus',slider:0,title:'Musik',paint:paintSlider},{id:'vsfx',slider:1,title:'Effekte',paint:paintSlider});
-rows.push({id:'mute',key:'m',act:'mute',title:'Ton: '+(SND.isMuted()?'aus':'an'),sub:'',nochip:false});
+/* Ton und Maus fangen (MLOCK aus index.html): zwei halbe Kacheln nebeneinander, ohne Pointer-Lock-Unterstuetzung nur der Ton in voller Breite */
+rows.push({id:'mute',key:'m',act:'mute',half:MLOCK.can?0:undefined,title:'Ton: '+(SND.isMuted()?'aus':'an'),sub:MLOCK.can?'Musik und Effekte':'',nochip:false});
+if(MLOCK.can)rows.push({id:'lock',key:'f',act:'mlock',half:1,title:'Maus fangen: '+(MLOCK.on?'an':'aus'),sub:MLOCK.on?'Esc gibt die Maus frei':'Zeiger bleibt beweglich'});
 /* Bildgroesse und Vollbild (VIEW aus index.html): zwei halbe Kacheln nebeneinander, ohne Vollbild-Unterstuetzung nur die Bildgroesse in voller Breite */
 rows.push({id:'view',key:'b',act:'view',half:VIEW.can?0:undefined,title:'Bildgröße',sub:VIEW.mode==='auto'?'Passt sich dem Fenster an':'Fest, höchstens 1100 px'});
 if(VIEW.can)rows.push({id:'full',key:'v',act:'full',half:1,title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'});

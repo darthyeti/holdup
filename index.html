@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=54"></script>
+<script src="js/ui.js?v=55"></script>
 <script>
-const BUILD={n:54,d:'2026-10-19'};//BUILD
+const BUILD={n:55,d:'2026-10-20'};//BUILD
 const UI_API=2;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -46,6 +46,10 @@ document.addEventListener('fullscreenchange',onFs);document.addEventListener('we
 return{get mode(){return mode},get full(){return !!fsEl()},get can(){return can},
 cycle(){mode=mode==='auto'?'fix':'auto';sync();try{localStorage.setItem('holdup.view',mode)}catch(e){}return mode},
 toggleFull(){if(!can)return false;try{if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else{const r=(de.requestFullscreen||de.webkitRequestFullscreen).call(de);if(r&&r.catch)r.catch(()=>{})}}catch(e){}return true}}})();
+/* Maus fangen (Option, Voreinstellung aus, localStorage 'holdup.lock'): Im Spiel sperrt requestPointerLock den Zeiger im Canvas, die Spiellogik fuehrt dann einen virtuellen Zeiger (siehe plHeld in start). Menues greifen wie bei VIEW ueber den globalen Namen darauf zu. */
+const MLOCK=(()=>{let on=false;try{on=localStorage.getItem('holdup.lock')==='1'}catch(e){}
+return{get on(){return on},get can(){return!!(Element.prototype.requestPointerLock&&document.exitPointerLock)},
+toggle(){on=!on;try{localStorage.setItem('holdup.lock',on?'1':'0')}catch(e){}return on}}})();
 const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error(src));i.src=src});
 Promise.all(['chars','chars_flash','props','props2','cars'].map(n=>load('assets/'+n+'.png'))).then(a=>{if(typeof mkUI!=='function'||mkUI.api!==UI_API)throw new Error('js/ui.js fehlt oder ist veraltet (Browser-Cache). Seite hart neu laden: Strg+Umschalt+R, am Mac Cmd+Umschalt+R.');window.__mkInst=o=>start(a[0],a[1],a[2],a[3],a[4],o);start(a[0],a[1],a[2],a[3],a[4])}).catch(e=>{const el=document.getElementById('err');el.hidden=false;el.textContent='Spiel konnte nicht gestartet werden: '+e.message});
 /* ---- Ton: alles synthetisch (WebAudio), keine Dateien. Ohne Nutzeraktion bleibt ac=null, dann sind alle Aufrufe leer. ---- */
@@ -1797,6 +1801,7 @@ for(const f of fx){g.globalAlpha=Math.min(1,f.t);g.fillStyle='#7ee34a';g.font='b
 let ax=p.x-camX+Math.cos(p.a)*90,ay=p.y-camY+Math.sin(p.a)*90;if(time-mouse.t<4){ax=mouse.sx;ay=mouse.sy}
 if(focus&&p===me&&live(me)&&me.armed){const gp=4+(p.wp.spread+.05*p.mv+p.rec+lsp(p))*180;g.strokeStyle='rgba(120,255,140,.95)';g.lineWidth=1.6;g.beginPath();g.moveTo(ax-gp-6,ay);g.lineTo(ax-gp,ay);g.moveTo(ax+gp,ay);g.lineTo(ax+gp+6,ay);g.moveTo(ax,ay-gp-6);g.lineTo(ax,ay-gp);g.moveTo(ax,ay+gp);g.lineTo(ax,ay+gp+6);g.stroke()}
 hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('TON AUS (M)',VW-12,VH-52);g.textAlign='left'}
+if(MLOCK.on&&MLOCK.can&&plWant()&&!plHeld()&&focus&&!paused&&!ended){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('KLICKEN: MAUS FANGEN',VW-12,VH-(SND.isMuted()?68:52));g.textAlign='left'}
 if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}g.textAlign='left'}
 if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
 ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=(i===ended.hi?'bold 20px':'15px')+' monospace';g.fillText(l,480,244+i*28)});
@@ -1860,7 +1865,7 @@ case'shopBack':if(NET.role==='solo')toTitle();else leaveGame('');break;
 case'resume':paused=false;break;
 case'leave':if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.');break;
 case'mute':SND.toggleMute();break;
-case'view':VIEW.cycle();break;
+case'view':VIEW.cycle();break;case'mlock':MLOCK.toggle();break;
 case'full':VIEW.toggleFull();break;
 case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
 case'unlock':unlockAll=!unlockAll;break;
@@ -1931,7 +1936,8 @@ function tick(dt){
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
 if(titleNote){titleNote.t-=dt;if(titleNote.t<=0)titleNote=null}
 volT=Math.max(0,volT-dt);shopNote.t=Math.max(0,shopNote.t-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.length?Math.min(...pcs.map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});
-const cc=scr!=='play'||paused||ended?'pointer':focus?'none':'crosshair';if(cc!==curCur){curCur=cc;cv.style.cursor=cc}}
+const cc=scr!=='play'||paused||ended?'pointer':focus?'none':'crosshair';if(cc!==curCur){curCur=cc;cv.style.cursor=cc}
+if(plHeld()&&!plWant())document.exitPointerLock()}
 if(!opt.noLoop)requestAnimationFrame(loop);
 cv.addEventListener('focus',()=>{focus=true});cv.addEventListener('blur',()=>{focus=false;clearKeys();mouse.down=0});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&scr==='play'&&!ended&&NET.role==='solo'){paused=true;clearKeys();mouse.down=0}});
@@ -1941,7 +1947,7 @@ const kn=e=>e.key.length===1?e.key.toLowerCase():e.key;
 cv.addEventListener('keydown',e=>{const k=kn(e);SND.init();SND.resume();
 if(nameEdit){if(e.key==='Enter'||e.key==='Escape'||e.key==='Tab'){nameEdit=false;saveName()}else if(e.key==='Backspace')myName=myName.slice(0,-1);else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&myName.length<NAME_MAX&&/[\p{L}\p{N} _.\-]/u.test(e.key))myName+=e.key;e.preventDefault();return}
 if(scr==='join'){if((e.ctrlKey||e.metaKey)&&k==='v')return;if(!e.ctrlKey&&!e.metaKey&&(k==='Backspace'||k.length===1)){if(!e.repeat||k==='Backspace'){if(k==='Backspace')joinText=joinText.slice(0,-1);else if(joinText.length<4){const u=k.toUpperCase();if(CODECH.includes(u))joinText+=u}}e.preventDefault();return}}
-if(UI.key(k,e)){e.preventDefault();return}
+if(UI.key(k,e)){e.preventDefault();plTry();return}
 if(scr!=='play'||paused){e.preventDefault();return}
 keys[k]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Escape'].includes(e.key))e.preventDefault();
 if(e.repeat)return;
@@ -1952,9 +1958,14 @@ if(k==='f'&&phase===1)reqHeist();if(k==='g')reqVan();if(k==='1')reqGadget(1);if(
 if(k==='Enter'&&ended){if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}});
 cv.addEventListener('keyup',e=>{keys[kn(e)]=0});
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
-cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();mpos(e);if(nameEdit){nameEdit=false;saveName()}if(UI.down(mouse.sx,mouse.sy))return;if(scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
-cv.addEventListener('mousemove',e=>{mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+/* Maus fangen (MLOCK): gesperrt ist der Zeiger nur im laufenden Spiel (nicht in Menues, Pause, Ergebnis). Gesperrt rechnet mousemove mit movementX/Y (auf logische Pixel umgerechnet, am Bildrand geklemmt)
+   und mouse.sx/sy bleibt der Zeiger fuers Zielen. Gesperrt wird nur auf eine Eingabe hin (Klick oder Taste, Browserregel), Esc oder ein Klick auf Weiter genuegen also. Esc loest die Sperre und pausiert (pointerlockchange). */
+const plHeld=()=>document.pointerLockElement===cv,plWant=()=>MLOCK.on&&MLOCK.can&&scr==='play'&&!paused&&!ended;
+function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
+cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
+cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
+const dbg={plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
