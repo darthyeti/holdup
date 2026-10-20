@@ -1,7 +1,8 @@
 // Bot-Rauchtest: Der Balance-Bot (tools/bot.js) spielt je Szenario ein paar fruehe Abgaenge. Das ist kein Balance-Test,
 // sondern eine Probe, dass ein ganzer Auftrag von Phase 1 bis zum Ende durchlaeuft (Beute, Polizei, Wagen, Ergebnis) und der Sieg erreichbar bleibt.
 // Richtwerte aus docs/tests-und-messwerte.md: frueh rufen (call:0) gewinnt auf Bank, Tankstelle, Museum (2 Stuecke) und Casino (nur Tresor) fast immer.
-const BASE = { sigma: .05, react: .35, kit: 'old', call: 0 };
+// van 'alt': der Bot hat keine Taktik fuer Polizei am Fluchtwagen, die Rauchtests messen die Karten mit dem alten Verhalten (sofort an Bord, Fahrer wartet immer); die neuen Regeln testet 32-fluchtwagen
+const BASE = { sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt' };
 
 const cases = [
   { name: 'Bank klassisch', sc: 'bank', n: 12, min: .75, opt: { wait: [15, 4] }, classic: true },

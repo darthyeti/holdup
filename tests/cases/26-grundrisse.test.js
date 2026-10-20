@@ -240,7 +240,7 @@ module.exports = [
             let win = 0, loot = 0, n = 0, lost = [];
             for (const sd of list) {
               D.setScenario(sc); D.setSeedMode('random');
-              const res = bot.run(Object.assign({ sigma: .05, react: .35, kit: 'old', call: 0, seed: sd }, BOT[sc])); n++;
+              const res = bot.run(Object.assign({ sigma: .05, react: .35, kit: 'old', call: 0, seed: sd, van: 'alt' }, BOT[sc])); n++;
               if (res.res === 'WIN') { win++; loot += res.loot } else lost.push(sd);
             }
             out[sc + '/' + hall] = { win, n, avg: win ? Math.round(loot / win) : 0, lost };

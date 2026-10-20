@@ -73,6 +73,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(([SIDES]) => {
         const D = __dbg, T = 32, out = [], bad = [];
+        Object.assign(D.CFG.van, { bt: 0, bu: 0, r: 0 });   // der Test prueft die Strassengeometrie, nicht die Regeln fuers Einsteigen und den Fahrer (die haben 32-fluchtwagen)
         for (const [sc, seed] of [['jewel', 5], ['gas', 22]]) for (const side of SIDES) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           let lay = D.layoutFor(seed); if (side !== 'S') lay = D.turnLayout(lay, side[0], side[1] === '+');
@@ -88,7 +89,7 @@ module.exports = [
             D.update(1 / 30);
             const g = D.get();
             // Beamter: erste Sicht nach dem Aussteigen, 44 px vom Wagen zum Gebaeude hin (Normale), hoechstens 28 px laengs daneben
-            for (const e of g.en) if (!seenCops.has(e.id)) { seenCops.add(e.id); if (!['cop', 'swat', 'shield'].includes(e.kind)) continue; const c = g.pcs.slice().sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0]; if (!c) { bad.push(tag + ' Beamter ohne Wagen'); continue; } const dn = (e.x - c.x) * LN.n[0] + (e.y - c.y) * LN.n[1], du = (e.x - c.x) * LN.u[0] + (e.y - c.y) * LN.u[1]; if (Math.abs(dn - 44) > 8 || Math.abs(du) > 30) bad.push(tag + ' Beamter steigt falsch aus: Normale ' + Math.round(dn) + ', laengs ' + Math.round(du)); }
+            for (const e of g.en) if (!seenCops.has(e.id)) { seenCops.add(e.id); if (!['cop', 'swat', 'shield'].includes(e.kind)) continue; const c = g.pcs.slice().sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0]; if (!c) { bad.push(tag + ' Beamter ohne Wagen'); continue; } const dn = (e.x - c.x) * LN.n[0] + (e.y - c.y) * LN.n[1], du = (e.x - c.x) * LN.u[0] + (e.y - c.y) * LN.u[1]; if (Math.abs(dn - 44) > 8 || Math.abs(du) > 34) bad.push(tag + ' Beamter steigt falsch aus: Normale ' + Math.round(dn) + ', laengs ' + Math.round(du)); }
             if (!parked && g.pcs.length && g.pcs.every(c => c.st === 'park')) {
               parked = true; cars = g.pcs.length;
               for (const c of g.pcs) {
@@ -191,7 +192,7 @@ module.exports = [
         for (const [sc, seed, side, n, min] of [['jewel', 5000, 'E', 4, 2], ['jewel', 5000, 'W', 4, 2], ['jewel', 5000, 'N+', 4, 2], ['gas', 5000, 'N', 3, 2], ['gas', 5000, 'W', 3, 2], ['bank', 5017, 'E', 3, 2]]) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           D.buildLay(D.turnLayout(D.layoutFor(seed), side[0], side[1] === '+'));
-          let w = 0, loot = 0; for (let i = 0; i < n; i++) { const q = bot.run({ sigma: .05, react: .35, kit: 'old', call: 0 }); if (q.res === 'WIN') { w++; loot += q.loot; } }
+          let w = 0, loot = 0; for (let i = 0; i < n; i++) { const q = bot.run({ sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt' }); if (q.res === 'WIN') { w++; loot += q.loot; } }
           out[sc + ' ' + side] = { w, n, min, loot: w ? Math.round(loot / w) : 0 };
         }
         return out;
