@@ -40,19 +40,19 @@ Netzformat `VER` 17 (Oktober 2026, Auszeichnungen): Das Ende-Paket `{t:'end',res
 
 ## Was beendet die gehostete Sitzung
 
-Stand Oktober 2026, geprüft im Code (`uiAct`, `leaveGame`, `netReset`, `hostConn`, Tastenbehandlung in `index.html`). Ein Host, der den Raum verlässt, beendet ihn für alle: `netReset` schließt alle Verbindungen, die Clients lesen `Verbindung zum Host verloren.` und landen auf dem Titel (Konto und Ausrüstung bleiben in ihrem Tab, `SESSION` liegt im Speicher, nur Neuladen löscht sie). Einen Hostwechsel gibt es nicht.
+Stand Oktober 2026, geprüft im Code (`uiAct`, `leaveGame`, `netReset`, `hostConn`, Tastenbehandlung in `index.html` und `activate` in `js/ui.js`). Ein Host, der den Raum verlässt, beendet ihn für alle: `netReset` schließt alle Verbindungen, die Clients lesen `Verbindung zum Host verloren.` und landen auf dem Titel (Konto und Ausrüstung bleiben in ihrem Tab, `SESSION` liegt im Speicher, nur Neuladen löscht sie). Einen Hostwechsel gibt es nicht.
 
 Beendet den Raum für alle (als Host):
-- Lobby: Esc oder Kachel `Raum schließen` (sofort, ohne Rückfrage).
-- Shop: Esc oder Kachel `Raum schließen` (sofort, ohne Rückfrage).
-- Ergebnis (beide Seiten): Esc oder Kachel `Raum schließen` (sofort, ohne Rückfrage, auch auf der Seite Auszeichnungen).
-- Pause im Spiel: Kachel `Raum schließen` (Taste Q), mit Rückfrage.
-- Browser: Tab oder Fenster schließen, Neuladen, Adresse ändern, Zurück (`beforeunload` ruft `netReset`), ebenso ein Absturz des Tabs.
+- Lobby: Esc oder Kachel `Raum schließen`.
+- Shop: Esc oder Kachel `Raum schließen`.
+- Ergebnis (beide Seiten): Esc oder Kachel `Raum schließen`.
+- Pause im Spiel: Kachel `Raum schließen` (Taste Q).
+- Browser: Tab oder Fenster schließen, Neuladen, Adresse ändern, Zurück (`beforeunload` ruft `netReset`), ebenso ein Absturz des Tabs. Dafür gibt es keine Rückfrage.
+
+Rückfrage (seit Oktober 2026): Lobby, Shop, Ergebnis und Pause fragen den Host nach `Raum schließen` zurück (Fenster `RAUM SCHLIESSEN`: `Du bist der Host: Der Raum wird geschlossen und 2 Mitspieler werden getrennt. Wirklich schließen?`, Standardwahl `Zurück`, Esc schließt nur das Fenster), solange Mitspieler verbunden sind (`NET.conns.length > 0`). Ohne Mitspieler, solo und für Clients geht es direkt, ein Client verlässt dabei nur sich selbst. Die Pause hatte die Rückfrage schon, Lobby, Shop und Ergebnis neu (`activate` in `js/ui.js` fängt `lobbyBack`, `shopBack` und `endBack` ab, die Taste Esc auf dem Ergebnis geht jetzt auch über das UI statt über den Kern).
 
 Harmlos: Auftragswahl (Esc geht zurück zum Shop oder zur Lobby), Optionen und Anleitung (Esc schließt nur das Fenster), Pause `Weiter` (P), das Blättern im Ergebnis (Pfeile, Enter), Tab wechseln (im Spiel rechnet der Host über einen Hintergrund-Worker weiter, `hostTicker`, in den Menüs gibt es nichts zu rechnen).
 
-Für Clients gilt dasselbe an denselben Stellen, aber es verlässt nur den Client selbst, die anderen spielen weiter.
-
 Weitere Regel: Neue Spieler kommen nur in der Lobby in den Raum (`hostConn` lehnt sonst mit `Das Spiel läuft schon.` ab). Wer die Verbindung verliert, kann also nicht wieder zurück, und eine Lobby gibt es nach dem ersten Start nicht mehr (nur Shop und Auftragswahl). Ein Abbruch ist deshalb für diesen Mitspieler endgültig, solange der Host nicht den Raum schließt und neu eröffnet.
 
-Offen (Vorschlag): Für den Host mit verbundenen Mitspielern eine Rückfrage vor `Raum schließen` in Lobby, Shop und Ergebnis (die Rückfrage-Fenster gibt es schon), weil dort Esc aus Gewohnheit den Raum schließt.
+Offen (Vorschlag): Eine Abfrage des Browsers (`beforeunload`) beim Schließen oder Neuladen des Tabs, solange Mitspieler verbunden sind (Vorsicht: Test-Browser müssen den Dialog wegklicken, sonst hängt eine Navigation).

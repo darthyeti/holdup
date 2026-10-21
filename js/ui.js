@@ -164,7 +164,7 @@ function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||
 const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
 {id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen',tf:'bold 13px monospace'}];
 if(pg===1)t.push({id:'endPrev',x:250,y:468,w:190,h:58,nofocus:true,act:'endPrev',chip:'←',title:'Übersicht',tf:'bold 13px monospace'});
-return{t,deco:aw.length?()=>pageAw(aw,pg):null}}
+return{t,back:'endBack',deco:aw.length?()=>pageAw(aw,pg):null}}
 function medal(cx,cy,c){const{g}=X;g.fillStyle=c;g.beginPath();g.arc(cx,cy,19,0,6.283);g.fill();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=2;g.stroke();
 g.fillStyle='rgba(10,12,18,.72)';g.beginPath();for(let k=0;k<10;k++){const r=k%2?4.5:10,an=-1.5708+k*.62832;g.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}g.closePath();g.fill()}
 function pageAw(aw,pg){const{g,VW,VH}=X,cx=pg===1?585:480;g.textAlign='center';
@@ -234,6 +234,8 @@ if(a==='ui:close'){closeModal();return}
 if(a==='ui:options'||a==='ui:help'){openModal({k:a.slice(3)});return}
 if(a==='ui:confirm'){const solo=X.NET.role==='solo',host=X.NET.role==='host';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:host?{title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und alle Mitspieler werden getrennt.',yesLabel:'Ja, Raum schließen',yes:'leave'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}
 if(a==='ui:yes'){const y=modal.yes;closeAll();X.act(y);return}
+/* Raum schliessen (Host mit verbundenen Mitspielern): Lobby, Shop und Ergebnis fragen zurueck, denn ein geschlossener Raum trennt alle (Esc aus Gewohnheit, siehe docs/coop-und-netz.md). Ohne Mitspieler, solo und fuer Clients geht es direkt. */
+if((a==='lobbyBack'||a==='shopBack'||a==='endBack')&&X.NET.role==='host'&&X.NET.conns.length>0){const n=X.NET.conns.length;openModal({k:'confirm',title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und '+n+(n===1?' Mitspieler wird':' Mitspieler werden')+' getrennt. Wirklich schließen?',yesLabel:'Ja, Raum schließen',yes:a});return}
 X.act(a,t.arg);if(a==='pick')focus='start'}
 function nav(k){const c=cur();if(!c)return true;const L=c.t.filter(t=>!t.nofocus);if(!L.length)return true;const f=L.find(t=>t.id===focus);if(!f){focus=L[0].id;return true}
 const cx=t=>t.x+t.w/2,cy=t=>t.y+t.h/2;let best=null,bs=1e9;
@@ -241,7 +243,7 @@ for(const t of L){if(t===f)continue;const dx=cx(t)-cx(f),dy=cy(t)-cy(f);let p,q;
 if(k==='ArrowRight'){if(dx<=4)continue;p=dx;q=Math.abs(dy)}else if(k==='ArrowLeft'){if(dx>=-4)continue;p=-dx;q=Math.abs(dy)}else if(k==='ArrowDown'){if(dy<=4)continue;p=dy;q=Math.abs(dx)}else{if(dy>=-4)continue;p=-dy;q=Math.abs(dx)}
 const s=p+2.5*q;if(s<bs){bs=s;best=t}}
 if(best)focus=best.id;return true}
-function key(k,e){const c=cur();if(!c||c.t.every(t=>t.nofocus))return false;e=e||{};const ft=c.t.find(t=>t.id===focus&&!t.nofocus);
+function key(k,e){const c=cur();if(c&&k==='Escape'&&c.back&&c.t.every(t=>t.nofocus)){if(!(e||{}).repeat)activate({act:c.back});return true}if(!c||c.t.every(t=>t.nofocus))return false;e=e||{};const ft=c.t.find(t=>t.id===focus&&!t.nofocus);
 if(k==='m'){if(!e.repeat)X.act('mute');return true}
 if(k==='ArrowLeft'||k==='ArrowRight'){if(ft&&ft.slider!=null){X.volAdj(ft.slider,k==='ArrowLeft'?-.05:.05);return true}return nav(k)}
 if(k==='ArrowUp'||k==='ArrowDown')return nav(k);

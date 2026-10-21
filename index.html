@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=63"></script>
+<script src="js/ui.js?v=64"></script>
 <script>
-const BUILD={n:63,d:'2026-10-21'};//BUILD
+const BUILD={n:64,d:'2026-10-21'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -2123,7 +2123,7 @@ keys[k]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Escape'].inclu
 if(e.repeat)return;
 if(k==='m')SND.toggleMute();
 if((k==='Escape'||k==='p')&&!ended){aimG=0;paused=true;clearKeys();mouse.down=0}
-else if(k==='Escape'&&ended){if(NET.role==='solo')toTitle();else leaveGame('')}
+
 if(k==='f'&&phase===1)reqHeist();if(k==='g')reqVan();if(k==='1'){aimG=0;reqGadget(1)}if(k==='2'){aimG=0;reqGadget(2)}
 if(k==='3'||k==='4'||k==='5'){const n=+k,W=THROW[n];if(aimOk(n))aimG=n;else{SND.ev('deny');ban(!live(me)||ended?'':phase!==W.ph?(W.ph===2?'Nur im Überfall nützlich':'Nur beim Erkunden nützlich'):'Kein Vorrat: '+W.n,1.4,me.id)}}
 if(ended&&k==='Enter')endNext();if(ended&&(k==='ArrowRight'||k==='ArrowLeft'))endPage(k==='ArrowRight'?1:0)});
