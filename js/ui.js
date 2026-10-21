@@ -149,7 +149,10 @@ g.textAlign='right';g.font='bold 13px monospace';g.fillStyle=ok?'#e6eaf0':'#6c74
 g.textAlign='left';g.font='11px monospace';g.fillStyle=own?G:st==='zu teuer'?RD:SU;
 if(it.t){for(let q=0;q<3;q++){g.fillStyle=q<lv?(own?G:A):'rgba(255,255,255,.18)';g.fillRect(t.x+10+q*14,t.y+t.h-20,10,10)}
  const w=it.k==='vest'?SESSION.wear.vest:it.k==='helm'?SESSION.wear.helm:null,mx=lv?(it.k==='vest'?CFG.shop.tier.vest[lv-1]:it.k==='helm'?CFG.shop.helmHits[lv-1]:0):0;
- g.fillStyle=own?G:st==='zu teuer'?RD:SU;g.fillText((lv?'Stufe '+lv:'nicht gekauft')+(w!=null&&mx?'  Zustand '+Math.round(Math.max(0,w)/mx*100)+' %':'')+(ok?'':'  ('+st+')'),t.x+58,t.y+t.h-11)}
+ g.fillStyle=own?G:st==='zu teuer'?RD:SU;
+ /* Platz hinter den Stufenquadraten: rund 20 Zeichen. Stufe 0: nur 'nicht gekauft' oder 'zu teuer' (rot), ab Stufe 1 'Stufe n', der Zustand von Weste und Helm und der Grund, der Grund faellt weg, wenn er nicht mehr passt (die rote Farbe zeigt ihn dann) */
+ const zu=w!=null&&mx?'  Zustand '+Math.round(Math.max(0,w)/mx*100)+' %':'',base=lv?'Stufe '+lv+zu:'',full=lv?base+(ok?'':st==='zu teuer'?'  zu teuer':'  ('+st+')'):(ok?'nicht gekauft':st);
+ g.fillText(lv&&g.measureText(full).width>t.w-68?base:full,t.x+58,t.y+t.h-11)}
 else g.fillText(it.c?'Vorrat '+cnt+' / '+CFG.shop[it.k+'Max']+(ok?'':'  ('+st+')'):it.r?(st==='heil'?'alles heil':st==='zu teuer'?'Kosten '+fmt(price)+'  (zu teuer)':'Weste und Helm'):st,t.x+10,t.y+t.h-11)}
 function sPause(){const{NET}=X;
 return{def:'resume',back:'resume',t:[
