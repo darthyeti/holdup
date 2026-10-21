@@ -88,9 +88,9 @@ t.push({id:'start',x:620,y:466,w:280,h:44,kind:'p',act:'missionStart',title:from
 return{def:'start',back:'missionBack',t,deco(){const{g}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('AUFTRAG WÄHLEN',60,64);
 g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'Neue Serie',900,58);
 const ft=t.find(q=>q.id===focus&&q.job),j=(ft?ft.job:jobOf(scenario)),dl=ft&&ft.lock?[ft.job.n+' ist gesperrt: erreichbar '+ft.lock+'.','Jeder überstandene Auftrag zählt, auch beim Zufall.']:j.d;
-g.fillStyle='rgba(0,0,0,.55)';g.fillRect(60,366,840,84);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(60.5,366.5,839,83);g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=Y;g.fillText(j.n,74,386);
+g.fillStyle='rgba(0,0,0,.55)';g.fillRect(60,366,840,74);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(60.5,366.5,839,73);g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=Y;g.fillText(j.n,74,386);
 g.font='12px monospace';g.fillStyle=TX;dl.forEach((l,i)=>g.fillText(l,74,408+i*18));
-if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle=Y;g.fillText(shopNote.s,480,461)}g.textAlign='left'}}}
+if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle=Y;g.fillText(shopNote.s,480,458)}g.textAlign='left'}}}
 function paintJob(t){const{g}=X,j=t.job,lk=!!t.lock,c=lk?MU:Y;icon(j.i,t.x+26,t.y+28,26,lk?MU:A);g.textAlign='left';g.font='bold 15px monospace';g.fillStyle=c;g.fillText(j.n,t.x+50,t.y+33);
 g.font='11px monospace';g.fillStyle=SU;wrap(j.s,t.w-24,'11px monospace',2).forEach((l,i)=>g.fillText(l,t.x+12,t.y+60+i*13));
 if(lk){icon('lock',t.x+t.w-20,t.y+20,18,MU);g.fillStyle=MU;g.font='12px monospace';g.fillText(t.lock,t.x+12,t.y+t.h-14);return}
@@ -140,8 +140,11 @@ const k=curKit(),nm=[CFG.wpn[k.w].n].concat(items.filter(it=>it.t&&k[it.k]).map(
 const fi=focus&&/^buy:/.test(focus)?items[+focus.slice(4)]:null;
 if(fi){const lv=fi.t?(SESSION.own[fi.k]|0):0,nx=fi.t?Math.min(3,lv+1):0;g.textAlign='left';g.font='bold 12px monospace';g.fillStyle=A;g.fillText(fi.n+(fi.t?(lv>=3?' (Stufe 3, höchste)':' (Stufe '+nx+')'):''),60,428);g.font='12px monospace';g.fillStyle=TX;g.fillText(fit(fi.d(fi.t?nx:0)+(fi.t&&lv>0&&lv<3?'   jetzt: '+fi.d(lv):''),840,'12px monospace'),60,444)}else{g.textAlign='left';g.font='12px monospace';g.fillStyle=MU;g.fillText('Posten wählen (Pfeiltasten oder Maus): hier steht seine Beschreibung.',60,436)}
 g.textAlign='center';g.font='11px monospace';g.fillStyle=SU;g.fillText(fit('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),840,'11px monospace'),480,462);
-if(NET.role!=='solo'){const n=NET.roster.length,w=Math.min(150,860/n);NET.roster.forEach((r,i)=>{const x=480-n*w/2+i*w+8;g.fillStyle=PC[r.id].c;g.fillRect(x,474,9,9);g.textAlign='left';g.font='11px monospace';g.fillStyle=r.id===0||r.rdy?G:SU;g.fillText(pn(r.id)+(r.id===0?' (Host)':r.rdy?' bereit':' kauft ein'),x+14,483)})}
-if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle=Y;g.fillText(shopNote.s,480,500)}g.textAlign='left'}}}
+/* Team-Kasten im Coop: liegt in der vierten Spalte unter den Wurfgeraeten (die Spalte hat nur drei Posten), damit der Status der Mitspieler nie ueber den Kacheln unten liegt */
+if(NET.role!=='solo'){const x=696,y=296,w=204;g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,y,w,112);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,111);g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('TEAM',x+12,y+20);
+NET.roster.forEach((r,i)=>{const yy=y+40+i*21,rd=r.id===0||r.rdy;if(r.id===NET.myId){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(x+4,yy-14,w-8,20)}g.fillStyle=PC[r.id].c;g.fillRect(x+12,yy-9,9,9);g.textAlign='left';g.font='11px monospace';g.fillStyle=rd?TX:SU;g.fillText(fit(pn(r.id),w-120,g.font),x+28,yy);g.textAlign='right';g.fillStyle=rd?G:SU;g.fillText(r.id===0?'Host':r.rdy?'bereit':'kauft ein',x+w-12,yy)})}
+/* Hinweis (Nicht alle sind bereit ...): zwei Zeilen in der Luecke zwischen den Kacheln unten (x 260 bis 620), nicht quer ueber die Kachel Weiter */
+if(shopNote.t>0){g.textAlign='center';g.font='12px monospace';g.fillStyle=Y;wrap(shopNote.s,344,g.font,2).forEach((l,i)=>g.fillText(l,440,486+i*15))}g.textAlign='left'}}}
 function paintItem(t){const{g,fmt,CFG,SESSION,itemPrice,repCost}=X,it=t.item,st=t.st,ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt'||st==='heil',lv=it.t?(SESSION.own[it.k]|0):0,cnt=it.c?(SESSION.cons[it.k]|0):0,price=it.r?repCost():itemPrice(it);
 g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=A;if(t.key)g.fillText('['+String(t.key).toUpperCase()+']',t.x+10,t.y+20);
 g.font='bold 13px monospace';g.fillStyle=own?G:ok?Y:MU;g.fillText(fit(it.n,t.w-110,g.font),t.x+(t.key?38:10),t.y+20);

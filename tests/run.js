@@ -1,4 +1,4 @@
-// Testlauf fuer Holdup: node run.js [--update] [Teil des Testnamens ...]
+// Testlauf fuer Holdup: node run.js [--update] [Teil des Testnamens ...]   (HOLDUP_ROOT=<Ordner> spielt gegen einen anderen Stand, zum Beispiel git archive HEAD~1)
 // Jeder Test liegt in cases/*.test.js und exportiert { name, run(t) }. Jeder Test bekommt eine frische Seite mit #debug,
 // JS-Fehler im Spiel lassen ihn scheitern. t.snapshot(schluessel, wert) vergleicht mit golden/<datei>.json (mit --update neu schreiben).
 const fs = require('fs');
@@ -36,7 +36,8 @@ function mkT(testFile, page, env) {
 (async () => {
   const dir = path.join(__dirname, 'cases');
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.test.js')).sort().map(f => path.join(dir, f));
-  let env = await launch();
+  const LOPT = process.env.HOLDUP_ROOT ? { root: process.env.HOLDUP_ROOT } : undefined;   // HOLDUP_ROOT: Tests gegen einen anderen Stand des Spiels laufen lassen (Gegenprobe, ob ein Test den alten Fehler findet)
+  let env = await launch(LOPT);
   let pass = 0, fail = 0;
   const t0 = Date.now();
   try {
@@ -58,7 +59,7 @@ function mkT(testFile, page, env) {
           let timer, timedOut = false;
           await Promise.race([tc.run(t), new Promise((_, rej) => { timer = setTimeout(() => { timedOut = true; rej(new Fail('Zeitueberschreitung nach ' + limit / 1000 + ' s (haengt das Spiel in einer Schleife?)')); }, limit); })]).finally(() => clearTimeout(timer));
           if (page.errors.length) throw new Fail('JS-Fehler im Spiel: ' + page.errors.slice(0, 3).join(' | '));
-        } catch (e) { err = e; if (e instanceof Fail && /^Zeitueberschreitung/.test(e.message)) { try { const b = env.browser, srv = env.srv; await Promise.race([b.close(), new Promise(r => setTimeout(r, 5000))]); srv.close(); } catch (_) { } env = await launch(); page = null; } }
+        } catch (e) { err = e; if (e instanceof Fail && /^Zeitueberschreitung/.test(e.message)) { try { const b = env.browser, srv = env.srv; await Promise.race([b.close(), new Promise(r => setTimeout(r, 5000))]); srv.close(); } catch (_) { } env = await launch(LOPT); page = null; } }
         if (!err || attempt >= (tc.retry || 0) || (err instanceof Fail && /^Zeitueberschreitung/.test(err.message))) break;
         attempt++; }
         const sec = ((Date.now() - start) / 1000).toFixed(1);
