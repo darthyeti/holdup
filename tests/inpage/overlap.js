@@ -4,9 +4,10 @@
 // ist das abgedunkelte Spiel darunter. Gleiche Texte versetzt (Schatten) sind kein Fund. Kasten eines Textes: Breite per measureText, Hoehe 1,0 mal Schriftgroesse (Oberlaenge .8, Unterlaenge .2),
 // jeweils um 1 Pixel verkleinert. Liefert eine Liste von Fundstellen als Text (leer = in Ordnung).
 (function () {
-  function check(d) {
+  // opt.modal: Fenster (Anleitung, Optionen): geprueft werden die Texte nach dem abdunkelnden Rechteck des Fensters (Alpha .78), die Kacheln darunter zaehlen nicht
+  function check(d, opt) {
     const ctx = d.cv.getContext('2d'), orig = { fillText: ctx.fillText, strokeRect: ctx.strokeRect, fillRect: ctx.fillRect }, tiles = d.ui().tiles(), log = [];
-    let inTiles = false, started = d.state().scr !== 'play';
+    let inTiles = false, started = !(opt && opt.modal) && d.state().scr !== 'play';
     const frame = (x, y, w, h) => tiles.some(t => [.5, 1].some(o => Math.abs(x - (t.x + o)) < .01 && Math.abs(y - (t.y + o)) < .01 && Math.abs(w - (t.w - 2 * o)) < .01 && Math.abs(h - (t.h - 2 * o)) < .01));
     ctx.fillText = function (s, x, y) {
       if (started && !inTiles && String(s).trim()) {
@@ -16,7 +17,7 @@
       }
       return orig.fillText.apply(this, arguments);
     };
-    ctx.fillRect = function (x, y, w, h) { if (!started && x === 0 && y === 0 && w >= 960 && h >= 544 && /\.(74|82)\)/.test(String(ctx.fillStyle))) started = true; return orig.fillRect.apply(this, arguments); };
+    ctx.fillRect = function (x, y, w, h) { if (!started && x === 0 && y === 0 && w >= 960 && h >= 544 && (opt && opt.modal ? /\.78\)/ : /\.(74|82)\)/).test(String(ctx.fillStyle))) { started = true; inTiles = false; } return orig.fillRect.apply(this, arguments); };
     ctx.strokeRect = function (x, y, w, h) { if (!inTiles && frame(x, y, w, h)) inTiles = true; return orig.strokeRect.apply(this, arguments); };
     try { d.draw(); } finally { ctx.fillText = orig.fillText; ctx.strokeRect = orig.strokeRect; ctx.fillRect = orig.fillRect; }
     const hit = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0, out = [];

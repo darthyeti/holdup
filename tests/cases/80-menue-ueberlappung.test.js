@@ -87,4 +87,17 @@ module.exports = [
       t.eq(r, {}, 'Fundstellen');
     },
   },
+  {
+    name: 'Ueberlappung: Fenster Anleitung und Optionen (Text gegen Text und Kacheln)',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(() => {
+        const out = {}, net = LoopNet(30, 0), d = MT.solo(net), chk = (tag) => { const o = OV.check(d, { modal: true }); if (o.length) out[tag] = o; };
+        MT.adv(d, 1); MT.k(d, '?'); if (d.ui().modal() !== 'help') out['Anleitung fehlt'] = [String(d.ui().modal())]; chk('Anleitung'); MT.k(d, 'Escape');
+        MT.k(d, 'o'); if (d.ui().modal() !== 'options') out['Optionen fehlen'] = [String(d.ui().modal())]; chk('Optionen'); MT.k(d, 'Escape');
+        return out;
+      });
+      t.eq(r, {}, 'Fundstellen');
+    },
+  },
 ];

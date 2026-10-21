@@ -1,6 +1,7 @@
 // Verdachtsbalken im Coop (Tills Frage: stapeln sich die Balken pro Mitspieler, muss der Balken fuer bis zu 4 Spieler laenger sein?):
 // Es gibt einen gemeinsamen Teambalken, die Raten gelten als Maximum (nicht Summe). Neu: Der Balken ist je weiterem Spieler um CFG.susPer (.25) laenger,
 // sus bleibt in Prozent des Balkens, Anstieg und Abbau werden durch 1 + susPer * (n - 1) geteilt. Solo bleibt unveraendert.
+// Beobachtet wird hier ein Spieler, der nur Beute traegt (Wache: CFG.watch.carry.grd), die Gnadenfrist ist abgeschaltet (grace 0), damit der Alarm sofort bei 100 kommt.
 async function setup(t) {
   await t.loadTool('loopnet.js');
   await t.loadInpage('coop.js');
@@ -8,7 +9,7 @@ async function setup(t) {
 
 module.exports = [
   {
-    name: 'Verdacht Team: gleiche Beobachtung braucht mit n Spielern n-mal 1 + 0,25 (n - 1) so lange bis zum Alarm (Wache sieht Spieler mit Beute)',
+    name: 'Verdacht Team: gleiche Beobachtung braucht mit n Spielern 1 + 0,25 (n - 1) mal so lange bis zum Alarm (Wache sieht Spieler mit Beute)',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(() => {
@@ -16,10 +17,10 @@ module.exports = [
         for (const n of [1, 2, 3, 4]) {
           const G = CT.mkGame('jewel', 654, n), A = G.A, g = A.get().npcs.find(q => q.k === 'grd');
           if (!g) return { err: 'keine Wache auf der Karte' };
-          A.setSus(0); const p1 = A.get().players[n > 1 ? 1 : 0]; let s = 0;
+          A.CFG.watch.grace = 0; A.setSus(0); const p1 = A.get().players[n > 1 ? 1 : 0]; let s = 0;
           const hold = () => { p1.x = g.x + 50; p1.y = g.y; p1.units = 1; g.a = 0; };
           for (let i = 0; i < 60 * 40 && A.get().phase === 1; i++) { hold(); step(G.insts, G.net, 1 / 60); s++; }
-          out[n] = { t: +(s / 60).toFixed(2), phase: A.get().phase, rate: 48 * A.lgM('sus') };
+          out[n] = { t: +(s / 60).toFixed(2), phase: A.get().phase, rate: A.CFG.watch.carry.grd * A.lgM('sus') };
         }
         return out;
       });
@@ -44,7 +45,7 @@ module.exports = [
         }
         // Maximum statt Summe: vier Spieler im Blick derselben Wache steigern nicht schneller als einer
         const rate = (n, nSee) => {
-          const G = CT.mkGame('jewel', 654, n), A = G.A, g = A.get().npcs.find(q => q.k === 'grd'); A.setSus(0);
+          const G = CT.mkGame('jewel', 654, n), A = G.A, g = A.get().npcs.find(q => q.k === 'grd'); A.CFG.watch.grace = 0; A.setSus(0);
           const P = A.get().players; let s = 0;
           for (let i = 0; i < 30; i++) { for (let k = 0; k < nSee; k++) { P[k].x = g.x + 50 + k * 6; P[k].y = g.y; P[k].units = 1; } g.a = 0; step(G.insts, G.net, 1 / 60); s++; }
           return A.get().sus / (s / 60);
@@ -72,7 +73,7 @@ module.exports = [
         try { A.draw(); } finally { ctx.fillText = o; }
         out.hint = draw.find(s => /^Team: Balken/.test(s)) || null;
         // abgeschaltet: gleiche Beobachtung wie solo
-        A.CFG.susPer = 0; A.setSus(0);
+        A.CFG.susPer = 0; A.CFG.watch.grace = 0; A.setSus(0);
         for (let i = 0; i < 30; i++) { p.x = g.x + 50; p.y = g.y; p.units = 1; g.a = 0; step(G.insts, G.net, 1 / 60); }
         out.aus = A.get().sus; A.CFG.susPer = .25;
         return out;
@@ -80,24 +81,24 @@ module.exports = [
       t.ok(r.host > 5, 'Verdacht steigt: ' + r.host);
       t.ok(Math.abs(r.client - r.host) < 2, 'Client sieht ungefaehr denselben Balken (Prozent): ' + r.client + ' gegen ' + r.host);
       t.eq(r.hint, 'Team: Balken x1,50', 'HUD nennt den Faktor zu dritt');
-      t.ok(r.aus > 12 && r.aus < 30, 'ohne Skalierung steigt es mit voller Rate (48/s mal 0,5 s = 24 Prozent, Lage ohne Abweichung): ' + r.aus);
+      t.ok(r.aus > 7 && r.aus < 14, 'ohne Skalierung steigt es mit voller Rate (20/s mal 0,5 s = 10 Prozent, Lage ohne Abweichung): ' + r.aus);
     },
   },
   {
-    name: 'Verdacht Team: Solo ohne Hinweis und mit Faktor 1 (Rate 48 pro Sekunde)',
+    name: 'Verdacht Team: Solo ohne Hinweis und mit Faktor 1 (Rate CFG.watch.carry.grd pro Sekunde)',
     async run(t) {
       const r = await t.page.evaluate(() => {
-        const D = __dbg; D.reset(); D.setSus(0);
+        const D = __dbg; D.reset(); D.CFG.watch.grace = 0; D.setSus(0);
         const g = D.get().npcs.find(q => q.k === 'grd'), m = D.get().me;
         if (!g) return { err: 'keine Wache' };
         let s = 0; for (let i = 0; i < 30; i++) { m.x = g.x + 50; m.y = g.y; m.units = 1; g.a = 0; D.update(1 / 60); s++; }
         const draw = [], c = document.querySelector('canvas').getContext('2d'), o = c.fillText; c.fillText = function (x) { draw.push(String(x)); return o.apply(this, arguments); };
         try { D.draw(); } finally { c.fillText = o; }
-        return { rate: D.get().sus / (s / 60), lg: D.lgM('sus'), hint: draw.some(x => /^Team:/.test(x)) };
+        return { rate: D.get().sus / (s / 60), lg: D.lgM('sus'), car: D.CFG.watch.carry.grd, hint: draw.some(x => /^Team:/.test(x)) };
       });
       t.ok(!r.err, r.err);
       t.eq(r.hint, false, 'kein Team-Hinweis solo');
-      t.ok(Math.abs(r.rate - 48 * r.lg) < 48 * r.lg * .1, 'Rate solo ' + r.rate.toFixed(1) + ', erwartet ' + (48 * r.lg).toFixed(1));
+      t.ok(Math.abs(r.rate - r.car * r.lg) < r.car * r.lg * .1, 'Rate solo ' + r.rate.toFixed(1) + ', erwartet ' + (r.car * r.lg).toFixed(1));
     },
   },
 ];

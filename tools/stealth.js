@@ -7,6 +7,8 @@
 //  timed  dasselbe, aber vor jedem Schritt mit Beute wird auf ein sichtfreies Fenster gewartet (perfekte Voraussicht, Obergrenze fuer einen aufmerksamen Menschen), timedT die mittlere Dauer in s
 // Kameras bleiben ausser Betracht (Hauptschalter oder Stoersender gehen vom Spieler aus). Sichtregel wie im Spiel: canSee mit Reichweite mal .65 beim Schleichen,
 // Verdacht +48/s mal .8 bei Sicht, -9/s sonst, Alarm bei 100. Aufruf: stealth.measure({runs,secs,k,cut,sneak}) fuer die aktuelle Karte, stealth.sweep(n,from,{guards}) ueber Juwelier-Seeds.
+// Regelvarianten (Oktober 2026, Beobachterregeln und Gnadenfrist): stealth.rules(variants,o) und stealth.rulesSweep(variants,n,from,o): variants sind Objekte {carry,theft,first,ramp,grace}, Ergebnis ist je Variante der Anteil
+// gelungener Laeufe (ein Spieler, Juwelier, k Vitrinen, ohne Warten). carry = Rate beim Tragen, theft = Rate beim Schneiden mit Beute, first = Rate beim ersten Schnitt, ramp = Aufbauzeit der Sicht (s), grace = Gnadenfrist (s).
 // Team (Coop-Balken, Oktober 2026): stealth.team({ns,k,spread,trials,scale}) und stealth.teamSweep(n,from,o): ns Spieler, jeder schneidet k zufaellige Vitrinen und geht zur Tuer, versetzt gestartet (spread s),
 // ein gemeinsamer Balken mit Rate-Maximum. ok = Erfolg mit Balken 100 (ohne Skalierung), okS = Erfolg mit Balken 100 * (1 + scale * (n - 1)), peak = mittlerer Hoechststand. Wirklich spielen tut das Spiel mit CFG.susPer,
 // das Modell zeigt nur, wie stark ein gemeinsamer Balken mit der Spielerzahl kippt. Grenzen: nur Wache (keine Kameras, Kassierer), keine Absprache, kein Warten, Zufall aus Math.random (Mittel ueber viele Karten).
@@ -73,5 +75,23 @@ function teamSweep(n,from,o){o=o||{};const acc={};let cnt={};for(let i=0;i<n;i++
   const r=team(o);const key=g+' Wache(n)';cnt[key]=(cnt[key]||0)+1;acc[key]=acc[key]||{};for(const k in r){acc[key][k]=acc[key][k]||{ok:0,okS:0,peak:0};for(const f of['ok','okS','peak'])acc[key][k][f]+=r[k][f]}}
  for(const key in acc)for(const k in acc[key])for(const f in acc[key][k])acc[key][k][f]=+(acc[key][k][f]/cnt[key]).toFixed(2);
  return{seeds:cnt,res:acc}}
-window.stealth={measure,sweep,record,team,teamSweep};
+
+// Regelvarianten fuer den Einzelspieler (Juwelier): carry = Rate beim Tragen von Beute (Spiel heute 48), theft = Rate waehrend des Schneidens mit Beute in der Tasche,
+// first = Rate beim ersten Schnitt (heute 0), ramp = Sekunden zusammenhaengender Sicht bis zur vollen Rate, grace = Sekunden Gnadenfrist nach 100 (Abbruch, wenn der Balken in der Zeit unter 70 faellt)
+function rules(variants,o){o=Object.assign({secs:120,k:3,cut:6,sneak:true},o||{});const L=D.LAY(),rm=o.sneak?.65:1,kf=o.sneak?.8:1,speed=o.sneak?50:85,sight=D.lgM('sight');
+ const items=D.get().its.filter(i=>i.t==='vit'),spots=items.map(i=>({it:i,at:spotFor(i)})).filter(s=>s.at),exitT=frontOut(L),N=o.secs*HZ,res=variants.map(()=>({ok:0,n:0}));
+ const rec=record(o.secs),cache=new Map();
+ const vis=(i,x,y)=>{const key=((i%N)*64+Math.floor(y/T)+8)*128+Math.floor(x/T)+8;let v=cache.get(key);if(v===undefined){const g=rec[i%rec.length];v=g.some(q=>D.canSee(q[0],q[1],q[2],q[3],q[4]*rm*sight,x,y));cache.set(key,v)}return v};
+ const order=[];let cur=[L.spawn.x,L.spawn.y];const left=spots.slice();for(let i=0;i<Math.min(o.k,left.length);i++){let bi=0,bd=1e9;left.forEach((s,j)=>{const d=route(cur,s.at).d;if(d<bd){bd=d;bi=j}});order.push(left[bi]);cur=left[bi].at;left.splice(bi,1)}
+ const pts=[];cur=[L.spawn.x,L.spawn.y];order.forEach((s,idx)=>{for(const q of samples(cur,route(cur,s.at).p,speed))pts.push([q[0],q[1],idx>0?'carry':'walk']);for(let i=0;i<Math.round(o.cut*HZ);i++)pts.push([s.at[0],s.at[1],idx>0?'theft':'first']);cur=s.at});
+ for(const q of samples(cur,route(cur,exitT).p,speed))pts.push([q[0],q[1],'carry']);
+ variants.forEach((v,vi)=>{for(let t0=0;t0<N-50*HZ;t0+=2*HZ){let sus=0,seenT=0,fail=false,graceLeft=-1;
+  for(let j=0;j<pts.length&&!fail;j++){const kind=pts[j][2],base=kind==='carry'?v.carry:kind==='theft'?v.theft:kind==='first'?v.first:0,sees=base>0&&vis(t0+j,pts[j][0],pts[j][1]);
+   if(sees){seenT+=1/HZ;const f=v.ramp?Math.min(1,seenT/v.ramp):1;sus=Math.min(100,sus+base*kf*f/HZ)}else{seenT=0;sus=Math.max(0,sus-9/HZ)}
+   if(v.grace){if(graceLeft<0&&sus>=100)graceLeft=v.grace;if(graceLeft>=0){graceLeft-=1/HZ;if(sus<70)graceLeft=-1;else if(graceLeft<=0)fail=true}}else if(sus>=100)fail=true}
+  res[vi].n++;if(!fail)res[vi].ok++}});
+ return res.map(r=>r.ok/r.n)}
+function rulesSweep(variants,n,from,o){const acc={},cnt={};for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario('jewel');D.setSeedMode('random');D.setLage([]);D.buildLay(D.layoutFor(sd));const g=D.get().npcs.filter(q=>q.k==='grd').length;if(g===0)continue;const r=rules(variants,o),key=g+' Wache(n)';cnt[key]=(cnt[key]||0)+1;acc[key]=acc[key]||variants.map(()=>0);r.forEach((x,k)=>acc[key][k]+=x)}
+ for(const k in acc)acc[k]=acc[k].map(x=>+(x/cnt[k]).toFixed(2));return{seeds:cnt,res:acc}}
+window.stealth={measure,sweep,record,team,teamSweep,rules,rulesSweep};
 })();

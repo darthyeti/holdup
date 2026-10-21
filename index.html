@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=61"></script>
+<script src="js/ui.js?v=62"></script>
 <script>
-const BUILD={n:61,d:'2026-10-21'};//BUILD
+const BUILD={n:62,d:'2026-10-21'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -185,6 +185,7 @@ pol:{seats:3,carSpd:250,lead:600,exitGap:.45,run:1.7,dash:1.35,hold:14,anchorHol
 van:{bt:1.5,bu:.15,r:110,leave:5,back:8,spd:170},
 loiter:{warn:3,after:5,rate:14,still:28},
 susPer:.25,
+watch:{grace:4,back:70,carry:{grd:20,staff:10}},
 awards:{max:8,per:3,accShots:15,min:{idle:15,sh:40,tk:5,dist:150,work:10,bar:2,dry:3}},
 wpn:{pistol:{n:'Pistole',mag:12,res:72,cool:.32,dmg:50,spread:.014,rec:.02,rl:1.1},smg:{n:'SMG',mag:30,res:120,cool:.075,dmg:20,spread:.03,rec:.008,rl:1.2},rifle:{n:'Sturmgewehr',mag:30,res:150,cool:.1,dmg:34,spread:.012,rec:.012,rl:1.3}},
 shop:{tier:{vest:[100,150,200],helm:[.85,.75,.67],pack:[2,3,4],drill:[.64,.5,.4],pick:[.7,.55,.4],radio:[28,20,14]},price:{vest:[12000,20000,32000],helm:[8000,14000,22000],pack:[10000,16000,24000],drill:[14000,22000,32000],pick:[6000,10000,16000],radio:[9000,14000,20000]},helmHits:[12,16,20],rep:.4,
@@ -1176,7 +1177,7 @@ for(const b of bars)if(b.lv>0)b.cells.forEach((c,i)=>setc(c[0],c[1],b.pv[i]));ba
 if(tk&&tk.cells)for(const c of tk.cells)setc(c[0],c[1],'o');tk=null;
 if(mapSeed!==null&&(LAY.seed!==mapSeed||scOf(LAY)!==jobSc))buildWorld(layoutFor(mapSeed));
 LAY.lockCells.forEach(q=>setc(q[0],q[1],'L'));(LAY.wins||[]).forEach(w=>setc(w.x,w.y,'W'));camDown=0;rT=0;blk=0;evDone={};
-phase=1;tH=0;ended=null;vaultOpen=false;secured=0;escaped=0;code=false;mon=false;sus=0;banner=null;waveN=0;waveT=0;policeAt=0;vanAt=CFG.vanAuto;vanArr=false;vanCalled=false;vanX=LANE.van.from;vanMode=0;vanNv=0;vanBk=0;policeShown=false;civKills=0;kills=0;flowT=0;carsLight=0;eid=0;bid=0;seq=0;pend=[];evq=[];capd=[];keyTaken=false;cargoOpen=false;capt=0;surKilled=0;radioDown=0;
+phase=1;tH=0;ended=null;vaultOpen=false;secured=0;escaped=0;code=false;mon=false;sus=0;alarmT=0;alarmBy=null;banner=null;waveN=0;waveT=0;policeAt=0;vanAt=CFG.vanAuto;vanArr=false;vanCalled=false;vanX=LANE.van.from;vanMode=0;vanNv=0;vanBk=0;policeShown=false;civKills=0;kills=0;flowT=0;carsLight=0;eid=0;bid=0;seq=0;pend=[];evq=[];capd=[];keyTaken=false;cargoOpen=false;capt=0;surKilled=0;radioDown=0;
 if(NET.role!=='client')kits=buildKits();players=Array.from({length:nPl},(_,i)=>mkPl(i,nPl,kits[i]));me=players[Math.min(NET.myId,nPl-1)];p=me;if(NET.role==='host')players.forEach(o=>{if(o.id>0&&!NET.conns.some(c=>c.pid===o.id))o.gone=true});
 en=[];pcs=[];fps=[];bl=[];gr=[];gc=[];gq=[];smk=[];dcy=[];pt=[];cs=[];corp=[];fx=[];feed=[];pk=[];npcs=[];
 dc.save();dc.setTransform(1,0,0,1,0,0);dc.clearRect(0,0,WPX*2,WPY*2);dc.restore();
@@ -1403,7 +1404,7 @@ for(const n of npcs)if(n.st==='away'&&rT>=n.at){say(n.msg);if(phase===1){n.st='i
 if(gone)npcs=npcs.filter(q=>q.st!=='dead');
 if(ms.blackoutAt!=null&&!evDone.blk&&phase===1&&rT>=ms.blackoutAt){evDone.blk=1;blk=CFG.ev.blackout;camDown=Math.max(camDown,CFG.ev.blackout);snd('ev','power');ban('Stromausfall!',2.4);say('Stromausfall: Kameras und Licht sind aus.')}
 if(blk>0){blk-=dt;if(blk<=0){blk=0;say('Der Strom ist wieder da.')}}}
-function startHeist(forced,by,why){if(phase!==1||ended)return;phase=2;if(by&&by.st)by.st.alarm=forced?2:1;const who=by&&players.length>1?pn(by.id):null;LAY.spots.forEach(sp=>{if(sp.ex)sp.cells.forEach(c=>{if(cell(c[0],c[1])==='L')setc(c[0],c[1],'l')})});flowT=0;players.forEach(o=>{o.armed=true});tH=0;waveT=0;snd('alarm',forced);ban(LAY.truck?'ÜBERFALL AUF DEN PANZERWAGEN!':(who?who+': ':'')+(forced?'ENTDECKT! ALARM!':'ÜBERFALL! ALLE AUF DEN BODEN!'),2.8);if(who&&why!==false&&!LAY.truck)say(who+' '+(why||(forced?'ist aufgefallen: Alarm!':'hat die Waffe gezogen: Überfall!')));if(!LAY.truck)say('Möbel zerlegen (E) gibt Material für Barrikaden an den Türen.');
+function startHeist(forced,by,why){if(phase!==1||ended)return;phase=2;alarmT=0;alarmBy=null;if(by&&by.st)by.st.alarm=forced?2:1;const who=by&&players.length>1?pn(by.id):null;LAY.spots.forEach(sp=>{if(sp.ex)sp.cells.forEach(c=>{if(cell(c[0],c[1])==='L')setc(c[0],c[1],'l')})});flowT=0;players.forEach(o=>{o.armed=true});tH=0;waveT=0;snd('alarm',forced);ban(LAY.truck?'ÜBERFALL AUF DEN PANZERWAGEN!':(who?who+': ':'')+(forced?'ENTDECKT! ALARM!':'ÜBERFALL! ALLE AUF DEN BODEN!'),2.8);if(who&&why!==false&&!LAY.truck)say(who+' '+(why||(forced?'ist aufgefallen: Alarm!':'hat die Waffe gezogen: Überfall!')));if(!LAY.truck)say('Möbel zerlegen (E) gibt Material für Barrikaden an den Türen.');
 const keep=[];for(const n of npcs){if(n.k==='grd'){if(n.st==='away')keep.push(n);else convGuard(n)}else{n.st='cower';n.path=[];n.mvg=false;keep.push(n)}}
 npcs=keep;policeAt=LAY.truck?Math.max(CFG.policeForced,CFG.truck.policeAt-CFG.series.at*SESSION.round+lgA('pol')):forced?CFG.policeForced:Math.max(CFG.policeForced,(LAY.polAt||CFG.policeAt)-CFG.series.at*SESSION.round-(LAY.mission.ev.includes('streife')?CFG.ev.streife:0)+lgA('pol'));say(LAY.truck?'Der Fahrer funkt Alarm. Polizei in '+policeAt+' s':forced?'Alarm läuft schon. Polizei in '+policeAt+' s':'Stiller Alarm. Polizei in '+policeAt+' s');flowT=0}
 const vanT=()=>{const l=Math.max(0,...players.filter(o=>live(o)&&o.kit).map(o=>o.kit.radio|0));return l?CFG.shop.tier.radio[l-1]:CFG.vanCall};
@@ -1537,6 +1538,12 @@ pt=pt.filter(q=>{q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;return q.
 for(const f of fx){f.t-=dt;f.y-=14*dt}fx=fx.filter(f=>f.t>0);for(const f of feed)f.t-=dt;feed=feed.filter(f=>f.t>0)}
 /* Verdachtsbalken im Coop: je weiterem Spieler um CFG.susPer laenger. sus bleibt in Prozent des Balkens (HUD, Schnappschuss, Musik und Nebenziel rechnen damit), Anstieg und Abbau gelten deshalb durch den Faktor geteilt. */
 const susScale=()=>1/(1+CFG.susPer*Math.max(0,players.length-1));
+/* Gnadenfrist (CFG.watch): Erreicht der Balken 100, laeuft ein Countdown (grace s, im Coop mit dem Balken laenger: durch susScale, sonst waere der Abbau von 100 auf back bei laengerem Balken zu langsam) statt sofort der Alarm. Faellt der Balken in der Zeit unter back Prozent, ist der Alarm abgewendet (aus dem Blick, Kameras aus,
+   Beute weg, Mitspieler lenken ab), sonst startet der erzwungene Ueberfall. Der Countdown geht im Schnappschuss mit (g[24]), das HUD zeigt ihn. */
+let alarmT=0,alarmBy=null;
+function alarmStep(dt,by,k){const W=CFG.watch;
+if(alarmT<=0){if(sus<100)return;if(!(W.grace>0)){startHeist(true,by);return}alarmT=W.grace/susScale();alarmBy=by;const who=by&&players.length>1?pn(by.id)+': ':'',gs=Math.round(alarmT*10)/10;say(who+'Entdeckt'+(k?' ('+k+')':'')+'! Alarm in '+gs+' s, raus aus dem Blick.');snd('alert');return}
+if(by)alarmBy=by;if(sus<W.back){alarmT=0;alarmBy=null;say('Alarm abgewendet.');ban('Alarm abgewendet',1.8);snd('ev','power');return}alarmT-=dt;if(alarmT<=0){const b=alarmBy;alarmT=0;alarmBy=null;startHeist(true,b)}}
 function hostStep(dt){time+=dt;rT+=dt;evStep(dt);gadStep(dt);if(LAY.truck){tkStep(dt);tkSync()}const now=performance.now();
 for(const o of players)if(o!==me&&o.inp!==IDLE&&now-o.lastIn>400)o.inp=IDLE;
 if(live(me)){const c=readInput(dt);movePl(me,c);me.inp=c;stepSnd(me,c)}else me.inp=IDLE;
@@ -1546,19 +1553,21 @@ if(camDown>0){camDown-=dt;if(camDown<=0){camDown=0;say(LAY.lasers?'Kameras und L
 if(LAY.lasers&&camDown<=0)for(const o of act){if(phase!==1)break;if(LAY.lasers.some(L=>segDist(o.x,o.y,L)<CFG.museum.laser.r)){say(pn(o.id)+' hat einen Laser berührt: Alarm!');startHeist(true,o,false);break}}
 for(const c of cams){c.alert=Math.max(0,c.alert-dt);if(!c.k)for(const o of act)if(Math.hypot(c.x-o.x,c.y-o.y)<300&&angd(o.a,Math.atan2(c.y-o.y,c.x-o.x))<.8&&los(o.x,o.y,c.x,c.y)){c.k=true;snd('found');say('Kamera entdeckt');break}}
 for(const q of npcs)if(q.route&&!q.rk&&q.st!=='away')for(const o of act)if(Math.hypot(q.x-o.x,q.y-o.y)<300&&angd(o.a,Math.atan2(q.y-o.y,q.x-o.x))<.8&&los(o.x,o.y,q.x,q.y)){q.seen+=dt;if(q.seen>1.8){q.rk=true;snd('found');say(q.k==='grd'?'Route des Wachmanns eingeprägt':'Route des Managers eingeprägt')}break}
-let wr=0,wrBy=null;const wu=(v,o)=>{if(v>wr){wr=v;wrBy=o}};
-for(const o of act){const gate=restricted(o.x,o.y)||o.units>0;if(!gate&&!LAY.gAll)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1;
-for(const q of npcs){if(q.k==='civ'||q.st==='dead'||q.st==='away')continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*rm*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){wu((q.k==='grd'?(LAY.gAll?CFG.museum.seen:48):34)*kf,o);if(q.alert<=.01)snd('alert');q.alert=.5}}
-cams.forEach((c,i)=>{if(gate&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*rm*lgM('sight'),o.x,o.y)){wu(26*kf,o);if(c.alert<=.01)snd('alert');c.alert=.5}})}
+let wr=0,wrBy=null,wrK='';const wu=(v,o,k)=>{if(v>wr){wr=v;wrBy=o;wrK=k||''}};
+/* Beobachter (CFG.watch): hot = Sperrzone oder gerade beim Stehlen (o.thf, E gehalten an einer Beute-Stelle): da sehen alle mit der vollen Rate (Wache 48, Angestellte 34, Kamera 26). Nur Beute in der Tasche (carry):
+   Kameras ignorieren es, Wache und Angestellte finden es langsam verdaechtig (carry.grd, carry.staff, die Wache bleibt stehen und schaut). Im Museum (LAY.gAll) sehen Wachen jeden mit CFG.museum.seen. */
+for(const o of act){o.thf=Math.max(0,(o.thf||0)-dt);const hot=restricted(o.x,o.y)||o.thf>0,carry=o.units>0;if(!hot&&!carry&&!LAY.gAll)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1,W=CFG.watch;
+for(const q of npcs){if(q.k==='civ'||q.st==='dead'||q.st==='away')continue;const g=q.k==='grd',all=g&&LAY.gAll;if(!hot&&!carry&&!all)continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*rm*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){wu((all?CFG.museum.seen:hot?(g?48:34):(g?W.carry.grd:W.carry.staff))*kf,o,g?'Wache':'Angestellter');if(!hot&&!all)q.look={x:o.x,y:o.y,t:.7};if(q.alert<=.01)snd('alert');q.alert=.5}}
+cams.forEach((c,i)=>{if(hot&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*rm*lgM('sight'),o.x,o.y)){wu(26*kf,o,'Kamera');if(c.alert<=.01)snd('alert');c.alert=.5}})}
 for(const o of act){const tx=Math.floor(o.x/T),ty=Math.floor(o.y/T),ins=tx>LAY.bld.x0&&tx<LAY.bld.x1&&ty>LAY.bld.y0&&ty<LAY.bld.y1;o.dwT+=dt;if(o.dwT>=1){o.sl=Math.hypot(o.x-o.dx,o.y-o.dy)<CFG.loiter.still;o.dwT=0;o.dx=o.x;o.dy=o.y}
 let sn=false;if(ins&&o.sl)for(const q of npcs){if(q.k==='civ'||q.st==='dead'||q.st==='away')continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){sn=true;if(o.dw>=CFG.loiter.warn){q.alert=.5;q.look={x:o.x,y:o.y,t:.7}}}}
 if(sn)o.dw+=dt;else o.dw=Math.max(0,o.dw-(o.sl&&ins?.5:2)*dt);
 if(o.dw>=CFG.loiter.warn&&!o.lw){o.lw=1;sndTo(o,'alert');say('Ein Angestellter wird auf dich aufmerksam.',o.id);ban('Nicht herumstehen!',1.6,o.id)}else if(o.dw<.5)o.lw=0;
-if(o.dw>=CFG.loiter.after)wu(CFG.loiter.rate,o)}
-sus=clamp(sus+(wr?wr*lgM('sus'):-9)*dt*susScale(),0,100);if(sus>=100)startHeist(true,wrBy)}
+if(o.dw>=CFG.loiter.after)wu(CFG.loiter.rate,o,'Herumstehen')}
+sus=clamp(sus+(wr?wr*lgM('sus'):-9)*dt*susScale(),0,100);alarmStep(dt,wrBy,wrK)}
 const worked=new Set(),rvd=new Set();
 const cpd=new Set();
-for(const o of act){const rt=revTarget(o);if(rt){if(o.inp.e){rvd.add(rt);rt.rv+=dt/CFG.rev.t;if(rt.rv>=1){revive(rt);o.st.rev++}}continue}const ct=LAY.truck?capTarget(o):null;if(ct){if(o.inp.e){cpd.add(ct);ct.cp=(ct.cp||0)+dt/CFG.truck.capT;if(ct.cp>=1){capture(ct);o.st.cap++}}continue}const cur=pickIt(o);if(cur&&o.inp.e){worked.add(cur);o.st.work+=dt;cur.pr+=dt/cur.dur(o)/toolT(o,cur);if(cur.pr>=1){cur.pr=0;o.st.acts++;cur.act(o)}}}
+for(const o of act){const rt=revTarget(o);if(rt){if(o.inp.e){rvd.add(rt);rt.rv+=dt/CFG.rev.t;if(rt.rv>=1){revive(rt);o.st.rev++}}continue}const ct=LAY.truck?capTarget(o):null;if(ct){if(o.inp.e){cpd.add(ct);ct.cp=(ct.cp||0)+dt/CFG.truck.capT;if(ct.cp>=1){capture(ct);o.st.cap++}}continue}const cur=pickIt(o);if(cur&&o.inp.e){worked.add(cur);o.st.work+=dt;if(LOOT_T.includes(cur.t))o.thf=.6;cur.pr+=dt/cur.dur(o)/toolT(o,cur);if(cur.pr>=1){cur.pr=0;o.st.acts++;cur.act(o)}}}
 for(const q of players)if(q.dn>0&&!rvd.has(q))q.rv=0;
 for(const e of en)if(e.sur&&!cpd.has(e))e.cp=0;
 for(const it of its)if(!worked.has(it)&&!it.keep)it.pr=0;
@@ -1631,7 +1640,7 @@ if(LAY.truck)tkSync();setView();camUpdate(dt);SND.listen(p.x,p.y);
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=18,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=19,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());c.on('error',()=>w.onclose&&w.onclose());return w};
@@ -1690,7 +1699,7 @@ let snapT=0;
 function netHostTick(dt){if(!NET.conns.length){evq.length=0;return}snapT+=dt;if(snapT<.05)return;snapT=0;const s=buildSnap();
 for(const c of NET.conns)if(c.ok)c.send(Object.assign({ev:evq.filter(e=>e[0]===-1||e[0]===c.pid).map(e=>[e[1],e[2]])},s));evq.length=0}
 function buildSnap(){return{t:'snap',T:r2(time),
-g:[phase,r2(tH),waveN,r2(waveT),policeAt,vanAt,vanArr?1:0,vanCalled?1:0,Math.round(vanX),policeShown?1:0,r1(sus),Math.round(secured),civKills,kills,escaped,vaultOpen?1:0,code?1:0,mon?1:0,r2(camDown),r2(rT),r2(blk),goal&&goal.fail?1:0,vanMode,r1(vanNv)],
+g:[phase,r2(tH),waveN,r2(waveT),policeAt,vanAt,vanArr?1:0,vanCalled?1:0,Math.round(vanX),policeShown?1:0,r1(sus),Math.round(secured),civKills,kills,escaped,vaultOpen?1:0,code?1:0,mon?1:0,r2(camDown),r2(rT),r2(blk),goal&&goal.fail?1:0,vanMode,r1(vanNv),r1(alarmT)],
 pl:players.map(o=>[o.id,r1(o.x),r1(o.y),r2(o.a),Math.ceil(o.hp),Math.ceil(o.ar),o.mag,o.res,r2(o.units),o.loot,(o.armed?1:0)|(o.dead?2:0)|(o.out?4:0)|(o.gone?8:0)|(o.mvg?16:0)|(o.ln?32:0),r2(o.w),r2(Math.max(0,o.hurt)),r2(Math.max(0,o.rl)),o.ack,r2(o.mv),o.jam,o.med,o.mat|0,r1(Math.max(0,o.dn)),r2(o.rv),r2(Math.max(0,o.bl||0)),r2(o.gs||0),o.chipV|0,r2(o.bd),o.hh|0,o.fl|0,o.sm|0,o.dc|0,o.ad|0,o.bt|0]),
 np:npcs.map(q=>[q.id,r1(q.x),r1(q.y),r2(q.a),r2(q.w),q.mvg?1:0,q.st==='cower'?1:q.st==='away'?2:0,q.alert>0?1:0,q.rk?1:0]),
 en:en.map(e=>[e.id,e.kind==='cop'?0:e.kind==='swat'?1:e.kind==='shield'?3:e.kind==='sniper'?4:2,r1(e.x),r1(e.y),r2(e.a),e.hp,e.mhp||100,r2(e.w),e.mvg?1:0,r2(Math.max(0,e.h)),e.sur?1:0,r2(e.cp||0),Math.round(e.sh||0),e.kind==='sniper'&&e.aim>0?[r2(e.aim/CFG.snp.aim),r1(e.lx),r1(e.ly),e.tg]:0,e.stun>0?1:0]),
@@ -1703,7 +1712,7 @@ pk:pk.map(k=>[Math.round(k.x),Math.round(k.y),k.k]),
 it:its.reduce((m,it,i)=>{if(it.done)m[i/30|0]|=1<<(i%30);return m},Array(Math.ceil(its.length/30)).fill(0)),ip:its.map((it,i)=>it.pr>.001?[i,r2(it.pr)]:null).filter(Boolean),
 cm:cams.map(c=>(c.k?1:0)|(c.off?2:0)|(c.alert>0?4:0)),br:bars.map(b=>[b.lv,Math.ceil(b.hp),r1(b.cd),b.st==='fuse'?2:b.tk?1:0,r1(b.fz)]),pm:(LAY.pumps||[]).map(q=>q.hp>0?1:0).join(''),dr:LAY.lockCells.map(q=>cell(q[0],q[1])).join(''),wn:(LAY.wins||[]).map(w=>cell(w.x,w.y)).join('')}}
 function applySnap(s){if(!players.length)return;if(Math.abs(time-s.T)>.2)time=s.T;
-const g=s.g;phase=g[0];tH=g[1];waveN=g[2];waveT=g[3];policeAt=g[4];vanAt=g[5];vanArr=!!g[6];vanCalled=!!g[7];vanX=g[8];policeShown=!!g[9];sus=g[10];secured=g[11];civKills=g[12];kills=g[13];escaped=g[14];vaultOpen=!!g[15];code=!!g[16];mon=!!g[17];camDown=g[18];rT=g[19]||0;blk=g[20]||0;if(goal)goal.fail=g[21]?1:0;vanMode=g[22]|0;vanNv=g[23]||0;
+const g=s.g;phase=g[0];tH=g[1];waveN=g[2];waveT=g[3];policeAt=g[4];vanAt=g[5];vanArr=!!g[6];vanCalled=!!g[7];vanX=g[8];policeShown=!!g[9];sus=g[10];secured=g[11];civKills=g[12];kills=g[13];escaped=g[14];vaultOpen=!!g[15];code=!!g[16];mon=!!g[17];camDown=g[18];rT=g[19]||0;blk=g[20]||0;if(goal)goal.fail=g[21]?1:0;vanMode=g[22]|0;vanNv=g[23]||0;alarmT=g[24]||0;
 for(const a of s.pl){const o=players[a[0]];if(!o)continue;const f=a[10];o.hp=a[4];o.ar=a[5];o.mag=a[6];o.res=a[7];o.units=a[8];o.loot=a[9];o.armed=!!(f&1);o.dead=!!(f&2);o.out=!!(f&4);o.gone=!!(f&8);o.ln=f&32?1:0;o.rl=a[13];o.hurt=Math.max(o.hurt,a[12]);o.jam=a[16]|0;o.med=a[17]|0;o.mat=a[18]|0;o.dn=a[19]||0;o.rv=a[20]||0;o.bl=a[21]||0;o.gs=a[22]||0;o.chipV=a[23]||0;o.bd=a[24]||0;o.hh=a[25]|0;o.fl=a[26]|0;o.sm=a[27]|0;o.dc=a[28]|0;o.ad=a[29]|0;o.bt=a[30]|0;
 if(o===me){o.x=a[1];o.y=a[2];pend=pend.filter(c=>c.s>a[14]);const w0=o.w,a0=o.a;for(const c of pend)movePl(o,c);o.w=w0;o.a=a0}
 else{o.tx=a[1];o.ty=a[2];o.ta=a[3];o.mvg=!!(f&16);o.w=a[11];o.mv=a[15];if(!o.init){o.x=a[1];o.y=a[2];o.a=a[3];o.init=1}}}
@@ -2079,6 +2088,7 @@ if(p.helm){g.font='11px monospace';g.fillStyle=p.hh>0?'#c9d4de':'#ff6a5a';g.fill
 const rtg=live(me)&&!ended?revTarget(me):null,ctg=live(me)&&!ended&&LAY.truck&&!rtg?capTarget(me):null;let dp=null,prog=0,pk_='E';if(rtg){dp={i:'cross',c:'g',v:'Beleben',n:pn(rtg.id)};prog=rtg.rv}else if(ctg){dp={i:'cuffs',c:'r',v:'Überwältigen'};prog=ctg.cp||0}else if(curItem&&!ended){dp=pinfo(curItem,me);prog=curItem.pr}else if(phase===1&&!ended&&live(me)){dp={c:'x',v:'Überfall starten'};pk_='F'}
 if(dp)drawPrompt(dp,prog,pk_);
 if(live(me)&&!ended&&!me.ln&&en.length&&leanAt(me))drawPrompt({i:'lean',c:'g',v:'Lehnen',n:'halten'},0,'F',VH-140);
+if(phase===1&&alarmT>0&&!ended){const cd='ENTDECKT! Alarm in '+alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(banner&&!paused){g.globalAlpha=Math.min(1,banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(banner.s,482,154);g.fillStyle=phase===2?'#ff8a6a':'#ffd27a';g.fillText(banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
 mapSeed=DBG?'classic':rndSeed();buildWorld(layoutFor(mapSeed));reset();
 let last=performance.now(),hostWk=null;
@@ -2120,7 +2130,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
