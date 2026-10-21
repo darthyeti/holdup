@@ -7,6 +7,9 @@
 //  timed  dasselbe, aber vor jedem Schritt mit Beute wird auf ein sichtfreies Fenster gewartet (perfekte Voraussicht, Obergrenze fuer einen aufmerksamen Menschen), timedT die mittlere Dauer in s
 // Kameras bleiben ausser Betracht (Hauptschalter oder Stoersender gehen vom Spieler aus). Sichtregel wie im Spiel: canSee mit Reichweite mal .65 beim Schleichen,
 // Verdacht +48/s mal .8 bei Sicht, -9/s sonst, Alarm bei 100. Aufruf: stealth.measure({runs,secs,k,cut,sneak}) fuer die aktuelle Karte, stealth.sweep(n,from,{guards}) ueber Juwelier-Seeds.
+// Team (Coop-Balken, Oktober 2026): stealth.team({ns,k,spread,trials,scale}) und stealth.teamSweep(n,from,o): ns Spieler, jeder schneidet k zufaellige Vitrinen und geht zur Tuer, versetzt gestartet (spread s),
+// ein gemeinsamer Balken mit Rate-Maximum. ok = Erfolg mit Balken 100 (ohne Skalierung), okS = Erfolg mit Balken 100 * (1 + scale * (n - 1)), peak = mittlerer Hoechststand. Wirklich spielen tut das Spiel mit CFG.susPer,
+// das Modell zeigt nur, wie stark ein gemeinsamer Balken mit der Spielerzahl kippt. Grenzen: nur Wache (keine Kameras, Kassierer), keine Absprache, kein Warten, Zufall aus Math.random (Mittel ueber viele Karten).
 (function(){
 const D=__dbg,T=32,HZ=5;
 const guardsAll=()=>D.get().npcs.filter(q=>q.k==='grd'&&q.st!=='away'&&q.st!=='dead');
@@ -47,5 +50,28 @@ function measure(o){o=Object.assign({runs:2,secs:150,k:3,cut:6,sneak:true},o||{}
 function sweep(n,from,o){o=o||{};const rows=[];for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario('jewel');D.setSeedMode('random');D.setLage([]);D.buildLay(D.layoutFor(sd));const g=D.get().npcs.filter(q=>q.k==='grd').length;if(o.guards!=null&&g!==o.guards)continue;const m=measure(o);m.seed=sd;rows.push(m)}
  const avg=k=>+(rows.reduce((a,m)=>a+m[k],0)/(rows.length||1)).toFixed(2);
  return{n:rows.length,guards:o.guards,win:avg('win'),unseen:avg('unseen'),wait:avg('wait'),naive:avg('naive'),timed:avg('timed'),timedT:avg('timedT'),maxWin:Math.max(0,...rows.map(m=>m.maxWin)),rows}}
-window.stealth={measure,sweep,record};
+
+// Teamlauf: n Spieler, jeder schneidet k zufaellige Vitrinen und geht zur Tuer, versetzt gestartet, EIN gemeinsamer Balken, Rate = Maximum (wie im Spiel), nicht Summe.
+function team(o){o=Object.assign({secs:120,k:3,cut:6,sneak:true,ns:[1,2,3,4],spread:15,trials:120,scale:.25},o||{});
+ const L=D.LAY(),rm=o.sneak?.65:1,kf=o.sneak?.8:1,speed=o.sneak?50:85,sight=D.lgM('sight');
+ const items=D.get().its.filter(i=>i.t==='vit'),spots=items.map(i=>({it:i,at:spotFor(i)})).filter(s=>s.at),exitT=frontOut(L),N=o.secs*HZ;
+ const R={};for(const n of o.ns)R[n]={ok:0,okS:0,peak:0,tr:0};
+ const rec=record(o.secs),cache=new Map();
+ const vis=(i,x,y)=>{const key=((i%N)*64+Math.floor(y/T)+8)*128+Math.floor(x/T)+8;let v=cache.get(key);if(v===undefined){const g=rec[i%rec.length];v=g.some(q=>D.canSee(q[0],q[1],q[2],q[3],q[4]*rm*sight,x,y));cache.set(key,v)}return v};
+ const mkPts=()=>{const left=spots.slice().sort(()=>Math.random()-.5).slice(0,Math.min(o.k,spots.length)),order=[];let cur=[L.spawn.x,L.spawn.y];
+  while(left.length){let bi=0,bd=1e9;left.forEach((s,j)=>{const d=route(cur,s.at).d;if(d<bd){bd=d;bi=j}});order.push(left[bi]);cur=left[bi].at;left.splice(bi,1)}
+  const pts=[];cur=[L.spawn.x,L.spawn.y];order.forEach((s,idx)=>{for(const q of samples(cur,route(cur,s.at).p,speed))pts.push([q[0],q[1],idx>0]);for(let i=0;i<Math.round(o.cut*HZ);i++)pts.push([s.at[0],s.at[1],idx>0]);cur=s.at});
+  for(const q of samples(cur,route(cur,exitT).p,speed))pts.push([q[0],q[1],true]);return pts};
+ for(let tr=0;tr<o.trials;tr++){const t0=Math.floor(Math.random()*(N-100*HZ)),pl=[0,1,2,3].map(()=>({pts:mkPts(),off:Math.floor(Math.random()*o.spread*HZ)}));
+  for(const n of o.ns){const P=pl.slice(0,n),end=Math.max(...P.map(p=>p.off+p.pts.length));let sus=0,susS=0,capS=100*(1+o.scale*(n-1)),fail=false,failS=false,peak=0;
+   for(let t=0;t<end;t++){let sees=false;for(const p of P){const j=t-p.off;if(j>=0&&j<p.pts.length&&p.pts[j][2]&&vis(t0+t,p.pts[j][0],p.pts[j][1])){sees=true;break}}
+    const d=(sees?48*kf:-9)/HZ;sus=Math.max(0,Math.min(100,sus+d));susS=Math.max(0,susS+d);peak=Math.max(peak,sus);if(sus>=100)fail=true;if(susS>=capS)failS=true}
+   R[n].tr++;if(!fail)R[n].ok++;if(!failS)R[n].okS++;R[n].peak+=peak}}
+ for(const n of o.ns){R[n].ok=+(R[n].ok/R[n].tr).toFixed(2);R[n].okS=+(R[n].okS/R[n].tr).toFixed(2);R[n].peak=+(R[n].peak/R[n].tr).toFixed(0)}
+ return R}
+function teamSweep(n,from,o){o=o||{};const acc={};let cnt={};for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario('jewel');D.setSeedMode('random');D.setLage([]);D.buildLay(D.layoutFor(sd));const g=D.get().npcs.filter(q=>q.k==='grd').length;
+  const r=team(o);const key=g+' Wache(n)';cnt[key]=(cnt[key]||0)+1;acc[key]=acc[key]||{};for(const k in r){acc[key][k]=acc[key][k]||{ok:0,okS:0,peak:0};for(const f of['ok','okS','peak'])acc[key][k][f]+=r[k][f]}}
+ for(const key in acc)for(const k in acc[key])for(const f in acc[key][k])acc[key][k][f]=+(acc[key][k][f]/cnt[key]).toFixed(2);
+ return{seeds:cnt,res:acc}}
+window.stealth={measure,sweep,record,team,teamSweep};
 })();
