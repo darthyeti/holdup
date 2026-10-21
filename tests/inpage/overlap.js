@@ -36,5 +36,16 @@
     try { d.draw(); } finally { ctx.fillText = o; }
     return l;
   }
-  window.OV = { check, drawn };
+  // Alle Textkaesten eines Zeichnens (mit Schriftgroesse, wie in check) und die Kachelrechtecke, zum Vergleich zweier Zeichnungen (zum Beispiel mit und ohne Team-Leiste)
+  function boxes(d) {
+    const ctx = d.cv.getContext('2d'), o = ctx.fillText, l = [];
+    ctx.fillText = function (s, x, y) {
+      const sz = +(/(\d+)px/.exec(ctx.font) || [0, 12])[1], w = ctx.measureText(String(s)).width, al = ctx.textAlign, x0 = al === 'center' ? x - w / 2 : al === 'right' || al === 'end' ? x - w : x;
+      if (String(s).trim()) l.push({ s: String(s), x0: x0 + 1, x1: x0 + w - 1, y0: y - sz * .8 + 1, y1: y + sz * .2 - 1 });
+      return o.apply(this, arguments);
+    };
+    try { d.draw(); } finally { ctx.fillText = o; }
+    return { texts: l, tiles: d.ui().tiles().map(t => ({ id: t.id, x0: t.x, x1: t.x + t.w, y0: t.y, y1: t.y + t.h })) };
+  }
+  window.OV = { check, drawn, boxes };
 })();

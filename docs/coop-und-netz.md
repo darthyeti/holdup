@@ -30,8 +30,29 @@ Netzformat `VER` 15 (Oktober 2026, Fluchtwagen): Das Spielzustandsfeld `g` im Sc
 
 Netzformat `VER` 16 (Oktober 2026, Shop-Ausbau): Das Kit (`kit`, `hi`, `go`, `rst`) trägt Stufen 0 bis 3 für `vest`, `helm`, `pack`, `drill`, `pick`, `radio`, `vh` (Westenrest, null = voll), `hh` (Helmtreffer, null = voll) und die Zähler `jam`, `med`, `fl`, `sm`, `dc`, `ad`, `bt`, `sanKit` begrenzt alles. Die Spielerzeile `pl` hat als Index 25 bis 30 `hh`, `fl`, `sm`, `dc`, `ad`, `bt`. Die Granatenart in `gr` (Index 3) ist jetzt ein Index in `flash`, `gas`, `smoke`, `dec` (vorher 0 oder 1 für Blend und Gas). Neue Listen im Schnappschuss: `smk` (Rauchwolken, wie `gc`) und `dy` (liegende Ablenker, `[id,x,y,t]`), die Gegnerzeile `en` hat als Index 14 ein Betäubungsflag. Das Ereignis `gb` bekommt Art 2 (Rauch) und 3 (Ablenker, nur Ton). Die Client-Nachricht `u` trägt für die Wurfgeräte zusätzlich `x` und `y` (Weltkoordinaten, der Host begrenzt auf `CFG.gadget.maxD` und prüft Vorrat, Phase und lebt). Einzelheiten in docs/spielsystem.md, Shop-Ausbau.
 
+Netzformat `VER` 20 (Oktober 2026, Team-Leiste): Neue Nachricht `{t:'at',v}` vom Client an den Host (`v` ist ein Buchstabe: `l` Lobby, `s` Shop, `m` Auftragswahl, `e` Ergebnis, `p` im Spiel), gesendet bei jeder Änderung des Bildschirms (`atSync`). Die Spielerliste `ros` trägt je Spieler das neue Feld `at`, der Host pflegt auch seinen eigenen Eintrag und verteilt die Liste an alle (`bcastRoster`). Mehr in docs/spielsystem.md (Team-Leiste).
+
 Netzformat `VER` 19 (Oktober 2026, Gnadenfrist): Das Spielzustandsfeld `g` im Schnappschuss hat als letztes Feld (Index 24) den Countdown `alarmT` in Sekunden (0 = keiner). Der Host rechnet ihn, die Clients zeigen ihn im HUD an.
 
 Netzformat `VER` 18 (Oktober 2026, zerschießbare Streifenwagen): Das Feld `pc` im Schnappschuss (ein Eintrag je Streifenwagen: `id`, `x`, `y`, Winkel, geparkt) hat als letztes Feld (Index 5) die HP des Wagens, 0 heißt Wrack. Fußgruppen (`fps`), Parkreihe und Kolonne sind reine Host-Sache (die Beamten selbst kommen wie bisher über `en`).
 
 Netzformat `VER` 17 (Oktober 2026, Auszeichnungen): Das Ende-Paket `{t:'end',res}` trägt in `res` ein neues Feld `aw` (Liste der Auszeichnungen, je Eintrag `k`, `t`, `p`, `n`, `v`, `s`, nur im Coop und nur, wenn es welche gibt), der Client bereinigt es in `endLocal` (`cleanAw`: Felder gekürzt, Farben aus `PC`). Der Schnappschuss bleibt unverändert, die Zähler (`o.st`) werden nicht übertragen: Der Host rechnet in `finish()`, Clients sehen nur das Ergebnis. Einzelheiten und Regeln in docs/spielsystem.md (Auszeichnungen).
+
+## Was beendet die gehostete Sitzung
+
+Stand Oktober 2026, geprüft im Code (`uiAct`, `leaveGame`, `netReset`, `hostConn`, Tastenbehandlung in `index.html`). Ein Host, der den Raum verlässt, beendet ihn für alle: `netReset` schließt alle Verbindungen, die Clients lesen `Verbindung zum Host verloren.` und landen auf dem Titel (Konto und Ausrüstung bleiben in ihrem Tab, `SESSION` liegt im Speicher, nur Neuladen löscht sie). Einen Hostwechsel gibt es nicht.
+
+Beendet den Raum für alle (als Host):
+- Lobby: Esc oder Kachel `Raum schließen` (sofort, ohne Rückfrage).
+- Shop: Esc oder Kachel `Raum schließen` (sofort, ohne Rückfrage).
+- Ergebnis (beide Seiten): Esc oder Kachel `Raum schließen` (sofort, ohne Rückfrage, auch auf der Seite Auszeichnungen).
+- Pause im Spiel: Kachel `Raum schließen` (Taste Q), mit Rückfrage.
+- Browser: Tab oder Fenster schließen, Neuladen, Adresse ändern, Zurück (`beforeunload` ruft `netReset`), ebenso ein Absturz des Tabs.
+
+Harmlos: Auftragswahl (Esc geht zurück zum Shop oder zur Lobby), Optionen und Anleitung (Esc schließt nur das Fenster), Pause `Weiter` (P), das Blättern im Ergebnis (Pfeile, Enter), Tab wechseln (im Spiel rechnet der Host über einen Hintergrund-Worker weiter, `hostTicker`, in den Menüs gibt es nichts zu rechnen).
+
+Für Clients gilt dasselbe an denselben Stellen, aber es verlässt nur den Client selbst, die anderen spielen weiter.
+
+Weitere Regel: Neue Spieler kommen nur in der Lobby in den Raum (`hostConn` lehnt sonst mit `Das Spiel läuft schon.` ab). Wer die Verbindung verliert, kann also nicht wieder zurück, und eine Lobby gibt es nach dem ersten Start nicht mehr (nur Shop und Auftragswahl). Ein Abbruch ist deshalb für diesen Mitspieler endgültig, solange der Host nicht den Raum schließt und neu eröffnet.
+
+Offen (Vorschlag): Für den Host mit verbundenen Mitspielern eine Rückfrage vor `Raum schließen` in Lobby, Shop und Ergebnis (die Rückfrage-Fenster gibt es schon), weil dort Esc aus Gewohnheit den Raum schließt.

@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=62"></script>
+<script src="js/ui.js?v=63"></script>
 <script>
-const BUILD={n:62,d:'2026-10-21'};//BUILD
+const BUILD={n:63,d:'2026-10-21'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -1640,7 +1640,7 @@ if(LAY.truck)tkSync();setView();camUpdate(dt);SND.listen(p.x,p.y);
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=19,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=20,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());c.on('error',()=>w.onclose&&w.onclose());return w};
@@ -1654,7 +1654,7 @@ peer.on('error',e=>h.onError(e&&e.type||String(e)));
 return{close:()=>{try{peer.destroy()}catch(e){}}}}}}
 const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m)};
 const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario});
-function netReset(){const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],ping:0});nPl=1;
+function netReset(){atLast='';const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],ping:0});nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
 function hostRoom(tries){netReset();hostTicker(true);const code=newCode();NET.role='host';NET.code=code;NET.msg='Raum wird erstellt ...';NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';
@@ -1676,7 +1676,7 @@ else if(m.t==='f'){if(scr==='play')startHeist(false,o)}
 else if(m.t==='g'){if(scr==='play')callVan()}
 else if(m.t==='u'){if(scr==='play')useGadget(o,m.n|0,+m.x,+m.y)}
 else if(m.t==='kit'){c.kit=sanKit(m.k)}
-else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);if(r){r.rdy=m.v?1:0;bcastRoster()}}
+else if(m.t==='at'){const r=NET.roster.find(q=>q.id===c.pid);if(r&&'lsmep'.includes(String(m.v))&&String(m.v).length===1){r.at=m.v;bcastRoster()}} else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);if(r){r.rdy=m.v?1:0;bcastRoster()}}
 else if(m.t==='ping')c.send({t:'pong',n:m.n})}
 function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;mapSeed=newSeed();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc});beginPlay()}
 function joinRoom(code){netReset();NET.role='client';NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
@@ -2095,7 +2095,13 @@ let last=performance.now(),hostWk=null;
 function stepReal(){const n=performance.now(),dt=Math.min(.033,(n-last)/1000);last=n;tick(dt)}
 function loop(){stepReal();draw();requestAnimationFrame(loop)}
 function hostTicker(on){if(on&&!hostWk){try{hostWk=new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),16)'],{type:'text/javascript'})));hostWk.onmessage=()=>{if(document.hidden&&NET.role==='host'&&scr==='play')stepReal()}}catch(e){hostWk=null}}else if(!on&&hostWk){hostWk.terminate();hostWk=null}}
-function tick(dt){
+/* Bildschirm-Status fuer die Team-Leiste (js/ui.js, teamStrip): Jeder Spieler meldet, auf welchem Bildschirm er ist (l Lobby, s Shop, m Auftragswahl, e Ergebnis, p im Spiel), der Host traegt es in roster[].at ein
+   und verteilt die Liste (bcastRoster). Der eigene Eintrag kommt in der Leiste aus dem lokalen Zustand. Gesendet wird nur bei Aenderung (atSync in tick). */
+let atLast='';
+const curAt=()=>scr==='lobby'?'l':scr==='shop'?'s':scr==='mission'?'m':scr==='play'?(ended?'e':'p'):'';
+function atSync(){if(NET.role==='solo'){atLast='';return}const a=curAt();if(!a||a===atLast)return;
+if(NET.role==='host'){const r=NET.roster.find(q=>q.id===0);if(r){atLast=a;r.at=a;bcastRoster()}}else if(NET.conn){atLast=a;NET.conn.send({t:'at',v:a})}}
+function tick(dt){atSync();
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
 if(titleNote){titleNote.t-=dt;if(titleNote.t<=0)titleNote=null}
 volT=Math.max(0,volT-dt);shopNote.t=Math.max(0,shopNote.t-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.some(c=>!c.dead)?Math.min(...pcs.filter(c=>!c.dead).map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});

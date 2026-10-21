@@ -131,7 +131,7 @@ function sShop(){const{CFG,NET,SESSION,fmt,shopState,SHOPKEYS}=X,items=CFG.shop.
 const cols=SHOPGRP.map(([n,ks])=>({n,ix:ks.map(k=>items.findIndex(it=>it.k===k)).filter(i=>i>=0)}));
 items.forEach((it,i)=>{if(!cols.some(c=>c.ix.includes(i)))cols[cols.length-1].ix.push(i)});
 cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
-t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':'Raum verlassen',chip:'Esc'});
+t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);
 g.textAlign='right';g.font='bold 22px monospace';g.fillStyle=G;g.fillText('Konto '+fmt(SESSION.wallet),900,58);g.font='12px monospace';g.fillStyle=TX;g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Bester Auftrag '+fmt(SESSION.best),900,80);
@@ -140,9 +140,6 @@ const k=curKit(),nm=[CFG.wpn[k.w].n].concat(items.filter(it=>it.t&&k[it.k]).map(
 const fi=focus&&/^buy:/.test(focus)?items[+focus.slice(4)]:null;
 if(fi){const lv=fi.t?(SESSION.own[fi.k]|0):0,nx=fi.t?Math.min(3,lv+1):0;g.textAlign='left';g.font='bold 12px monospace';g.fillStyle=A;g.fillText(fi.n+(fi.t?(lv>=3?' (Stufe 3, höchste)':' (Stufe '+nx+')'):''),60,428);g.font='12px monospace';g.fillStyle=TX;g.fillText(fit(fi.d(fi.t?nx:0)+(fi.t&&lv>0&&lv<3?'   jetzt: '+fi.d(lv):''),840,'12px monospace'),60,444)}else{g.textAlign='left';g.font='12px monospace';g.fillStyle=MU;g.fillText('Posten wählen (Pfeiltasten oder Maus): hier steht seine Beschreibung.',60,436)}
 g.textAlign='center';g.font='11px monospace';g.fillStyle=SU;g.fillText(fit('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),840,'11px monospace'),480,462);
-/* Team-Kasten im Coop: liegt in der vierten Spalte unter den Wurfgeraeten (die Spalte hat nur drei Posten), damit der Status der Mitspieler nie ueber den Kacheln unten liegt */
-if(NET.role!=='solo'){const x=696,y=296,w=204;g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,y,w,112);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,111);g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('TEAM',x+12,y+20);
-NET.roster.forEach((r,i)=>{const yy=y+40+i*21,rd=r.id===0||r.rdy;if(r.id===NET.myId){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(x+4,yy-14,w-8,20)}g.fillStyle=PC[r.id].c;g.fillRect(x+12,yy-9,9,9);g.textAlign='left';g.font='11px monospace';g.fillStyle=rd?TX:SU;g.fillText(fit(pn(r.id),w-120,g.font),x+28,yy);g.textAlign='right';g.fillStyle=rd?G:SU;g.fillText(r.id===0?'Host':r.rdy?'bereit':'kauft ein',x+w-12,yy)})}
 /* Hinweis (Nicht alle sind bereit ...): zwei Zeilen in der Luecke zwischen den Kacheln unten (x 260 bis 620), nicht quer ueber die Kachel Weiter */
 if(shopNote.t>0){g.textAlign='center';g.font='12px monospace';g.fillStyle=Y;wrap(shopNote.s,344,g.font,2).forEach((l,i)=>g.fillText(l,440,486+i*15))}g.textAlign='left'}}}
 function paintItem(t){const{g,fmt,CFG,SESSION,itemPrice,repCost}=X,it=t.item,st=t.st,ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt'||st==='heil',lv=it.t?(SESSION.own[it.k]|0):0,cnt=it.c?(SESSION.cons[it.k]|0):0,price=it.r?repCost():itemPrice(it);
@@ -159,7 +156,7 @@ return{def:'resume',back:'resume',t:[
 {id:'resume',x:330,y:158,w:300,h:50,kind:'p',key:'p',act:'resume',title:'Weiter',chip:'P'},
 {id:'help',x:330,y:218,w:300,h:50,key:'?',act:'ui:help',icon:'help',title:'So wird gespielt'},
 {id:'opt',x:330,y:278,w:300,h:50,key:'o',act:'ui:options',icon:'opt',title:'Optionen'},
-{id:'leave',x:330,y:338,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':'Raum verlassen'}],
+{id:'leave',x:330,y:338,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'}],
 deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=Y;g.font='bold 34px monospace';g.fillText('PAUSE',480,122);
 g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424)}}}
 /* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
@@ -235,7 +232,7 @@ function setSlider(t,x){X.volAdj(t.slider,Math.max(0,Math.min(1,(x-(t.x+130))/(t
 function activate(t){if(!t||!t.act)return;if(t.lock){SND.ev('deny');return}const a=t.act;
 if(a==='ui:close'){closeModal();return}
 if(a==='ui:options'||a==='ui:help'){openModal({k:a.slice(3)});return}
-if(a==='ui:confirm'){const solo=X.NET.role==='solo';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}
+if(a==='ui:confirm'){const solo=X.NET.role==='solo',host=X.NET.role==='host';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:host?{title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und alle Mitspieler werden getrennt.',yesLabel:'Ja, Raum schließen',yes:'leave'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}
 if(a==='ui:yes'){const y=modal.yes;closeAll();X.act(y);return}
 X.act(a,t.arg);if(a==='pick')focus='start'}
 function nav(k){const c=cur();if(!c)return true;const L=c.t.filter(t=>!t.nofocus);if(!L.length)return true;const f=L.find(t=>t.id===focus);if(!f){focus=L[0].id;return true}
@@ -259,11 +256,23 @@ function move(x,y){if(drag){setSlider(drag,x);return}const t=tileAt(x,y);hov=t?t
 const active=()=>!!cur();
 
 /* ---------- Zeichnen ---------- */
+/* Team-Leiste am oberen Rand (Coop): wer ist wo, damit man in den Menues den Blick auf die Gruppe hat. Gezeichnet im Shop, in der Auftragswahl und beim Ergebnis. Status je Spieler: roster[].at (jeder meldet seinen
+   Bildschirm, atSync in index.html: l Lobby, s Shop, m Auftragswahl, e Ergebnis, p im Spiel) und roster[].rdy (bereit im Shop), der eigene Eintrag kommt aus dem lokalen Zustand. Rechts steht, wie viele Mitspieler bereit sind. */
+function teamStrip(){const{g,NET,PC,pn,scr,ended}=X;if(NET.role==='solo'||NET.roster.length<2||!(scr==='shop'||scr==='mission'||(scr==='play'&&ended)))return;
+const at=r=>r.id===NET.myId?(scr==='shop'?'s':scr==='mission'?'m':'e'):r.at,
+st=r=>{const a=at(r);return a==='s'?(r.rdy&&r.id!==0?['bereit',G]:['kauft ein',Y]):a==='m'?['wählt Auftrag',Y]:a==='e'?['sieht Ergebnis',SU]:a==='p'?['im Spiel',SU]:a==='l'?['in der Lobby',SU]:['…',MU]},
+cl=NET.roster.filter(r=>r.id!==0),rd=cl.filter(r=>r.rdy&&at(r)==='s').length,sum=cl.length?'bereit '+rd+'/'+cl.length:'';
+const it=NET.roster.map(r=>{g.font='bold 12px monospace';const n=fit(pn(r.id),78,g.font),nw=g.measureText(n).width,[s2,c]=st(r);g.font='11px monospace';return{r,n,nw,s2,c,sw:g.measureText(s2).width}});
+g.font='bold 11px monospace';const sw0=sum?g.measureText(sum).width:0;let W=24+it.reduce((a,q)=>a+8+6+q.nw+6+q.sw,0)+(it.length-1)*18+(sum?sw0+22:0);
+let x=Math.round((960-W)/2);g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,6,W,24);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,6.5,W-1,23);x+=12;g.textAlign='left';
+for(const q of it){g.fillStyle=PC[q.r.id].c;g.fillRect(x,14,8,8);x+=14;g.font=q.r.id===NET.myId?'bold 12px monospace':'12px monospace';g.fillStyle=q.r.id===NET.myId?'#f4f1e6':TX;g.fillText(q.n,x,23);x+=q.nw+6;g.font='11px monospace';g.fillStyle=q.c;g.fillText(q.s2,x,23);x+=q.sw+18}
+if(sum){g.font='bold 11px monospace';g.fillStyle=rd===cl.length?G:Y;g.fillText(sum,x+4,23)}g.textAlign='left'}
+
 function paintStack(c,under){c.deco&&c.deco();c.t.forEach(t=>drawTile(t,under))}
 function paintAll(){const b=base();if(stack.length){paintStack(b,true);stack.forEach(m=>paintStack(modalSpec(m),m!==modal))}else paintStack(b,false)}
-function drawMenu(){const{g,scr}=X;titleBack(scr==='shop'||scr==='mission');g.textAlign='center';if(!cur())return;paintAll();g.textAlign='left'}
+function drawMenu(){const{g,scr}=X;titleBack(scr==='shop'||scr==='mission');g.textAlign='center';if(!cur())return;paintAll();teamStrip();g.textAlign='left'}
 function drawPause(){const{g}=X;if(!cur())return;paintAll();g.textAlign='left'}
-function drawEnded(){const c=cur();if(!c)return;c.deco&&c.deco();c.t.forEach(t=>drawTile(t,false))}
+function drawEnded(){const c=cur();if(!c)return;c.deco&&c.deco();c.t.forEach(t=>drawTile(t,false));teamStrip()}
 function titleBack(small){const{S0,T,VH,VW,W1,WX0,WY0,camX,camY,g,so,st}=X;W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(camX-2,camY-2,VW+4,VH+4);
 {const sx=(camX-WX0*T)*2,sy=(camY-WY0*T)*2;g.drawImage(st,sx,sy,VW*2,VH*2,camX,camY,VW,VH);g.drawImage(so,sx,sy,VW*2,VH*2,camX,camY,VW,VH)}
 S0();g.fillStyle='rgba(8,10,16,.68)';g.fillRect(0,0,VW,VH);
