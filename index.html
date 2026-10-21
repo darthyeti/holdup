@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=65"></script>
+<script src="js/ui.js?v=68"></script>
 <script>
-const BUILD={n:65,d:'2026-10-21'};//BUILD
+const BUILD={n:68,d:'2026-10-21'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -188,7 +188,7 @@ susPer:.25,
 watch:{grace:4,back:70,carry:{grd:20,staff:10}},
 awards:{max:8,per:3,accShots:15,min:{idle:15,sh:40,tk:5,dist:150,work:10,bar:2,dry:3}},
 wpn:{pistol:{n:'Pistole',mag:12,res:72,cool:.32,dmg:50,spread:.014,rec:.02,rl:1.1},smg:{n:'SMG',mag:30,res:120,cool:.075,dmg:20,spread:.03,rec:.008,rl:1.2},rifle:{n:'Sturmgewehr',mag:30,res:150,cool:.1,dmg:34,spread:.012,rec:.012,rl:1.3}},
-shop:{tier:{vest:[100,150,200],helm:[.85,.75,.67],pack:[2,3,4],drill:[.64,.5,.4],pick:[.7,.55,.4],radio:[28,20,14]},price:{vest:[12000,20000,32000],helm:[8000,14000,22000],pack:[10000,16000,24000],drill:[14000,22000,32000],pick:[6000,10000,16000],radio:[9000,14000,20000]},helmHits:[12,16,20],rep:.4,
+shop:{tier:{vest:[100,150,200],helm:[.85,.75,.67],pack:[2,3,4],drill:[.64,.5,.4],pick:[.7,.55,.4],radio:[34,27,20]},price:{vest:[12000,20000,32000],helm:[8000,14000,22000],pack:[10000,16000,24000],drill:[14000,22000,32000],pick:[6000,10000,16000],radio:[9000,14000,20000]},helmHits:[12,16,20],rep:.4,
 jamT:40,medHp:40,jamMax:3,medMax:3,flMax:3,smMax:3,dcMax:3,adMax:1,btMax:2,btMat:4,adHp:25,adInv:2,items:[
 {k:'smg',n:'SMG',p:15000,d:()=>'Mag '+CFG.wpn.smg.mag+', '+CFG.wpn.smg.dmg+' Schaden, schnell, streut'},
 {k:'rifle',n:'Sturmgewehr',p:30000,d:()=>'Mag '+CFG.wpn.rifle.mag+', '+CFG.wpn.rifle.dmg+' Schaden, präzise'},
@@ -2112,7 +2112,8 @@ if(!opt.noLoop)requestAnimationFrame(loop);
 cv.addEventListener('focus',()=>{focus=true});cv.addEventListener('blur',()=>{focus=false;aimG=0;clearKeys();mouse.down=0});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&scr==='play'&&!ended&&NET.role==='solo'){paused=true;clearKeys();mouse.down=0}});
 document.addEventListener('paste',e=>{if(scr!=='join')return;const t=((e.clipboardData&&e.clipboardData.getData('text'))||'').toUpperCase(),m=/RAUM=([A-Z0-9]{4})/.exec(t)||/\b([A-Z0-9]{4})\b/.exec(t);if(m)joinText=m[1].split('').filter(c=>CODECH.includes(c)).join('').slice(0,4);e.preventDefault()});
-window.addEventListener('beforeunload',()=>{try{netReset()}catch(e){}});
+window.addEventListener('beforeunload',e=>{if(NET.role==='host'&&NET.conns.length>0){e.preventDefault();e.returnValue=''}});
+window.addEventListener('pagehide',()=>{try{netReset()}catch(e){}});
 const kn=e=>e.key.length===1?e.key.toLowerCase():e.key;
 cv.addEventListener('keydown',e=>{const k=kn(e);SND.init();SND.resume();
 if(nameEdit){if(e.key==='Enter'||e.key==='Escape'||e.key==='Tab'){nameEdit=false;saveName()}else if(e.key==='Backspace')myName=myName.slice(0,-1);else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&myName.length<NAME_MAX&&/[\p{L}\p{N} _.\-]/u.test(e.key))myName+=e.key;e.preventDefault();return}

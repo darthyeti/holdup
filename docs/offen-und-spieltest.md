@@ -4,13 +4,13 @@ Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Hier steht, was als Nächst
 
 Pflege: Sobald etwas gebaut ist, das Till noch nicht gespielt hat, kommt hier eine Zeile mit den Fragen dazu (Bereich suchen, sonst neuen anlegen). Hat Till getestet und entschieden, wird der Punkt gestrichen und die Erkenntnis geht in die Themendatei. Die Chronik der Builds gehört nicht hierher und nicht in `CLAUDE.md`: Sie steht in der Git-Historie und in den Themendateien.
 
-Stand der Prüfung (21. Oktober 2026, Build 65, `VER` 20, `UI_API` 4): 141 automatische Tests grün (`cd tests && npm test`, rund 4 Minuten), das sind keine Spieltests. Von Till gespielt sind der Solo-Transporter (Build 27: machbar, am Ende bleiben 5 bis 10 s), der erste Solo-Test der neuen Karten (Build 41), das Feedback zum Juwelier (Build 46) und mehrere Coop-Partien zu dritt und zu viert (daraus entstanden Alarm-Meldung, Polizei-Abstand, Fluchtwagen, Shop-Ausbau, Auszeichnungen, Polizei-Anfahrt, Beobachterregeln, Team-Leiste). Fast alles, was danach gebaut wurde, war ungespielt. Am 21. Oktober 2026 hat Till abgehakt: Polizei, Barrikaden und Gegner (Lehnen, Schilde, Granaten, Scharfschützen, Innentür-Barrikaden, Riegel, Abstand, Anfahrt, Wiederbeleben, Pistole), den Fluchtwagen (Zeiger, Einsteigen, Fahrer), den Transporter (solo und Coop), den Juwelier (Wege, Werte, Wache), leises Vorgehen (Beobachterregeln, Verdachtsbalken im Coop), den Coop (Alarm-Meldung, Namen, Versionsanzeige, Team-Leiste, Rückfrage, Auszeichnungen, Lobby) und die Menüs (Kacheln, Bildgröße, Maus fangen, "so in Ordnung erstmal"). Was unten steht, ist der Rest. Vor neuen Spielsachen kommt der Test (Regel in `CLAUDE.md`).
+Stand der Prüfung (21. Oktober 2026, Build 65, `VER` 20, `UI_API` 4): 143 automatische Tests grün (`cd tests && npm test`, rund 4 Minuten), das sind keine Spieltests. Von Till gespielt sind der Solo-Transporter (Build 27: machbar, am Ende bleiben 5 bis 10 s), der erste Solo-Test der neuen Karten (Build 41), das Feedback zum Juwelier (Build 46) und mehrere Coop-Partien zu dritt und zu viert (daraus entstanden Alarm-Meldung, Polizei-Abstand, Fluchtwagen, Shop-Ausbau, Auszeichnungen, Polizei-Anfahrt, Beobachterregeln, Team-Leiste). Fast alles, was danach gebaut wurde, war ungespielt. Am 21. Oktober 2026 hat Till abgehakt: Polizei, Barrikaden und Gegner (Lehnen, Schilde, Granaten, Scharfschützen, Innentür-Barrikaden, Riegel, Abstand, Anfahrt, Wiederbeleben, Pistole), den Fluchtwagen (Zeiger, Einsteigen, Fahrer), den Transporter (solo und Coop), den Juwelier (Wege, Werte, Wache), leises Vorgehen (Beobachterregeln, Verdachtsbalken im Coop), den Coop (Alarm-Meldung, Namen, Versionsanzeige, Team-Leiste, Rückfrage, Auszeichnungen, Lobby) und die Menüs (Kacheln, Bildgröße, Maus fangen, "so in Ordnung erstmal"). Was unten steht, ist der Rest. Vor neuen Spielsachen kommt der Test (Regel in `CLAUDE.md`).
 
 ## Spieltest-Fragen (Till)
 
 ### Fluchtwagen
 
-- [ ] Ruf (automatisch nach 150 s, G nach 40 s, mit Funkgerät Stufe 1 bis 3 in 28, 20, 14 s, im Coop zählt das beste Funkgerät aller Lebenden): Ist ein Funkgerät Stufe 3 im Team zu früh für alle (Vorschlag: Untergrenze oder nur das Funkgerät des Rufenden)?
+- [ ] Ruf (automatisch nach 150 s, G nach 40 s, mit Funkgerät Stufe 1 bis 3 in 34, 27, 20 s, im Coop zählt das beste Funkgerät aller Lebenden, nirgends schneller als 20 s): Fühlt sich das gut an, ist Stufe 1 (nur 6 s schneller als ohne) die 9.000 wert, bleibt der Wagen im Team mit Stufe 3 fair?
 
 ### Lage-Tags (docs/karte-und-layout.md)
 
@@ -29,6 +29,10 @@ Stand der Prüfung (21. Oktober 2026, Build 65, `VER` 20, `UI_API` 4): 141 autom
 
 - [ ] Nebenziele: Ist das Ziel zu Beginn lesbar (Meldung und Zeile ZIEL), sind die Bonus-Prozente und Grenzen fair (Schnell 120 s auf der Bank, Ohne Treffer 15 %, Nichts liegen lassen .75), wirkt "Alle auf den Beinen" zu dritt, stört die Zeile im HUD?
 
+### Coop (docs/coop-und-netz.md)
+
+- [ ] Abfrage beim Schließen des Tabs (Host mit Mitspielern): Kommt die Standard-Abfrage des Browsers beim Schließen und beim Neuladen, bleibt sie ohne Mitspieler und als Client aus, bleiben die Mitspieler im Raum, wenn man "Bleiben" wählt?
+
 ### Shop und Wurfgeräte (docs/spielsystem.md)
 
 - [ ] Ist die Wurf-Bedienung gut (Ring, Reichweite 300, Loslassen)? Lohnt sich die Blendgranate (1,5 bis 3,5 s, trifft auch das Team), der Rauch (9 s, Radius 110, gegen Beamte am Fluchtwagen), der Ablenker (8 s, lockt Wachen, Erkunden)?
@@ -36,12 +40,7 @@ Stand der Prüfung (21. Oktober 2026, Build 65, `VER` 20, `UI_API` 4): 141 autom
 
 ## Offene Entscheidungen (Till)
 
-- Breiteres Schussfeld beim Lehnen? Es macht das Lehnen deutlich stärker, `CFG.bar` müsste neu gedreht werden. Empfehlung: nein. (Hintergrund: Schräge Kugeln verlassen die Barrikaden-Kachel seitlich und treffen das Fenster neben der Tür, Messung in docs/polizei-und-barrikaden.md.)
-- Gedrehte Karten im Zufall: `layoutFor` baut keine, `turnLayout` kann es. Soll die Seite der Straße zufällig aus dem Seed kommen? Die Balance je Seite ist nur mit dem Bot-Rauchtest gemessen (docs/karte-und-layout.md, Freie Straße).
-- Fluchtwagen mit Funkgerät im Team: Untergrenze oder nur das Funkgerät des Rufenden (siehe Fluchtwagen oben).
-- Treffpunkt des Fluchtwagens in der Seitenstraße als Kartenvariante, nur nach Tills Test.
-- Maus fangen als Voreinstellung an (bisher aus)?
-- Abfrage des Browsers beim Schließen des Tabs für den Host (Esc, Raum schließen und die Pause fragen schon zurück, siehe docs/coop-und-netz.md, Was beendet die gehostete Sitzung).
+Zurzeit keine. Was am 21. Oktober 2026 entschieden wurde, steht in den Themendateien (Schussfeld beim Lehnen in docs/polizei-und-barrikaden.md, Maus fangen und Funkgerät in docs/spielsystem.md, Tab schließen in docs/coop-und-netz.md, gedrehte Karten in docs/karte-und-layout.md).
 
 ## Technisch offen
 
@@ -53,9 +52,9 @@ Coop (in sinnvoller Reihenfolge):
 5. Reconnect nach Verbindungsabbruch, Hostwechsel (aktuell beendet der Host-Abbruch das Spiel für alle).
 6. Eigenen Schuss serverseitig verzögerungsfrei abrechnen (Lag-Kompensation), aktuell trifft der Host mit seiner Sicht.
 
-Polizei und Barrikaden: Der Spieltest ist abgehakt, offen ist, ob danach `CFG.bar` zu drehen ist (docs/ideen-und-planung.md). Lautloser Raub: Ablenkung als nächste Schicht (der Ablenker als Wurfgerät auf Taste 5 ist gebaut, was darüber hinaus geplant war, steht in docs/ideen-und-planung.md).
+Polizei und Barrikaden: Der Spieltest ist abgehakt, `CFG.bar` bleibt vorerst so wie es ist (Till, 21. Oktober 2026), gedreht wird erst bei neuem Anlass (Plan in docs/ideen-und-planung.md). Lautloser Raub: Ablenkung als nächste Schicht (der Ablenker als Wurfgerät auf Taste 5 ist gebaut, was darüber hinaus geplant war, steht in docs/ideen-und-planung.md).
 
-Karten (docs/karte-und-layout.md): Posten und Wagenplätze wirklich ableiten (`autoPosts` wird bisher nur mit der Handliste verglichen), Registry für Kartentypen, Tresor und Büro optional. Karten über 64 x 64 und Coop mit gedrehter Karte sind ungeprüft.
+Karten (docs/karte-und-layout.md): Posten und Wagenplätze wirklich ableiten (`autoPosts` wird bisher nur mit der Handliste verglichen), Registry für Kartentypen, Tresor und Büro optional. Karten über 64 x 64 und Coop mit gedrehter Karte sind ungeprüft. Treffpunkt des Fluchtwagens in der Seitenstraße als Kartenvariante: beschlossen (Till, 21. Oktober 2026), noch nicht gebaut, kommt nach den offenen Spieltests (braucht je Karte einen abgesetzten Fluchtbereich, siehe docs/spielsystem.md, Fluchtwagen). Gedrehte Karten im Zufall: später entscheiden (docs/karte-und-layout.md, Freie Straße).
 
 Transporter (docs/szenarien.md): Schritt B bis D und weitere Karten. Die Besatzung hat keine echte Deckungs-KI (steht am Posten, stürmt nach `crewHold`). Es fehlen Bot, Vorhut mit Verdacht auf der Fahrbahn, Sprengladung und Generator-Varianten.
 
