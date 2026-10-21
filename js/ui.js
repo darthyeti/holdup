@@ -159,9 +159,28 @@ return{def:'resume',back:'resume',t:[
 {id:'leave',x:330,y:338,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':'Raum verlassen'}],
 deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=Y;g.font='bold 34px monospace';g.fillText('PAUSE',480,122);
 g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424)}}}
-function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft;
-return{t:[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
-{id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen',tf:'bold 13px monospace'}]}}
+/* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
+function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft,aw=ended.aw||[],pg=aw.length?ended.pg|0:0,last=!aw.length||pg===1;
+const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
+{id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen',tf:'bold 13px monospace'}];
+if(pg===1)t.push({id:'endPrev',x:250,y:468,w:190,h:58,nofocus:true,act:'endPrev',chip:'←',title:'Übersicht',tf:'bold 13px monospace'});
+return{t,deco:aw.length?()=>pageAw(aw,pg):null}}
+function medal(cx,cy,c){const{g}=X;g.fillStyle=c;g.beginPath();g.arc(cx,cy,19,0,6.283);g.fill();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=2;g.stroke();
+g.fillStyle='rgba(10,12,18,.72)';g.beginPath();for(let k=0;k<10;k++){const r=k%2?4.5:10,an=-1.5708+k*.62832;g.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}g.closePath();g.fill()}
+function pageAw(aw,pg){const{g,VW,VH}=X,cx=pg===1?585:480;g.textAlign='center';
+if(pg===1){g.fillStyle='rgba(6,8,14,.6)';g.fillRect(0,0,VW,VH)}
+for(let i=0;i<2;i++){g.beginPath();g.arc(cx-8+i*16,494,4,0,6.283);if(i===pg){g.fillStyle=A;g.fill()}else{g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=1;g.stroke()}}
+g.font='11px monospace';g.fillStyle=MU;g.fillText('Pfeiltasten blättern',cx,514);
+if(pg!==1)return;
+g.fillStyle=A;g.font='bold 34px monospace';g.fillText('AUSZEICHNUNGEN',480,68);g.fillStyle=TX;g.font='14px monospace';g.fillText('Wer hat was getan?',480,94);
+const y0=110+(4-Math.ceil(aw.length/2))*42,w=430,h=76;
+aw.forEach((a,i)=>{const x=40+(i%2)*450,y=y0+Math.floor(i/2)*84,nw=Math.max(1,a.cl.length),tx=x+68+(nw-1)*20,c0=a.cl[0]||A;
+g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,h-1);
+a.cl.forEach((c,j)=>medal(x+34+j*20,y+h/2,c));
+g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=A;g.fillText(a.t,tx,y+21);
+g.textAlign='right';g.font='bold 12px monospace';g.fillStyle=c0;g.fillText(fit(a.v,w-(tx-x)-130,g.font),x+w-12,y+21);
+g.textAlign='left';g.font='bold 17px monospace';g.fillStyle='#f4f1e6';g.fillText(fit(a.n,w-(tx-x)-12,g.font),tx,y+45);
+g.font='11px monospace';g.fillStyle=SU;g.fillText(fit(a.s,w-(tx-x)-12,g.font),tx,y+64)});g.textAlign='left'}
 
 /* ---------- Modals: Optionen, Anleitung, Rueckfrage ---------- */
 function mOptions(){const{scr,DBG,unlockAll,myName,nameEdit,time,CFG}=X,title=scr==='title',rows=[];
@@ -241,7 +260,7 @@ function paintStack(c,under){c.deco&&c.deco();c.t.forEach(t=>drawTile(t,under))}
 function paintAll(){const b=base();if(stack.length){paintStack(b,true);stack.forEach(m=>paintStack(modalSpec(m),m!==modal))}else paintStack(b,false)}
 function drawMenu(){const{g,scr}=X;titleBack(scr==='shop'||scr==='mission');g.textAlign='center';if(!cur())return;paintAll();g.textAlign='left'}
 function drawPause(){const{g}=X;if(!cur())return;paintAll();g.textAlign='left'}
-function drawEnded(){const c=cur();if(!c)return;c.t.forEach(t=>drawTile(t,false))}
+function drawEnded(){const c=cur();if(!c)return;c.deco&&c.deco();c.t.forEach(t=>drawTile(t,false))}
 function titleBack(small){const{S0,T,VH,VW,W1,WX0,WY0,camX,camY,g,so,st}=X;W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(camX-2,camY-2,VW+4,VH+4);
 {const sx=(camX-WX0*T)*2,sy=(camY-WY0*T)*2;g.drawImage(st,sx,sy,VW*2,VH*2,camX,camY,VW,VH);g.drawImage(so,sx,sy,VW*2,VH*2,camX,camY,VW,VH)}
 S0();g.fillStyle='rgba(8,10,16,.68)';g.fillRect(0,0,VW,VH);
@@ -249,4 +268,4 @@ const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
 return{drawMenu,drawPause,drawEnded,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus})):[]}}}
-mkUI.api=3;
+mkUI.api=4;
