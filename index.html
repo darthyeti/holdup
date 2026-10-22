@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=68"></script>
+<script src="js/ui.js?v=71"></script>
 <script>
-const BUILD={n:68,d:'2026-10-21'};//BUILD
+const BUILD={n:71,d:'2026-10-22'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -1411,10 +1411,11 @@ const vanT=()=>{const l=Math.max(0,...players.filter(o=>live(o)&&o.kit).map(o=>o
 /* Wurfgeraete der Spieler (CFG.gadget): Blendgranate (Taste 3), Rauchgranate (4), Ablenker (5). Taste halten zeigt den Zielring an der Maus, Loslassen schickt das Ziel (reqThrow), der Host prueft Vorrat, Phase und Weite und wirft ueber die Liste gr (Arten flash, smoke, dec, dazu gas der Polizei).
    Blend betaeubt Beamte (e.stun), Rauch sperrt Sichtlinien (smoked), der Ablenker lockt Wachen (decoyOn). */
 const THROW={3:{k:'flash',c:'fl',ph:2,n:'Blendgranate'},4:{k:'smoke',c:'sm',ph:2,n:'Rauchgranate'},5:{k:'dec',c:'dc',ph:1,n:'Ablenker'}};
-function throwPoint(o,tx,ty){const G=CFG.gadget;let dx=tx-o.x,dy=ty-o.y;const d=Math.hypot(dx,dy)||1,ln=Math.min(d,G.maxD);dx/=d;dy/=d;let r=0;while(r<ln&&!isSol(Math.floor((o.x+dx*(r+4))/T),Math.floor((o.y+dy*(r+4))/T)))r+=4;r=Math.min(r,ln);return{x:o.x+dx*r,y:o.y+dy*r,blocked:r<ln-4,far:d>G.maxD}}
+// Freies Ziel: der Punkt liegt auf der Strecke zur Maus und ist nur auf die Wurfweite (maxD) begrenzt, nicht an Waenden gekuerzt. blocked sagt, ob die gerade Strecke bis dorthin eine feste Kachel schneidet (hit = erste Stelle), dann wird nicht geworfen.
+function throwPoint(o,tx,ty){const G=CFG.gadget;let dx=tx-o.x,dy=ty-o.y;const d=Math.hypot(dx,dy)||1,ln=Math.min(d,G.maxD);dx/=d;dy/=d;let hit=null;for(let r=4;r<ln+4&&!hit;r+=4){const q=Math.min(r,ln);if(isSol(Math.floor((o.x+dx*q)/T),Math.floor((o.y+dy*q)/T)))hit={x:o.x+dx*q,y:o.y+dy*q}}return{x:o.x+dx*ln,y:o.y+dy*ln,blocked:!!hit,hit,far:d>G.maxD}}
 function throwG(o,n,tx,ty){const W=THROW[n];if(!W)return;
 if(phase!==W.ph||!(o[W.c]>0)||!isFinite(tx)||!isFinite(ty)){sndTo(o,'ev','deny');ban(phase!==W.ph?(W.ph===2?'Nur im Überfall nützlich':'Nur beim Erkunden nützlich'):'Kein Vorrat: '+W.n,1.6,o.id);return}
-const G=CFG.gadget,pt=throwPoint(o,tx,ty),dx=pt.x-o.x,dy=pt.y-o.y,d=Math.max(8,Math.hypot(dx,dy));o[W.c]--;
+const G=CFG.gadget,pt=throwPoint(o,tx,ty);if(pt.blocked){sndTo(o,'ev','deny');ban('Wurf blockiert: Weg versperrt',1.4,o.id);return}const dx=pt.x-o.x,dy=pt.y-o.y,d=Math.max(8,Math.hypot(dx,dy));o[W.c]--;
 gr.push({id:++bid,k:W.k,x:o.x,y:o.y,vx:dx/d*G.spd,vy:dy/d*G.spd,st:'fly',t:d/G.spd,tm:0,own:o.id});o.a=Math.atan2(dy,dx);snd('gthrow',o.x,o.y);
 if(players.length>1&&W.k!=='dec')say(pn(o.id)+' wirft '+(W.k==='flash'?'eine Blendgranate':'eine Rauchgranate')+'!')}
 function smokeCloud(x,y){evt('gb',[x,y,2]);smk.push({id:++bid,x,y,r:CFG.gadget.smokeR,t:CFG.gadget.smokeT})}
@@ -1860,10 +1861,10 @@ for(let i=0;i<10;i++){const a=i*.63+c.id+time*(.12+i*.015)*(i%2?1:-1),rr=c.r*(.2
 for(const d of dcy){const ph=(time*1.7+d.id)%1;g.save();g.strokeStyle='rgba(255,196,70,'+(.8*(1-ph))+')';g.lineWidth=2;g.beginPath();g.arc(d.x,d.y,8+ph*40,0,6.283);g.stroke();g.fillStyle='#2a2d33';g.fillRect(d.x-5,d.y-4,10,8);g.fillStyle=Math.floor(time*8)%2?'#ffc446':'#6a5a30';g.fillRect(d.x-3,d.y-2,6,4);g.restore()}
 for(const e of en){if(!(e.stun>0)||e.hp<=0)continue;g.save();for(let i=0;i<3;i++){const a=time*5+i*2.09;g.fillStyle='#ffe066';g.fillRect(e.x+Math.cos(a)*11-1.5,e.y-14+Math.sin(a)*3-1.5,3,3)}g.restore()}
 if(aimG&&live(p)&&p===me){const a=aimPoint(),W=THROW[aimG],G=CFG.gadget,col=W.k==='flash'?'255,244,200':W.k==='smoke'?'190,200,215':'255,190,60',rad=W.k==='smoke'?G.smokeR:W.k==='flash'?G.stunR:G.decR;
-g.save();g.strokeStyle='rgba('+col+',.7)';g.lineWidth=2;g.setLineDash([6,6]);g.beginPath();g.moveTo(me.x,me.y);g.lineTo(a.x,a.y);g.stroke();
-g.strokeStyle=a.blocked?'rgba(255,90,70,.95)':'rgba('+col+',.95)';g.lineWidth=2.5;g.setLineDash([]);g.beginPath();g.arc(a.x,a.y,10,0,6.283);g.stroke();
+const ok=a.blocked?'rgba(255,90,70,.95)':'rgba(110,235,130,.95)';g.save();g.strokeStyle=ok;g.lineWidth=2.5;g.setLineDash([8,6]);g.beginPath();g.moveTo(me.x,me.y);g.lineTo(a.x,a.y);g.stroke();
+g.strokeStyle=ok;g.lineWidth=2.5;g.setLineDash([]);g.beginPath();g.arc(a.x,a.y,10,0,6.283);g.stroke();if(a.hit){const h=a.hit;g.beginPath();g.moveTo(h.x-6,h.y-6);g.lineTo(h.x+6,h.y+6);g.moveTo(h.x+6,h.y-6);g.lineTo(h.x-6,h.y+6);g.stroke()}
 g.setLineDash([3,6]);g.strokeStyle='rgba('+col+',.35)';g.lineWidth=1.5;g.beginPath();g.arc(a.x,a.y,rad,0,6.283);g.stroke();g.setLineDash([]);
-g.textAlign='center';g.font='bold 10px monospace';g.fillStyle='rgba('+col+',.95)';g.fillText(W.n.toUpperCase()+' x'+me[W.c]+(a.blocked?' (Wand)':a.far?' (zu weit)':''),a.x,a.y-16);g.restore()}}
+g.textAlign='center';g.font='bold 10px monospace';g.fillStyle='rgba('+col+',.95)';g.fillText(W.n.toUpperCase()+' x'+me[W.c]+(a.blocked?' (blockiert)':a.far?' (max. Weite)':''),a.x,a.y-16);g.restore()}}
 function drawBoard(){for(const o of players){if(!(o.bd>0)||o.out||o.gone)continue;g.save();g.lineWidth=4;g.strokeStyle='rgba(0,0,0,.55)';g.beginPath();g.arc(o.x,o.y,22,0,6.283);g.stroke();g.strokeStyle='#7ee34a';g.beginPath();g.arc(o.x,o.y,22,-1.5708,-1.5708+6.283*o.bd);g.stroke();g.textAlign='center';g.font='bold 10px monospace';g.fillStyle='#7ee34a';g.fillText('EINSTEIGEN',o.x,o.y-30);g.restore()}}
 function drawSnipe(){for(const e of en){if(e.kind!=='sniper')continue;if(los(p.x,p.y,e.x,e.y)){g.save();g.translate(e.x,e.y);g.rotate(e.a);g.strokeStyle='#14171c';g.lineWidth=3;g.beginPath();g.moveTo(8,3);g.lineTo(34,3);g.stroke();g.strokeStyle='#59616b';g.lineWidth=1.2;g.beginPath();g.moveTo(8,3);g.lineTo(34,3);g.stroke();if(e.aimA){g.fillStyle='#ff3a2a';g.beginPath();g.arc(34,3,1.8,0,6.283);g.fill()}g.restore()}
 const a=e.aimA;if(a&&(los(p.x,p.y,e.x,e.y)||los(p.x,p.y,a[1],a[2]))){const k=Math.min(1,a[0]),fl=a[0]>1-CFG.snp.lock/CFG.snp.aim,bl2=fl?Math.floor(time*16)%2:1;g.save();g.strokeStyle='rgba(255,50,40,'+(.25+.5*k)*bl2+')';g.lineWidth=1.3;g.beginPath();g.moveTo(e.x+Math.cos(e.a)*34,e.y+Math.sin(e.a)*34+3);g.lineTo(a[1],a[2]);g.stroke();g.fillStyle='rgba(255,60,40,'+(.5+.4*k)+')';g.beginPath();g.arc(a[1],a[2],3+3*(1-k),0,6.283);g.fill();g.restore()}}}
@@ -2128,7 +2129,7 @@ if((k==='Escape'||k==='p')&&!ended){aimG=0;paused=true;clearKeys();mouse.down=0}
 if(k==='f'&&phase===1)reqHeist();if(k==='g')reqVan();if(k==='1'){aimG=0;reqGadget(1)}if(k==='2'){aimG=0;reqGadget(2)}
 if(k==='3'||k==='4'||k==='5'){const n=+k,W=THROW[n];if(aimOk(n))aimG=n;else{SND.ev('deny');ban(!live(me)||ended?'':phase!==W.ph?(W.ph===2?'Nur im Überfall nützlich':'Nur beim Erkunden nützlich'):'Kein Vorrat: '+W.n,1.4,me.id)}}
 if(ended&&k==='Enter')endNext();if(ended&&(k==='ArrowRight'||k==='ArrowLeft'))endPage(k==='ArrowRight'?1:0)});
-cv.addEventListener('keyup',e=>{const k=kn(e);keys[k]=0;if(aimG&&(k==='3'||k==='4'||k==='5')&&+k===aimG){const n=aimG;aimG=0;if(aimOk(n)&&!paused&&scr==='play'){const a=aimPoint();reqThrow(n,a.x,a.y)}}});
+cv.addEventListener('keyup',e=>{const k=kn(e);keys[k]=0;if(aimG&&(k==='3'||k==='4'||k==='5')&&+k===aimG){const n=aimG;aimG=0;if(aimOk(n)&&!paused&&scr==='play'){const a=aimPoint();if(a.blocked){SND.ev('deny');ban('Wurf blockiert: Weg versperrt',1.4,me.id)}else reqThrow(n,a.x,a.y)}}});
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
 /* Maus fangen (MLOCK): gesperrt ist der Zeiger nur im laufenden Spiel (nicht in Menues, Pause, Ergebnis). Gesperrt rechnet mousemove mit movementX/Y (auf logische Pixel umgerechnet, am Bildrand geklemmt)
    und mouse.sx/sy bleibt der Zeiger fuers Zielen. Gesperrt wird nur auf eine Eingabe hin (Klick oder Taste, Browserregel), Esc oder ein Klick auf Weiter genuegen also. Esc loest die Sperre und pausiert (pointerlockchange). */

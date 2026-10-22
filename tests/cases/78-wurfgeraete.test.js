@@ -6,19 +6,52 @@ const SETUP2 = () => {   // Bank klassisch, Ueberfall, keine Polizei, Spieler mi
 
 module.exports = [
   {
-    name: 'Wurf: Zielpunkt liegt auf der Strecke zur Maus, endet nach 300 Pixeln und vor der ersten Wand',
+    name: 'Wurf: Zielpunkt liegt frei auf der Strecke zur Maus (nur auf 300 Pixel begrenzt), eine Wand dazwischen macht ihn blockiert statt ihn zu kürzen',
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, me = D.get().me, out = {};
         me.x = 12 * 32 + 16; me.y = 14 * 32 + 16;    // Gehsteig vor der Bank, frei
         const a = D.throwPoint(me, me.x + 100, me.y); out.near = [Math.round(a.x - me.x), Math.round(a.y - me.y), a.blocked, a.far];
         const b = D.throwPoint(me, me.x + 900, me.y); out.far = [Math.round(b.x - me.x), b.blocked, b.far];
-        const c = D.throwPoint(me, me.x, me.y - 200); out.wall = [Math.round(c.y - me.y), c.blocked, c.far];   // die Fassade der Bank liegt 1,5 Kacheln weiter nördlich
+        const c = D.throwPoint(me, me.x, me.y - 200); out.wall = [Math.round(c.y - me.y), c.blocked, c.far, c.hit ? Math.round(c.hit.y - me.y) : null];   // die Fassade der Bank liegt 1,5 Kacheln weiter nördlich
         return out;
       });
       t.eq(r.near, [100, 0, false, false], 'Ziel in Reichweite: genau dort');
       t.ok(r.far[0] === 300 && r.far[2] === true, 'zu weit: auf 300 Pixel gekürzt: ' + JSON.stringify(r.far));
-      t.ok(r.wall[0] > -200 && r.wall[0] < -20 && r.wall[1] === true, 'Wand stoppt den Wurf, Ring rot: ' + JSON.stringify(r.wall));
+      t.eq([r.wall[0], r.wall[1], r.wall[2]], [-200, true, false], 'Ziel bleibt an der Maus, der Wurf ist blockiert: ' + JSON.stringify(r.wall));
+      t.ok(r.wall[3] > -200 && r.wall[3] < -20, 'die Sperre liegt zwischen Figur und Ziel (Kreuz): ' + JSON.stringify(r.wall));
+      t.eq([r.near[2], r.far[1]], [false, false], 'freie Strecken sind nicht blockiert');
+    },
+  },
+  {
+    name: 'Wurf: ein blockierter Wurf wird nicht ausgeführt (Vorrat bleibt, nichts fliegt, Hinweis), ein freier Wurf geht wie bisher',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, cv = document.getElementById('c'), out = {};
+        D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.sessReset(); D.SESSION.cons = { fl: 2, sm: 1, dc: 1 }; D.reset(); D.startHeist(false, D.get().me);
+        const me = D.get().me; me.x = 12 * 32 + 16; me.y = 14 * 32 + 16; D.update(1 / 30);
+        const box = cv.getBoundingClientRect(), mv = (sx, sy) => cv.dispatchEvent(new MouseEvent('mousemove', { clientX: box.left + sx * box.width / 960, clientY: box.top + sy * box.height / 544, bubbles: true }));
+        // Maus 120 Pixel ueber der Figur, also hinter der Fassade
+        mv(480, 272 - 120); D.draw(); const ty = D.mouse.y;
+        cv.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true })); D.draw();
+        const a = D.aimPoint(); out.aim = [Math.round(a.y - ty), a.blocked, !!a.hit];
+        cv.dispatchEvent(new KeyboardEvent('keyup', { key: '3', bubbles: true }));
+        out.fl = me.fl; out.gr = D.gren().gr.length; out.banner = (D.msgs().banner || '');
+        // der Host verweigert dasselbe, falls ein Client es trotzdem schickt
+        D.useGadget(me, 3, me.x, me.y - 120); out.fl2 = me.fl; out.gr2 = D.gren().gr.length;
+        // frei: Maus 140 Pixel rechts
+        mv(480 + 140, 272); D.draw();
+        cv.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true })); D.draw();
+        out.aim2 = D.aimPoint().blocked;
+        cv.dispatchEvent(new KeyboardEvent('keyup', { key: '3', bubbles: true }));
+        out.fl3 = me.fl; out.gr3 = D.gren().gr.length;
+        return out;
+      });
+      t.eq(r.aim, [0, true, true], 'der Ring sitzt auf der Maus (nicht an der Wand) und der Wurf ist blockiert: ' + JSON.stringify(r.aim));
+      t.eq([r.fl, r.gr], [2, 0], 'Loslassen bei blockiertem Weg: kein Wurf, Vorrat bleibt');
+      t.ok(/blockiert/.test(r.banner), 'Hinweis erscheint: ' + r.banner);
+      t.eq([r.fl2, r.gr2], [2, 0], 'auch der Host wirft nicht, wenn ein Client ein blockiertes Ziel schickt');
+      t.eq([r.aim2, r.fl3, r.gr3], [false, 1, 1], 'freier Weg: wirft wie bisher');
     },
   },
   {
