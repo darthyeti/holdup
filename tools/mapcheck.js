@@ -17,7 +17,7 @@ function check(sc,seed,lage,turn){build(sc,seed,lage,turn);const w=D.world(),L=D
  // Erreichbar heisst: auf einer begehbaren Kachel kann man so stehen, dass der Abstand zum Item kleiner als r ist (Kachelrand statt Kachelmitte, Figurenradius 9 ab Wand)
  const near=(x,y,r)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const tx=Math.floor(x/T)+dx,ty=Math.floor(y/T)+dy;if(!has(tx,ty))continue;const cx=Math.max(tx*T+3,Math.min(tx*T+T-3,x)),cy=Math.max(ty*T+3,Math.min(ty*T+T-3,y));if(Math.hypot(cx-x,cy-y)<r*.95)return true}return false};
  // Items
- let n=0;for(const it of G.its){if(it.t==='bar'||it.t==='wbar'||it.t==='lock'||it.t==='cam'&&false)continue;n++;if(!near(it.x,it.y,it.r||44))rep.err.push('Item nicht erreichbar: '+it.t+(it.k?'/'+it.k:'')+' bei '+Math.round(it.x/T*10)/10+','+Math.round(it.y/T*10)/10)}
+ let n=0;for(const it of G.its){if(it.t==='bar'||it.t==='bard'||it.t==='wbar'||it.t==='lock'||it.t==='cam'&&false)continue;n++;if(!near(it.x,it.y,it.r||44))rep.err.push('Item nicht erreichbar: '+it.t+(it.k?'/'+it.k:'')+' bei '+Math.round(it.x/T*10)/10+','+Math.round(it.y/T*10)/10)}
  rep.info.items=n;
  // Polizei: Aussteigepunkt und Posten
  const LN=D.LANE(),curb=(LN.slots.find(q=>q.end===LN.ends[1])||LN.slots[0]).curb;   // Aussteigepunkt des ersten Platzes am hohen Ende der Strasse

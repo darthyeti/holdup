@@ -19,7 +19,7 @@ const JOBS=[
 {k:'museum',n:'Museum',i:'museum',be:3,ri:2,s:'Nacht, Laser, Lichtkegel',d:['Im Lichtkegel einer Wache fällst du sofort auf, Laser lösen bei Berührung Alarm aus (Schalter: 50 s aus).','Gemälde, Statue, Relikte, Depot. Lautlos mit Beute raus: 100 % Bonus. Schwere Stücke machen langsam.']},
 {k:'casino',n:'Casino',i:'casino',be:3,ri:3,s:'Chips und Cage',d:['Viele Wachen und Kameras. Chips zählen nur halb, wenn du sie nicht am Cage tauschst (dauert).','Chips, Automaten, VIP-Fächer, Tresor. Erst kämpft der Hausdienst, dann die Polizei.']}],
 RANDOM={k:'random',n:'Zufall',i:'dice',s:'Würfelt unter allem, was dein Rang freischaltet',d:['Jeder Auftrag wird neu gewürfelt, unter allem, was dein Rang freischaltet.','Bank, Juwelier, Transporter und Tankstelle von Anfang an, Museum ab Auftrag 3, Casino ab Auftrag 5.']};
-const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','Blend, Rauch, Ablenker werfen'],['Esc, P','Pause'],['M','Ton an/aus']];
+const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','Blend, Rauch, Ablenker werfen'],['Esc, P','Pause'],['M','Ton an/aus']];
 const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.','Beute in der Tasche fällt Wachen nur langsam auf,','Stehlen im Blick von Kameras sofort. Bei 100 %','läuft ein Countdown: raus aus dem Blick.'];
 const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH',['jam','med','ad','bt']],['WURFGERÄTE',['fl','sm','dc']]];
 
@@ -208,7 +208,7 @@ function panelFrame(x,y,w,h,title){const{g,VW,VH}=X;g.fillStyle='rgba(8,10,16,.7
 function mHelp(){const px=70,pw=820,py=24,ph=496;
 return{def:'close',back:'ui:close',t:[{id:'close',x:480-90,y:py+ph-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'}],
 deco(){const{g,drawLegend}=X;panelFrame(px,py,pw,ph,'SO WIRD GESPIELT');g.font='bold 11px monospace';g.fillStyle=MU;g.textAlign='left';g.fillText('STEUERUNG',px+24,py+66);g.fillText('ABLAUF',px+430,py+66);
-CTRL.forEach((r,i)=>{const y=py+92+i*24;g.font='bold 12px monospace';g.fillStyle=Y;g.fillText(r[0],px+24,y);g.font='12px monospace';g.fillStyle=TX;g.fillText(r[1],px+190,y)});
+CTRL.forEach((r,i)=>{const y=py+92+i*22;g.font='bold 12px monospace';g.fillStyle=Y;g.fillText(r[0],px+24,y);g.font='12px monospace';g.fillStyle=TX;g.fillText(r[1],px+190,y)});
 FLOW.forEach((l,i)=>{g.font='12px monospace';g.fillStyle=TX;g.fillText(l,px+430,py+92+i*24)});
 g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('SYMBOLE',px+24,py+376);drawLegend(py+398);g.textAlign='left'}}}
 function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
