@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=75"></script>
+<script src="js/ui.js?v=76"></script>
 <script>
-const BUILD={n:75,d:'2026-10-22'};//BUILD
+const BUILD={n:76,d:'2026-10-22'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -213,7 +213,7 @@ cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:
 shield:{from:3,every:8,hp:110,dmg:8,rate:.55,spd:50,acc:.11,arc:1.05,pool:120,follow:.85,cover:80},
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6,n:5},
 map:{a:[10,15],b:[20,23],bs:[24,28],c:[12,16],tries:40,back:'vault',gate:2},
-val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,30],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2}},
+val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,30],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
 ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
 bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40},
@@ -852,7 +852,9 @@ posts:[{x:4,y:25,a:-1.57,k:'S'},{x:41,y:11,a:3.14,k:'E',anchor:true},{x:-1,y:8,a
 slots:{W:[24,19,14,9,4,-1],E:[30,35,40,45]},laneY:29*T,title:titleBox(),bn:CFG.casino.bn,polAt:CFG.casino.pol,wb:CFG.casino.wb,goods}}
 // Karten-Vertrag: Auf den Zellen der Strasse (Fahrstrecke des Fluchtwagens samt Rand bis zum Weltrand, Wagenplaetze) steht nichts Festes, das nur Dekor ist. Zaun wird zum Tor, Einzelkacheln-Props (Pflanze, Fass, Kiste) verschwinden. Laeuft nach dem Bau und nach der Pruefung und macht nur Kacheln frei, deshalb kann es keine Erreichbarkeit zerstoeren. Autos (v) und Waende bleiben stehen, die meldet validateMap weiter.
 function clearLane(lay){if(lay.truck)return lay;const ln=laneOf(lay),cs=[].concat(ln.van.swept,ln.van.rest);ln.slots.forEach(s=>s.cells.forEach(c=>cs.push(c)));for(const c of cs){if(OOB(c[0],c[1]))continue;const ch=cell(c[0],c[1]);if(ch==='f'||ch==='p'||ch==='q'||ch==='k')setc(c[0],c[1],'o')}return lay}
-function layoutFor(seed){return clearLane(layoutFor0(seed))}
+// Letzter Schritt jeder Karte: fehlende Listen ableiten, dann die Strasse freiraeumen (die abgeleiteten Wagenplaetze duerfen Zaun und Einzelkachel-Props kreuzen)
+function finishLay(lay){return clearLane(fillDerived(lay))}
+function layoutFor(seed){return finishLay(layoutFor0(seed))}
 function layoutFor0(seed){const LF={truck:truckLayout,jewel:jewelLayout,gas:gasLayout,museum:museumLayout,casino:casinoLayout};if(LF[jobSc]){const lay=LF[jobSc](seed);lay.seed=seed;return lay}if(seed==='classic')return classicLayout();const base=seed|0;for(let k=0;k<CFG.map.tries;k++){const lay=genLayout(base+k*7919);if(validLayout(lay)){lay.seed=seed;lay.tries=k+1;return lay}}return classicLayout()}
 /* Sperrstellen: alle Tueren in der Gebaeudehuelle (Glastueren D und Hintertueren), benachbarte Kacheln bilden einen Eingang. Aus dem Raster abgeleitet, daher auch gespiegelt/getauscht richtig. */
 function findSpots(lay){const B=lay.bld,bd=new Set(lay.backDoors.map(q=>q[0]+','+q[1])),seen=new Set(),out=[];
@@ -902,8 +904,8 @@ for(const side of['S','N','W','E']){const sw=ws.filter(w=>w.side===side);if(!sw.
 const MAP_FIELDS=[
 ['seed','P','layoutFor, reset, Netz, Nebenziel'],['bld','P','findSpots, deriveWins, hostStep (Innen/Aussen, lautlose Flucht), buildWorld (Schatten, Licht)'],
 ['spawn','P','mkPl'],['zones','P','restricted (Verdacht)'],['lobby','P','buildWorld (LOBBY, Zivilisten)'],['civ','P','reset'],['mission','P','reset, Lage, Ereignisse, Nebenziel, Briefing'],
-['exit','P','laneOf (secure, findSpots, vanPointer, Zeichnen); alternativ road'],['van','P','laneOf (reset, hostStep, vanPointer, Zeichnen); alternativ road'],['laneY','P','laneOf (mkCar); alternativ road'],['slots','P','laneOf (mkCar); alternativ road'],
-['posts','P','freePost, unload (Polizeiposten)'],['backDoors','P','findSpots (Personaltueren, lockCells)'],['mat','P','buildWorld (Bodenmaterial)'],['paintFloor','P','buildWorld'],['paintTop','P','buildWorld'],
+['exit','P','laneOf (secure, findSpots, vanPointer, Zeichnen); alternativ road'],['van','P','laneOf (reset, hostStep, vanPointer, Zeichnen); alternativ road'],['laneY','P','laneOf (mkCar); alternativ road'],['slots','O','laneOf (mkCar); alternativ road; fehlt es, leitet fillDerived es ab (autoPosts)',1],
+['posts','O','freePost, unload (Polizeiposten); fehlt es, leitet fillDerived es ab (autoPosts)',1],['backDoors','O','findSpots (Personaltueren, lockCells); fehlt es, leitet fillDerived es aus den L-Kacheln am Gebaeuderand ab',1],['mat','P','buildWorld (Bodenmaterial)'],['paintFloor','P','buildWorld'],['paintTop','P','buildWorld'],
 ['theme','P','buildWorld, draw'],['title','P','titleCam'],['winN','P','buildWorld (Sonnenstrahlen)'],['winS','P','buildWorld (Lichtkegel)'],['flip','P','draw (Spiegelung)'],
 ['vault','O','reset (Items vault und bundle), draw (Tresortuer), Bot'],['note','O','reset (Item note), matCell'],['mon','O','reset (Item mon), matCell'],['sw','O','reset (Item sw)'],
 ['tellers','O','reset (Kassierer)'],['mgr','O','reset (Manager)',1],['tills','O','reset (Kassen)'],['atms','O','reset (Automaten)'],['guards','O','reset (Wachen)'],['cams','O','reset (Kameras)'],
@@ -1023,25 +1025,38 @@ if(stand){const sv=P(sp,stand),ve=P(stand,ln.exit.goal);rep.info.pathSV=sv;rep.i
 if(rep.info.loot.v<V.loot[0]||rep.info.loot.v>V.loot[1])Wn('beute-summe','Beute-Summe '+rep.info.loot.v+' ausserhalb '+V.loot.join(' bis '));
 rep.info.cams=(lay.cams||[]).length;rep.info.guards=(lay.guards||[]).length;if(rep.info.cams>V.cams)Wn('kameras',rep.info.cams+' Kameras (Richtwert hoechstens '+V.cams+')');if(rep.info.guards>V.guards)Wn('wachen',rep.info.guards+' Wachen (Richtwert hoechstens '+V.guards+')')}
 rep.ok=!rep.err.length;return rep}
-// Posten und Wagenplaetze aus Geometrie (Gebaeude, Tueren, Strasse, Fluchttuer). Nur zum Vergleich mit der Handliste (LAY.posts, LAY.slots): ersetzt nichts.
-// Wagenplaetze: ab der Gebaeudemitte alle slotStep Kacheln nach beiden Seiten, solange der Wagen in die Welt und auf freie Spur passt.
-// Posten: eine Kachel vor jeder verriegelten Aussentuer (Aufbruch, door), gleichmaessig an der Strassenseite und den Seitenwaenden, an der Fluchtseite nur drei Anker in der Fluchtzone, Reihenfolge reihum.
-function autoPosts(lay){if(!lay.spots)findSpots(lay);const B=lay.bld,ln=laneOf(lay),V=CFG.val,tl=v=>Math.floor(v/T),ex=ln.exit,xa=ln.axis==='x',free=(x,y)=>!OOB(x,y)&&!isSol(x,y),out={slots:{},posts:[]};
+// Posten, Wagenplaetze und Hintertueren aus der Geometrie (Gebaeude, Tueren, Strasse, Fluchttuer, Zapfsaeulen). Fehlt einer Karte LAY.posts, LAY.slots oder LAY.backDoors, leitet fillDerived sie hiermit ab (Plan Mehr Abwechslung, Sprint 2), die Handlisten der heutigen Karten bleiben unveraendert (mapcheck.autocmp vergleicht).
+// Wagenplaetze: im Raster slotStep ab der Gebaeudemitte, solange der Wagen in die Welt und auf eine Spur passt, auf der nur Zaun oder Einzelkachel-Props stehen (clearLane raeumt sie danach). Alle Plaetze werden gleichmaessig auf beide Enden verteilt, der Platz am Teiler zuerst (wie die Handliste der Tankstelle).
+// Posten: eine Kachel vor jeder verriegelten Aussentuer (Aufbruch, door), an der Strassenseite im Dreierabstand um die Vordertuer, an Seitenwaenden im Dreierabstand um eine offene Seitentuer, sonst gleichmaessig verteilt, an der Fluchtseite drei Anker (bei grossen Gebaeuden mit Abstand um die Zone), Reihenfolge reihum. Kein Posten steht im Gefahrenradius einer Zapfsaeule (CFG.val.danger), er rueckt dann nach aussen. Zwei Posten stehen nie auf demselben oder einem Nachbarfeld (die Tuer-Posten haben Vorrang).
+function derivedBackDoors(lay){const B=lay.bld,o=[];for(let x=B.x0;x<=B.x1;x++)for(let y=B.y0;y<=B.y1;y++)if((x===B.x0||x===B.x1||y===B.y0||y===B.y1)&&cell(x,y)==='L')o.push([x,y]);return o}
+function autoPosts(lay){if(!lay.spots)findSpots(lay);const B=lay.bld,ln=laneOf(lay),V=CFG.val,tl=v=>Math.floor(v/T),ex=ln.exit,xa=ln.axis==='x',free=(x,y)=>!OOB(x,y)&&!isSol(x,y),soft=(x,y)=>!OOB(x,y)&&(!isSol(x,y)||'fpqk'.includes(cell(x,y))),out={slots:{},posts:[]};
 ln.ends.forEach(e=>{out.slots[e]=[]});
-const c=Math.floor(xa?(B.x0+B.x1)/2:(B.y0+B.y1)/2),w0=xa?WX0:WY0,w1=w0+(xa?W:H)-1,fits=u=>ln.box(u*T-48,u*T+80,ln.pos,32).every(q=>free(q[0],q[1]));
-for(let u=c;u-2>=w0;u-=V.slotStep)if(fits(u))out.slots[ln.ends[0]].push(u);for(let u=c+V.slotStep;u+2<=w1;u+=V.slotStep)if(fits(u))out.slots[ln.ends[1]].push(u);
+const c=Math.floor(xa?(B.x0+B.x1)/2:(B.y0+B.y1)/2),w0=xa?WX0:WY0,w1=w0+(xa?W:H)-1,fits=u=>ln.box(u*T-48,u*T+80,ln.pos,32).every(q=>soft(q[0],q[1]));
+{const us=[];for(let u=c;u-2>=w0;u-=V.slotStep)if(fits(u))us.push(u);for(let u=c+V.slotStep;u+2<=w1;u+=V.slotStep)if(fits(u))us.push(u);us.sort((a,b)=>a-b);const h=Math.ceil(us.length/2);out.slots[ln.ends[0]]=us.slice(0,h).reverse();out.slots[ln.ends[1]]=us.slice(h)}
 // Seiten: Strassenseite (ln.side), Fluchtseite (xs), Gegenseite zur Fluchtseite (os), Rueckseite (ln.opp). Die Werte in CFG.val heissen nach der Rolle: S Strassenseite, N Rueckseite, W Seite gegenueber der Fluchtseite, E Fluchtseite.
-const xs=ex.side,os=ROAD_SIDES[xs].opp,A={S:[],N:[],E:[],W:[]},ang={S:-Math.PI/2,N:Math.PI/2,W:0,E:Math.PI},role=sd=>sd===ln.side?'S':sd===ln.opp?'N':'W',hz=sd=>sd==='S'||sd==='N',edge=(sd,off)=>sd==='S'?B.y1+off:sd==='N'?B.y0-off:sd==='E'?B.x1+off:B.x0-off;
-const pick=(x,y,hor)=>{for(const k of[0,1,-1,2,-2]){const px=hor?x+k:x,py=hor?y:y+k;if(free(px,py))return[px,py]}return null};
-for(const sp of lay.spots)if(sp.side&&sp.lk&&!sp.ex){const c0=sp.cells[0],p=[c0[0]-sp.iv[0],c0[1]-sp.iv[1]];if(free(p[0],p[1]))A[sp.side].push({x:p[0],y:p[1],a:ang[sp.side],k:sp.side,door:[c0[0],c0[1]]})}
-const wall=sd=>{const h=hz(sd),a0=h?B.x0:B.y0,a1=h?B.x1:B.y1,r=role(sd),line=edge(sd,V.off[r]),n=Math.max(2,Math.round((a1-a0)/V.postStep[r]));for(let i=0;i<n;i++){const t=Math.round(a0+(a1-a0)*(i+.5)/n),p=h?pick(t,line,true):pick(line,t,false);if(p)A[sd].push({x:p[0],y:p[1],a:ang[sd],k:sd})}};
+const xs=ex.side,os=ROAD_SIDES[xs].opp,A={S:[],N:[],E:[],W:[]},ang={S:-Math.PI/2,N:Math.PI/2,W:0,E:Math.PI},nrm={S:[0,1],N:[0,-1],E:[1,0],W:[-1,0]},role=sd=>sd===ln.side?'S':sd===ln.opp?'N':'W',hz=sd=>sd==='S'||sd==='N',edge=(sd,off)=>sd==='S'?B.y1+off:sd==='N'?B.y0-off:sd==='E'?B.x1+off:B.x0-off;
+const add=(sd,po)=>{if(Object.values(A).some(l=>l.some(q=>Math.abs(q.x-po.x)<2&&Math.abs(q.y-po.y)<2)))return false;A[sd].push(po);return true};
+const dng=(x,y)=>(lay.pumps||[]).some(p=>Math.hypot(p.x-x,p.y-y)<V.danger);
+// Nach aussen rueckt ein Posten aus dem Gefahrenradius, bis er frei und sicher steht (hoechstens 6 Kacheln)
+const safe=(p,sd)=>{if(!p)return null;for(let k=0;k<=6;k++){const q=[p[0]+nrm[sd][0]*k,p[1]+nrm[sd][1]*k];if(free(q[0],q[1])&&!dng(q[0],q[1]))return q}return null};
+const pick=(x,y,hor,sd)=>{for(const k of[0,1,-1,2,-2]){const px=hor?x+k:x,py=hor?y:y+k;if(free(px,py))return safe([px,py],sd)}return null};
+for(const sp of lay.spots)if(sp.side&&sp.lk&&!sp.ex){const c0=sp.cells[0],p=[c0[0]-sp.iv[0],c0[1]-sp.iv[1]];if(free(p[0],p[1]))add(sp.side,{x:p[0],y:p[1],a:ang[sp.side],k:sp.side,door:[c0[0],c0[1]]})}
+// Anker an der Fluchtseite: kleine Gebaeude an den Enden der Zone und zwei Kacheln darueber, grosse (Tiefe ueber CFG.val.anchorBase, zum Beispiel das Casino) mit Abstand g um die Zone
+const dep=hz(xs)?B.x1-B.x0+1:B.y1-B.y0+1,g=Math.max(0,Math.round((dep-V.anchorBase)/V.anchorDiv)),r0=tl(ex.span[0]),r1=tl(ex.span[1])-1,ax=ex.tx+ex.dir*V.off.E;for(const [y0,dn] of[[r0-g,-1],[r1+g,1],[r0-2-2*g,-1]])for(let k=0;k<=6;k++){const y=y0+dn*k,p=xa?pick(ax,y,false,xs):pick(y,ax,true,xs);if(p&&add(xs,{x:p[0],y:p[1],a:ang[xs],k:xs,anchor:true}))break}
+// Seitenwand: um eine offene Tuer im Dreierabstand (Tuer, davor, dahinter), sonst gleichmaessig
+const wall=sd=>{const h=hz(sd),a0=h?B.x0:B.y0,a1=h?B.x1:B.y1,r=role(sd),line=edge(sd,V.off[r]),od=lay.spots.find(q=>q.side===sd&&!q.lk&&!q.ex),ts=[];
+ if(od){const d=od.cells[0][h?0:1];ts.push(d,d-V.postGap,d+V.postGap)}else{const n=Math.max(2,Math.round((a1-a0)/V.postStep[r]));for(let i=0;i<n;i++)ts.push(Math.round(a0+(a1-a0)*(i+.5)/n))}
+ for(const t of ts){const p=h?pick(t,line,true,sd):pick(line,t,false,sd);if(p)add(sd,{x:p[0],y:p[1],a:ang[sd],k:sd})}};
 const fd=lay.spots.find(q=>q.side===ln.side&&!q.lk&&!q.ex),nS=Math.max(4,Math.round((xa?B.x1-B.x0:B.y1-B.y0)/V.postStep.S)),lo=xa?B.x0:B.y0,hi=xa?B.x1:B.y1,ci=xa?0:1,fe=edge(ln.side,V.off.S);
-if(fd)for(let i=0;i<nS;i++){const k=i>>1,t=fd.cells[0][ci]+(i%2?V.postGap*k+2:-(V.postGap*k+1)),p=t>=lo-1&&t<=hi+1?(xa?pick(t,fe,true):pick(fe,t,false)):null;if(p)A[ln.side].push({x:p[0],y:p[1],a:ang[ln.side],k:ln.side})}
+if(fd)for(let i=0;i<nS;i++){const k=i>>1,t=fd.cells[0][ci]+(i%2?V.postGap*k+2:-(V.postGap*k+1)),p=t>=lo-1&&t<=hi+1?(xa?pick(t,fe,true,ln.side):pick(fe,t,false,ln.side)):null;if(p)add(ln.side,{x:p[0],y:p[1],a:ang[ln.side],k:ln.side})}
 else wall(ln.side);
 wall(ln.opp);wall(os);
-const r0=tl(ex.span[0]),r1=tl(ex.span[1])-1,ax=ex.tx+ex.dir*V.off.E;for(const y of[r0,r1,r0-2]){const p=xa?pick(ax,y,false):pick(y,ax,true);if(p)A[xs].push({x:p[0],y:p[1],a:ang[xs],k:xs,anchor:true})}
 const ord=[ln.side,xs,os,ln.opp];for(let i=0;ord.some(sd=>A[sd].length>i);i++)for(const sd of ord)if(A[sd].length>i)out.posts.push(A[sd][i]);
 return out}
+// Fehlende Posten, Wagenplaetze und Hintertueren ableiten (Karten-Vertrag, Felder optional). Eine freie Strasse (lay.road) traegt die Plaetze in road.slots, sonst stehen sie in lay.slots {W,E}.
+function fillDerived(lay){if(lay.truck)return lay;if(!lay.backDoors)lay.backDoors=derivedBackDoors(lay);const rd=lay.road,noSl=rd?!rd.slots:!lay.slots;if(lay.posts&&!noSl)return lay;
+if(noSl){if(rd)rd.slots=[[],[]];else lay.slots={W:[],E:[]}}
+const A=autoPosts(lay);if(!lay.posts)lay.posts=A.posts;if(noSl){const e=laneOf(lay).ends;if(rd)rd.slots=[A.slots[e[0]],A.slots[e[1]]];else lay.slots={W:A.slots.W,E:A.slots.E}}return lay}
 function buildWorld(lay){LAY=lay;LANE=laneOf(lay);SUNW=lay.winN;seed=11;if(!lay.truck){findSpots(lay);deriveWins(lay)}else{lay.wins=[];lay.snp=[]}
 LOBBY=[];{const l=lay.lobby;for(let y=l[1];y<=l[3];y++)for(let x=l[0];x<=l[2];x++)if(!isSol(x,y))LOBBY.push([x,y])}
 const th=lay.theme,P=th.f,sun=th.sun;
@@ -2141,7 +2156,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
