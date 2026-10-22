@@ -103,26 +103,30 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 6,
-   "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 16,
+   "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 5,
+   "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 12,
    "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 11,
    "Vordertür (N) | Fluchttür (W) | Hintertür (S)": 9,
    "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 12,
-   "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 12,
-   "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 11,
-   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 3
+   "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 10,
+   "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 10,
+   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 3,
+   "Vordertür (W) | Hintertür (E) | Fluchttür (S)": 1,
+   "Vordertür (E) | Hintertür (W) | Fluchttür (S)": 1,
+   "Fluchttür (N) | Hintertür (E) | Vordertür (W)": 2,
+   "Fluchttür (N) | Hintertür (W) | Vordertür (E)": 4
   },
   "range": {
    "pathSV": [
-    20,
-    20
+    17,
+    24
    ],
    "pathVE": [
-    19,
-    19
+    17,
+    25
    ],
    "loot": [
-    28200,
+    25200,
     28200
    ],
    "cams": [
@@ -134,7 +138,7 @@
     2
    ],
    "mat": [
-    14,
+    13,
     14
    ],
    "slots": [
@@ -142,7 +146,7 @@
     8
    ],
    "posts": [
-    16,
+    12,
     16
    ]
   }

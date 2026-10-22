@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=83"></script>
+<script src="js/ui.js?v=86"></script>
 <script>
-const BUILD={n:83,d:'2026-10-22'};//BUILD
+const BUILD={n:86,d:'2026-10-22'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -214,6 +214,7 @@ shield:{from:3,every:8,hp:110,dmg:8,rate:.55,spd:50,acc:.11,arc:1.05,pool:120,fo
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6,n:5},
 map:{a:[10,15],b:[20,23],bs:[24,28],c:[12,16],tries:40,back:'vault',gate:2,tpW:.5,tpX:4,anW:2,bw:[14,25],bws:[14,25]},
 turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:.5},
+gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,30],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
 ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
@@ -680,52 +681,63 @@ const titleBox=()=>({cx:Math.round((WX0*T+((WX0+W)*T-VW))/2),ax:Math.floor(((WX0
    Verkaufsraum x1..14, y6..9. Frei bleiben der Eingangsbereich (x6..9, y8..9), die Zeile y6 am Tresen (x10..14, Gatter bei 10 und Kasse bei 12), die Osttuer (x13..14, y7..8). Die Beute bleibt gleich (5 Zigarettenstuecke, 4 Regalstuecke, gleiche Werte).
    Bauregeln (mit dem Bot gemessen, siehe docs/szenarien.md): (1) Lager: immer der 2x2-Block bei x6..7, y3..4 (nur die Fass-Position wechselt). Er ist Deckung zwischen Lagertuer und Safe, mit anderen Formen (Reihe, T) verlor der Safe-Camper-Bot im Gierig-Lauf von 97 auf 33 bis 47 %. Eine Kiste bei x5 liegt in der Reichweite des Tresor-Standplatzes (4,3) und nimmt der Taste E den Tresor weg. (2) Routenpunkte mindestens 5 Kacheln vom Eingang (8,9): jeder kann Startpunkt der Wache beim Alarm sein, und eine Wache neben der Tuer steht dem Bot auf den Fuessen (Kugeln starten hinter ihr). (3) Zapfsaeulen: die innere Saeule hoechstens bei x4 links und mindestens bei x11 rechts, die Explosion reicht 3 Kacheln. (4) Regale an der Suedwand (vor den Fenstern) machten den Gierig-Lauf von 97 auf 82 %, an der Nordwand sind sie sicherer. */
 const GS_SHOPS=[
-{n:'Klassik',sh:[[3,7,2,1],[5,7,2,1],[9,7,2,1],[11,7,2,1]],lg:[[6,3,'k'],[7,3,'k'],[6,4,'k'],[7,4,'q']],pu:[[3,12],[11,12]],route:[[13,9],[13,6],[2,6],[2,9]]},
-{n:'Insel',sh:[[3,7,2,1],[5,7,2,1],[3,8,2,1],[5,8,2,1]],lg:[[6,3,'q'],[7,3,'k'],[6,4,'k'],[7,4,'k']],pu:[[2,12],[12,12]],route:[[13,9],[13,6],[2,6],[2,9]]},
-{n:'Wandregale',sh:[[2,6,2,1],[4,6,2,1],[6,6,2,1],[8,6,2,1]],lg:[[6,3,'k'],[7,3,'k'],[6,4,'q'],[7,4,'k']],pu:[[1,12],[13,12]],route:[[13,7],[13,9],[2,9],[2,7]]},
-{n:'Gänge',sh:[[3,7,1,2],[5,7,1,2],[9,7,1,2],[11,7,1,2]],lg:[[6,3,'k'],[7,3,'q'],[6,4,'k'],[7,4,'k']],pu:[[3,12],[13,12]],route:[[13,9],[13,6],[4,6],[2,9]]}];
-const GAS_ROWS=["#######L########","#..#ee..m#CCCCC#","#..V.....#.....#","#..V.....d.....#","#..#.....#.....#","##########gCrCC#","W..............#","W..............D","W..............D","W..............W","#WWWWWWDDWWWWWW#"];
+{n:'Klassik',sh:s=>[[3,7,2,1],[5,7,2,1],[s-5,7,2,1],[s-3,7,2,1]],lg:[[6,3,'k'],[7,3,'k'],[6,4,'k'],[7,4,'q']],pl:3,pr:3,rt:(l,r,t,b)=>[[r,b],[r,t],[l,t],[l,b]]},
+{n:'Insel',sh:s=>[[3,7,2,1],[5,7,2,1],[3,8,2,1],[5,8,2,1]],lg:[[6,3,'q'],[7,3,'k'],[6,4,'k'],[7,4,'k']],pl:2,pr:2,rt:(l,r,t,b)=>[[r,b],[r,t],[l,t],[l,b]]},
+{n:'Wandregale',sh:s=>[[2,6,2,1],[4,6,2,1],[6,6,2,1],[8,6,2,1]],lg:[[6,3,'k'],[7,3,'k'],[6,4,'q'],[7,4,'k']],pl:1,pr:1,rt:(l,r,t,b)=>[[r,t+1],[r,b],[l,b],[l,t+1]]},
+{n:'Gänge',sh:s=>[[3,7,1,2],[5,7,1,2],[s-5,7,1,2],[s-3,7,1,2]],lg:[[6,3,'k'],[7,3,'q'],[6,4,'k'],[7,4,'k']],pl:3,pr:1,rt:(l,r,t,b,e)=>[[r,b],[r,t],[Math.min(4,Math.floor(e-Math.sqrt(Math.max(0,25-(b-t)*(b-t))))),t],[l,b]]}];
+/* Huelle der Tankstelle aus Parametern (Plan Mehr Abwechslung, Sprint 6): sw Breite der Verkaufsflaeche (Klassik 14, x1..sw), sd Zahl ihrer Zeilen (4, y6..5+sd), er erste Zeile der Fluchttuer (7, zwei Kacheln), np Zahl der Zapfsaeuleninseln (2), ps bei einer Insel die Seite.
+   Das Lager mit Safe (x0..9, y0..4) bleibt ein fester Block, die Tresenkammer (x10..sw) waechst mit sw, die Vordertuer liegt mittig (fd = 1 + (sw-2)/2). Mit sw 14, sd 4, er 7, np 2 ergibt jede Halle exakt die Karte von vorher (Test 37-tankstelle-generator). */
+function gasRows(sw,sd,er){const cw=sw-9,fd=1+Math.floor((sw-2)/2),rw=['#######L'+'#'.repeat(sw-6),'#..#ee..m#'+'C'.repeat(cw)+'#','#..V.....#'+'.'.repeat(cw)+'#','#..V.....d'+'.'.repeat(cw)+'#','#..#.....#'+'.'.repeat(cw)+'#','##########g'+'C'+'r'+'C'.repeat(cw-3)+'#'];
+for(let y=6;y<=5+sd;y++)rw.push('W'+'.'.repeat(sw)+(y===6?'#':y===er||y===er+1?'D':'W'));
+let fr='#';for(let x=1;x<=sw;x++)fr+=x===fd||x===fd+1?'D':'W';rw.push(fr+'#');return rw}
 function gsBoxes(c,x,y,w,h,r,pal){const n=Math.max(2,Math.floor(w/6)),m=Math.max(1,Math.floor(h/9));c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x+2,y+h-4,w-4,3);for(let j=0;j<m;j++)for(let i=0;i<n;i++){c.fillStyle=pal[Math.floor(r()*pal.length)];c.fillRect(x+3+i*(w-6)/n,y+3+j*(h-6)/m,(w-6)/n-1.5,(h-6)/m-1.5)}}
-function gasLayout(sd){const sn=typeof sd==='number'?sd:7;frameWorld(44,30,-6,-6,13);setc(37,7,'o');setc(37,8,'o');
-const hr=mulberry32((((sn)*7919)>>>0)^0x3a1f5c27),H=GS_SHOPS[Math.floor(hr()*GS_SHOPS.length)],PU=[].concat(...H.pu.map(a=>[[a[0],a[1]],[a[0]+1,a[1]]]));
-asc(GAS_ROWS,0,0);H.sh.forEach(a=>fill(a[0],a[1],a[0]+a[2]-1,a[1]+a[3]-1,'C'));H.lg.forEach(a=>setc(a[0],a[1],a[2]));PU.forEach(a=>setc(a[0],a[1],'u'));
-[[18,1],[19,1],[18,2],[-2,-3],[24,10],[28,4]].forEach(a=>setc(a[0],a[1],'k'));[[20,5],[21,9],[17,11],[26,8],[-2,5],[-2,10],[10,-3]].forEach(a=>setc(a[0],a[1],'q'));[[2,22],[9,22],[16,22],[24,22],[31,22],[0,15],[15,15]].forEach(a=>setc(a[0],a[1],'p'));
-const winS=[];for(let x=1;x<=14;x++)if(x!==7&&x!==8)winS.push(x);
+const CLASSICGP={sw:14,sd:4,er:7,np:2,ps:'L',classic:true};
+/* Zufallsparameter der Tankstelle (eigener Strom, wie genParams der Bank): k ist der Versuch, Versuch 0 ist mit CFG.gasGen.classic die Klassik-Huelle. */
+function gasParams(sn,k){const G=CFG.gasGen,P=Object.assign({},CLASSICGP);if(!G.on)return P;const r=mulberry32((Math.imul(sn|0,374761393)+Math.imul(k+1,668265263))^0x2f6b1d93),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),c=r();if(k===0&&c<G.classic)return P;
+P.sw=ri(G.sw[0],G.sw[1]);P.sd=ri(G.sd[0],G.sd[1]);P.er=ri(7,4+P.sd);const q=r();P.np=q<.2?1:q<.8?2:3;P.ps=r()<.5?'L':'R';P.classic=P.sw===14&&P.sd===4&&P.er===7&&P.np===2;return P}
+function gasLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.gasGen;if(G.on){for(let k=0;k<G.tries;k++){const P=gasParams(sn,k);if(P.classic)return genGas(sn,P);const lay=finishLay(genGas(sn,P));if(validateMap(lay).ok){lay.tries=k+1;return lay}}}return genGas(sn,CLASSICGP)}
+function genGas(sn,P){const sw=P.sw,sd=P.sd,er=P.er,fd=1+Math.floor((sw-2)/2),bot=5+sd,wall=6+sd,dx=sw-14,cx0=10;frameWorld(44,30,-6,-6,13);setc(37,er,'o');setc(37,er+1,'o');
+const hr=mulberry32((((sn)*7919)>>>0)^0x3a1f5c27),H=GS_SHOPS[Math.floor(hr()*GS_SHOPS.length)],SH=H.sh(sw),py=wall+2,pxL=Math.min(H.pl,fd-4),pxR=Math.max(sw-H.pr,fd+4),isl=[];
+if(P.np>=2||P.ps==='L')isl.push([pxL,py]);if(P.np>=2||P.ps==='R')isl.push([pxR,py]);if(P.np===3){if(pxR-3>=fd+4)isl.push([pxR-3,py]);else if(pxL+3<=fd-4)isl.push([pxL+3,py])}isl.sort((a,b)=>a[0]-b[0]);
+const PU=[].concat(...isl.map(a=>[[a[0],a[1]],[a[0]+1,a[1]]]));
+asc(gasRows(sw,sd,er),0,0);SH.forEach(a=>fill(a[0],a[1],a[0]+a[2]-1,a[1]+a[3]-1,'C'));H.lg.forEach(a=>setc(a[0],a[1],a[2]));PU.forEach(a=>setc(a[0],a[1],'u'));
+const sx=a=>a[0]>=16?a[0]+dx:a[0];[[18,1],[19,1],[18,2],[-2,-3],[24,10],[28,4]].forEach(a=>setc(sx(a),a[1],'k'));[[20,5],[21,9],[17,11],[26,8],[-2,5],[-2,10],[10,-3]].forEach(a=>setc(sx(a),a[1],'q'));[[2,22],[9,22],[16,22],[24,22],[31,22],[0,15],[15,15]].forEach(a=>setc(a[0],a[1],'p'));
+const winS=[];for(let x=1;x<=sw;x++)if(x!==fd&&x!==fd+1)winS.push(x);
 const mr=mulberry32((((sn)*2654435761)>>>0)^0x5bd1e995),ms=genMission(mr,'g',sn),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593),ti=tr()<.5?2:0,tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
 ms.civ=Math.max(1,Math.min(3,Math.round(ms.civ*.4)));ms.guards=ms.lg.includes('sicher')?2:Math.min(ms.guards,1);ms.cams=Math.max(2,Math.min(4,ms.cams-4));
-const R0=H.route,NR=R0.length,guards=[];
+const rl=Math.min(2,fd-5),rr=Math.max(sw-1,fd+6),R0=H.rt(rl,rr,6,bot,fd+1),NR=R0.length,guards=[];
 if(ms.guards>=1){const rt=rotR(R0,ms.rot[0]%NR,ms.rot[1]);guards.push({p:rt[0],route:rt})}
 if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+(NR>>1))%NR,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
-const camc=[{x:1.5*T,y:6.4*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:14.5*T,y:6.4*T,a0:2.4,amp:.6,sp:.55,rng:300,fov:.5},{x:1.5*T,y:9.5*T,a0:-.7,amp:.55,sp:.5,rng:290,fov:.5},{x:6.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:12.5*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:200,fov:.55},{x:8*T,y:10.4*T,a0:1.57,amp:.7,sp:.5,rng:320,fov:.6}];
+const camc=[{x:1.5*T,y:6.4*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:(sw+.5)*T,y:6.4*T,a0:2.4,amp:.6,sp:.55,rng:300,fov:.5},{x:1.5*T,y:(bot+.5)*T,a0:-.7,amp:.55,sp:.5,rng:290,fov:.5},{x:6.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:(cx0+2.5)*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:200,fov:.55},{x:(fd+1)*T,y:(wall+.4)*T,a0:1.57,amp:.7,sp:.5,rng:320,fov:.6}];
 const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
-if(ev.includes('wache'))extra.push({p:[7,9],route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
+if(ev.includes('wache'))extra.push({p:[fd,bot],route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,3);
 const deskT=[[4,1],[5,1]],goods=[];
-for(let x=10;x<=14;x++)goods.push({k:'cig',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
-H.sh.forEach(a=>goods.push({k:'shelf',x:(a[0]+a[2]/2)*T,y:(a[1]+a[3]/2)*T,rc:[a[0]*T,a[1]*T,a[2]*T,a[3]*T],r:50}));
-return{seed:sd,gas:true,hall:H.n,theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:15,y1:10},winN:[],winS,
-mat:(x,y)=>{if(x>=0&&x<=15&&y>=0&&y<=10)return(y<=4&&x!==9)?'w':'m';
-if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>15)return'a';return'y'},
+for(let x=Math.max(cx0,sw-4);x<=sw;x++)goods.push({k:'cig',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
+SH.forEach(a=>goods.push({k:'shelf',x:(a[0]+a[2]/2)*T,y:(a[1]+a[3]/2)*T,rc:[a[0]*T,a[1]*T,a[2]*T,a[3]*T],r:50}));
+return{seed:sn,gas:true,hall:H.n,theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:sw+1,y1:wall},winN:[],winS,
+mat:(x,y)=>{if(x>=0&&x<=sw+1&&y>=0&&y<=wall)return(y<=4&&x!==9)?'w':'m';
+if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>sw+1)return'a';return'y'},
 paintFloor(s){const r=mulberry32(sn*7+1);
-for(let i=0;i<40;i++){const x=T+r()*13*T,y=11*T+r()*3*T,q=s.createRadialGradient(x,y,0,x,y,10+r()*14);q.addColorStop(0,'rgba(25,22,20,.28)');q.addColorStop(1,'rgba(25,22,20,0)');s.fillStyle=q;s.fillRect(x-24,y-24,48,48)}
-for(const a of H.pu.map(q=>[q[0]-.6,q[1]-.45])){s.fillStyle='#7c828a';s.fillRect(a[0]*T,a[1]*T,3.2*T,1.9*T);s.fillStyle='#aeb4bb';s.fillRect(a[0]*T+3,a[1]*T+3,3.2*T-6,1.9*T-6)}
-s.strokeStyle='rgba(235,200,60,.7)';s.lineWidth=2;s.strokeRect(1.2*T,11.2*T,13.6*T,2.6*T);
-s.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++)s.fillRect(16.5*T+i*0,2*T+i*T*1.6,3*T,2)},
+for(let i=0;i<40;i++){const x=T+r()*(sw-1)*T,y=(wall+1)*T+r()*3*T,q=s.createRadialGradient(x,y,0,x,y,10+r()*14);q.addColorStop(0,'rgba(25,22,20,.28)');q.addColorStop(1,'rgba(25,22,20,0)');s.fillStyle=q;s.fillRect(x-24,y-24,48,48)}
+for(const a of isl.map(q=>[q[0]-.6,q[1]-.45])){s.fillStyle='#7c828a';s.fillRect(a[0]*T,a[1]*T,3.2*T,1.9*T);s.fillStyle='#aeb4bb';s.fillRect(a[0]*T+3,a[1]*T+3,3.2*T-6,1.9*T-6)}
+s.strokeStyle='rgba(235,200,60,.7)';s.lineWidth=2;s.strokeRect(1.2*T,(wall+1.2)*T,(sw-.4)*T,2.6*T);
+s.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++)s.fillRect((sw+2.5)*T+i*0,2*T+i*T*1.6,3*T,2)},
 paintTop(s){const r=mulberry32(sn*13+5),PAL=['#c4402f','#e8b84a','#3a7fc4','#59a65a','#d8d4c8','#8a4fc4'];
-s.fillStyle='rgba(0,0,0,.28)';s.fillRect(2*T+4,16*T+6,4*T,2*T-8);s.fillRect(17*T+4,16*T+6,4*T,2*T-8);s.fillRect(26*T+4,0*T+6,4*T,2*T-8);s.fillRect(29*T+4,11*T+6,4*T,2*T-8);
-s.drawImage(cars,0,3*128,256,128,2*T,16*T,128,64);s.drawImage(cars,0,2*128,256,128,17*T,16*T,128,64);s.drawImage(cars,0,2*128,256,128,26*T,0,128,64);s.drawImage(cars,0,3*128,256,128,29*T,11*T,128,64);
+s.fillStyle='rgba(0,0,0,.28)';s.fillRect(2*T+4,16*T+6,4*T,2*T-8);s.fillRect(17*T+4,16*T+6,4*T,2*T-8);s.fillRect((26+dx)*T+4,0*T+6,4*T,2*T-8);s.fillRect((29+dx)*T+4,11*T+6,4*T,2*T-8);
+s.drawImage(cars,0,3*128,256,128,2*T,16*T,128,64);s.drawImage(cars,0,2*128,256,128,17*T,16*T,128,64);s.drawImage(cars,0,2*128,256,128,(26+dx)*T,0,128,64);s.drawImage(cars,0,3*128,256,128,(29+dx)*T,11*T,128,64);
 for(const q of goods)gsBoxes(s,q.rc[0],q.rc[1],q.rc[2],q.rc[3],r,q.k==='cig'?['#d8d4c8','#c4402f','#2a2e34','#e8b84a']:PAL);
 s.fillStyle='#3b4048';s.fillRect(6*T+8,1*T+2,16,10);s.fillStyle='#e0b020';s.fillRect(6*T+14,1*T+5,4,4);s.fillStyle='rgba(255,255,255,.25)';s.fillRect(6*T+8,1*T+2,16,1);
 s.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<8;i++)s.fillRect(0*T+10+i*30,18*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(14*T+i*30,18*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(24*T+i*30,18*T+14,12,2)},
-spawn:{x:7.9*T,y:12.3*T},
-zones:[[1,1,8,4],[10,1,14,4],[0,-99,99,-1],[16,-99,99,10]],lobby:[1,6,14,9],
-cams:camsSel,tellers:[[12,4]],mgr:null,guards,civ:ev.includes('feiertag')?Math.min(CFG.ev.civMax,ms.civ*2):ms.civ,
+spawn:{x:(fd+.9)*T,y:(wall+2.3)*T},
+zones:[[1,1,8,4],[10,1,sw,4],[0,-99,99,-1],[sw+2,-99,99,wall]],lobby:[1,6,sw,bot],
+cams:camsSel,tellers:[[cx0+2,4]],mgr:null,guards,civ:ev.includes('feiertag')?Math.min(CFG.ev.civMax,ms.civ*2):ms.civ,
 mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:false,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],at:ms.at,extra,bags:[],blackoutAt:ev.includes('strom')?ms.at.strom:null},
-note:deskT[ms.noteIdx%2],mon:[8,1],vault:{door:[3,2],pad:[4,4],dir:-1,bundles:[[1,2],[2,3]]},tills:[[12,5]],atms:[],backDoors:[[7,0]],
-sw:{x:6*T+16,y:1*T+22},exit:{x:16*T,y0:6*T,y1:10*T,dir:1,tx:16},van:{y:8*T,x0:22*T,stop:16*T,dir:-1},flip:false,
-posts:[{x:4,y:15,a:-1.57,k:'S'},{x:18,y:6,a:3.14,k:'E',anchor:true},{x:-1,y:8,a:0,k:'W'},{x:7,y:-1,a:1.57,k:'N',door:[7,0]},{x:10,y:15,a:-1.57,k:'S'},{x:18,y:9,a:3.14,k:'E',anchor:true},{x:3,y:-1,a:1.57,k:'N'},{x:14,y:15,a:-1.57,k:'S'},{x:-1,y:4,a:0,k:'W'},{x:12,y:-1,a:1.57,k:'N'},{x:7,y:15,a:-1.57,k:'S'},{x:19,y:4,a:3.14,k:'E',anchor:true},{x:5,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:12,y:15,a:-1.57,k:'S'},{x:2,y:15,a:-1.57,k:'S'}],
-slots:{W:[12,7,2,-3],E:[17,22,27,32]},laneY:19*T,title:titleBox(),bn:CFG.gas.bn,polAt:CFG.gas.pol,wb:CFG.gas.wb,goods,
+note:deskT[ms.noteIdx%2],mon:[8,1],vault:{door:[3,2],pad:[4,4],dir:-1,bundles:[[1,2],[2,3]]},tills:[[cx0+2,5]],atms:[],backDoors:[[7,0]],
+sw:{x:6*T+16,y:1*T+22},exit:{x:(sw+2)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:sw+2},van:{y:(er+1)*T,x0:(sw+8)*T,stop:(sw+2)*T,dir:-1},flip:false,
+...(P.classic?{posts:[{x:4,y:15,a:-1.57,k:'S'},{x:18,y:6,a:3.14,k:'E',anchor:true},{x:-1,y:8,a:0,k:'W'},{x:7,y:-1,a:1.57,k:'N',door:[7,0]},{x:10,y:15,a:-1.57,k:'S'},{x:18,y:9,a:3.14,k:'E',anchor:true},{x:3,y:-1,a:1.57,k:'N'},{x:14,y:15,a:-1.57,k:'S'},{x:-1,y:4,a:0,k:'W'},{x:12,y:-1,a:1.57,k:'N'},{x:7,y:15,a:-1.57,k:'S'},{x:19,y:4,a:3.14,k:'E',anchor:true},{x:5,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:12,y:15,a:-1.57,k:'S'},{x:2,y:15,a:-1.57,k:'S'}],
+slots:{W:[12,7,2,-3],E:[17,22,27,32]}}:{q:{sw,sd,er,np:P.np,ps:P.ps}}),laneY:19*T,title:titleBox(),bn:CFG.gas.bn,polAt:CFG.gas.pol,wb:CFG.gas.wb,goods,
 pumps:PU.map(a=>({x:a[0],y:a[1],hp:CFG.gas.pump.hp}))}}
 /* ---- Szenario Museum bei Nacht: Gebaeude x0..27, y0..17. Westgalerie mit vier Gemaelden, Atrium mit Infotresen, Sicherheitsraum (Monitore, Hauptschalter, Hintertuer) im Norden, Ostgalerie mit Statue und Reliktvitrinen hinter einem Lasertor, Depot im Nordosten hinter einem zweiten Laser.
    Eingaenge: Haupteingang (Glas, Sueden), Hintertuer (Norden, direkt in den Sicherheitsraum) und Osttuer (Fluchttuer in der Ostgalerie, von innen leise zu entriegeln, so kommt man an den Lasern vorbei raus). Laser (LAY.lasers) loesen in Phase 1 Alarm aus, solange die Kameras laufen. ---- */
@@ -919,7 +931,7 @@ const MAP_FIELDS=[
 ['vit','E','reset (Vitrinen, Juwelier)'],['goods','E','reset (Beute-Stuecke)'],['cage','E','reset (Cage, Casino)'],['pumps','E','reset, Zeichnen (Zapfsaeulen, Tankstelle)'],['lasers','E','hostStep, Zeichnen (Museum)'],
 ['bn','E','reset (Tresorbeute abweichend)'],['polAt','E','startHeist'],['wb','E','spawnWave'],['stl','E','finish (Lautlos-Bonus)'],['gAll','E','hostStep (Wachen sehen ueberall, Museum)'],['cone','E','Zeichnen (Sichtkegel der Wache)'],
 ['hall','E','Anzeige, Tests (Name des Grundrisses)'],['jewel','E','Kennzeichen Juwelier'],['gas','E','Kennzeichen Tankstelle'],['museum','E','Kennzeichen Museum'],['casino','E','Kennzeichen Casino'],
-['road','E','Freie Strasse: ersetzt laneY, slots, exit und van (laneOf)'],['turned','E','Anzeige, Tests (turnLayout: Seite der Strasse)'],['q','E','Bank-Zufallskarte: Parameter (Tausch Buero und Sicherheitsraum, Tests)'],['tries','E','layoutFor (Zahl der Versuche der Zufallskarte)'],['truck','E','Kennzeichen Strassenkarte Transporter'],['parked','E','Zeichnen, Material (geparkte Autos am Transporter)'],
+['road','E','Freie Strasse: ersetzt laneY, slots, exit und van (laneOf)'],['turned','E','Anzeige, Tests (turnLayout: Seite der Strasse)'],['q','E','Bank-Zufallskarte und generierte Tankstelle: Parameter (Bank: Tausch Buero und Sicherheitsraum, Treffpunkt tp, Tests; Tankstelle: sw, sd, er, np, ps)'],['tries','E','layoutFor (Zahl der Versuche der Zufallskarte)'],['truck','E','Kennzeichen Strassenkarte Transporter'],['parked','E','Zeichnen, Material (geparkte Autos am Transporter)'],
 ['spots','A','Eingaenge (findSpots), Barrikaden, startHeist'],['lockCells','A','reset, Netz'],['wins','A','Fenster (deriveWins), Netz'],['snp','A','Scharfschuetzen (deriveWins)']];
 // Tresortuer: senkrechtes Paar (Standard, door = obere Kachel) oder waagerechtes (o 'h', door = linke Kachel). dir = Richtung vom Gang zum Tresorraum, bei 'v' in x, bei 'h' in y. Mitte: Ort des Items.
 const vaultMid=v=>v.o==='h'?[(v.door[0]+1)*T,v.door[1]*T+16]:[v.door[0]*T+16,(v.door[1]+1)*T];
@@ -1676,7 +1688,7 @@ if(selIt>=0&&!inReach(its[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=23,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=24,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());c.on('error',()=>w.onclose&&w.onclose());return w};
@@ -2181,7 +2193,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,gasParams,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}

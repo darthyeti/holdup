@@ -33,10 +33,10 @@
   "gas": {
    "sc": "gas",
    "seeds": 200,
-   "huelle": 8,
-   "groessen": 2,
-   "flucht": 8,
-   "beute": 32,
+   "huelle": 175,
+   "groessen": 42,
+   "flucht": 94,
+   "beute": 133,
    "hallen": 4,
    "hallenVerteilung": {
     "Insel": 55,
@@ -44,7 +44,7 @@
     "Gänge": 39,
     "Wandregale": 53
    },
-   "raster": 16,
+   "raster": 20,
    "rasterVon": 20
   },
   "museum": {
