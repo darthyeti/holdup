@@ -1,12 +1,8 @@
 {
  "sweep-bank": {
   "n": 80,
-  "ok": 47,
-  "err": {
-   "fluchtweg": 19,
-   "wagenplatz": 15,
-   "fluchtweg-rand": 5
-  },
+  "ok": 80,
+  "err": {},
   "warn": {},
   "entries": {
    "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 18,
@@ -96,10 +92,8 @@
  },
  "sweep-gas": {
   "n": 80,
-  "ok": 0,
-  "err": {
-   "fluchtweg-rand": 80
-  },
+  "ok": 80,
+  "err": {},
   "warn": {},
   "entries": {
    "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 80
@@ -126,8 +120,8 @@
     2
    ],
    "mat": [
-    15,
-    15
+    14,
+    14
    ],
    "slots": [
     8,
@@ -141,13 +135,9 @@
  },
  "sweep-museum": {
   "n": 60,
-  "ok": 0,
-  "err": {
-   "fluchtweg": 60
-  },
-  "warn": {
-   "eingang-verstellt": 60
-  },
+  "ok": 60,
+  "err": {},
+  "warn": {},
   "entries": {
    "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 60
   },
@@ -188,10 +178,8 @@
  },
  "sweep-casino": {
   "n": 50,
-  "ok": 0,
-  "err": {
-   "fluchtweg": 50
-  },
+  "ok": 50,
+  "err": {},
   "warn": {
    "weg-start-tresor": 50,
    "beute-summe": 50,

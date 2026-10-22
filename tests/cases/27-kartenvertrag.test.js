@@ -13,19 +13,9 @@ const HALLS = {
   casino: ['Klassik', 'Promenade', 'Reihen', 'Staffel'],
 };
 // Bekannte Abweichungen: Karte -> Regel -> Begruendung. Gilt fuer alle Seeds und Grundrisse der Karte.
-const KNOWN = {
-  bank: {
-    fluchtweg: 'Zufallskarte: eine Pflanze (p) aus den Aussen-Props steht in der Fahrstrecke des Fluchtwagens (rund jede vierte Karte)',
-    'fluchtweg-rand': 'Zufallskarte: Pflanze (p) zwischen Fahrstrecke und Weltrand (selten)',
-    wagenplatz: 'Zufallskarte: der letzte Ost-Wagenplatz (oder West) liegt auf dem Zaun (f) am Weltrand, mit dem Sprite-Rand 5 Kacheln breit gerechnet',
-  },
-  jewel: {},
-  gas: { 'fluchtweg-rand': 'Fass (q) in der Fahrbahn zwischen Fluchtzone und Weltrand (jeder Seed)' },
-  museum: { fluchtweg: 'Zaun (f) am Weltrand liegt unter dem Startbild des Wagens, anders als beim Juwelier gibt es kein Tor im Zaun (jeder Seed)' },
-  casino: { fluchtweg: 'Zaun (f) am Weltrand liegt unter dem Startbild des Wagens, kein Tor im Zaun (jeder Seed)' },
-};
-// classicLayout() (Debug-Karte, Tests, Bot, Rueckfall von layoutFor) ist die alte Bank mit zwei Hintertueren, nur genLayout kennt CFG.map.back
-const KNOWN_CLASSIC = { eingaenge: 'classicLayout hat noch zwei Hintertueren (5 Aussen-Eingaenge)', wagenplatz: 'letzter Ost-Wagenplatz auf dem Zaun (wie die Zufallskarten)' };
+// Bekannte, von einem Menschen akzeptierte Abweichungen je Karte (Regel: Begruendung). Seit dem 22. Oktober 2026 leer: Zaun und Props auf der Strasse raeumt clearLane in layoutFor, classicLayout hat wie genLayout nur eine Hintertuer, die Museums-Hintertuer liegt frei. Neue Eintraege nur mit Begruendung, Ziel bleibt leer (Plan Mehr Abwechslung, docs/offen-und-spieltest.md).
+const KNOWN = { bank: {}, jewel: {}, gas: {}, museum: {}, casino: {} };
+const KNOWN_CLASSIC = {};
 
 const rules = (errs, known) => Object.entries(errs).filter(([k]) => !(k in known)).map(([k, v]) => k + ' x' + v.n + ' (Seeds ' + v.seeds.join(',') + '): ' + v.ex);
 

@@ -2,7 +2,7 @@
 // Laden im Browser: fetch('tools/mapcheck.js').then(r=>r.text()).then(eval)
 // Dann: mapcheck.check('gas',123) liefert einen Bericht, mapcheck.sweep('gas',60) prueft viele Seeds, mapcheck.ascii() zeigt das Raster.
 // Geprueft wird per Flutfuellung vom Spielerstart (Tresortuer und Hintertueren zaehlen als offen): Items, Posten, Wagenplaetze, Fluchtzone, Wachrouten, Kassierer, Kameras, dazu die Beute-Summe.
-// Dazu validate/vsweep/autocmp fuer den Kartenvertrag (validateMap, autoPosts), siehe docs/karte-und-layout.md.
+// Dazu validate/vsweep/autocmp fuer den Kartenvertrag (validateMap, autoPosts), siehe docs/karte-und-layout.md, und variety (Vielfalt der Karten je Szenario).
 (function(){
 const D=__dbg,T=32;
 // turn: Strasse auf eine andere Seite legen (turnLayout), 'E', 'N', 'W' oder mit '+' dahinter fuer zusaetzliches Spiegeln laengs der Strasse ('E+')
@@ -59,5 +59,16 @@ function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){lay=lay0(sc,seed,undefin
  return{sc,seed,flip:!!lay.flip,hall:lay.hall||null,hand:H.length,auto:P.length,bySide:{hand:by(H),auto:by(P)},hit:H.length-um.length,hit3:H.length-um3.length,handMiss:str(um),autoExtra:str(ex),
   doors:{hand:str(H.filter(p=>p.door)),auto:str(P.filter(p=>p.door))},anchors:{hand:str(H.filter(p=>p.anchor)),auto:str(P.filter(p=>p.anchor))},
   slots:{hand:lay.slots||R.slots,auto:A.slots,shiftW:sh(0),shiftE:sh(1)},order:{hand:H.slice(0,8).map(p=>p.k).join(''),auto:P.slice(0,8).map(p=>p.k).join('')}}}
-window.mapcheck={check,sweep,ascii,build,validate,vsweep,autocmp};
+// Vielfalt je Szenario ueber viele Seeds (Plan Mehr Abwechslung, docs/offen-und-spieltest.md): wie viele verschiedene Huellen (Gebaeudebox, Strasse, Ausgang, Fluchtwagen, Wagenplaetze, Posten, Hintertueren, Tresortuer),
+// Gebaeudegroessen, Fluchtvarianten, Beute-Anordnungen, Hallen und Raster (gebaut werden nur die ersten rn Seeds, das Raster kostet am meisten). Aufruf: mapcheck.variety('gas',300,1,13,40)
+function variety(sc,n,from,step,rn){n=n||300;from=from||1;step=step||13;rn=rn==null?40:rn;D.setScenario(sc);D.setSeedMode('random');D.setLage([]);
+ const S=JSON.stringify,shell=new Set(),size=new Set(),esc=new Set(),loot=new Set(),halls={},grids=new Set();
+ for(let i=0;i<n;i++){const lay=D.layoutFor(from+i*step),b=lay.bld;size.add(S(b&&[b.x1-b.x0,b.y1-b.y0]));
+  const fl=[lay.road,lay.exit,lay.van];esc.add(S(fl));
+  shell.add(S([b,fl,lay.slots,lay.laneY,(lay.posts||[]).map(p=>[p.x,p.y,p.k,!!p.anchor]),lay.backDoors,lay.vault&&lay.vault.door]));
+  loot.add(S([lay.vault&&lay.vault.door,lay.goods&&lay.goods.map(g=>[g.k,g.x,g.y]),lay.vit&&lay.vit.length]));
+  if(lay.hall)halls[lay.hall]=(halls[lay.hall]||0)+1;
+  if(i<rn){D.buildLay(lay);grids.add(D.world().M.join('|'))}}
+ return{sc,seeds:n,huelle:shell.size,groessen:size.size,flucht:esc.size,beute:loot.size,hallen:Object.keys(halls).length,hallenVerteilung:halls,raster:grids.size,rasterVon:Math.min(rn,n)}}
+window.mapcheck={check,sweep,ascii,build,validate,vsweep,autocmp,variety};
 })();

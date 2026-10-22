@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=71"></script>
+<script src="js/ui.js?v=75"></script>
 <script>
-const BUILD={n:71,d:'2026-10-22'};//BUILD
+const BUILD={n:75,d:'2026-10-22'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -269,7 +269,7 @@ fill(12,1,17,6,'#');fill(13,1,17,4,'.');setc(12,2,'V');setc(12,3,'V');
 fill(18,1,18,11,'#');setc(18,9,'d');
 fill(19,6,24,6,'#');setc(21,6,'d');
 [[25,9],[25,10],[9,12],[10,12],[0,9]].forEach(a=>setc(a[0],a[1],'D'));
-setc(11,0,'L');setc(22,0,'L');
+const cbd=CFG.map.back==='vault'?11:22;setc(cbd,0,'L');
 [3,6,9,20,23].forEach(x=>setc(x,0,'W'));
 [2,3,4,13,14,15,16].forEach(x=>setc(x,12,'W'));
 [[2,2],[3,2],[8,2],[9,2],[21,2],[22,2],[23,2]].forEach(a=>setc(a[0],a[1],'e'));
@@ -319,9 +319,9 @@ cams:[
 {x:27.5*T,y:8*T,a0:2.55,amp:.5,sp:.5,rng:260,fov:.5}],
 tellers:[[3,4],[6,4],[9,4]],mgr:{p:[20,2],route:[[20,2],[23,4],[21,5],[20,8],[23,10],[20,10]]},theme:mkTheme(0,0,0),guards:[{p:[3,9],route:[[3,9],[9,8],[16,8],[17,9],[20,9],[23,9],[20,7],[16,10],[8,10]]}],civ:6,mission:{code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,tags:[],ev:[],at:{},extra:[],bags:[],blackoutAt:null},
 note:[22,2],mon:[22,8],vault:{door:[12,2],pad:[11,4],dir:1,bundles:[[14,2],[16,2],[14,3],[16,3],[15,4]]},
-tills:[[3,5],[6,5],[9,5]],atms:[[17,10],[17,11]],backDoors:[[11,0],[22,0]],
+tills:[[3,5],[6,5],[9,5]],atms:[[17,10],[17,11]],backDoors:[[cbd,0]],
 sw:{x:24*T+16,y:7*T+22},exit:{x:26*T,y0:8*T,y1:12*T,dir:1,tx:26},van:{y:10*T,x0:32*T,stop:26*T,dir:-1},flip:false,
-posts:[{x:8,y:14,a:-1.57,k:'S'},{x:27,y:8,a:3.14,k:'E',anchor:true},{x:-1,y:9,a:0,k:'W'},{x:11,y:-1,a:1.57,k:'N',door:[11,0]},{x:11,y:14,a:-1.57,k:'S'},{x:27,y:11,a:3.14,k:'E',anchor:true},{x:22,y:-1,a:1.57,k:'N',door:[22,0]},{x:5,y:14,a:-1.57,k:'S'},
+posts:[{x:8,y:14,a:-1.57,k:'S'},{x:27,y:8,a:3.14,k:'E',anchor:true},{x:-1,y:9,a:0,k:'W'},Object.assign({x:11,y:-1,a:1.57,k:'N'},cbd===11?{door:[11,0]}:{}),{x:11,y:14,a:-1.57,k:'S'},{x:27,y:11,a:3.14,k:'E',anchor:true},Object.assign({x:22,y:-1,a:1.57,k:'N'},cbd===22?{door:[22,0]}:{}),{x:5,y:14,a:-1.57,k:'S'},
 {x:-1,y:6,a:0,k:'W'},{x:5,y:-1,a:1.57,k:'N'},{x:14,y:14,a:-1.57,k:'S'},{x:27,y:6,a:3.14,k:'E',anchor:true},{x:16,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:2,y:14,a:-1.57,k:'S'},{x:17,y:14,a:-1.57,k:'S'}],
 slots:{W:[15,10,5,0],E:[20,25,30,35]},laneY:18*T,title:{cx:32,ax:190,cy:-10,ay:110}};
 return lay}
@@ -734,7 +734,7 @@ const MU_HALLS=[
 {n:'Kabinette',art:[[4,1,'N'],[7,1,'N'],[2,6,'N'],[6,11,'S']],ben:[[5,8],[5,10],[12,8],[15,8],[19,11],[19,12]],pl:[[9,6],[1,16],[9,13],[11,6],[16,6],[11,16],[16,16]],pil:[],part:[[1,5,6,1],[4,12,6,1]],desk:[12,13,4],rel:[[19,15],[21,15],[23,15],[25,15]],st:[22,11],pool:[[5,3,110],[5,9,110],[5,14,110]],route:[[8,3],[3,3],[2,9],[3,14],[9,9],[14,12]]},
 {n:'Säulenhalle',art:[[1,3,'W'],[1,11,'W'],[4,1,'N'],[7,1,'N']],ben:[[5,5],[5,11],[12,7],[15,7],[18,12],[18,13]],pl:[[1,6],[9,6],[9,15],[1,16],[11,6],[16,6],[11,16],[16,16]],pil:[[3,3],[7,3],[3,8],[7,8],[3,13],[7,13],[12,12],[15,12],[21,10],[24,10],[21,13],[24,13]],part:[],desk:[13,14,3],rel:[[19,7],[24,7],[19,14],[24,14]],st:[22,11],pool:[[5,9,120]],route:[[5,15],[2,11],[2,5],[8,2],[9,10],[14,10]]},
 {n:'Ring',art:[[4,1,'N'],[7,1,'N'],[3,7,'E'],[7,7,'W']],ben:[[3,14],[7,14],[12,11],[15,11],[24,7],[25,7]],pl:[[1,16],[9,16],[1,4],[9,4],[11,6],[16,6],[11,16],[16,16]],pil:[],part:[[4,5,3,7]],desk:[13,14,3],rel:[[19,12],[19,13],[19,14],[19,15]],st:[23,12],pool:[[2,9,90],[8,9,90]],route:[[2,15],[2,3],[8,3],[9,9],[14,9],[14,13],[8,15]]}];
-const MUSEUM_ROWS=["#############L##############","#.........#mmm..e#...#.....#","#.........#.....e#...V.....#","#.........#......#...V.....#","#.........#......#...#.....#","#.........###d####...#######","#.........#......#.........W","W.........#......#.........#","W..........................D","#..........................D","#..........................#","#.........#......#.........#","#.........#......#.........W","#.........#......#.........W","W.........#......#.........#","W.........#......#.........#","#.........#......#.........#","##WW#WW#W####DD####WW#WW#WW#"];
+const MUSEUM_ROWS=["#############L##############","#.........#mm.m.e#...#.....#","#.........#.....e#...V.....#","#.........#......#...V.....#","#.........#......#...#.....#","#.........###d####...#######","#.........#......#.........W","W.........#......#.........#","W..........................D","#..........................D","#..........................#","#.........#......#.........#","#.........#......#.........W","#.........#......#.........W","W.........#......#.........#","W.........#......#.........#","#.........#......#.........#","##WW#WW#W####DD####WW#WW#WW#"];
 function muArt(c,x,y,w,h,r){c.fillStyle='rgba(0,0,0,.35)';c.fillRect(x+2,y+3,w,h);c.fillStyle='#8a6a2e';c.fillRect(x,y,w,h);c.fillStyle='#d8b45a';c.fillRect(x+1,y+1,w-2,h-2);const ix=x+3,iy=y+3,iw=w-6,ih=h-6,q=c.createLinearGradient(ix,iy,ix,iy+ih),hue=Math.floor(r()*360);q.addColorStop(0,'hsl('+hue+',45%,62%)');q.addColorStop(1,'hsl('+(hue+40)+',40%,34%)');c.fillStyle=q;c.fillRect(ix,iy,iw,ih);
 const long=iw>ih;for(let i=0;i<3;i++){c.fillStyle='hsla('+(hue+90+i*30)+',35%,'+(24+i*8)+'%,.8)';c.beginPath();const bx=ix+r()*iw,by=iy+ih*(.5+i*.15);c.ellipse(bx,by,(long?iw:ih)*.3,(long?ih:iw)*.28,0,0,6.283);c.fill()}
 c.fillStyle='rgba(255,255,255,.18)';c.fillRect(ix,iy,iw,2)}
@@ -850,7 +850,10 @@ note:deskT[ms.noteIdx%4],mon:[16,1],vault:{door:[35,2],pad:[34,4],dir:1,bundles:
 sw:{x:20*T+16,y:1*T+22},exit:{x:40*T,y0:15*T,y1:19*T,dir:1,tx:40},van:{y:17*T,x0:46*T,stop:40*T,dir:-1},flip:false,cage:{x:30*T,y:7*T+16,r:60},
 posts:[{x:4,y:25,a:-1.57,k:'S'},{x:41,y:11,a:3.14,k:'E',anchor:true},{x:-1,y:8,a:0,k:'W'},{x:19,y:-1,a:1.57,k:'N',door:[19,0]},{x:12,y:25,a:-1.57,k:'S'},{x:41,y:21,a:3.14,k:'E',anchor:true},{x:30,y:-1,a:1.57,k:'N',door:[30,0]},{x:20,y:25,a:-1.57,k:'S'},{x:-1,y:3,a:0,k:'W'},{x:5,y:-1,a:1.57,k:'N'},{x:28,y:25,a:-1.57,k:'S'},{x:43,y:8,a:3.14,k:'E',anchor:true},{x:36,y:-1,a:1.57,k:'N'},{x:-1,y:13,a:0,k:'W'},{x:36,y:25,a:-1.57,k:'S'},{x:12,y:-1,a:1.57,k:'N'},{x:8,y:25,a:-1.57,k:'S'},{x:-1,y:18,a:0,k:'W'},{x:24,y:25,a:-1.57,k:'S'},{x:24,y:-1,a:1.57,k:'N'},{x:16,y:25,a:-1.57,k:'S'},{x:32,y:25,a:-1.57,k:'S'},{x:-1,y:22,a:0,k:'W'},{x:2,y:25,a:-1.57,k:'S'}],
 slots:{W:[24,19,14,9,4,-1],E:[30,35,40,45]},laneY:29*T,title:titleBox(),bn:CFG.casino.bn,polAt:CFG.casino.pol,wb:CFG.casino.wb,goods}}
-function layoutFor(seed){const LF={truck:truckLayout,jewel:jewelLayout,gas:gasLayout,museum:museumLayout,casino:casinoLayout};if(LF[jobSc]){const lay=LF[jobSc](seed);lay.seed=seed;return lay}if(seed==='classic')return classicLayout();const base=seed|0;for(let k=0;k<CFG.map.tries;k++){const lay=genLayout(base+k*7919);if(validLayout(lay)){lay.seed=seed;lay.tries=k+1;return lay}}return classicLayout()}
+// Karten-Vertrag: Auf den Zellen der Strasse (Fahrstrecke des Fluchtwagens samt Rand bis zum Weltrand, Wagenplaetze) steht nichts Festes, das nur Dekor ist. Zaun wird zum Tor, Einzelkacheln-Props (Pflanze, Fass, Kiste) verschwinden. Laeuft nach dem Bau und nach der Pruefung und macht nur Kacheln frei, deshalb kann es keine Erreichbarkeit zerstoeren. Autos (v) und Waende bleiben stehen, die meldet validateMap weiter.
+function clearLane(lay){if(lay.truck)return lay;const ln=laneOf(lay),cs=[].concat(ln.van.swept,ln.van.rest);ln.slots.forEach(s=>s.cells.forEach(c=>cs.push(c)));for(const c of cs){if(OOB(c[0],c[1]))continue;const ch=cell(c[0],c[1]);if(ch==='f'||ch==='p'||ch==='q'||ch==='k')setc(c[0],c[1],'o')}return lay}
+function layoutFor(seed){return clearLane(layoutFor0(seed))}
+function layoutFor0(seed){const LF={truck:truckLayout,jewel:jewelLayout,gas:gasLayout,museum:museumLayout,casino:casinoLayout};if(LF[jobSc]){const lay=LF[jobSc](seed);lay.seed=seed;return lay}if(seed==='classic')return classicLayout();const base=seed|0;for(let k=0;k<CFG.map.tries;k++){const lay=genLayout(base+k*7919);if(validLayout(lay)){lay.seed=seed;lay.tries=k+1;return lay}}return classicLayout()}
 /* Sperrstellen: alle Tueren in der Gebaeudehuelle (Glastueren D und Hintertueren), benachbarte Kacheln bilden einen Eingang. Aus dem Raster abgeleitet, daher auch gespiegelt/getauscht richtig. */
 function findSpots(lay){const B=lay.bld,bd=new Set(lay.backDoors.map(q=>q[0]+','+q[1])),seen=new Set(),out=[];
 const inB=(x,y)=>x>=B.x0&&x<=B.x1&&y>=B.y0&&y<=B.y1,sol=(x,y)=>SOLID.indexOf(cell(x,y))>=0;

@@ -1,0 +1,97 @@
+{
+ "vielfalt": {
+  "bank": {
+   "sc": "bank",
+   "seeds": 200,
+   "huelle": 200,
+   "groessen": 33,
+   "flucht": 90,
+   "beute": 13,
+   "hallen": 0,
+   "hallenVerteilung": {},
+   "raster": 20,
+   "rasterVon": 20
+  },
+  "jewel": {
+   "sc": "jewel",
+   "seeds": 200,
+   "huelle": 1,
+   "groessen": 1,
+   "flucht": 1,
+   "beute": 1,
+   "hallen": 5,
+   "hallenVerteilung": {
+    "Reihen": 48,
+    "Gänge": 42,
+    "Klassik": 41,
+    "Salon": 41,
+    "Ring": 28
+   },
+   "raster": 5,
+   "rasterVon": 20
+  },
+  "gas": {
+   "sc": "gas",
+   "seeds": 200,
+   "huelle": 1,
+   "groessen": 1,
+   "flucht": 1,
+   "beute": 4,
+   "hallen": 4,
+   "hallenVerteilung": {
+    "Insel": 55,
+    "Klassik": 53,
+    "Gänge": 39,
+    "Wandregale": 53
+   },
+   "raster": 4,
+   "rasterVon": 20
+  },
+  "museum": {
+   "sc": "museum",
+   "seeds": 200,
+   "huelle": 1,
+   "groessen": 1,
+   "flucht": 1,
+   "beute": 4,
+   "hallen": 4,
+   "hallenVerteilung": {
+    "Klassik": 43,
+    "Ring": 48,
+    "Kabinette": 56,
+    "Säulenhalle": 53
+   },
+   "raster": 4,
+   "rasterVon": 20
+  },
+  "casino": {
+   "sc": "casino",
+   "seeds": 200,
+   "huelle": 1,
+   "groessen": 1,
+   "flucht": 1,
+   "beute": 4,
+   "hallen": 4,
+   "hallenVerteilung": {
+    "Klassik": 62,
+    "Promenade": 46,
+    "Reihen": 47,
+    "Staffel": 45
+   },
+   "raster": 4,
+   "rasterVon": 20
+  },
+  "truck": {
+   "sc": "truck",
+   "seeds": 200,
+   "huelle": 1,
+   "groessen": 1,
+   "flucht": 1,
+   "beute": 1,
+   "hallen": 0,
+   "hallenVerteilung": {},
+   "raster": 1,
+   "rasterVon": 20
+  }
+ }
+}
