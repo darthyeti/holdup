@@ -113,20 +113,20 @@ module.exports = [
         const beh = cars.find(q => q.row === 1 && q.st === 'park' && q.side === 'E' && q.slot === c.slot + 4);
         o.beh = !!beh; c.crew = ['cop', 'cop']; c.ex = 1e9; const shoot = (own, k, dmg, ow) => { for (let j = 0; j < k; j++) g().bl.push({ id: 7000 + (shoot.n = (shoot.n || 0) + 1), x: c.x - 24 + j * 6, y: c.y - 60, vx: 0, vy: 720, l: .8, o: ow, own, d: dmg, dmg }); };
         // Gegnerkugel geht durch (Wagen unversehrt)
-        shoot(0, 1, 50, 0); __run(.2); o.gegner = c.hp;
+        o.max = D.CFG.pol.car.hp; shoot(0, 1, 50, 0); __run(.2); o.gegner = c.hp;
         // ein Treffer
         const k0 = g().kills, st0 = me.st.k; shoot(0, 1, 50, 1); __run(.2); o.eins = c.hp;
         // Beamter an der Fahrertuer und Spieler in der Naehe vor der Explosion
         const cop = D.mkCop(c.x + 20, c.y - 50, 'cop'); g().en.push(cop); const hp0 = cop.hp, bh0 = beh ? beh.hp : null;
-        me.x = c.x; me.y = c.y - 110; shoot(0, 2, 50, 1); D.update(1 / 30); D.update(1 / 30); D.update(1 / 30);
+        me.x = c.x; me.y = c.y - 110; shoot(0, Math.ceil(o.max / 50) - 1, 50, 1); D.update(1 / 30); D.update(1 / 30); D.update(1 / 30);
         o.tot = [c.dead, c.hp, c.crew.length]; o.kills = [g().kills - k0, me.st.k - st0]; o.cop = [hp0, Math.round(cop.hp)]; o.beh = beh ? [bh0, Math.round(beh.hp), beh.dead] : null; o.boom = me.st.boom;
         o.feed = D.msgs().feed.find(f => /explodiert/.test(f));
         // Wrack: Platz bleibt belegt, Kugel geht hindurch
         __run(1); const id = 7999; g().bl.push({ id, x: c.x, y: c.y - 60, vx: 0, vy: 720, l: .8, o: 1, own: 0, d: 50 }); D.update(1 / 30); D.update(1 / 30); o.durch = g().bl.some(b => b.id === id);
         o.platz = g().pcs.some(q => q === c);
         return o; })()`);
-      t.eq(r.gegner, 140, 'Gegnerkugel trifft den Wagen nicht');
-      t.eq(r.eins, 90, 'ein Treffer mit 50 Schaden: 140 - 50');
+      t.eq(r.gegner, r.max, 'Gegnerkugel trifft den Wagen nicht');
+      t.eq(r.eins, r.max - 50, 'ein Treffer mit 50 Schaden: CFG.pol.car.hp - 50');
       t.eq(r.tot[0], true, 'bei 0 HP explodiert er'); t.eq(r.tot[2], 0, 'die Besatzung im Wagen ist weg');
       t.eq(r.kills, [2, 2], 'beide Beamte im Wagen zaehlen als Abschuesse des Schuetzen');
       t.ok(r.cop[1] < r.cop[0], 'Beamter an der Tuer nimmt Schaden: ' + JSON.stringify(r.cop));
@@ -163,7 +163,7 @@ module.exports = [
         A.startHeist(false, A.get().players[0]); god(1); A.spawnWave(); god(14);
         const c = A.get().pcs.find(q => q.st === 'park' && q.row === 0); const bc = () => B.get().pcs.find(q => q.id === c.id);
         A.get().bl.push({ id: 6001, x: c.x - 20, y: c.y - 60, vx: 0, vy: 720, l: .8, o: 1, own: 0, d: 50 }); god(.6);
-        out.schaden = [c.hp, bc() && bc().hp, bc() && bc().dead];
+        out.max = A.CFG.pol.car.hp; out.schaden = [c.hp, bc() && bc().hp, bc() && bc().dead];
         A.get().bl.push({ id: 6002, x: c.x, y: c.y - 60, vx: 0, vy: 720, l: .8, o: 1, own: 0, d: 999 }); god(.8);
         out.wrack = [c.dead, bc() && bc().dead, bc() && bc().hp];
         // Wellenabstand: waveGap(1) fuer 1 bis 4 Spieler
@@ -172,7 +172,7 @@ module.exports = [
         out.cfg = [A.CFG.waveGap, A.CFG.waveGapMin, A.CFG.waveGapPer];
         return out;
       });
-      t.eq(r.schaden, [90, 90, false], 'Client sieht den Schaden (HP 90, noch nicht tot)');
+      t.eq(r.schaden, [r.max - 50, r.max - 50, false], 'Client sieht den Schaden (HP ' + (r.max - 50) + ', noch nicht tot)');
       t.eq(r.wrack, [true, true, 0], 'Client sieht das Wrack');
       const [g0, gm, per] = r.cfg;
       for (const n of [1, 2, 3, 4]) {
