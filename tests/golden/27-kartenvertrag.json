@@ -53,7 +53,14 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 80
+   "Vordertür (W) | Hintertür (E) | Fluchttür (S)": 8,
+   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 9,
+   "Vordertür (E) | Hintertür (W) | Fluchttür (S)": 11,
+   "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 9,
+   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 11,
+   "Vordertür (N) | Fluchttür (W) | Hintertür (S)": 12,
+   "Fluchttür (N) | Hintertür (E) | Vordertür (W)": 12,
+   "Fluchttür (N) | Hintertür (W) | Vordertür (E)": 8
   },
   "range": {
    "pathSV": [
@@ -96,7 +103,14 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 80
+   "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 6,
+   "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 16,
+   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 11,
+   "Vordertür (N) | Fluchttür (W) | Hintertür (S)": 9,
+   "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 12,
+   "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 12,
+   "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 11,
+   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 3
   },
   "range": {
    "pathSV": [
@@ -139,7 +153,14 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 60
+   "Vordertür (N) | Fluchttür (W) | Hintertür (S)": 9,
+   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 9,
+   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 4,
+   "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 8,
+   "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 8,
+   "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 9,
+   "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 6,
+   "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 7
   },
   "range": {
    "pathSV": [
@@ -186,7 +207,14 @@
    "wachen": 46
   },
   "entries": {
-   "Hintertür 1 (N) | Hintertür 2 (N) | Fluchttür (E) | Vordertür (S)": 50
+   "Hintertür 1 (N) | Hintertür 2 (N) | Fluchttür (W) | Vordertür (S)": 6,
+   "Vordertür (N) | Fluchttür (W) | Hintertür 1 (S) | Hintertür 2 (S)": 7,
+   "Hintertür 1 (N) | Hintertür 2 (N) | Fluchttür (E) | Vordertür (S)": 7,
+   "Vordertür (N) | Fluchttür (E) | Hintertür 1 (S) | Hintertür 2 (S)": 6,
+   "Fluchttür (N) | Hintertür 1 (E) | Vordertür (W) | Hintertür 2 (E)": 9,
+   "Hintertür 1 (W) | Vordertür (E) | Hintertür 2 (W) | Fluchttür (S)": 5,
+   "Hintertür 1 (E) | Vordertür (W) | Hintertür 2 (E) | Fluchttür (S)": 5,
+   "Fluchttür (N) | Hintertür 1 (W) | Vordertür (E) | Hintertür 2 (W)": 5
   },
   "range": {
    "pathSV": [

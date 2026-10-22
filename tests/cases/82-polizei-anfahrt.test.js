@@ -9,7 +9,7 @@ async function setup(t) {
 
 // Aufbau (solo, Wellen wie zu viert ueber LAY.wb): Ueberfall, Polizei sofort, Spieler steht ausserhalb auf dem Spawn und ist unverwundbar
 const SETUP = `(sc, seed, extra) => {
-  const D = __dbg; D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); D.buildSeed(seed);
+  const D = __dbg; D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); D.setTurn('S'); D.buildSeed(seed);
   const L = D.LAY(); L.wb = (L.wb || 0) + (extra == null ? 6 : extra); D.CFG.policeAt = 1; D.CFG.policeForced = 1; D.CFG.snp.from = 99;
   D.startHeist(false, D.get().me);
   window.__run = (s, f) => { for (let i = 0; i < s * 30; i++) { const m = D.get().me; m.hp = 1e9; m.x = L.spawn.x; m.y = L.spawn.y; if (f) f(i); D.update(1 / 30); } };
@@ -53,7 +53,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const out = {}, tl = v => Math.floor(v / 32);
         for (const [sc, side] of [['bank', 'S'], ['bank', 'N'], ['bank', 'E'], ['bank', 'W'], ['jewel', 'E'], ['jewel', 'W'], ['gas', 'N']]) {
           const D = __dbg; D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
-          const lay = D.layoutFor(5017); D.buildLay(side === 'S' ? lay : D.turnLayout(lay, side, false));
+          const lay = D.layoutBase(5017); D.buildLay(side === 'S' ? lay : D.turnLayout(lay, side, false));
           const L = D.LAY(), B = L.bld, LN = D.LANE(); L.wb = (L.wb || 0) + 6; D.CFG.policeAt = 1; D.CFG.policeForced = 1; D.CFG.snp.from = 99; D.startHeist(false, D.get().me);
           const cx = (B.x0 + B.x1) / 2 * 32, cy = (B.y0 + B.y1) / 2 * 32, dist = c => Math.abs(LN.axis === 'x' ? c.y - cy : c.x - cx), seen = new Set(), bad = [];
           for (let i = 0; i < 30 * 70; i++) { if (i === 30 * 20 || i === 30 * 45) D.spawnWave(); const m = D.get().me; m.hp = 1e9; m.x = L.spawn.x; m.y = L.spawn.y; D.update(1 / 30);
@@ -144,7 +144,7 @@ module.exports = [
         const dead = c.dead; D.spawnWave(); __run(14);
         const same = D.get().pcs.filter(q => q.side + q.slot === key).length;
         // Tankstelle: Zapfsaeule per Kugel
-        D.setScenario('gas'); D.buildSeed(21); __dbg.startHeist(false, D.get().me); const pump = D.LAY().pumps[0], hp0 = pump.hp;
+        D.setScenario('gas'); D.setTurn('S'); D.buildSeed(21); __dbg.startHeist(false, D.get().me); const pump = D.LAY().pumps[0], hp0 = pump.hp;
         D.get().bl.push({ id: 8002, x: pump.x * 32 + 16, y: pump.y * 32 - 20, vx: 0, vy: 720, l: .5, o: 1, own: 0, d: 999 }); D.update(1 / 30); D.update(1 / 30); D.update(1 / 30);
         return { dead, same, pump: [hp0, pump.hp] }; })()`);
       t.eq(r.dead, true, 'ein Treffer mit 999 Schaden sprengt den Wagen');

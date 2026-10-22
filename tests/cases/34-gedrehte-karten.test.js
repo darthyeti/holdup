@@ -25,7 +25,7 @@ module.exports = [
             if (D.laneOf(l1).side !== side[0]) bad.push(sc + '#' + seed + ' ' + side + ': Strasse an ' + D.laneOf(l1).side);
             // gleiches Ergebnis wie der handgeschriebene Weg
             D.setTurn(null);
-            const l0 = D.layoutFor(seed), l3 = side === 'S' ? l0 : D.turnLayout(l0, side[0], side[1] === '+');
+            const l0 = D.layoutBase(seed), l3 = side === 'S' ? l0 : D.turnLayout(l0, side[0], side[1] === '+');
             if (TN.layHash(D, l3) !== h1) bad.push(sc + '#' + seed + ' ' + side + ': setTurn weicht von turnLayout ab');
             hs.add(h1);
           }
@@ -83,7 +83,7 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const G = CT.mkGame('jewel', 654, 2), A = G.A, B = G.clients[0];
         const gleich = JSON.stringify(A.LANE()) === JSON.stringify(B.LANE()) && CT.diff(CT.sig(A), CT.sig(B)).length === 0;
-        A.setTurn('E'); A.buildLay(A.layoutFor(654));
+        const auto = A.turnFor(654, 'jewel'); A.setTurn(auto[0] === 'E' ? 'W+' : 'E'); A.buildLay(A.layoutFor(654));   // der Host in einer anderen Lage als der Seed vorgibt
         return { gleich, lane: JSON.stringify(A.LANE()) !== JSON.stringify(B.LANE()), diff: CT.diff(CT.sig(A), CT.sig(B)) };
       });
       t.ok(r.gleich, 'ohne Drehung sind beide gleich');

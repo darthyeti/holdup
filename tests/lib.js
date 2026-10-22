@@ -82,7 +82,7 @@ async function coopGame(env, sc, seed, turn, o) {
   const page = await openGame(env);
   try {
     await loadTool(page, 'loopnet.js'); await loadInpage(page, 'coop.js'); await loadInpage(page, 'turn.js');
-    const r = await page.evaluate(([sc, seed, turn, o]) => TN.coop(sc, seed, turn, o), [sc, seed, turn, o || {}]);
+    const r = await page.evaluate(([sc, seed, turn, o]) => TN.coop(sc, seed, turn == null ? undefined : turn, o), [sc, seed, turn == null ? null : turn, o || {}]);
     if (page.errors.length) r.bad.push('JS-Fehler im Spiel: ' + page.errors.slice(0, 2).join(' | '));
     return r;
   } finally { await Promise.race([page.ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]); }

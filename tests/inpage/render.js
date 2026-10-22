@@ -4,8 +4,8 @@
   function draw(sc, sd, turn) {
     const D = __dbg; D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
     let seed = +sd;
-    if (isNaN(seed)) { seed = null; for (let s = 1; s < 3000; s++) if (D.layoutFor(s).hall === sd) { seed = s; break; } if (seed == null) return { err: 'Grundriss nicht gefunden: ' + sd }; }
-    let lay = D.layoutFor(seed); if (turn) lay = D.turnLayout(lay, turn[0], turn[1] === '+');
+    if (isNaN(seed)) { seed = null; for (let s = 1; s < 3000; s++) if (D.layoutBase(s).hall === sd) { seed = s; break; } if (seed == null) return { err: 'Grundriss nicht gefunden: ' + sd }; }
+    let lay = D.layoutBase(seed); if (turn) lay = D.turnLayout(lay, turn[0], turn[1] === '+');
     D.buildLay(lay);
     const L = D.LAY(), w = D.world(), T = 32, B = L.bld, ln = D.LANE();
     // Ausschnitt: Gebaeude mit Rand, dazu Wagenplaetze, Fahrstrecke des Fluchtwagens, Fluchtzone und Posten

@@ -16,10 +16,10 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(([SIDES, HALLS]) => {
         const D = __dbg, T = 32, bad = [], stat = { maps: 0, variants: 0, weltOnly: 0 };
-        const mk = (sc, s, side) => { D.setScenario(sc); D.setSeedMode(s === 'classic' ? 'classic' : 'random'); D.setLage([]); const lay = D.layoutFor(s); return side === 'S' ? lay : D.turnLayout(lay, side[0], side[1] === '+'); };
+        const mk = (sc, s, side) => { D.setScenario(sc); D.setSeedMode(s === 'classic' ? 'classic' : 'random'); D.setLage([]); const lay = D.layoutBase(s); return side === 'S' ? lay : D.turnLayout(lay, side[0], side[1] === '+'); };
         const ids = rep => [rep.err.map(e => e.r), rep.warn.map(e => e.r)].map(l => [...new Set(l)].sort().join(','));
         const list = [];
-        for (const sc of Object.keys(HALLS)) for (const h of HALLS[sc]) { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); let seed = null; for (let s = 1; s < 800 && seed == null; s++) if (D.layoutFor(s).hall === h) seed = s; if (seed == null) bad.push(sc + ' ' + h + ': kein Seed'); else list.push([sc, seed]); }
+        for (const sc of Object.keys(HALLS)) for (const h of HALLS[sc]) { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); let seed = null; for (let s = 1; s < 800 && seed == null; s++) if (D.layoutBase(s).hall === h) seed = s; if (seed == null) bad.push(sc + ' ' + h + ': kein Seed'); else list.push([sc, seed]); }
         // Bank-Zufallskarten: dazu 4996 (dort wich die Zielkachel am Wagen nach dem Spiegeln um eine Kachel ab, siehe exit.goal) und 60 Seeds im Abstand 37, darunter gespiegelte und getauschte
         for (const s of [101, 5000, 5017, 9001, 4996, 'classic']) list.push(['bank', s]);
         for (let i = 0; i < 60; i++) list.push(['bank', 1 + i * 37]);
@@ -76,7 +76,7 @@ module.exports = [
         Object.assign(D.CFG.van, { bt: 0, bu: 0, r: 0 });   // der Test prueft die Strassengeometrie, nicht die Regeln fuers Einsteigen und den Fahrer (die haben 32-fluchtwagen)
         for (const [sc, seed] of [['jewel', 5], ['gas', 22]]) for (const side of SIDES) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
-          let lay = D.layoutFor(seed); if (side !== 'S') lay = D.turnLayout(lay, side[0], side[1] === '+');
+          let lay = D.layoutBase(seed); if (side !== 'S') lay = D.turnLayout(lay, side[0], side[1] === '+');
           D.buildLay(lay); D.startHeist(true);
           const LN = D.LANE(), A = LN.A, C = LN.C, tag = sc + ' ' + side, seenCops = new Set();
           let parked = false, drew = 0, ended = null, vanStopT = null, cars = 0;
@@ -123,7 +123,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, bad = [], sum = [];
-        const mk = (sc, s) => { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); return D.layoutFor(s); };
+        const mk = (sc, s) => { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); return D.layoutBase(s); };
         for (const [sc, seed] of [['jewel', 5], ['gas', 22], ['museum', 33], ['casino', 41], ['bank', 5017]]) for (const side of ['N', 'E', 'W', 'S+', 'N+', 'E+', 'W+']) {
           // Referenz: abgeleitet am Original, dann mit der Karte gedreht. Gegenprobe: am gedrehten Original abgeleitet.
           const a = mk(sc, seed), A = D.autoPosts(a); a.posts = A.posts; a.slots = A.slots;
@@ -159,7 +159,7 @@ module.exports = [
         const D = __dbg, T = 32, bad = [], seen = {};
         for (const [sc, seed] of [['jewel', 5], ['gas', 22], ['museum', 33], ['casino', 41], ['bank', 5017]]) for (const side of ['S', 'N', 'E', 'W', 'E+', 'W+', 'N+']) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
-          let lay = D.layoutFor(seed); if (side !== 'S') lay = D.turnLayout(lay, side[0], side[1] === '+');
+          let lay = D.layoutBase(seed); if (side !== 'S') lay = D.turnLayout(lay, side[0], side[1] === '+');
           D.buildLay(lay); const L = D.LAY(), v = L.vault, w = D.world(), tag = sc + ' ' + side, h = side[0] === 'E' || side[0] === 'W';
           seen[h ? 'h' : 'v'] = (seen[h ? 'h' : 'v'] || 0) + 1;
           if ((v.o === 'h') !== h) bad.push(tag + ' Ausrichtung ' + v.o);
@@ -192,7 +192,7 @@ module.exports = [
         const D = __dbg, out = {};
         for (const [sc, seed, side, n, min] of [['jewel', 5000, 'E', 4, 1], ['jewel', 5000, 'W', 4, 1], ['jewel', 5000, 'N+', 4, 2], ['gas', 5000, 'N', 3, 2], ['gas', 5000, 'W', 3, 2], ['bank', 5017, 'E', 3, 2]]) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
-          D.buildLay(D.turnLayout(D.layoutFor(seed), side[0], side[1] === '+'));
+          D.buildLay(D.turnLayout(D.layoutBase(seed), side[0], side[1] === '+'));
           let w = 0, loot = 0; for (let i = 0; i < n; i++) { const q = bot.run({ sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt' }); if (q.res === 'WIN') { w++; loot += q.loot; } }
           out[sc + ' ' + side] = { w, n, min, loot: w ? Math.round(loot / w) : 0 };
         }
@@ -208,14 +208,14 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, out = {};
-        const mk = side => { D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); const lay = D.layoutFor(5); return side ? D.turnLayout(lay, side, false) : lay; };
+        const mk = side => { D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); const lay = D.layoutBase(5); return side ? D.turnLayout(lay, side, false) : lay; };
         const rules = lay => D.validateMap(lay).err.map(e => e.r);
         let lay = mk('E'); delete lay.road.van; out.vanFehlt = rules(lay);
         lay = mk('E'); lay.road.side = 'X'; out.seiteFalsch = rules(lay);
         lay = mk('E'); lay.road.slots = [lay.road.slots[0]]; out.slotsFalsch = rules(lay);
         lay = mk('E'); out.sauber = rules(lay);
         try { D.turnLayout(mk('E'), 'N', false); out.doppelt = 'kein Fehler'; } catch (e) { out.doppelt = 'Fehler'; }
-        D.setScenario('truck'); D.setSeedMode('random'); try { D.turnLayout(D.layoutFor(5), 'N', false); out.truck = 'kein Fehler'; } catch (e) { out.truck = 'Fehler'; }
+        D.setScenario('truck'); D.setSeedMode('random'); try { D.turnLayout(D.layoutBase(5), 'N', false); out.truck = 'kein Fehler'; } catch (e) { out.truck = 'Fehler'; }
         return out;
       });
       for (const k of ['vanFehlt', 'seiteFalsch', 'slotsFalsch']) t.ok(r[k].includes('feld'), k + ': validateMap meldet das Feld road: ' + JSON.stringify(r[k]));

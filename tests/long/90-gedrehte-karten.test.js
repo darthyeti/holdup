@@ -4,6 +4,9 @@
 //   2 voller Aufbau und mapcheck.check (Erreichbarkeit, Wagenplaetze, Fluchtzone) fuer 100 Seeds je Szenario und Lage
 //   3 Bot mit fruehem Rufen (Loesbarkeit: keine Haenger, hoechstens 3 fruehe Verluste, in jeder Halle und Lage mindestens ein Sieg, weite Mindestquoten je Lage)
 //   4 Coop zu zweit ueber die Test-Leitung fuer jede Halle in jeder Lage (je Halle zwei Seeds)
+// Seit Sprint 4 (Lage aus dem Seed) kommen dazu, je Szenario ohne Schalter (so, wie der Spieler die Karten bekommt):
+//   5 layoutFor aus dem Seed: validateMap ohne Fehler ueber 3000 Seeds, jede Halle in jeder Lage
+//   6 Bot mit fruehem Rufen auf 300 Karten aus dem Seed (keine Haenger, wenige fruehe Verluste, Mindestquote)
 const { coopGame } = require('../lib');
 const SC = ['jewel', 'gas', 'museum', 'casino'];
 const LAGEN = ['S', 'N', 'E', 'W', 'S+', 'N+', 'E+', 'W+'];
@@ -50,7 +53,7 @@ for (const sc of SC) {
         const D = __dbg, errs = {}; let n = 0;
         D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
         for (const side of LAGEN) for (let i = 0; i < 100; i++) {
-          const seed = 1 + i * 7, rep = mapcheck.check(sc, seed, undefined, side === 'S' ? undefined : side); n++;
+          const seed = 1 + i * 7, rep = mapcheck.check(sc, seed, undefined, side); n++;
           for (const e of rep.err) { const k = e.replace(/[0-9.,-]+/g, '#'); (errs[k] = errs[k] || []).push(side + '#' + seed); }
         }
         return { n, errs: Object.entries(errs).map(([k, v]) => k + ' (' + v.length + 'x, zuerst ' + v.slice(0, 3).join(' ') + ')') };
@@ -102,6 +105,52 @@ for (const sc of SC) {
       }
       t.note(n + ' Partien');
       t.eq(bad.slice(0, 12), [], 'Coop auf gedrehter Karte (' + bad.length + ' Abweichungen)');
+    },
+  });
+}
+for (const sc of SC) {
+  tests.push({
+    name: 'Lang: ' + sc + ': Karten aus dem Seed ohne Schalter (3000 Seeds): validateMap ohne Fehler, jede Halle in jeder der acht Lagen',
+    timeout: 290000,
+    async run(t) {
+      const r = await t.page.evaluate(({ sc }) => {
+        const D = __dbg, bad = [], halls = {}; let n = 0;
+        D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn(null);
+        for (let seed = 1; seed <= 3000; seed++) {
+          const lay = D.layoutFor(seed), want = D.turnFor(seed, sc), rep = D.validateMap(lay); n++;
+          const side = D.laneOf(lay).side; if (side !== want[0]) bad.push('#' + seed + ': Strasse an ' + side + ' statt ' + want[0]);
+          for (const e of rep.err) if (bad.length < 15) bad.push('#' + seed + ' ' + e.r + ': ' + e.m);
+          const k = (lay.hall || '-') + ' ' + want; halls[k] = (halls[k] || 0) + 1;
+        }
+        return { n, bad, halls };
+      }, { sc });
+      const hs = new Set(Object.keys(r.halls).map(k => k.split(' ')[0]));
+      t.note(r.n + ' Karten, seltenste Halle in einer Lage: ' + Math.min(...Object.values(r.halls)) + ' mal');
+      t.eq(r.bad, [], 'Karten aus dem Seed');
+      t.ok(Object.keys(r.halls).length === hs.size * 8, 'jede Halle kommt in jeder Lage vor: ' + Object.keys(r.halls).length + ' von ' + hs.size * 8);
+    },
+  });
+  tests.push({
+    name: 'Lang: ' + sc + ': Bot mit fruehem Rufen auf 300 Karten aus dem Seed (ohne Schalter): keine Haenger, hoechstens 6 fruehe Verluste, Quote mindestens ' + Math.round(MINWIN[sc] * 100) + ' %',
+    timeout: 290000,
+    async run(t) {
+      await t.loadTool('bot.js');
+      const r = await t.page.evaluate(({ sc, opt }) => {
+        const D = __dbg, lagen = {}; let w = 0, to = 0, early = 0;
+        D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn(null);
+        for (let i = 0; i < 300; i++) {
+          const seed = 5000 + i, q = bot.run(Object.assign({ sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt', seed }, opt)), k = D.turnFor(seed, sc)[0];
+          lagen[k] = lagen[k] || [0, 0]; lagen[k][1]++;
+          if (q.res === 'WIN') { w++; lagen[k][0]++; } else { if (q.res === 'TIMEOUT') to++; if (q.t < 30) early++; }
+        }
+        return { w, to, early, lagen };
+      }, { sc, opt: BOTOPT[sc] });
+      t.note(Math.round(r.w / 3) + ' % Siege, je Seite: ' + Object.entries(r.lagen).map(([k, v]) => k + ' ' + Math.round(100 * v[0] / v[1]) + ' %').join(', '));
+      const bad = [];
+      if (r.to) bad.push(r.to + ' Haenger');
+      if (r.early > 6) bad.push(r.early + ' fruehe Verluste unter 30 s');
+      if (r.w < 3 * MINWIN[sc] * 100) bad.push('Quote ' + Math.round(r.w / 3) + ' %');
+      t.eq(bad, [], 'Loesbarkeit');
     },
   });
 }

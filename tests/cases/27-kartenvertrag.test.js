@@ -29,7 +29,7 @@ module.exports = [
         const keys = new Set();
         for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino', 'truck']) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage(null);
-          const lay = D.layoutFor(5); Object.keys(lay).forEach(k => keys.add(k));
+          const lay = D.layoutBase(5); Object.keys(lay).forEach(k => keys.add(k));
           const miss = F.filter(f => f[1] === 'P' && lay[f[0]] == null).map(f => f[0]); if (miss.length) out.missing[sc] = miss;
         }
         D.setScenario('bank'); D.setSeedMode('classic'); Object.keys(D.layoutFor('classic')).forEach(k => keys.add(k));
@@ -153,7 +153,7 @@ module.exports = [
         // Juwelier Seed 1 ohne Aufbau (layoutFor allein, das Raster ist dann noch ohne verriegelte Tueren), danach eine Aenderung an Raster oder Feldern, danach die Pruefung (findSpots laeuft dabei neu)
         const run = (name, f) => {
           D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]);
-          const lay = D.layoutFor(1), w = D.world(); f(w.setc, lay, w);
+          const lay = D.layoutBase(1), w = D.world(); f(w.setc, lay, w);
           const rep = D.validateMap(lay);
           out[name] = { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) };
         };
@@ -180,7 +180,7 @@ module.exports = [
         const sv = D.CFG.val.minW; D.CFG.val.minW = 100; run('welt', () => { }); D.CFG.val.minW = sv;
         // Zauntor der Bank (Parkplatz): ein Auto davor stellt es zu (Fehler), ein halb verstelltes Tor ist eine Warnung
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
-        const gate = f => { const lay = D.layoutFor(5), w = D.world(), B = lay.bld, gy = B.y1 + 1; let gx = -1; for (let x = B.x1 + 1; x < w.WX0 + w.W - 1; x++) if (!D.isSol(x, gy)) { gx = x; break; } f(w.setc, gx, gy); const rep = D.validateMap(lay); return { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) }; };
+        const gate = f => { const lay = D.layoutBase(5), w = D.world(), B = lay.bld, gy = B.y1 + 1; let gx = -1; for (let x = B.x1 + 1; x < w.WX0 + w.W - 1; x++) if (!D.isSol(x, gy)) { gx = x; break; } f(w.setc, gx, gy); const rep = D.validateMap(lay); return { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) }; };
         out['tor-ganz'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); c(gx + 1, gy - 1, 'v'); });
         out['tor-halb'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); });
         out['tor-frei'] = gate(() => { });
@@ -205,7 +205,7 @@ module.exports = [
         for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino', 'truck']) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           for (let s = 1; s < (sc === 'bank' ? 60 : 8); s += 3) {
-            const lay = D.layoutFor(s), ln = D.laneOf(lay), tag = sc + '#' + s;
+            const lay = D.layoutBase(s), ln = D.laneOf(lay), tag = sc + '#' + s;
             if (lay.flip) seen.flip++; else seen.plain++;
             if (ln.axis !== 'x' || ln.side !== 'S' || ln.n[0] !== 0 || ln.n[1] !== -1 || ln.pos !== lay.laneY) bad.push(tag + ' Achse/Seite/Lage');
             // Normale zeigt zum Gebaeude
@@ -236,7 +236,7 @@ module.exports = [
         // Gesund: jeder abgeleitete Posten steht frei und ist von der Strasse erreichbar (validateMap-Regeln auf die abgeleitete Liste)
         const bad = [], D = __dbg;
         for (const sc of Object.keys(runs)) for (const s of runs[sc]) {
-          D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); const lay = D.layoutFor(s), A = D.autoPosts(lay), w = D.world();
+          D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); const lay = D.layoutBase(s), A = D.autoPosts(lay), w = D.world();
           for (const p of A.posts) if (w.isSol(p.x, p.y)) bad.push(sc + '#' + s + ' Posten in Festem ' + p.x + ',' + p.y);
           const hand = lay.posts; lay.posts = A.posts; lay.slots = A.slots;
           const rep = D.validateMap(lay); for (const e of rep.err) if (e.r === 'posten' || e.r === 'aussteigen') bad.push(sc + '#' + s + ' ' + e.m);

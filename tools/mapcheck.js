@@ -6,7 +6,7 @@
 (function(){
 const D=__dbg,T=32;
 // turn: Strasse auf eine andere Seite legen (turnLayout), 'E', 'N', 'W' oder mit '+' dahinter fuer zusaetzliches Spiegeln laengs der Strasse ('E+')
-function lay0(sc,seed,lage,turn){D.setScenario(sc);D.setSeedMode('random');if(lage!==undefined)D.setLage(lage);const l=D.layoutFor(seed);return turn?D.turnLayout(l,turn[0],turn[1]==='+'):l}
+function lay0(sc,seed,lage,turn){D.setScenario(sc);D.setSeedMode('random');if(lage!==undefined)D.setLage(lage);return turn?D.turnLayout(D.layoutBase(seed),turn[0],turn[1]==='+'):D.layoutFor(seed)}
 function build(sc,seed,lage,turn){D.buildLay(lay0(sc,seed,lage,turn))}
 function fill(sx,sy,pass){const w=D.world(),seen=new Set([sx+','+sy]),q=[[sx,sy]];let h=0;
  while(h<q.length){const c=q[h++];for(const v of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=c[0]+v[0],ny=c[1]+v[1],k=nx+','+ny;if(seen.has(k)||!pass(nx,ny))continue;seen.add(k);q.push([nx,ny])}}return seen}
@@ -51,8 +51,8 @@ function vsweep(sc,n,from,o){const out={sc,n,ok:0,err:{},warn:{},entries:{},rang
   if(r.info.entries){const k=r.info.entries.join(' | ');out.entries[k]=(out.entries[k]||0)+1}
   for(const [k,v] of[['pathSV',r.info.pathSV],['pathVE',r.info.pathVE],['loot',r.info.loot&&r.info.loot.v],['cams',r.info.cams],['guards',r.info.guards],['mat',r.info.mat&&r.info.mat[0]-r.info.mat[1]],['slots',r.info.slots],['posts',r.info.posts]])if(v!=null){const g=out.range[k]=out.range[k]||[v,v];g[0]=Math.min(g[0],v);g[1]=Math.max(g[1],v)}}
  return out}
-// autocmp(sc,seed,o): abgeleitete Posten und Wagenplaetze (autoPosts) gegen die Handliste der Karte. Ein Posten gilt als getroffen, wenn der andere Typ innerhalb von 1,5 Kacheln liegt, shiftW/shiftE sind je Hand-Platz die Verschiebung (abgeleitet minus Hand) zum naechsten abgeleiteten Platz.
-function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){lay=lay0(sc,seed,undefined,o.turn)}else{build(sc,seed,undefined,o.turn);lay=D.LAY()}
+// autocmp(sc,seed,o): vergleicht auf der Basiskarte (Lage S), o.turn nimmt eine andere Lage. Abgeleitete Posten und Wagenplaetze (autoPosts) gegen die Handliste der Karte. Ein Posten gilt als getroffen, wenn der andere Typ innerhalb von 1,5 Kacheln liegt, shiftW/shiftE sind je Hand-Platz die Verschiebung (abgeleitet minus Hand) zum naechsten abgeleiteten Platz.
+function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){lay=lay0(sc,seed,undefined,o.turn||'S')}else{build(sc,seed,undefined,o.turn||'S');lay=D.LAY()}
  const A=D.autoPosts(lay),H=lay.posts,P=A.posts,d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),by=l=>{const c={};l.forEach(p=>c[p.k]=(c[p.k]||0)+1);return c},str=l=>l.map(p=>p.x+','+p.y+p.k);
  const um=H.filter(h=>!P.some(a=>d(a,h)<=1.5)),ex=P.filter(a=>!H.some(h=>d(a,h)<=1.5)),um3=H.filter(h=>!P.some(a=>d(a,h)<=3));
  const R=D.roadOf(lay),ln=D.laneOf(lay),sh=k=>R.slots[k].map(u=>{const c=A.slots[ln.ends[k]];return c.length?c.map(v=>v-u).reduce((a,b)=>Math.abs(b)<Math.abs(a)?b:a):null});

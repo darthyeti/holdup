@@ -7,7 +7,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, halls = {}, bad = [], grids = new Set();
-        D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]);
+        D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
         for (let i = 0; i < 150; i++) {
           D.buildLay(D.layoutFor(1 + i * 7));
           const L = D.LAY(), c = {}; for (const v of L.vit) c[v.k] = (c[v.k] || 0) + 1;
@@ -27,7 +27,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, out = {};
-        D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]);
+        D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
         let sd = 1; for (; sd < 200; sd++) { D.buildLay(D.layoutFor(sd)); if (D.get().npcs.some(q => q.k === 'grd')) break; }
         const g = D.get().npcs.find(q => q.k === 'grd'), cg = D.CFG.jewel.guard;
         out.guard = [g.spd, g.fov, g.rng]; out.cfg = [cg.spd, cg.fov, cg.rng];
@@ -48,7 +48,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, seen = new Set(), out = { drawn: 0 };
-        D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]);
+        D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
         for (let sd = 1; sd < 300 && seen.size < 5; sd++) {
           D.buildLay(D.layoutFor(sd)); const h = D.LAY().hall; if (seen.has(h) || !D.get().npcs.some(q => q.k === 'grd')) continue; seen.add(h);
           D.startHeist(false); D.reset(); const me = D.get().me; me.x = 11.9 * 32; me.y = 12 * 32;
@@ -78,7 +78,7 @@ module.exports = [
     async run(t) {
       await t.loadTool('stealth.js');
       const r = await t.page.evaluate(() => {
-        const D = __dbg; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]);
+        const D = __dbg; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
         let sd = 1; for (; sd < 200; sd++) { D.buildLay(D.layoutFor(sd)); if (D.get().npcs.filter(q => q.k === 'grd').length === 1) break; }
         return stealth.measure({ runs: 1, secs: 90, k: 2 });
       });
