@@ -1,4 +1,4 @@
-// Testlauf fuer Holdup: node run.js [--update] [Teil des Testnamens ...]   (HOLDUP_ROOT=<Ordner> spielt gegen einen anderen Stand, zum Beispiel git archive HEAD~1)
+// Testlauf fuer Holdup: node run.js [--update] [--long] [Teil des Testnamens ...]   (--long fuehrt statt cases/ die grossen Laeufe in long/ aus: npm run test:long, viele Seeds, mehrere Minuten)   (HOLDUP_ROOT=<Ordner> spielt gegen einen anderen Stand, zum Beispiel git archive HEAD~1)
 // Jeder Test liegt in cases/*.test.js und exportiert { name, run(t) }. Jeder Test bekommt eine frische Seite mit #debug,
 // JS-Fehler im Spiel lassen ihn scheitern. t.snapshot(schluessel, wert) vergleicht mit golden/<datei>.json (mit --update neu schreiben).
 const fs = require('fs');
@@ -7,6 +7,7 @@ const { launch, openGame, loadTool, loadInpage } = require('./lib');
 
 const args = process.argv.slice(2);
 const UPDATE = args.includes('--update');
+const LONG = args.includes('--long');
 const filters = args.filter(a => !a.startsWith('--'));
 const GOLD = path.join(__dirname, 'golden');
 
@@ -34,7 +35,7 @@ function mkT(testFile, page, env) {
 }
 
 (async () => {
-  const dir = path.join(__dirname, 'cases');
+  const dir = path.join(__dirname, LONG ? 'long' : 'cases');
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.test.js')).sort().map(f => path.join(dir, f));
   const LOPT = process.env.HOLDUP_ROOT ? { root: process.env.HOLDUP_ROOT } : undefined;   // HOLDUP_ROOT: Tests gegen einen anderen Stand des Spiels laufen lassen (Gegenprobe, ob ein Test den alten Fehler findet)
   let env = await launch(LOPT);

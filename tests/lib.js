@@ -76,4 +76,16 @@ async function loadInpage(page, name) {
   await page.addScriptTag({ content: fs.readFileSync(path.join(__dirname, 'inpage', name), 'utf8') });
 }
 
-module.exports = { ROOT, launch, openGame, loadTool, loadInpage };
+// Eine Coop-Partie zu zweit auf einer (gedrehten) Karte vom Start bis zum Sieg (inpage/turn.js, TN.coop) auf einer eigenen Seite: Jede Instanz haelt Raster und Ebenen im Speicher (das Casino 9 Megapixel je Ebene), mehrere Partien in einer Seite blaehen sie auf.
+// Liefert { tag, bad, stat }, die JS-Fehler der Seite landen in bad.
+async function coopGame(env, sc, seed, turn, o) {
+  const page = await openGame(env);
+  try {
+    await loadTool(page, 'loopnet.js'); await loadInpage(page, 'coop.js'); await loadInpage(page, 'turn.js');
+    const r = await page.evaluate(([sc, seed, turn, o]) => TN.coop(sc, seed, turn, o), [sc, seed, turn, o || {}]);
+    if (page.errors.length) r.bad.push('JS-Fehler im Spiel: ' + page.errors.slice(0, 2).join(' | '));
+    return r;
+  } finally { await Promise.race([page.ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]); }
+}
+
+module.exports = { ROOT, launch, openGame, loadTool, loadInpage, coopGame };

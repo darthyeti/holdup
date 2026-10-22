@@ -4,7 +4,8 @@
   "description": "Automatische Pruefungen fuer Holdup (nur Entwicklung, das Spiel selbst braucht keinen Bauschritt)",
   "scripts": {
     "test": "node run.js",
-    "test:update": "node run.js --update"
+    "test:update": "node run.js --update",
+    "test:long": "node run.js --long"
   },
   "devDependencies": {
     "playwright-core": "^1.64.1"

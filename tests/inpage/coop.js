@@ -1,13 +1,13 @@
 // Seitenskript fuer Coop-Tests: baut Host und Clients ueber die Test-Leitung (tools/loopnet.js muss geladen sein).
 (function () {
-  // mkGame(sc, seed, n, lat, jit): Host A plus n-1 Clients, Raum gebaut, Spiel gestartet, 3 s Spielzeit vorgespult
-  function mkGame(sc, seed, n, lat, jit, goal) {
+  // mkGame(sc, seed, n, lat, jit, goal, turn): Host A plus n-1 Clients, Raum gebaut, Spiel gestartet, 3 s Spielzeit vorgespult. turn legt die Strasse auf allen Instanzen auf eine Seite (dbg.setTurn, zum Beispiel 'E+')
+  function mkGame(sc, seed, n, lat, jit, goal, turn) {
     const net = LoopNet(lat == null ? 60 : lat, jit == null ? 20 : jit), insts = [];
     const A = mkInst(net, 'a'); insts.push(A);
-    A.setScenario(sc); A.setSeedMode(seed);
+    A.setScenario(sc); A.setSeedMode(seed); if (turn) A.setTurn(turn);
     A.hostRoom(); for (let i = 0; i < 10; i++) step(insts, net, 1 / 60);
     for (let k = 1; k < n; k++) {
-      const C = mkInst(net, 'c' + k); insts.push(C);
+      const C = mkInst(net, 'c' + k); insts.push(C); if (turn) C.setTurn(turn);
       C.joinRoom(A.NET.code); for (let i = 0; i < 120; i++) step(insts, net, 1 / 60);
     }
     if (goal) for (const d of insts) d.setGoal(goal);

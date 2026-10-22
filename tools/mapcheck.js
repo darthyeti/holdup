@@ -31,14 +31,14 @@ function check(sc,seed,lage,turn){build(sc,seed,lage,turn);const w=D.world(),L=D
  const pt=(a,nm)=>{if(!a)return;if(w.isSol(a[0],a[1])||!has(a[0],a[1]))rep.err.push(nm+' nicht begehbar: '+a)};
  (L.guards||[]).forEach((g,i)=>g.route.forEach(r=>pt(r,'Wachroute '+i)));if(L.mgr)L.mgr.route.forEach(r=>pt(r,'Managerroute'));(L.tellers||[]).forEach(t=>pt(t,'Kassierer'));
  (L.vault.bundles||[]).forEach(b=>pt(b,'Tresorbuendel'));(L.mission.extra||[]).forEach((x,i)=>{pt(x.p,'Wachwechsel-Start');x.route.forEach(r=>pt(r,'Wachwechsel-Route '+i))});(L.pumps||[]).forEach(q=>{if(w.cell(q.x,q.y)!=='u')rep.err.push('Zapfsaeule fehlt: '+q.x+','+q.y)});
- for(const c of L.cams)if(!has(Math.floor(c.x/T),Math.floor(c.y/T))&&!has(Math.floor(c.x/T),Math.floor(c.y/T)+1)&&!has(Math.floor(c.x/T),Math.floor(c.y/T)-1))rep.err.push('Kamera ohne Boden in der Naehe: '+Math.round(c.x/T)+','+Math.round(c.y/T));
+ for(const c of L.cams){const cx=Math.floor(c.x/T),cy=Math.floor(c.y/T);if(![[0,0],[0,1],[0,-1],[1,0],[-1,0]].some(d=>has(cx+d[0],cy+d[1])))rep.err.push('Kamera ohne Boden in der Naehe: '+Math.round(c.x/T)+','+Math.round(c.y/T))}
  // Zusammenfassung
  let loot=0,units=0;for(const it of G.its){}
  rep.info.wins=(L.wins||[]).length;rep.info.snp=(L.snp||[]).length;rep.info.spots=(L.spots||[]).length;rep.info.posts=L.posts.length;rep.info.cams=L.cams.length;rep.info.guards=(L.guards||[]).length;rep.info.civ=L.civ;rep.info.reach=R.size;
  const goods=(L.goods||[]).map(g=>D.CFG.goods[g.k]);rep.info.goodsV=goods.reduce((s,g)=>s+g.v,0);rep.info.goodsU=goods.reduce((s,g)=>s+g.u,0);
  const bn=L.bn||D.CFG.bundle;rep.info.vaultV=bn.n*bn.v;rep.info.tills=L.tills.length;rep.info.atms=L.atms.length;
  return rep}
-function sweep(sc,n,from){const out={n,fail:0,errs:{},tags:{}};for(let i=0;i<n;i++){const seed=(from||1)+i*37,r=check(sc,seed);for(const l of r.lg)out.tags[l]=(out.tags[l]||0)+1;if(r.err.length){out.fail++;for(const e of r.err){const k=e.replace(/[0-9.,-]+/g,'#');(out.errs[k]=out.errs[k]||[]).push(seed)}}}return out}
+function sweep(sc,n,from,turn){const out={n,fail:0,errs:{},tags:{}};for(let i=0;i<n;i++){const seed=(from||1)+i*37,r=check(sc,seed,undefined,turn);for(const l of r.lg)out.tags[l]=(out.tags[l]||0)+1;if(r.err.length){out.fail++;for(const e of r.err){const k=e.replace(/[0-9.,-]+/g,'#');(out.errs[k]=out.errs[k]||[]).push(seed)}}}return out}
 function ascii(x0,y0,x1,y1){const w=D.world(),rows=[];const X0=x0==null?w.WX0:x0,Y0=y0==null?w.WY0:y0,X1=x1==null?w.WX0+w.W-1:x1,Y1=y1==null?w.WY0+w.H-1:y1;
  let hdr='    ';for(let x=X0;x<=X1;x++)hdr+=(x%10===0?String(Math.abs(x)%100/10|0):' ');rows.push(hdr);hdr='    ';for(let x=X0;x<=X1;x++)hdr+=Math.abs(x)%10;rows.push(hdr);
  for(let y=Y0;y<=Y1;y++){let r=String(y).padStart(3)+' ';for(let x=X0;x<=X1;x++)r+=w.cell(x,y)==='o'?'.':w.cell(x,y);rows.push(r)}return rows.join('\n')}
