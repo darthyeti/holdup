@@ -26,7 +26,7 @@ function check(sc,seed,lage,turn){build(sc,seed,lage,turn);const w=D.world(),L=D
  // Der Wagen steht mit der Mitte auf slot*T+16 und ist 4 Kacheln breit (slot-1 .. slot+2)
  for(const q of LN.slots)for(let k=-1;k<=2;k++){const c=LN.pt(q.u+k,LN.row);if(w.isSol(c[0],c[1])){rep.err.push('Wagenplatz blockiert: '+q.u);break}}
  // Fluchtzone und Wagen
- const ex=LN.pt(LN.exit.tx+2,Math.floor(LN.van.pos/T));if(!has(ex[0],ex[1]))rep.err.push('Fluchtzone nicht erreichbar');
+ const ex=LN.pt(LN.exit.tx+2*LN.exit.dir,Math.floor(LN.van.pos/T));if(!has(ex[0],ex[1]))rep.err.push('Fluchtzone nicht erreichbar');
  // Routen, Kassierer, Tresor, Kameras
  const pt=(a,nm)=>{if(!a)return;if(w.isSol(a[0],a[1])||!has(a[0],a[1]))rep.err.push(nm+' nicht begehbar: '+a)};
  (L.guards||[]).forEach((g,i)=>g.route.forEach(r=>pt(r,'Wachroute '+i)));if(L.mgr)L.mgr.route.forEach(r=>pt(r,'Managerroute'));(L.tellers||[]).forEach(t=>pt(t,'Kassierer'));

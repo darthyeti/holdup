@@ -176,11 +176,11 @@ module.exports = [
         B.SESSION.cons = { sm: 2, fl: 1 }; B.openShop(); G.run(1); A.startNext(); G.run(2);
         B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true })); G.run(1);
         const pb = A.get().players[1], out = { before: [A.get().players[1].sm, B.get().players[1].sm] };
-        pb.x = 12 * 32 + 16; pb.y = 14 * 32 + 16;
+        const sp = A.LAY().spawn; pb.x = sp.x; pb.y = sp.y;   // der Spawn liegt auf der Strasse vor der Bank, welche Kachel frei ist, haengt vom Treffpunkt der Zufallskarte ab
         const cvb = B.cv;
         B.mouse.sx = 600; B.mouse.sy = 272; B.mouse.t = B.get().time;   // das Test-Canvas hat keine Groesse, deshalb der Zeiger direkt
         B.draw(); cvb.dispatchEvent(new KeyboardEvent('keydown', { key: '4', bubbles: true })); B.draw(); cvb.dispatchEvent(new KeyboardEvent('keyup', { key: '4', bubbles: true }));
-        for (let i = 0; i < 90; i++) { pb.x = 12 * 32 + 16; pb.y = 14 * 32 + 16; pb.hp = 1e9; step(G.insts, G.net, 1 / 60); }
+        for (let i = 0; i < 90; i++) { pb.x = sp.x; pb.y = sp.y; pb.hp = 1e9; step(G.insts, G.net, 1 / 60); }
         out.after = [A.get().players[1].sm, B.get().players[1].sm];
         G.run(1.5);
         out.cloud = [A.smokeN(), B.smokeN()];

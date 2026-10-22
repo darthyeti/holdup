@@ -5,12 +5,12 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 18,
-   "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 12,
-   "Hintertür (N) | Osttür (E) | Fluchttür (W) | Vordertür (S)": 12,
-   "Hintertür (N) | Westtür (W) | Fluchttür (E) | Vordertür (S)": 10,
-   "Hintertür (N) | Fluchttür (W) | Osttür (E) | Vordertür (S)": 16,
-   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 12
+   "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 10,
+   "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 5,
+   "Hintertür (N) | Osttür (E) | Fluchttür (W) | Vordertür (S)": 22,
+   "Hintertür (N) | Westtür (W) | Fluchttür (E) | Vordertür (S)": 22,
+   "Hintertür (N) | Fluchttür (W) | Osttür (E) | Vordertür (S)": 14,
+   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 7
   },
   "range": {
    "pathSV": [
@@ -18,7 +18,7 @@
     14
    ],
    "pathVE": [
-    20,
+    15,
     27
    ],
    "loot": [
@@ -438,63 +438,63 @@
     "seed": 5074,
     "flip": true,
     "hand": 16,
-    "auto": 15,
-    "hit": 12,
+    "auto": 16,
+    "hit": 14,
     "hit3": 15,
     "bySide": {
      "hand": {
       "S": 6,
-      "E": 3,
       "W": 3,
+      "E": 3,
       "N": 4
      },
      "auto": {
       "S": 7,
+      "E": 3,
       "W": 3,
-      "E": 2,
       "N": 3
      }
     },
     "doorsEqual": true,
     "anchors": {
      "hand": [
-      "4,7E",
-      "4,10E",
-      "4,5E"
+      "30,7W",
+      "30,10W"
      ],
      "auto": [
-      "3,7W",
-      "3,10W",
-      "3,5W"
+      "31,7E",
+      "31,10E",
+      "31,5E"
      ]
     },
     "slots": {
      "hand": {
       "W": [
-       11,
-       6,
-       1,
-       -4
+       7,
+       2,
+       -3,
+       -8
       ],
       "E": [
-       16,
-       21,
-       26,
-       31
+       12,
+       17,
+       22,
+       27
       ]
      },
      "auto": {
       "W": [
-       14,
-       9,
-       4,
-       -1
+       15,
+       10,
+       5,
+       0,
+       -5
       ],
       "E": [
-       19,
-       24,
-       29,
-       34
+       20,
+       25,
+       30,
+       35
       ]
      },
      "shiftW": [
@@ -504,26 +504,23 @@
       3
      ],
      "shiftE": [
+      8,
       3,
-      -2,
       -2,
       -2
      ]
     },
     "order": {
-     "hand": "SEWNSENS",
-     "auto": "SWENSWEN"
+     "hand": "SWENSWNS",
+     "auto": "SEWNSEWN"
     },
     "handMiss": [
-     "33,5W",
-     "26,-1N",
-     "15,-1N",
-     "33,11W"
+     "22,-1N",
+     "11,-1N"
     ],
     "autoExtra": [
-     "33,3E",
-     "28,-1N",
-     "11,14S"
+     "24,-1N",
+     "7,14S"
     ]
    },
    {
@@ -536,57 +533,57 @@
     "bySide": {
      "hand": {
       "S": 6,
-      "E": 3,
       "W": 3,
+      "E": 3,
       "N": 4
      },
      "auto": {
       "S": 6,
-      "W": 3,
       "E": 3,
+      "W": 3,
       "N": 4
      }
     },
     "doorsEqual": true,
     "anchors": {
      "hand": [
-      "3,7E",
-      "3,10E",
-      "3,5E"
+      "28,7W",
+      "28,10W"
      ],
      "auto": [
-      "2,7W",
-      "2,10W",
-      "2,5W"
+      "29,7E",
+      "29,10E",
+      "29,5E"
      ]
     },
     "slots": {
      "hand": {
       "W": [
+       9,
+       4,
+       -1,
+       -6
+      ],
+      "E": [
+       14,
+       19,
+       24,
+       29
+      ]
+     },
+     "auto": {
+      "W": [
        13,
        8,
        3,
-       -2
+       -2,
+       -7
       ],
       "E": [
        18,
        23,
        28,
        33
-      ]
-     },
-     "auto": {
-      "W": [
-       12,
-       7,
-       2,
-       -3
-      ],
-      "E": [
-       17,
-       22,
-       27,
-       32
       ]
      },
      "shiftW": [
@@ -596,21 +593,21 @@
       -1
      ],
      "shiftE": [
-      -1,
+      4,
       -1,
       -1,
       -1
      ]
     },
     "order": {
-     "hand": "SEWNSENS",
-     "auto": "SWENSWEN"
+     "hand": "SWENSWNS",
+     "auto": "SEWNSEWN"
     },
     "handMiss": [
-     "16,-1N"
+     "12,-1N"
     ],
     "autoExtra": [
-     "18,-1N"
+     "14,-1N"
     ]
    }
   ],
