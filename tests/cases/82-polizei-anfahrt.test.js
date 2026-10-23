@@ -106,13 +106,13 @@ module.exports = [
     },
   },
   {
-    name: 'Zerschiessen: Spielerkugeln treffen Streifenwagen, bei 0 HP explodiert er (Besatzung stirbt, Schaden und Kette), das Wrack bleibt, Gegnerkugeln gehen durch',
+    name: 'Zerschiessen: Spielerkugeln treffen Streifenwagen, bei 0 HP explodiert er (Besatzung stirbt, Schaden und Kette), das Wrack bleibt, Gegnerkugeln enden am Wagen ohne Schaden',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}; S('bank', 'classic', 6); const D = __dbg; D.spawnWave(); __run(14); D.spawnWave(); __run(14);
         const g = () => D.get(), o = {}, me = g().me; __run(20); const cars = g().pcs, c = cars.find(q => q.row === 0 && q.st === 'park' && q.side === 'E');
         const beh = cars.find(q => q.row === 1 && q.st === 'park' && q.side === 'E' && q.slot === c.slot + 4);
         o.beh = !!beh; c.crew = ['cop', 'cop']; c.ex = 1e9; const shoot = (own, k, dmg, ow) => { for (let j = 0; j < k; j++) g().bl.push({ id: 7000 + (shoot.n = (shoot.n || 0) + 1), x: c.x - 24 + j * 6, y: c.y - 60, vx: 0, vy: 720, l: .8, o: ow, own, d: dmg, dmg }); };
-        // Gegnerkugel geht durch (Wagen unversehrt)
+        // Gegnerkugel endet am Wagen (Wagen unversehrt)
         o.max = D.CFG.pol.car.hp; shoot(0, 1, 50, 0); __run(.2); o.gegner = c.hp;
         // ein Treffer
         const k0 = g().kills, st0 = me.st.k; shoot(0, 1, 50, 1); __run(.2); o.eins = c.hp;
@@ -121,7 +121,7 @@ module.exports = [
         me.x = c.x; me.y = c.y - 110; shoot(0, Math.ceil(o.max / 50) - 1, 50, 1); D.update(1 / 30); D.update(1 / 30); D.update(1 / 30);
         o.tot = [c.dead, c.hp, c.crew.length]; o.kills = [g().kills - k0, me.st.k - st0]; o.cop = [hp0, Math.round(cop.hp)]; o.beh = beh ? [bh0, Math.round(beh.hp), beh.dead] : null; o.boom = me.st.boom;
         o.feed = D.msgs().feed.find(f => /explodiert/.test(f));
-        // Wrack: Platz bleibt belegt, Kugel geht hindurch
+        // Wrack: Platz bleibt belegt, die Kugel endet am Wrack (solide, seit den Fahrzeugen im Raster)
         __run(1); const id = 7999; g().bl.push({ id, x: c.x, y: c.y - 60, vx: 0, vy: 720, l: .8, o: 1, own: 0, d: 50 }); D.update(1 / 30); D.update(1 / 30); o.durch = g().bl.some(b => b.id === id);
         o.platz = g().pcs.some(q => q === c);
         return o; })()`);
@@ -132,7 +132,7 @@ module.exports = [
       t.ok(r.cop[1] < r.cop[0], 'Beamter an der Tuer nimmt Schaden: ' + JSON.stringify(r.cop));
       t.ok(r.beh && r.beh[1] < r.beh[0], 'der Wagen dahinter (zweite Reihe) wird beschaedigt: ' + JSON.stringify(r.beh));
       t.ok(r.boom >= 1, 'zaehlt beim Schuetzen als gesprengt'); t.ok(/explodiert/.test(r.feed || ''), 'Meldung: ' + r.feed);
-      t.eq(r.durch, true, 'durch das Wrack fliegt die Kugel'); t.eq(r.platz, true, 'das Wrack steht weiter auf dem Platz');
+      t.eq(r.durch, false, 'das Wrack faengt die Kugel'); t.eq(r.platz, true, 'das Wrack steht weiter auf dem Platz');
     },
   },
   {

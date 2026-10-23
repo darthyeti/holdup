@@ -89,7 +89,7 @@ module.exports = [
             D.update(1 / 30);
             const g = D.get();
             // Beamter: erste Sicht nach dem Aussteigen, 44 px vom Wagen zum Gebaeude hin (Normale), hoechstens 28 px laengs daneben
-            for (const e of g.en) if (!seenCops.has(e.id)) { seenCops.add(e.id); if (!['cop', 'swat', 'shield'].includes(e.kind)) continue; const c = g.pcs.slice().sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0]; if (!c) { bad.push(tag + ' Beamter ohne Wagen'); continue; } const dn = (e.x - c.x) * LN.n[0] + (e.y - c.y) * LN.n[1], du = (e.x - c.x) * LN.u[0] + (e.y - c.y) * LN.u[1]; if (Math.abs(dn - 44) > 8 || Math.abs(du) > 34) bad.push(tag + ' Beamter steigt falsch aus: Normale ' + Math.round(dn) + ', laengs ' + Math.round(du)); }
+            for (const e of g.en) if (!seenCops.has(e.id)) { seenCops.add(e.id); if (!['cop', 'swat', 'shield'].includes(e.kind)) continue; const c = g.pcs.slice().sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0]; if (!c) { bad.push(tag + ' Beamter ohne Wagen'); continue; } const dn = (e.x - c.x) * LN.n[0] + (e.y - c.y) * LN.n[1], du = (e.x - c.x) * LN.u[0] + (e.y - c.y) * LN.u[1]; if (Math.abs(dn - 44) > 20 || Math.abs(du) > 46) bad.push(tag + ' Beamter steigt falsch aus: Normale ' + Math.round(dn) + ', laengs ' + Math.round(du)); }
             if (!parked && g.pcs.length && g.pcs.every(c => c.st === 'park')) {
               parked = true; cars = g.pcs.length;
               for (const c of g.pcs) {

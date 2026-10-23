@@ -1,5 +1,5 @@
 // Fahndungslevel (Tills Idee, Schritt 1 Trockenlauf, docs/spielsystem.md): Teamwert der Serie (SESSION.heat, Punkte 0 bis 100, Stufe 0 bis 5), gebucht am Auftragsende aus generischen Groessen
-// (heatBook), im Ende-Paket als res.fh, im Coop vom Host in go, rst und ros (Feld h, VER 25). Der Trockenlauf wirkt nicht auf die Polizei. Das Badge steht in jedem Bildschirm, auch in Shop und Auftragswahl.
+// (heatBook), im Ende-Paket als res.fh, im Coop vom Host in go, rst und ros (Feld h, VER 26). Der Trockenlauf wirkt nicht auf die Polizei. Das Badge steht in jedem Bildschirm, auch in Shop und Auftragswahl.
 // Hinweis: Alle Instanzen einer Seite teilen ein SESSION-Objekt, deshalb prueft der Coop-Test die gesendeten Nachrichten und das Verhalten der Handler, nicht getrennte Staende je Instanz.
 const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino'];
 
