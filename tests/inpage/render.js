@@ -27,6 +27,8 @@
     for (const q of (L.goods || []).concat(L.vit || [])) x.strokeRect(q.rc[0], q.rc[1], q.rc[2], q.rc[3]);
     x.lineWidth = 3; x.strokeStyle = '#ff0000'; (L.lasers || []).forEach(q => { x.beginPath(); x.moveTo(q[0] * T, q[1] * T); x.lineTo(q[2] * T, q[3] * T); x.stroke(); });
     x.lineWidth = 2; x.strokeStyle = '#ff7700'; (L.pumps || []).forEach(q => x.strokeRect(q.x * T + 2, q.y * T + 2, T - 4, T - 4));
+    // Parkende Autos, die als Wagen ins Spiel kommen (LAY.decorReal, nicht in die Karte gemalt): orange Kasten
+    x.lineWidth = 2; x.strokeStyle = '#ffb000'; (L.decorReal || []).forEach(q => { const hx = ln.A === 'x' ? 64 : 32, hy = ln.A === 'x' ? 32 : 64; x.strokeRect(q.x - hx + 2, q.y - hy + 2, 2 * hx - 4, 2 * hy - 4); });
     // Strasse: Wagenplaetze blau (Zielpunkt als Kreuz, Aussteigepunkt als Kreis), Fluchtwagen-Strecke gruen, Fluchtzone gruen gefuellt, Posten rot mit Blickrichtung
     x.lineWidth = 1.5; x.strokeStyle = '#4aa8ff';
     ln.slots.forEach(q => { const xs = q.cells.map(c => c[0]), ys = q.cells.map(c => c[1]); x.strokeRect(Math.min(...xs) * T, Math.min(...ys) * T, (Math.max(...xs) - Math.min(...xs) + 1) * T, (Math.max(...ys) - Math.min(...ys) + 1) * T); x.beginPath(); x.arc((q.curb[0] + .5) * T, (q.curb[1] + .5) * T, 4, 0, 6.3); x.stroke(); });

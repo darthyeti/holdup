@@ -3,7 +3,7 @@
 //   node render.js casino Reihen museum Kabinette gas 5
 // Seite (N, E, W, S, mit + dahinter auch laengs der Strasse gespiegelt) legt die Strasse mit turnLayout auf eine andere Seite: node render.js jewel 5 E jewel 5 W+
 // Mit einem Namen (zum Beispiel Reihen, Ring, Insel, Klassik) nimmt es den ersten Seed, dessen LAY.hall so heisst. Ausgabe nach $HOLDUP_OUT (Standard: <Temp-Ordner>/holdup-render).
-// Farben: Wachen rot, gelb, gruen, tuerkis (je Route, dicker Punkt = Start), Wachwechsel magenta, Manager orange, Kameras rosa, Beute tuerkis umrandet, Laser rot, Zapfsaeulen orange, Spielerstart weiss.
+// Farben: Wachen rot, gelb, gruen, tuerkis (je Route, dicker Punkt = Start), Wachwechsel magenta, Manager orange, Kameras rosa, Beute tuerkis umrandet, Laser rot, Zapfsaeulen orange, parkende Autos (echte Wagen, LAY.decorReal) gelborange umrandet, Spielerstart weiss.
 const fs = require('fs'), path = require('path'), os = require('os');
 const { launch, openGame, loadInpage } = require('./lib');
 const OUT = process.env.HOLDUP_OUT || path.join(os.tmpdir(), 'holdup-render');
