@@ -23,7 +23,7 @@ module.exports = [
         try {
           for (const [sc, seeds, turns] of [['bank', [5017, 5031, 5044, 5058, 5071], ['S']], ['jewel', [11, 12, 13, 14], ['S', 'E+', 'W', 'N+']], ['gas', [21, 22, 23, 24], ['S', 'E+', 'W', 'N+']], ['museum', [31, 32, 33, 34], ['S', 'E+', 'W', 'N+']], ['casino', [41, 42, 43, 44], ['S', 'E+', 'W', 'N+']]])
             for (const turn of turns) for (const seed of seeds) {
-              painted = 0; S(sc, seed, turn); const L = D.LAY(), W = D.world(), LN = D.LANE(), cars = D.get().pcs.filter(c => c.civ), bad = [];
+              painted = 0; S(sc, seed, turn); const L = D.LAY(), W = D.world(), LN = D.LANE(), cars = D.get().cars.filter(c => c.civ), bad = [];
               if (cars.length !== L.decorReal.length) bad.push('Wagen ' + cars.length + ' statt ' + L.decorReal.length);
               if (painted !== L.decor.length - L.decorReal.length) bad.push('gemalt ' + painted + ' statt ' + (L.decor.length - L.decorReal.length));
               const seen = new Set(); for (const c of cars) { if (!c.cells || c.cells.length !== 8) bad.push('Fussabdruck ' + (c.cells || []).length); for (const q of c.cells || []) { const k = q[0] + ',' + q[1]; if (seen.has(k)) bad.push('zwei Autos auf ' + k); seen.add(k); if (!W.isSol(q[0], q[1]) || !W.isBul(q[0], q[1])) bad.push('Kachel ' + k + ' nicht solide oder kugeldurchlaessig'); } }
@@ -47,7 +47,7 @@ module.exports = [
     name: 'Autos: Spielerkugeln machen Schaden, Gegnerkugeln nicht, bei 0 HP explodiert das Auto (Radius, Schaden, Kettenreaktion) und bleibt als solides Wrack, das Kugeln ohne Schaden faengt',
     timeout: 120000,
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('gas', 21, 'S'), o = {}; D.startHeist(false, D.get().me); const me = D.get().me, cars = D.get().pcs.filter(c => c.civ), c = cars[0], c2 = cars[1], R = D.CFG.pol.car;
+      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('gas', 21, 'S'), o = {}; D.startHeist(false, D.get().me); const me = D.get().me, cars = D.get().cars.filter(c => c.civ), c = cars[0], c2 = cars[1], R = D.CFG.pol.car;
         const fire = (car, dmg, own) => { D.get().bl.push({ id: 9000 + Math.random() * 1e6 | 0, x: car.x - 80, y: car.y, vx: 720, vy: 0, l: .8, o: own ? 1 : 0, own: 0, d: dmg, ov: false }); for (let i = 0; i < 10; i++) D.update(1 / 30); };
         o.hp0 = c.hp; o.max = D.CFG.dec.hp;
         fire(c, 50, false); o.afterEnemy = c.hp;                              // Gegnerkugel: kein Schaden
@@ -78,7 +78,7 @@ module.exports = [
     name: 'Autos: Abbau (E halten): ziviles Auto 2 Material, Wrack 1, auch bei vollem Fach (der Rest verfaellt), nur im Ueberfall, ein heiler Streifenwagen nicht, ein Wrack der Polizei schon, die Kacheln sind danach frei',
     timeout: 180000,
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('gas', 21, 'S'), o = {}, W = D.world(); const cars = () => D.get().pcs.filter(c => c.civ);
+      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('gas', 21, 'S'), o = {}, W = D.world(); const cars = () => D.get().cars.filter(c => c.civ);
         const me0 = D.get().me; o.phase1 = D.carMi(cars()[0]).ok(me0);                       // vor dem Ueberfall nicht
         D.startHeist(false, D.get().me); const me = D.get().me; me.hp = 1e9;
         const work = (c, max) => { D.keys.e = true; let n = 0; while (!c.gone && n < (max || 400)) { me.x = c.x; me.y = c.y + 60; D.update(1 / 30); n++; } D.keys.e = false; return +(n / 30).toFixed(1); };
@@ -98,7 +98,7 @@ module.exports = [
         me.x = c.x; me.y = c.y + 200; me.mat = 0; me.units = 0; o.dead4 = c.dead; o.cnt4 = D.carMi(c).cnt; o.t4 = work(c); o.mat4 = me.mat; o.gone4 = c.gone;
         // 6) Streifenwagen: heil nicht, als Wrack ja
         D.CFG.policeAt = 1; D.CFG.policeForced = 1; D.spawnWave(); let police = null;
-        for (let i = 0; i < 30 * 40 && !police; i++) { me.x = D.LAY().spawn.x; me.y = D.LAY().spawn.y; D.update(1 / 30); police = D.get().pcs.find(q => !q.civ && q.st === 'park'); }
+        for (let i = 0; i < 30 * 40 && !police; i++) { me.x = D.LAY().spawn.x; me.y = D.LAY().spawn.y; D.update(1 / 30); police = D.get().cars.find(q => !q.civ && q.st === 'park'); }
         o.police = !!police; if (police) { o.okPolice = D.carMi(police).ok(me); me.x = police.x; me.y = police.y + 60;
           for (let k = 0; k < 8 && !police.dead; k++) { D.get().bl.push({ id: 7100 + k, x: police.x - 80, y: police.y, vx: 720, vy: 0, l: .8, o: 1, own: 0, d: 60, ov: false }); for (let i = 0; i < 8; i++) D.update(1 / 30); }
           me.mat = 0; me.units = 0; o.deadPolice = police.dead; o.okWreck = D.carMi(police).ok(me); o.cntWreck = D.carMi(police).cnt; if (police.dead) { o.tp = work(police); o.matPolice = me.mat; o.gonePolice = police.gone; } }
@@ -122,9 +122,9 @@ module.exports = [
     timeout: 180000,
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('jewel', 11, 'E+'), o = {}; D.CFG.policeAt = 1; D.CFG.policeForced = 1; D.CFG.snp.from = 1; D.CFG.snp.car = 1; const L = D.LAY();
-        D.startHeist(false, D.get().me); D.get().me.hp = 1e9; const civ0 = D.get().pcs.filter(c => c.civ).length;
+        D.startHeist(false, D.get().me); D.get().me.hp = 1e9; const civ0 = D.get().cars.filter(c => c.civ).length;
         for (let w = 0; w < 4; w++) { D.spawnWave(); for (let i = 0; i < 30 * 12; i++) { const m = D.get().me; m.hp = 1e9; m.x = L.spawn.x; m.y = L.spawn.y; D.update(1 / 30); } }
-        const pcs = D.get().pcs; o.civ0 = civ0; o.civ = pcs.filter(c => c.civ).length; o.police = pcs.filter(c => !c.civ).length; o.crewInCiv = pcs.filter(c => c.civ && c.crew && c.crew.length).length;
+        const pcs = D.get().cars; o.civ0 = civ0; o.civ = pcs.filter(c => c.civ).length; o.police = pcs.filter(c => !c.civ).length; o.crewInCiv = pcs.filter(c => c.civ && c.crew && c.crew.length).length;
         o.parked = pcs.filter(c => !c.civ && c.st === 'park').length; o.inCiv = pcs.filter(c => !c.civ).some(c => pcs.some(q => q.civ && Math.hypot(q.x - c.x, q.y - c.y) < 44));
         return o; })()`);
       t.eq(r.civ, r.civ0, 'die zivilen Autos bleiben (alle vier Wellen lang): ' + r.civ0 + ' vorher, ' + r.civ + ' nachher');
@@ -141,9 +141,9 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const o = {}, G = CT.mkGame('gas', 21, 2, 30, 0), A = G.A, B = G.insts[1];
         A.CFG.policeAt = 9999; A.CFG.policeForced = 9999; B.CFG.policeAt = 9999;
-        const civ = d => d.get().pcs.filter(c => c.civ), grid = d => d.world().M.join('\n');
+        const civ = d => d.get().cars.filter(c => c.civ), grid = d => d.world().M.join('\n');
         o.civA = civ(A).length; o.civB = civ(B).length; o.gridEq = grid(A) === grid(B);
-        o.fields = A.get().pcs.length > 0;
+        o.fields = A.get().cars.length > 0;
         A.startHeist(false, A.get().players[0]); G.run(1);
         const c = civ(A)[0]; o.sameId = !!civ(B).find(q => q.id === c.id);
         A.get().players.forEach(p => { p.hp = 1e9; p.x = 60; p.y = 60; });

@@ -712,8 +712,8 @@
     "flip": false,
     "hand": 16,
     "auto": 12,
-    "hit": 13,
-    "hit3": 14,
+    "hit": 12,
+    "hit3": 13,
     "bySide": {
      "hand": {
       "S": 6,
@@ -788,11 +788,14 @@
      "auto": "SEWNSEWN"
     },
     "handMiss": [
+     "4,15S",
      "14,15S",
      "-1,12W",
      "2,15S"
     ],
-    "autoExtra": []
+    "autoExtra": [
+     "4,18S"
+    ]
    }
   ],
   "museum": [

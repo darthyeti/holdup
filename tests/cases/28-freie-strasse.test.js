@@ -88,8 +88,8 @@ module.exports = [
             if (G.vanArr && Math.abs(G.vanX - LN.van.stop) <= 2 && !me.out) { const q = LN.exit.cells[Math.floor(LN.exit.cells.length / 2)]; me.x = q[0] * T + 16; me.y = q[1] * T + 16; if (vanStopT == null) { vanStopT = i; D.draw(); drew++; } }
             D.update(1 / 30);
             const g = D.get();
-            // Beamter: erste Sicht nach dem Aussteigen, 44 px vom Wagen zum Gebaeude hin (Normale), hoechstens 28 px laengs daneben
-            for (const e of g.en) if (!seenCops.has(e.id)) { seenCops.add(e.id); if (!['cop', 'swat', 'shield'].includes(e.kind)) continue; const c = g.pcs.slice().sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0]; if (!c) { bad.push(tag + ' Beamter ohne Wagen'); continue; } const dn = (e.x - c.x) * LN.n[0] + (e.y - c.y) * LN.n[1], du = (e.x - c.x) * LN.u[0] + (e.y - c.y) * LN.u[1]; if (Math.abs(dn - 44) > 20 || Math.abs(du) > 46) bad.push(tag + ' Beamter steigt falsch aus: Normale ' + Math.round(dn) + ', laengs ' + Math.round(du)); }
+            // Beamter: erste Sicht nach dem Aussteigen, 44 px vom Wagen zum Gebaeude hin (Normale), hoechstens 28 px laengs daneben (steht ein parkendes ziviles Auto dicht dabei, weicht der Ausstieg aus: dann keine Pruefung)
+            for (const e of g.en) if (!seenCops.has(e.id)) { seenCops.add(e.id); if (!['cop', 'swat', 'shield'].includes(e.kind)) continue; const c = g.pcs.slice().sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0]; if (!c) { bad.push(tag + ' Beamter ohne Wagen'); continue; } const dn = (e.x - c.x) * LN.n[0] + (e.y - c.y) * LN.n[1], du = (e.x - c.x) * LN.u[0] + (e.y - c.y) * LN.u[1]; if ((Math.abs(dn - 44) > 20 || Math.abs(du) > 46) && !(g.cars || []).some(z => z.civ && Math.hypot(z.x - e.x, z.y - e.y) < 110)) bad.push(tag + ' Beamter steigt falsch aus: Normale ' + Math.round(dn) + ', laengs ' + Math.round(du)); }
             if (!parked && g.pcs.length && g.pcs.every(c => c.st === 'park')) {
               parked = true; cars = g.pcs.length;
               for (const c of g.pcs) {

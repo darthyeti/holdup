@@ -88,12 +88,12 @@ module.exports = [
         const w0 = d.SESSION.wallet; MT.click(d, 'buy:0'); o.clickBuy = w0 - d.SESSION.wallet;
         const items = d.CFG.shop.items, keys = '1234567890-';
         for (let i = 1; i < items.length; i++) { if (i < keys.length) k(keys[i]); else MT.click(d, 'buy:' + i); }   // die ersten elf per Taste, die neuen per Klick
-        o.bought = items.map(it => it.r ? true : it.c ? (d.SESSION.cons[it.k] | 0) > 0 : !!d.SESSION.own[it.k]);
+        o.bought = items.map(it => it.r || it.l ? true : it.c ? (d.SESSION.cons[it.k] | 0) > 0 : !!d.SESSION.own[it.k]);
         MT.click(d, 'next'); o.next = [d.state().scr, d.SC.from]; k('Escape'); o.back = d.state().scr;
         k('Enter'); k('Enter'); o.go = d.state().scr; o.round = d.SESSION.round;
         return o;
       });
-      t.eq(r.scr, 'shop'); t.eq(r.n, 17, 'siebzehn Posten als Kacheln'); t.eq(r.focus, 'next', 'Standardfokus Weiter');
+      t.eq(r.scr, 'shop'); t.eq(r.n, 18, 'achtzehn Posten als Kacheln (der letzte ist der Anwalt)'); t.eq(r.focus, 'next', 'Standardfokus Weiter');
       t.ok(r.clickBuy > 0, 'Klick kauft'); t.ok(r.bought.every(Boolean), 'alles gekauft: ' + JSON.stringify(r.bought));
       t.eq(r.next, ['mission', 'shop'], 'Weiter oeffnet die Auftragswahl'); t.eq(r.back, 'shop', 'Esc zurueck in den Shop');
       t.eq(r.go, 'play', 'Auftrag starten beginnt den naechsten Auftrag');

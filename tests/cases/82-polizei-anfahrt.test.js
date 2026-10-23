@@ -161,7 +161,8 @@ module.exports = [
         const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1; A.CFG.policeForced = 1;
         const god = s => { for (let i = 0; i < Math.round(s * 60); i++) { A.get().players.forEach(p => { p.hp = 1e9; }); step(G.insts, G.net, 1 / 60); } };
         A.startHeist(false, A.get().players[0]); god(1); A.spawnWave(); god(14);
-        const c = A.get().pcs.find(q => q.st === 'park' && q.row === 0); const bc = () => B.get().pcs.find(q => q.id === c.id);
+        // kein parkendes ziviles Auto in der Schusslinie des Spielers
+        const c = A.get().pcs.find(q => q.st === 'park' && q.row === 0 && !A.get().cars.some(z => z.civ && Math.hypot(z.x - q.x, z.y - q.y) < 150)); const bc = () => B.get().pcs.find(q => q.id === c.id);
         A.get().bl.push({ id: 6001, x: c.x - 20, y: c.y - 60, vx: 0, vy: 720, l: .8, o: 1, own: 0, d: 50 }); god(.6);
         out.max = A.CFG.pol.car.hp; out.schaden = [c.hp, bc() && bc().hp, bc() && bc().dead];
         A.get().bl.push({ id: 6002, x: c.x, y: c.y - 60, vx: 0, vy: 720, l: .8, o: 1, own: 0, d: 999 }); god(.8);

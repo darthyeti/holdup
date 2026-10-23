@@ -76,7 +76,7 @@ module.exports = [
         }
         // Kuenstlicher Fall: ein Beutestueck, das nicht passt, liegt naeher als eine Kamera; ein passendes liegt noch naeher
         D.setScenario('bank'); D.buildLay(D.layoutFor(4242)); D.startHeist(true);
-        const G = D.get(), M = G.me, its = G.its; M.x = 500; M.y = 500;
+        const G = D.get(), M = G.me, its = G.its; M.x = 500; M.y = 500; G.cars.filter(c => c.civ).forEach(c => { c.x = -9999; c.y = -9999; });   // zivile Autos (Abbau-Objekte) nicht in Reichweite
         const mk = (tp, dx, fit) => ({ t: tp, x: 500 + dx, y: 500, r: 60, pr: 0, ok: () => true, fit: fit ? () => fit() : undefined, lab: () => tp, dur: () => 1, act() {} });
         const loot = mk('good', 5, () => false), cam = mk('cam', 40), lootOk = mk('good', 2, () => true);
         its.push(loot, cam);

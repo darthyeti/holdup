@@ -126,6 +126,8 @@ Transporter (docs/szenarien.md): Schritt B bis D und weitere Karten. Die Besatzu
 
 Menüs, Serie, Langzeit (docs/ideen-und-planung.md): Auftragsbörse (Menü Stufe 5), Karriere-Serie mit Rang und Nebenzielen (Entwurf), Touch für iPad und iPhone (Entwurf), Langzeitmotivation.
 
+Nach dem Merge der Parkenden Autos auf dem Mac (einmalig): `cd tests && node run.js --update "ohne Generator" "Pixel: Hauptmenue" "Pixel: Coop-Lobby"` (Tankstellen-Schnappschuss `gas-basis` und die lokalen Pixel-Referenzen der Menüs, Gründe in docs/tests-und-messwerte.md), danach `npm test`.
+
 Fahndungslevel (docs/spielsystem.md, Serie, Shop und Ausrüstung): Schritt 1 (Trockenlauf) ist gebaut und wartet auf Tills Test. Offen: Schritt 2, die Wirkung auf die Polizei über `lgA`/`lgM` und den Eskalationsvorsprung auf `swatFrom`, `shield.from`, `snp.from`, `gren.from` (Schalter `CFG.fahndung.on`, ersetzt `series.wave` und `series.at`, `CFG.rank` bleibt an `SESSION.round`), dazu die Bot-Messung je Stufe (Bot-Option `heat`, Bank und Tankstelle, 20 Seeds je Zelle, Vergleich mit den Rundenwerten 90 / 55 / 5 %: Stufe 5 darf nicht härter sein als etwa Auftrag 4 bis 5). Schritt 3: Auszeichnungen Heißsporn und Phantom (braucht Heiß-Zähler je Spieler), Zuordnung der Gründe je Spieler in der Tafel, Verknüpfung mit der Auftragsbörse. Der Wert lebt nur im Speicher, ein Neuladen setzt ihn zurück (wie das Konto).
 
 Struktur (docs/ideen-und-planung.md): Doku aufteilen und Tests festhalten sind erledigt, das Auslagern von Code ist begonnen (`js/ui.js`), als Nächstes `SND`, `peerTransport` und die Generatoren.
