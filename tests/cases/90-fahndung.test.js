@@ -1,5 +1,6 @@
 // Fahndungslevel (Tills Idee, Schritt 1 Trockenlauf, docs/spielsystem.md): Teamwert der Serie (SESSION.heat, Punkte 0 bis 100, Stufe 0 bis 5), gebucht am Auftragsende aus generischen Groessen
 // (heatBook), im Ende-Paket als res.fh, im Coop vom Host in go, rst und ros (Feld h, VER 26). Der Trockenlauf wirkt nicht auf die Polizei. Das Badge steht in jedem Bildschirm, auch in Shop und Auftragswahl.
+// Dazu (23. Oktober 2026, Tills Coop-Test): Zurueckgelassene heizen an (left), der Anwalt im Shop senkt die Fahndung (law, VER 27: Nachrichten law und lawr, Feld l in ros).
 // Hinweis: Alle Instanzen einer Seite teilen ein SESSION-Objekt, deshalb prueft der Coop-Test die gesendeten Nachrichten und das Verhalten der Handler, nicht getrennte Staende je Instanz.
 const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino'];
 
@@ -37,6 +38,10 @@ module.exports = [
         o.loud = B(40, { win: true, phase: 2, kills: 8, civ: 1, waves: 4, goal: true });
         o.caps = B(0, { win: true, phase: 2, kills: 100, civ: 10, waves: 20, goal: false });
         o.soft = B(0, { win: false, phase: 2, kills: 2, civ: 0, waves: 1, goal: false });
+        o.left2 = B(0, { win: true, phase: 2, kills: 3, civ: 0, waves: 3, left: 2, goal: false });
+        o.left10 = B(0, { win: true, phase: 2, kills: 3, civ: 0, waves: 3, left: 10, goal: false });
+        o.left0 = B(0, { win: true, phase: 2, kills: 3, civ: 0, waves: 3, left: 0, goal: false });
+        o.leftQuiet = B(50, Object.assign({}, quiet, { left: 1 }));
         o.sum = x => x.items.reduce((s, q) => s + q[1], 0);
         // Szenario-Unabhaengigkeit: dieselbe Eingabe ergibt auf jeder Karte dasselbe Ergebnis
         const ref = JSON.stringify(B(30, { win: true, phase: 2, kills: 5, civ: 0, waves: 3, goal: true })), diff = [];
@@ -59,6 +64,13 @@ module.exports = [
       t.eq(r.caps.to, Math.min(F.max, r.sumCaps), 'Obergrenze max');
       t.ok(!r.soft.items.some(q => q[0] === 'Lautlos entkommen'), 'ohne Sieg gibt es keinen Lautlos-Abzug');
       t.eq(r.diff, [], 'dieselbe Eingabe, dasselbe Ergebnis auf allen Karten (kein Szenario fliesst ein)');
+      const lf = x => (x.items.find(q => q[0].startsWith('Zurückgelassen')) || [])[1];
+      t.eq(lf(r.left2), 2 * F.left, 'zwei Zurueckgelassene: left je Spieler');
+      t.eq(lf(r.left10), F.leftMax, 'Deckel leftMax');
+      t.eq(lf(r.left0), undefined, 'ohne Zurueckgelassene kein Posten');
+      t.eq(lf(r.leftQuiet), F.left, 'auch ein lautloser Auftrag mit einem Zurueckgelassenen heizt an');
+      t.ok(r.leftQuiet.to > r.quiet.to, 'Zurueckgelassene machen den lautlosen Auftrag heisser');
+      t.ok(F.quiet < 0 && -F.quiet < F.loud + F.drift + 10, 'Lautlos senkt, aber weniger als zwei Ueberfaelle anheizen (Tills Coop-Test: vorher zu stark)');
     },
   },
   {
@@ -144,6 +156,115 @@ module.exports = [
       t.eq(r.heatAfter, r.fh.to, 'Host: SESSION.heat ist der gebuchte Wert');
       t.ok(r.rstH.length >= 2 && r.rstH.every(h => h === r.fh.to), 'rst traegt den neuen Wert: ' + JSON.stringify(r.rstH));
       t.eq(r.clamp, { hi: 100, lo: 0, junk: 0, ok: 42, none: 42 }, 'Client bereinigt h (zu gross, negativ, Unsinn), ohne h bleibt der Stand');
+    },
+  },
+  {
+    name: 'Fahndung: Coop, wer nicht entkommt, heizt an (gefasst oder ausgefallen), ein Verbindungsabbruch nicht',
+    timeout: 120000,
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(() => {
+        const run = (flag) => {
+          const G = CT.mkGame('bank', 321, 3), A = G.A, P = A.get().players;
+          A.SESSION.heat = 40; A.SESSION.round = 2;
+          if (flag === 'gone') P[2].gone = true;                         // zurueckgelassen (gefasst)
+          if (flag === 'dead') P[2].dead = true;                         // zurueckgelassen (tot)
+          if (flag === 'dc') { P[2].gone = true; P[2].dc = true; }       // Verbindungsabbruch
+          P[0].units = 1; P[0].loot = 20000; P[1].units = 1; P[1].loot = 20000;
+          G.run(5);
+          const e = A.get().ended;
+          return e && e.fh ? { items: e.fh.items.map(q => q[0] + ':' + q[1]), to: e.fh.to } : 'kein Ende';
+        };
+        return { none: run(null), gone: run('gone'), dead: run('dead'), dc: run('dc') };
+      });
+      const has = x => typeof x !== 'string' && x.items.some(q => q.startsWith('Zurückgelassen'));
+      t.ok(typeof r.none !== 'string', 'Auftrag endet (alle draussen): ' + JSON.stringify(r.none));
+      t.ok(!has(r.none), 'wenn alle entkommen, kein Zurueckgelassen-Posten: ' + JSON.stringify(r.none));
+      t.ok(has(r.gone), 'gefasst zaehlt: ' + JSON.stringify(r.gone));
+      t.ok(has(r.dead), 'tot zaehlt: ' + JSON.stringify(r.dead));
+      t.ok(!has(r.dc), 'Verbindungsabbruch zaehlt nicht: ' + JSON.stringify(r.dc));
+      t.ok(r.gone.to > r.none.to, 'mit einem Zurueckgelassenen ist die Fahndung hoeher');
+    },
+  },
+  {
+    name: 'Fahndung: Anwalt im Shop (Solo): Preis waechst mit der Stufe, senkt um cut, einmal je Besuch, Zustaende, Taste a, Reset nach dem Auftrag',
+    timeout: 120000,
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(() => {
+        const o = {}, d = MT.solo(null, 's'), F = d.CFG.fahndung, idx = d.CFG.shop.items.findIndex(x => x.k === 'law'), it = d.CFG.shop.items[idx];
+        o.idx = idx; o.price = [0, 20, 40, 60, 80, 100].map(h => { d.SESSION.heat = h; return d.lawCost(); });
+        d.SESSION.round = 3; d.SESSION.heat = 65; d.SESSION.wallet = 30000; d.SESSION.law = false; d.openShop();
+        o.state0 = d.shopState(it);
+        d.shopBuy(idx); o.after1 = { heat: d.SESSION.heat, wallet: d.SESSION.wallet, law: d.SESSION.law, state: d.shopState(it) };
+        d.shopBuy(idx); o.after2 = { heat: d.SESSION.heat, wallet: d.SESSION.wallet };           // zweiter Versuch: nichts
+        d.SESSION.law = false; d.SESSION.heat = 0; o.noNeed = d.shopState(it); d.shopBuy(idx); o.noNeedHeat = d.SESSION.heat;
+        d.SESSION.heat = 65; d.SESSION.wallet = 1000; o.poor = d.shopState(it); d.shopBuy(idx); o.poorAfter = { heat: d.SESSION.heat, wallet: d.SESSION.wallet };
+        d.SESSION.heat = 10; d.SESSION.wallet = 30000; d.SESSION.law = false; d.shopBuy(idx); o.floor = d.SESSION.heat;           // nie unter 0
+        // Taste a im Shop
+        d.SESSION.heat = 65; d.SESSION.wallet = 30000; d.SESSION.law = false;
+        const tile = d.ui().tiles().find(q => q.id === 'buy:' + idx); o.tile = !!tile;
+        MT.k(d, 'a'); o.keyA = { heat: d.SESSION.heat, law: d.SESSION.law };
+        // naechster Auftrag zu Ende: der Anwalt ist wieder frei
+        d.SESSION.heat = 65; d.SESSION.law = true;
+        MT.click(d, 'next'); MT.click(d, 'start'); MT.adv(d, 1);
+        d.get().players[0].units = 1; d.get().players[0].loot = 20000; MT.adv(d, 4);
+        o.afterJob = { law: d.SESSION.law, ended: !!d.get().ended };
+        o.cut = F.law.cut; o.base = F.law.base; o.perLv = F.law.perLv;
+        return o;
+      });
+      t.ok(r.idx >= 0, 'Anwalt steht im Katalog');
+      t.eq(r.price, [0, 1, 2, 3, 4, 5].map(l => r.base + r.perLv * l), 'Preis waechst mit der Stufe (base plus perLv je Stufe)');
+      t.eq(r.state0, 'kaufen', 'bei Fahndung und genug Geld: kaufen');
+      t.eq(r.after1, { heat: 65 - r.cut, wallet: 30000 - (r.base + r.perLv * 3), law: true, state: 'beauftragt' }, 'senkt um cut, kostet den Preis der alten Stufe, danach beauftragt');
+      t.eq(r.after2, { heat: 65 - r.cut, wallet: 30000 - (r.base + r.perLv * 3) }, 'einmal je Besuch: der zweite Versuch aendert nichts');
+      t.eq([r.noNeed, r.noNeedHeat], ['kein Bedarf', 0], 'ohne Fahndung kein Bedarf, nichts passiert');
+      t.eq([r.poor, r.poorAfter], ['zu teuer', { heat: 65, wallet: 1000 }], 'zu wenig Geld: zu teuer, nichts passiert');
+      t.eq(r.floor, 0, 'die Fahndung faellt nie unter 0');
+      t.ok(r.tile, 'Kachel buy:<Anwalt> existiert');
+      t.eq(r.keyA, { heat: 65 - r.cut, law: true }, 'Taste a beauftragt den Anwalt');
+      t.ok(r.afterJob.ended && r.afterJob.law === false, 'nach dem naechsten Auftrag ist der Anwalt wieder frei (law zurueckgesetzt)');
+    },
+  },
+  {
+    name: 'Fahndung: Anwalt im Coop (Client bucht ueber den Host, Host bucht selbst, zweiter Versuch wird abgelehnt, Nachrichten law, lawr, ros)',
+    timeout: 120000,
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(() => {
+        const G = CT.mkGame('bank', 321, 3), A = G.A, B = G.insts[1], C = G.insts[2], o = { log: [], up: [] }, idx = A.CFG.shop.items.findIndex(x => x.k === 'law'), cut = A.CFG.fahndung.law.cut;
+        A.NET.conns.forEach(c => { const s = c.send; c.send = m => { o.log.push(m); return s.call(c, m); }; });
+        const bs = B.NET.conn.send; B.NET.conn.send = m => { o.up.push(m); return bs.call(B.NET.conn, m); };
+        const set = (h, w, l) => { A.SESSION.heat = h; A.SESSION.wallet = w; A.SESSION.law = l; };
+        // 1) Client bucht
+        set(65, 30000, false); B.openShop(); o.logStart1 = o.log.length;
+        B.shopBuy(idx); G.run(1);
+        o.client = { heat: A.SESSION.heat, wallet: A.SESSION.wallet, law: A.SESSION.law, sent: o.up.filter(m => m.t === 'law').length, lawr: o.log.slice(o.logStart1).filter(m => m.t === 'lawr').map(m => [m.ok, m.p]), ros: o.log.slice(o.logStart1).filter(m => m.t === 'ros').map(m => [m.h, m.l]) };
+        // 2) zweiter Versuch ueber die Taste: Zustand beauftragt, es geht keine Nachricht raus
+        const n0 = o.up.filter(m => m.t === 'law').length; B.shopBuy(idx); G.run(.5);
+        o.again = { sent: o.up.filter(m => m.t === 'law').length - n0, heat: A.SESSION.heat, wallet: A.SESSION.wallet };
+        // 3) Rennen: ein zweiter Client schickt trotzdem law, der Host lehnt ab, kein Abzug
+        o.logStart3 = o.log.length; C.NET.conn.send({ t: 'law' }); G.run(1);
+        o.race = { lawr: o.log.slice(o.logStart3).filter(m => m.t === 'lawr').map(m => [m.ok, m.p]), heat: A.SESSION.heat, wallet: A.SESSION.wallet };
+        // 4) Host bucht selbst, die Clients bekommen h und l
+        set(65, 30000, false); A.openShop(); o.logStart4 = o.log.length; A.shopBuy(idx); G.run(1);
+        o.host = { heat: A.SESSION.heat, wallet: A.SESSION.wallet, law: A.SESSION.law, ros: o.log.slice(o.logStart4).filter(m => m.t === 'ros').map(m => [m.h, m.l]) };
+        // 5) Client ohne Fahndung: der Host lehnt ab
+        set(0, 30000, false); o.logStart5 = o.log.length; B.NET.conn.send({ t: 'law' }); G.run(1);
+        o.none = { lawr: o.log.slice(o.logStart5).filter(m => m.t === 'lawr').map(m => [m.ok, m.p]), heat: A.SESSION.heat };
+        o.cut = cut; o.base = A.CFG.fahndung.law.base; o.perLv = A.CFG.fahndung.law.perLv;
+        return JSON.parse(JSON.stringify(o));
+      });
+      const price = r.base + r.perLv * 3;
+      t.eq(r.client.sent, 1, 'Client schickt genau eine law-Nachricht');
+      t.eq(r.client.lawr.length >= 1 && r.client.lawr.every(x => x[0] === 1 && x[1] === price), true, 'Host antwortet lawr ok mit dem Preis der alten Stufe: ' + JSON.stringify(r.client.lawr));
+      t.eq([r.client.heat, r.client.wallet, r.client.law], [65 - r.cut, 30000 - price, true], 'Fahndung gesenkt, der Client zahlt genau einmal');
+      t.ok(r.client.ros.length >= 2 && r.client.ros.every(x => x[0] === 65 - r.cut && x[1] === 1), 'ros verteilt h und l an beide Clients: ' + JSON.stringify(r.client.ros));
+      t.eq(r.again, { sent: 0, heat: 65 - r.cut, wallet: 30000 - price }, 'zweiter Versuch: gesperrt, keine Nachricht, kein Abzug');
+      t.eq(r.race, { lawr: [[0, 0]], heat: 65 - r.cut, wallet: 30000 - price }, 'Rennen: der Host lehnt ab (ok 0), kein Abzug, kein zweites Mal gesenkt');
+      t.eq([r.host.heat, r.host.wallet, r.host.law], [65 - r.cut, 30000 - price, true], 'Host bucht selbst');
+      t.ok(r.host.ros.length >= 2 && r.host.ros.every(x => x[0] === 65 - r.cut && x[1] === 1), 'Host verteilt h und l: ' + JSON.stringify(r.host.ros));
+      t.eq(r.none, { lawr: [[0, 0]], heat: 0 }, 'ohne Fahndung lehnt der Host ab');
     },
   },
   {

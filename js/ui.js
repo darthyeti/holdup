@@ -22,7 +22,7 @@ RANDOM={k:'random',n:'Zufall',i:'dice',s:'Würfelt unter allem, was dein Rang fr
 const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','Blend, Rauch, Ablenker werfen'],['Esc, P','Pause'],['M','Ton an/aus']];
 const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.','Beute in der Tasche fällt Wachen nur langsam auf,','Stehlen im Blick von Kameras sofort. Bei 100 %','läuft ein Countdown: raus aus dem Blick.'],
 FLOW_FH_OFF=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie, für die ganze Serie. Noch ohne Wirkung.'],FLOW_FH_ON=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie. Hoch: Polizei früher und härter.'];
-const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH',['jam','med','ad','bt']],['WURFGERÄTE',['fl','sm','dc']]];
+const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH UND RECHT',['jam','med','ad','bt','law']],['WURFGERÄTE',['fl','sm','dc']]];
 
 /* ---------- Hilfen ---------- */
 function fit(t,w,font){const{g}=X;g.font=font;t=String(t);if(g.measureText(t).width<=w)return t;while(t.length>1&&g.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
@@ -77,7 +77,7 @@ g.textAlign='left';g.font=lf;g.fillStyle=MU;g.fillText('FAHNDUNG',x0,y);pips(x0+
 if(!small){g.font=nf;g.fillStyle=lv?HCOL[lv-1]:G;g.fillText(nm,x0+lw+8+pw+10,y)}
 g.restore()}
 /* Fahndungs-Tafel im Ergebnis (Seite 1, rechts neben den Zeilen): neuer Stand, Stufe vorher und nachher, die Gruende des Auftrags, Punkte. Ohne Wirkung (CFG.fahndung.on 0) steht darunter der Hinweis auf den Trockenlauf. */
-function pageFh(f){const{g,CFG}=X,F=CFG.fahndung,a=X.heatLv(f.from),b=X.heatLv(f.to),x=748,y=226,w=196,rows=f.items,dry=F.on?[]:wrap('Trockenlauf: wirkt noch nicht auf die Polizei.',w-24,'10px monospace',2),h=96+rows.length*16+(dry.length?dry.length*13+10:0);
+function pageFh(f){const{g,CFG}=X,F=CFG.fahndung,a=X.heatLv(f.from),b=X.heatLv(f.to),x=748,y=216,w=196,rows=f.items,dry=F.on?[]:wrap('Trockenlauf: wirkt noch nicht auf die Polizei.',w-24,'10px monospace',2),h=96+rows.length*16+(dry.length?dry.length*13+10:0);
 g.save();g.textAlign='left';g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,h-1);
 g.font='bold 11px monospace';g.fillStyle=A;g.fillText('FAHNDUNG',x+12,y+20);g.textAlign='right';g.font='11px monospace';g.fillStyle=a===b?MU:b>a?RD:G;g.fillText(a===b?'Stufe '+b:'Stufe '+a+' → '+b,x+w-12,y+20);
 g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=b?HCOL[b-1]:G;g.fillText(fit(F.names[b],w-24,g.font),x+12,y+42);pips(x+12,y+62,b,14,8,3);
@@ -150,7 +150,7 @@ else{g.font='12px monospace';g.fillStyle='#6c7480';g.fillText('wartet auf',t.x+3
 function sShop(){const{CFG,NET,SESSION,fmt,shopState,SHOPKEYS}=X,items=CFG.shop.items,t=[],host=NET.role==='host',client=NET.role==='client',mine=NET.roster.find(q=>q.id===NET.myId);
 const cols=SHOPGRP.map(([n,ks])=>({n,ix:ks.map(k=>items.findIndex(it=>it.k===k)).filter(i=>i>=0)}));
 items.forEach((it,i)=>{if(!cols.some(c=>c.ix.includes(i)))cols[cols.length-1].ix.push(i)});
-cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
+cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':items[i].l?'a':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);fhBadge(160,62,'l');

@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=95"></script>
+<script src="js/ui.js?v=99"></script>
 <script>
-const BUILD={n:95,d:'2026-10-23'};//BUILD
+const BUILD={n:99,d:'2026-10-23'};//BUILD
 const UI_API=5;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -175,8 +175,8 @@ function toggleMute(){muted=!muted;try{localStorage.setItem('holdup.mute',muted?
 return{init,resume,pause,frame,toggleMute,isMuted:()=>muted,vol:k=>vol[k],setVol,blip,skid,_gains:()=>({sfx:sfx&&sfx.gain.value,mus:mus&&mus.gain.value}),on:()=>!!ac,listen:(x,y)=>{lx=x;ly=y},
 shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
 /* Sitzungsfortschritt: nur im Speicher, ueberlebt Auftraege, nicht den Neustart. Niederlage setzt alles zurueck (Serie). */
-const SESSION={wallet:0,own:{},cons:{},wear:{vest:null,helm:null},round:0,earned:0,best:0,heat:0};
-function sessReset(){SESSION.wallet=0;SESSION.own={};SESSION.cons={};SESSION.wear={vest:null,helm:null};SESSION.round=0;SESSION.earned=0;SESSION.best=0;SESSION.heat=0}
+const SESSION={wallet:0,own:{},cons:{},wear:{vest:null,helm:null},round:0,earned:0,best:0,heat:0,law:false};
+function sessReset(){SESSION.wallet=0;SESSION.own={};SESSION.cons={};SESSION.wear={vest:null,helm:null};SESSION.round=0;SESSION.earned=0;SESSION.best=0;SESSION.heat=0;SESSION.law=false}
 function start(ch,chF,pr,p2,cars,opt){opt=opt||{};
 const cv=opt.cv||document.getElementById('c'),g=cv.getContext('2d');
 const VW=960,VH=544,T=32;let W=44,H=28,WX0=-6,WY0=-5,WPX=W*T,WPY=H*T;
@@ -206,7 +206,8 @@ jamT:40,medHp:40,jamMax:3,medMax:3,flMax:3,smMax:3,dcMax:3,adMax:1,btMax:2,btMat
 {k:'sm',n:'Rauchgranate',p:4000,c:1,d:()=>'Taste 4: Rauchwolke '+CFG.gadget.smokeT+' s, Gegner verlieren das Ziel'},
 {k:'dc',n:'Ablenker',p:3500,c:1,d:()=>'Taste 5: piept '+CFG.gadget.decT+' s, lockt Wachen (nur beim Erkunden)'},
 {k:'ad',n:'Adrenalin',p:8000,c:1,d:()=>'Rettet einmal vor dem Tod (bleibt mit '+CFG.shop.adHp+' HP stehen)'},
-{k:'bt',n:'Brettersatz',p:2500,c:1,d:()=>'+'+CFG.shop.btMat+' Material zum Start, belegt Platz'}]},
+{k:'bt',n:'Brettersatz',p:2500,c:1,d:()=>'+'+CFG.shop.btMat+' Material zum Start, belegt Platz'},
+{k:'law',n:'Anwalt',l:1,p:0,d:()=>'Fahndung -'+CFG.fahndung.law.cut+' Punkte (eine Stufe), einmal je Shop-Besuch, im Coop für alle'}]},
 gadget:{maxD:300,spd:520,fuse:.5,stun:[1.5,3.5],stunR:200,smokeT:9,smokeR:110,decT:8,decR:380,decHold:6},
 
 cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:.14},swat:{hp:200,dmg:10,rate:.45,spd:60,acc:.08},
@@ -217,8 +218,8 @@ turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,30],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
-/* Fahndungslevel (Teamwert der Serie, SESSION.heat in Punkten 0 bis max, Stufe = Punkte / step). on 0 = Trockenlauf (nur Anzeige und Buchung, keine Wirkung auf die Polizei), 1 = wirkt (Schritt 2, noch nicht gebaut). Gebucht wird am Auftragsende (heatCalc): drift Grundrauschen je Auftrag, loud Ueberfall gestartet, kill je ausgeschaltetem Gegner (Deckel killMax), civ je getroffenem Zivilisten (Deckel civMax), wave je Welle ueber waveFree (Deckel waveMax); senkend quiet lautlos gewonnen, calm Ueberfall ohne einen Toten, goal Nebenziel erfuellt. Alle Gewichte sind Startwerte, ungemessen. */
-fahndung:{on:0,max:100,step:20,drift:3,loud:10,kill:1.5,killMax:15,civ:6,civMax:18,wave:3,waveFree:2,waveMax:12,quiet:-24,calm:-6,goal:-6,names:['Unauffällig','Aufmerksam','Gesucht','Fahndung','Großfahndung','Ausnahmezustand']},
+/* Fahndungslevel (Teamwert der Serie, SESSION.heat in Punkten 0 bis max, Stufe = Punkte / step). on 0 = Trockenlauf (nur Anzeige und Buchung, keine Wirkung auf die Polizei), 1 = wirkt (Schritt 2, noch nicht gebaut). Gebucht wird am Auftragsende (heatCalc): drift Grundrauschen je Auftrag, loud Ueberfall gestartet, kill je ausgeschaltetem Gegner (Deckel killMax), civ je getroffenem Zivilisten (Deckel civMax), wave je Welle ueber waveFree (Deckel waveMax); left je Spieler, der den Auftrag nicht verlassen hat (am Boden gelassen, gefasst, ausgefallen, nicht bei Verbindungsabbruch, nur bei Sieg, Deckel leftMax); senkend quiet lautlos gewonnen (am 23. Oktober 2026 nach Tills Coop-Test von -24 auf -16), calm Ueberfall ohne einen Toten, goal Nebenziel erfuellt. law Anwalt im Shop: cut Punkte weniger, Preis base plus perLv je Stufe, einmal je Shop-Besuch. Alle Gewichte sind Startwerte, ungemessen. */
+fahndung:{on:0,max:100,step:20,drift:3,loud:10,kill:1.5,killMax:15,civ:6,civMax:18,wave:3,waveFree:2,waveMax:12,quiet:-16,calm:-6,goal:-6,left:8,leftMax:24,law:{cut:20,base:4000,perLv:4000},names:['Unauffällig','Aufmerksam','Gesucht','Fahndung','Großfahndung','Ausnahmezustand']},
 ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
 bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40},
 lean:{reach:26,spd:0},
@@ -1220,7 +1221,7 @@ if(tk&&tk.cells)for(const c of tk.cells)setc(c[0],c[1],'o');tk=null;
 if(mapSeed!==null&&(LAY.seed!==mapSeed||scOf(LAY)!==jobSc))buildWorld(layoutFor(mapSeed));
 LAY.lockCells.forEach(q=>setc(q[0],q[1],'L'));(LAY.wins||[]).forEach(w=>setc(w.x,w.y,'W'));camDown=0;rT=0;blk=0;evDone={};
 phase=1;tH=0;ended=null;vaultOpen=false;secured=0;escaped=0;code=false;mon=false;sus=0;alarmT=0;alarmBy=null;banner=null;waveN=0;waveT=0;policeAt=0;vanAt=CFG.vanAuto;vanArr=false;vanCalled=false;vanX=LANE.van.from;vanMode=0;vanNv=0;vanBk=0;policeShown=false;civKills=0;kills=0;flowT=0;carsLight=0;eid=0;bid=0;seq=0;pend=[];evq=[];capd=[];keyTaken=false;cargoOpen=false;capt=0;surKilled=0;radioDown=0;
-if(NET.role!=='client')kits=buildKits();players=Array.from({length:nPl},(_,i)=>mkPl(i,nPl,kits[i]));me=players[Math.min(NET.myId,nPl-1)];p=me;if(NET.role==='host')players.forEach(o=>{if(o.id>0&&!NET.conns.some(c=>c.pid===o.id))o.gone=true});
+if(NET.role!=='client')kits=buildKits();players=Array.from({length:nPl},(_,i)=>mkPl(i,nPl,kits[i]));me=players[Math.min(NET.myId,nPl-1)];p=me;if(NET.role==='host')players.forEach(o=>{if(o.id>0&&!NET.conns.some(c=>c.pid===o.id)){o.gone=true;o.dc=true}});
 en=[];pcs=[];fps=[];bl=[];gr=[];gc=[];gq=[];smk=[];dcy=[];pt=[];cs=[];corp=[];fx=[];feed=[];pk=[];npcs=[];
 dc.save();dc.setTransform(1,0,0,1,0,0);dc.clearRect(0,0,WPX*2,WPY*2);dc.restore();
 cams=LAY.cams.map(c=>Object.assign({},c,{k:false,alert:0,off:false}));
@@ -1552,9 +1553,10 @@ function heatBook(from,i){const F=CFG.fahndung,it=[],add=(t,d)=>{d=Math.round(d)
 add('Grundrauschen',F.drift);
 if(i.phase===1&&i.win)add('Lautlos entkommen',F.quiet);
 else{add('Überfall',F.loud);add('Ausgeschaltet ('+i.kills+')',Math.min(F.killMax,i.kills*F.kill));add('Zivilisten ('+i.civ+')',Math.min(F.civMax,i.civ*F.civ));add('Wellen ('+i.waves+')',Math.min(F.waveMax,Math.max(0,i.waves-F.waveFree)*F.wave));if(!i.kills&&!i.civ)add('Ohne Tote',F.calm)}
+if(i.left>0)add('Zurückgelassen ('+i.left+')',Math.min(F.leftMax,i.left*F.left));
 if(i.goal)add('Nebenziel',F.goal);
 return{from,to:heatClamp(from+it.reduce((s,q)=>s+q[1],0)),items:it}}
-const heatCalc=win=>heatBook(heatClamp(SESSION.heat),{win,phase,kills,civ:civKills,waves:waveN,goal:!!goal&&goalOk()});
+const heatCalc=win=>heatBook(heatClamp(SESSION.heat),{win,phase,kills,civ:civKills,waves:waveN,left:win?players.filter(o=>!o.out&&!o.dc).length:0,goal:!!goal&&goalOk()});
 const cleanFh=f=>f&&typeof f==='object'&&Array.isArray(f.items)?{from:heatClamp(f.from),to:heatClamp(f.to),items:f.items.slice(0,8).map(q=>[String(q[0]).slice(0,28),Math.max(-100,Math.min(100,Math.round(+q[1]||0)))])}:null;
 function finish(win,title,extra,soft){if(ended)return;let score=secured;const lines=[];lines.push('Beute: '+fmt(secured));
 const lost=players.reduce((s,o)=>s+(!o.out&&o.loot>0?o.loot:0),0);
@@ -1575,7 +1577,7 @@ if(!res.soft)SESSION.round++;
 if(res.win){SESSION.wallet+=share;SESSION.earned+=share;if(share>SESSION.best){SESSION.best=share;lines.push('Bester Auftrag der Serie!')}keepKit();lines.push('Konto: '+fmt(SESSION.wallet))}
 else if(res.soft){keepKit();lines.push('Auftrag gescheitert. Die Serie läuft weiter, Konto '+fmt(SESSION.wallet))}
 else{lines.push('Serie beendet. Überstandene Aufträge: '+(SESSION.round-1)+', Beute gesamt '+fmt(SESSION.earned));sessReset()}
-const fh=res.win||res.soft?cleanFh(res.fh):null;if(fh)SESSION.heat=fh.to;
+const fh=res.win||res.soft?cleanFh(res.fh):null;if(fh)SESSION.heat=fh.to;SESSION.law=false;
 if(NET.role==='client'&&NET.conn)NET.conn.send({t:'kit',k:curKit()});
 SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines,hi:res.hi,fh}}
 function canSee(sx,sy,sa,fov,rng,tx,ty){const dx=tx-sx,dy=ty-sy,dd=Math.hypot(dx,dy);if(dd>rng)return false;if(angd(sa,Math.atan2(dy,dx))>fov)return false;return los(sx,sy,tx,ty)}
@@ -1720,7 +1722,7 @@ if(selIt>=0&&!inReach(its[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=26,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=27,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());c.on('error',()=>w.onclose&&w.onclose());return w};
@@ -1733,7 +1735,7 @@ peer.on('open',()=>{const c=peer.connect('holdup-'+code,{serialization:'json',re
 peer.on('error',e=>h.onError(e&&e.type||String(e)));
 return{close:()=>{try{peer.destroy()}catch(e){}}}}}}
 const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m)};
-const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario,h:SESSION.heat});
+const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario,h:SESSION.heat,l:SESSION.law?1:0});
 function netReset(){atLast='';const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],ping:0});nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
@@ -1744,7 +1746,7 @@ const id=[1,2,3].find(i=>!NET.roster.some(r=>r.id===i));if(id===undefined){c.sen
 c.pid=id;c.ok=true;NET.conns.push(c);NET.roster.push({id,name:PC[id].n});
 c.onmsg=m=>hostMsg(c,m);
 c.onclose=()=>{c.ok=false;NET.conns=NET.conns.filter(x=>x!==c);const o=players[c.pid];
-if(scr==='lobby'||scr==='shop')NET.roster=NET.roster.filter(r=>r.id!==c.pid);if(scr!=='lobby'&&o&&!o.gone){o.gone=true;say(pn(c.pid)+' hat das Spiel verlassen');checkEnd()}
+if(scr==='lobby'||scr==='shop')NET.roster=NET.roster.filter(r=>r.id!==c.pid);if(scr!=='lobby'&&o&&!o.gone){o.gone=true;o.dc=true;say(pn(c.pid)+' hat das Spiel verlassen');checkEnd()}
 bcastRoster()};
 }
 function hostMsg(c,m){const o=players[c.pid];
@@ -1756,6 +1758,7 @@ else if(m.t==='f'){if(scr==='play')startHeist(false,o)}
 else if(m.t==='g'){if(scr==='play')callVan()}
 else if(m.t==='u'){if(scr==='play')useGadget(o,m.n|0,+m.x,+m.y)}
 else if(m.t==='kit'){c.kit=sanKit(m.k)}
+else if(m.t==='law'){const ok=SESSION.heat>0&&!SESSION.law,p=ok?lawHire():0;c.send({t:'lawr',ok:ok?1:0,p});if(ok)bcastRoster()}
 else if(m.t==='at'){const r=NET.roster.find(q=>q.id===c.pid);if(r&&'lsmep'.includes(String(m.v))&&String(m.v).length===1){r.at=m.v;bcastRoster()}} else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);if(r){r.rdy=m.v?1:0;bcastRoster()}}
 else if(m.t==='ping')c.send({t:'pong',n:m.n})}
 function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;mapSeed=newSeed();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat});beginPlay()}
@@ -1764,11 +1767,12 @@ NET.srv=TR.join(code,{onOpen(c){NET.conn=c;c.onmsg=clientMsg;c.onclose=()=>{if(N
 setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.msg='Keine Antwort. Code prüfen und erneut versuchen.'},15000)}
 function clientMsg(m){
 if(m.t==='wel'){NET.myId=m.id;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...'}
-else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h)}
+else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.l!=null)SESSION.law=!!m.l}
 else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='go'){nPl=m.n;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
 else if(m.t==='snap'){if(scr==='play'&&!ended)applySnap(m)}
 else if(m.t==='end'){if(scr==='play'&&!ended)endLocal(m.res)}
+else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
 else if(m.t==='rst'){if(scr==='play'||scr==='shop'){if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong')NET.ping=performance.now()-m.n}
 function leaveGame(msg){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
@@ -2107,26 +2111,34 @@ case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
 case'unlock':unlockAll=!unlockAll;break;
 case'endNext':endNext();break;case'endPrev':endPage(0);break;
 case'endBack':if(NET.role==='solo')toTitle();else leaveGame('');break}}
-function itemPrice(it){return it.t?CFG.shop.price[it.k][Math.min(2,SESSION.own[it.k]|0)]:it.p}
+function itemPrice(it){return it.l?lawCost():it.t?CFG.shop.price[it.k][Math.min(2,SESSION.own[it.k]|0)]:it.p}
+/* Anwalt (Shop-Posten l, senkt die Fahndung): Preis waechst mit der Stufe, einmal je Shop-Besuch (SESSION.law, endLocal setzt es zurueck). Im Coop zaehlt der Wert des Hosts: Der Client schickt law, der Host bucht (lawHire), antwortet lawr und verteilt h und l per ros. Bezahlt wird vom Konto dessen, der ihn beauftragt, die Wirkung gilt fuer alle. */
+const lawCost=()=>{const F=CFG.fahndung.law;return F.base+F.perLv*heatLv(SESSION.heat)};
+const lawState=()=>SESSION.heat<=0?'kein Bedarf':SESSION.law?'beauftragt':SESSION.wallet<lawCost()?'zu teuer':'kaufen';
+function lawHire(){const p=lawCost();SESSION.heat=heatClamp(SESSION.heat-CFG.fahndung.law.cut);SESSION.law=true;return p}
+function lawBuy(){if(NET.role==='client'){if(NET.conn){NET.conn.send({t:'law'});shopNote={s:'Anwalt wird beauftragt ...',t:3}}return}
+SESSION.wallet-=lawHire();SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2};if(NET.role==='host')bcastRoster()}
 /* Reparatur: fehlender Anteil mal CFG.shop.rep des Stufenpreises, Weste und Helm zusammen */
 function repCost(){const o=SESSION.own,w=SESSION.wear,sh=CFG.shop;let c=0;
 if(o.vest&&w.vest!=null)c+=(1-clamp(w.vest/sh.tier.vest[o.vest-1],0,1))*sh.price.vest[o.vest-1]*sh.rep;
 if(o.helm&&w.helm!=null)c+=(1-clamp(w.helm/sh.helmHits[o.helm-1],0,1))*sh.price.helm[o.helm-1]*sh.rep;
 return Math.round(c/100)*100}
 function shopState(it){const o=SESSION.own,c=SESSION.cons,sh=CFG.shop;
+if(it.l)return lawState();
 if(it.r){const n=repCost();return n<=0?'heil':SESSION.wallet<n?'zu teuer':'kaufen'}
 if(it.c)return(c[it.k]|0)>=sh[it.k+'Max']?'voll':SESSION.wallet<it.p?'zu teuer':'kaufen';
 if(it.t)return(o[it.k]|0)>=3?'gekauft':SESSION.wallet<itemPrice(it)?'zu teuer':'kaufen';
 if(o[it.k])return'gekauft';if(it.k==='smg'&&o.rifle)return'ersetzt';return SESSION.wallet<it.p?'zu teuer':'kaufen'}
 function sendKit(){if(NET.role==='client'&&NET.conn)NET.conn.send({t:'kit',k:curKit()})}
 function shopBuy(i){const it=CFG.shop.items[i];if(!it)return;const st=shopState(it);
+if(it.l&&st==='kaufen'){lawBuy();return}
 if(st==='kaufen'){SESSION.wallet-=it.r?repCost():itemPrice(it);
 if(it.r){SESSION.wear.vest=null;SESSION.wear.helm=null}
 else if(it.c)SESSION.cons[it.k]=(SESSION.cons[it.k]|0)+1;
 else if(it.t){SESSION.own[it.k]=(SESSION.own[it.k]|0)+1;if(it.k==='vest')SESSION.wear.vest=null;if(it.k==='helm')SESSION.wear.helm=null}
 else SESSION.own[it.k]=1;
 SND.cash();shopNote={s:it.r?'Repariert':it.n+(it.t?' Stufe '+SESSION.own[it.k]:'')+' gekauft',t:2};sendKit()}
-else{SND.ev('deny');shopNote={s:st==='zu teuer'?'Zu teuer':st==='gekauft'?(it.t?'Schon auf der höchsten Stufe':'Schon gekauft'):st==='heil'?'Nichts zu reparieren':st==='voll'?'Vorrat voll':'Das Sturmgewehr ist besser',t:2}}}
+else{SND.ev('deny');shopNote={s:st==='zu teuer'?'Zu teuer':st==='gekauft'?(it.t?'Schon auf der höchsten Stufe':'Schon gekauft'):st==='heil'?'Nichts zu reparieren':st==='voll'?'Vorrat voll':st==='kein Bedarf'?'Keine Fahndung, kein Anwalt nötig':st==='beauftragt'?'Der Anwalt war diesen Besuch schon dran':'Das Sturmgewehr ist besser',t:2}}}
 function openShop(){if(NET.role==='host'){NET.roster=NET.roster.filter(r=>r.id===0||NET.conns.some(c=>c.pid===r.id));bcastRoster()}scr='shop';paused=false;clearKeys();mouse.down=0;shopNote={s:'',t:0};shopConf=-9;sendKit()}
 function shopGo(){if(NET.role==='solo'){startNext();return}
 if(NET.role==='client'){const r=NET.roster.find(q=>q.id===NET.myId),v=r&&r.rdy?0:1;if(r)r.rdy=v;NET.conn&&NET.conn.send({t:'rdy',v,k:curKit()});return}
@@ -2225,7 +2237,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,heatLv,heatBook,heatCalc,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,gasParams,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,heatLv,heatBook,heatCalc,lawCost,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,gasParams,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
