@@ -7,6 +7,7 @@ const KNOWN = { bank: [/^Wagenplatz blockiert/] };
 
 const tests = SC.map(sc => ({
   name: 'Karten: ' + sc + ' (' + N[sc] + ' Seeds erreichbar und vollstaendig)',
+  slow: true,
   async run(t) {
     await t.loadTool('mapcheck.js');
     const r = await t.page.evaluate(([sc, n]) => mapcheck.sweep(sc, n, 1), [sc, N[sc]]);

@@ -5,6 +5,7 @@ const SC = ['bank', 'jewel', 'gas', 'museum', 'casino', 'truck'];
 module.exports = [
   {
     name: 'Vielfalt: Huellen, Groessen, Fluchtvarianten, Beute und Raster je Szenario ueber 200 Seeds (Schnappschuss)',
+    slow: true,
     timeout: 240000,
     async run(t) {
       await t.loadTool('mapcheck.js');

@@ -4,6 +4,8 @@
   "description": "Automatische Pruefungen fuer Holdup (nur Entwicklung, das Spiel selbst braucht keinen Bauschritt)",
   "scripts": {
     "test": "node run.js",
+    "test:fast": "node run.js --fast --jobs=auto",
+    "test:par": "node run.js --jobs=auto",
     "test:update": "node run.js --update",
     "test:long": "node run.js --long"
   },

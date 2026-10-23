@@ -5,6 +5,7 @@ const money = s => +String(s).replace(/[^0-9]/g, '');
 module.exports = [
   {
     name: 'Nebenziele: Auswahl ist deterministisch, deckt alle Ziele ab, team nur ab zwei Spielern',
+    slow: true,
     async run(t) {
       const r = await t.page.evaluate(SC => {
         const D = __dbg, out = { seen: {}, bad: [] };
@@ -105,6 +106,7 @@ module.exports = [
   },
   {
     name: 'Nebenziele: Auswahl ohne erzwungenes Ziel stimmt im Coop auf Host und Client',
+    slow: true,
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
       const r = await t.page.evaluate(SC => {
@@ -121,6 +123,7 @@ module.exports = [
   },
   {
     name: 'Nebenziele: HUD zeichnet in beiden Phasen fuer jedes Ziel und jede Karte',
+    slow: true,
     async run(t) {
       const n = await t.page.evaluate(SC => {
         const D = __dbg; let n = 0;

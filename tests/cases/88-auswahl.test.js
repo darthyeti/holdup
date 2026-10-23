@@ -6,6 +6,7 @@ const STATES = ['frisch', 'Kameras entdeckt', 'Teilbeute', 'Teilbeute, Tasche vo
 module.exports = [
   {
     name: 'Auswahl: 32 px innen vor einer Personaltuer (Phase 1) bekommt der Riegel E, in jedem Szenario, jeder Lage und jedem Zustand',
+    slow: true,
     async run(t) {
       const r = await t.page.evaluate(([SC, STATES]) => {
         const D = __dbg, bad = []; let n = 0;

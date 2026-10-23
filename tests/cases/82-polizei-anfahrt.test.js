@@ -19,6 +19,7 @@ const SETUP = `(sc, seed, extra) => {
 module.exports = [
   {
     name: 'Anfahrt: Wagen fahren als Kolonne ohne Ueberlappung, parken in zwei Reihen, danach kommen Beamte zu Fuss vom Rand (nie in Wand oder Gebaeude)',
+    slow: true,
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}, out = [], tl = v => Math.floor(v / 32);
         for (const [sc, seed] of [['bank', 'classic'], ['bank', 5017], ['jewel', 11], ['gas', 21], ['museum', 31], ['casino', 41]]) {

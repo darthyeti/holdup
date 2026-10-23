@@ -16,6 +16,7 @@ const cases = [
 
 module.exports = cases.map(c => ({
   name: 'Bot: ' + c.name + ' gewinnt mit frueh rufen mindestens ' + Math.round(c.min * 100) + ' %',
+  slow: c.sc === 'jewel',   // der Juwelier braucht mit Abstand am laengsten (rund 23 s in der Cloud), die anderen bleiben im schnellen Lauf
   timeout: 240000,
   async run(t) {
     await t.loadTool('bot.js');

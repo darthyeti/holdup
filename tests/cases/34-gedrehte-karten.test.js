@@ -67,6 +67,7 @@ module.exports = [
   // Coop: je Szenario alle acht Lagen, die Hallen reihum (jede Halle kommt in mehreren Lagen vor), je Partie eine eigene Seite
   ...SC.map(sc => ({
     name: 'Gedreht: Coop zu zweit auf ' + sc + ' in allen acht Lagen (Karte, Items, Strasse, Ebenen, Posten gleich auf Host und Client, Beute durch den Client, Polizei, Fluchtwagen, Sieg)',
+    slow: true,
     timeout: 240000,
     async run(t) {
       const seeds = await t.page.evaluate(`(${SEEDS})('${sc}')`);
@@ -92,6 +93,7 @@ module.exports = [
   },
   {
     name: 'Gedreht: der Bot mit fruehem Rufen gewinnt in jeder Lage (je Szenario und Lage vier Seeds, ohne Haenger und ohne fruehe Verluste)',
+    slow: true,
     open: { det: true },
     timeout: 280000,
     async run(t) {

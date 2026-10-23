@@ -1,0 +1,158 @@
+{
+ "00-start.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "10-karten.test.js": {
+  "all": 103,
+  "fast": 3
+ },
+ "20-lage.test.js": {
+  "all": 86,
+  "fast": 12
+ },
+ "25-juwelier.test.js": {
+  "all": 37,
+  "fast": 10
+ },
+ "26-grundrisse.test.js": {
+  "all": 279,
+  "fast": 27
+ },
+ "27-kartenvertrag.test.js": {
+  "all": 130,
+  "fast": 35
+ },
+ "28-freie-strasse.test.js": {
+  "all": 50,
+  "fast": 50
+ },
+ "29-vielfalt.test.js": {
+  "all": 40,
+  "fast": 0
+ },
+ "30-polizei.test.js": {
+  "all": 15,
+  "fast": 15
+ },
+ "31-polizei-abstand.test.js": {
+  "all": 1,
+  "fast": 1
+ },
+ "32-fluchtwagen.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "33-posten-ableiten.test.js": {
+  "all": 88,
+  "fast": 18
+ },
+ "34-gedrehte-karten.test.js": {
+  "all": 258,
+  "fast": 20
+ },
+ "35-lage-aus-seed.test.js": {
+  "all": 79,
+  "fast": 19
+ },
+ "36-treffpunkt-bank.test.js": {
+  "all": 64,
+  "fast": 32
+ },
+ "37-tankstelle-generator.test.js": {
+  "all": 45,
+  "fast": 45
+ },
+ "40-coop.test.js": {
+  "all": 23,
+  "fast": 23
+ },
+ "41-coop-alarm.test.js": {
+  "all": 8,
+  "fast": 8
+ },
+ "50-bot.test.js": {
+  "all": 54,
+  "fast": 31
+ },
+ "60-nebenziele.test.js": {
+  "all": 163,
+  "fast": 7
+ },
+ "70-menues.test.js": {
+  "all": 23,
+  "fast": 23
+ },
+ "75-bildgroesse.test.js": {
+  "all": 8,
+  "fast": 8
+ },
+ "76-maus-fangen.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "77-shop-stufen.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "78-wurfgeraete.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "79-auszeichnungen.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "80-menue-ueberlappung.test.js": {
+  "all": 17,
+  "fast": 17
+ },
+ "81-verdacht-team.test.js": {
+  "all": 18,
+  "fast": 18
+ },
+ "82-polizei-anfahrt.test.js": {
+  "all": 46,
+  "fast": 18
+ },
+ "83-beobachter-gnadenfrist.test.js": {
+  "all": 12,
+  "fast": 12
+ },
+ "84-team-leiste.test.js": {
+  "all": 10,
+  "fast": 10
+ },
+ "85-raum-schliessen-rueckfrage.test.js": {
+  "all": 8,
+  "fast": 8
+ },
+ "86-shop-text.test.js": {
+  "all": 2,
+  "fast": 2
+ },
+ "87-tab-schliessen.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "88-auswahl.test.js": {
+  "all": 57,
+  "fast": 21
+ },
+ "89-beute-hinweis.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "90-fahndung.test.js": {
+  "all": 31,
+  "fast": 31
+ },
+ "90-fahrzeuge-solide.test.js": {
+  "all": 60,
+  "fast": 8
+ },
+ "91-autos-parkend.test.js": {
+  "all": 28,
+  "fast": 28
+ }
+}

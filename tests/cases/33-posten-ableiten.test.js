@@ -14,6 +14,7 @@ const SEEDS = `(sc) => { const D = __dbg; D.setScenario(sc); D.setSeedMode('rand
 module.exports = [
   {
     name: 'Ableiten: Hintertueren aus den L-Kacheln am Gebaeuderand sind auf allen Karten, Grundrissen und Lagen gleich der Handliste',
+    slow: true,
     timeout: 240000,
     async run(t) {
       await setup(t);
@@ -35,6 +36,7 @@ module.exports = [
   },
   {
     name: 'Ableiten: abgeleitete Posten und Wagenplaetze sind auf jeder Karte, jedem Grundriss und jeder Lage gueltig (frei, mit Sicht, Tuerposten, Anker, Plaetze, validateMap)',
+    slow: true,
     timeout: 290000,
     async run(t) {
       await setup(t);
