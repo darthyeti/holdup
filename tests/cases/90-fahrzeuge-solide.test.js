@@ -18,6 +18,7 @@ const SETUP = `(sc, seed, turn, extra) => {
 module.exports = [
   {
     name: 'Fahrzeuge: mit allen Plaetzen und dem Fluchtwagen bleibt von jeder Aussentuer ein Weg zur Zone, die Zone zu 75 Prozent frei, jede Wagenkachel solide und kugelsperrend, reset raeumt auf (5 Szenarien, 2 Lagen)',
+    slow: true,
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = __dbg, T = 32, out = [];
         for (const [sc, seed] of [['bank', 5017], ['jewel', 11], ['gas', 21], ['museum', 31], ['casino', 41]]) for (const turn of ['S', 'E+']) {

@@ -4,6 +4,7 @@ const HALLS = ['Klassik', 'Reihen', 'Salon', 'Ring', 'Gänge'];
 module.exports = [
   {
     name: 'Juwelier: fuenf verschiedene Hallen, immer 22 Vitrinen (8 Insel, 6 Wand, 6 Podest, 2 Tresen)',
+    slow: true,
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, halls = {}, bad = [], grids = new Set();

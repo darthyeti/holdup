@@ -105,6 +105,7 @@ module.exports = [
   },
   {
     name: 'Treffpunkt: der Bot mit fruehem Rufen gewinnt in allen vier Varianten (je Variante 20 Seeds, kein Haenger, kein frueher Verlust)',
+    slow: true,
     open: { det: true },
     timeout: 280000,
     async run(t) {

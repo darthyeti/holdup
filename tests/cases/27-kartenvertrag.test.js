@@ -47,6 +47,7 @@ module.exports = [
   },
   ...SC.map(sc => ({
     name: 'Kartenvertrag: ' + sc + ' (' + N[sc] + ' Seeds, voller Aufbau): keine unbekannte Abweichung',
+    slow: true,
     timeout: 240000,
     async run(t) {
       await t.loadTool('mapcheck.js');

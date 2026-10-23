@@ -103,6 +103,7 @@ module.exports = [
   // Coop ohne Schalter: Host und Client bauen die Lage allein aus Seed und Szenario (kein Netzfeld), je Szenario zwei Seeds mit verschiedener Lage, die nicht Sued ist
   ...SC.map(sc => ({
     name: 'Lage aus dem Seed: Coop zu zweit auf ' + sc + ' ohne Schalter (Host und Client bauen dieselbe Lage aus dem Seed, vom Start bis zum Sieg)',
+    slow: true,
     timeout: 240000,
     async run(t) {
       const seeds = await t.page.evaluate(({ sc }) => { const D = __dbg, out = [], seen = new Set(); for (let s = 1; s < 400 && out.length < 3; s++) { const k = D.turnFor(s, sc); if (k[0] !== 'S' && !seen.has(k[0])) { seen.add(k[0]); out.push(s); } } return out; }, { sc });

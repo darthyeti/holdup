@@ -50,6 +50,7 @@ module.exports = [
   },
   {
     name: 'Lage: Karten mit erzwungenem Tag sind vollstaendig (mapcheck)',
+    slow: true,
     async run(t) {
       await t.loadTool('mapcheck.js');
       const r = await t.page.evaluate(NAMES => {

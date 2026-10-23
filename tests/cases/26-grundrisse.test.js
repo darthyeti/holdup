@@ -25,6 +25,7 @@ const FIND = `(sc, from, k) => {
 module.exports = [
   {
     name: 'Grundrisse: je Karte vier Varianten, Beute-Stuecke, Werte und Material bleiben gleich',
+    slow: true,
     timeout: 240000,
     async run(t) {
       const r = await t.page.evaluate(VAR => {
@@ -55,6 +56,7 @@ module.exports = [
   },
   {
     name: 'Grundrisse: Mission, Lage-Tags, Theme und Kameras haengen nicht vom Grundriss ab (Schnappschuss)',
+    slow: true,
     timeout: 240000,
     async run(t) {
       const hashes = await t.page.evaluate(SC => {
@@ -117,6 +119,7 @@ module.exports = [
   },
   {
     name: 'Grundrisse: mapcheck je Grundriss (Erreichbarkeit aller Beute, Posten, Wagenplaetze, Routen), auch mit Sicherheitsdienst',
+    slow: true,
     timeout: 240000,
     async run(t) {
       await t.loadTool('mapcheck.js');
@@ -229,6 +232,7 @@ module.exports = [
   },
   {
     name: 'Grundrisse: der Bot gewinnt in jedem Grundriss mit fruehem Abgang (Rauchtest je Grundriss, keine Balance-Messung)',
+    slow: true,
     timeout: 400000,
     async run(t) {
       await t.loadTool('bot.js');
