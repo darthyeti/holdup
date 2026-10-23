@@ -1,20 +1,20 @@
 {
  "gas-basis": {
   "hash": {
-   "Insel": "445b6b0e",
-   "Klassik": "8b07e0e4",
-   "Gänge": "72f0fd80",
-   "Wandregale": "986edb82"
+   "Insel": "f907f72e",
+   "Klassik": "862aebe5",
+   "Gänge": "dae9320e",
+   "Wandregale": "dd320881"
   },
   "px": {
-   "Insel#1": "470519cd:2816x1920 36b1c01f:2816x1920",
-   "Insel#2": "a348b511:2816x1920 ed6f251f:2816x1920",
-   "Klassik#3": "ed916477:2816x1920 78078ada:2816x1920",
-   "Klassik#4": "15e92f30:2816x1920 9543adda:2816x1920",
-   "Gänge#8": "80ad6d0c:2816x1920 cd4f7c5f:2816x1920",
-   "Gänge#9": "1077989:2816x1920 87957d5f:2816x1920",
-   "Wandregale#10": "7451b281:2816x1920 567cdb98:2816x1920",
-   "Wandregale#11": "3c6e45e2:2816x1920 567cdb98:2816x1920"
+   "Insel#1": "3552b0fa:2816x1920 36b1c01f:2816x1920",
+   "Insel#2": "1d39beca:2816x1920 ed6f251f:2816x1920",
+   "Klassik#3": "1f81393e:2816x1920 78078ada:2816x1920",
+   "Klassik#4": "c82b04b5:2816x1920 9543adda:2816x1920",
+   "Gänge#8": "1e5d955f:2816x1920 cd4f7c5f:2816x1920",
+   "Gänge#9": "deecdee6:2816x1920 87957d5f:2816x1920",
+   "Wandregale#10": "215e8df0:2816x1920 567cdb98:2816x1920",
+   "Wandregale#11": "cfa91f11:2816x1920 567cdb98:2816x1920"
   },
   "n": {
    "Insel": 60,
