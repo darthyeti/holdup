@@ -79,5 +79,10 @@ function batchHalls(n,o,from,halls){const D2=__dbg,seeds={};from=from||5000;cons
  const out={};for(const h of Object.keys(seeds)){const rs=seeds[h].map(sd=>run(Object.assign({},o,{seed:sd}))),w=rs.filter(r=>r.res==='WIN'),avg=(a,f)=>a.length?Math.round(a.reduce((x,r)=>x+f(r),0)/a.length):0;
   out[h]={n:rs.length,win:Math.round(100*w.length/rs.length),hp:avg(rs,r=>r.minHp),loot:avg(w,r=>r.loot),t:avg(w,r=>r.t),looted:avg(rs,r=>r.milestones.looted||0),early:rs.filter(r=>r.res!=='WIN'&&r.t<30).length,lost:rs.map((r,i)=>r.res!=='WIN'?seeds[h][i]+'@'+r.t:null).filter(Boolean)}}
  return out}
-window.bot={run,batch,batchSeeds,batchHalls};
+/* Bot je Fahndungsstufe (Schritt 2 des Fahndungslevels): die ersten n Seeds ab from (Standard 5000) der aktuellen Szenario-Einstellung, je Stufe in lv (Punkte = Stufe mal CFG.fahndung.step, o.heat), der Rufzeitpunkt wird gestreut (call = (i % sp[0]) * sp[1] Sekunden, Standard 6 und 4), sonst gewinnt oder verliert der Bot an einer einzigen Schwelle (er ist nach rund 85 s fertig, die dritte Welle kommt bei rund 99 s). Liefert je Stufe Siegquote in Prozent, Rest-HP, Zeit der Siege und Wellen. Gebrauch: __dbg.setScenario('bank');__dbg.setSeedMode('random');bot.levels(96,{kit:'full',sigma:.05,react:.35},[0,1,2,3,4,5]). Rauschen bei n 96 rund 5 Prozentpunkte, die Rest-HP zeigen den Verlauf deutlicher. */
+function levels(n,o,lv,from,sp){const D2=__dbg,step=D2.CFG.fahndung.step,out={};sp=sp||[6,4];from=from||5000;
+ for(const l of lv){const rs=[];for(let i=0;i<n;i++)rs.push(run(Object.assign({},o,{heat:l*step,seed:from+i,call:(i%sp[0])*sp[1]})));const w=rs.filter(r=>r.res==='WIN'),avg=(a,f)=>a.length?Math.round(a.reduce((x,r)=>x+f(r),0)/a.length):null;
+  out['L'+l]={win:Math.round(100*w.length/n),hp:avg(rs,r=>r.minHp),t:avg(w,r=>r.t),waves:avg(rs,r=>r.waves)}}
+ return out}
+window.bot={run,batch,batchSeeds,batchHalls,levels};
 })();

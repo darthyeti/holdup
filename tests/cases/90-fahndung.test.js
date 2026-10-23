@@ -1,5 +1,5 @@
-// Fahndungslevel (Tills Idee, Schritt 1 Trockenlauf, docs/spielsystem.md): Teamwert der Serie (SESSION.heat, Punkte 0 bis 100, Stufe 0 bis 5), gebucht am Auftragsende aus generischen Groessen
-// (heatBook), im Ende-Paket als res.fh, im Coop vom Host in go, rst und ros (Feld h, VER 26). Der Trockenlauf wirkt nicht auf die Polizei. Das Badge steht in jedem Bildschirm, auch in Shop und Auftragswahl.
+// Fahndungslevel (Tills Idee, Schritt 1 Trockenlauf und Schritt 2 Wirkung auf die Polizei, docs/spielsystem.md): Teamwert der Serie (SESSION.heat, Punkte 0 bis 100, Stufe 0 bis 5), gebucht am Auftragsende aus generischen Groessen
+// (heatBook), im Ende-Paket als res.fh, im Coop vom Host in go, rst und ros (Feld h, VER 26). Der Trockenlauf (CFG.fahndung.on 0) wirkt nicht auf die Polizei, mit on 1 (Standard) ersetzt die Stufe die Steigerung nach Auftragsnummer (Schritt 2). Das Badge steht in jedem Bildschirm, auch in Shop und Auftragswahl.
 // Dazu (23. Oktober 2026, Tills Coop-Test): Zurueckgelassene heizen an (left), der Anwalt im Shop senkt die Fahndung (law, VER 27: Nachrichten law und lawr, Feld l in ros).
 // Hinweis: Alle Instanzen einer Seite teilen ein SESSION-Objekt, deshalb prueft der Coop-Test die gesendeten Nachrichten und das Verhalten der Handler, nicht getrennte Staende je Instanz.
 const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino'];
@@ -22,7 +22,39 @@ module.exports = [
       t.eq(r.names, 6, 'sechs Stufen (0 bis 5)');
       t.eq(r.max / r.step, 5, 'Punkte und Schrittweite ergeben Stufe 5 bei max');
       t.eq(r.lv, [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 0, 0, 0], 'Stufe je Punktzahl');
-      t.eq(r.on, 0, 'Schritt 1 ist ein Trockenlauf (CFG.fahndung.on 0)');
+      t.eq(r.on, 1, 'Schritt 2 wirkt (CFG.fahndung.on 1, 0 waere der Trockenlauf)');
+    },
+  },
+  {
+    name: 'Fahndung Schritt 2: die Stufe wirkt auf die Polizei (erste Polizei, Wellengroesse, Wellenabstand, Eskalationsvorsprung), die Auftragsnummer nicht mehr, mit on 0 gilt alles wie vorher',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, F = D.CFG.fahndung, E = F.eff, o = { lv: [], round: {}, off: {}, bad: [] };
+        D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017);
+        const feed = () => D.msgs().feed[0] || '';
+        const wave = () => { D.spawnWave(); const m = /Welle (\d+): (\d+) Einsatz/.exec(feed()); return { n: m ? +m[2] : -1, shield: /mit Schild/.test(feed()), swat: /SWAT/.test(feed()) }; };
+        const job = (heat, round, on) => { F.on = on; D.sessReset(); D.SESSION.heat = heat; D.SESSION.round = round; D.reset(); D.startHeist(false); const L = D.LAY(), at = D.pAt(), gap = D.waveGap(2), w = [wave(), wave(), wave()]; return { at, gap, w, wb: L.wb || 0 }; };
+        const base = job(0, 0, 1);
+        for (let lv = 0; lv <= 5; lv++) {
+          const j = job(lv * 20, 0, 1);
+          o.lv.push({ lv, at: j.at, gapR: +(j.gap / base.gap).toFixed(3), n: j.w.map(x => x.n), shield: j.w.map(x => x.shield), swat: j.w.map(x => x.swat) });
+          if (j.at !== Math.max(D.CFG.policeForced, base.at - E.at[lv])) o.bad.push('erste Polizei Stufe ' + lv + ': ' + j.at);
+          if (Math.abs(j.gap / base.gap - E.gap[lv]) > .001) o.bad.push('Wellenabstand Stufe ' + lv);
+          j.w.forEach((x, i) => { if (x.n !== D.CFG.waveBase + j.wb + (i + 1) + E.wave[lv]) o.bad.push('Wellengroesse Stufe ' + lv + ' Welle ' + (i + 1) + ': ' + x.n); });
+          const from = E.lead.shield[lv] ? Math.max(1, D.CFG.shield.from - E.lead.shield[lv]) : D.CFG.shield.from;
+          j.w.forEach((x, i) => { if (x.shield !== (i + 1 >= from) && !x.swat) o.bad.push('Schild Stufe ' + lv + ' Welle ' + (i + 1)); });
+        }
+        // Auftragsnummer zaehlt mit on 1 nicht: Runde 6 und Stufe 0 gleich wie Runde 0
+        const r6 = job(0, 6, 1); o.round = { at: r6.at === base.at, n: r6.w.map(x => x.n).join() === base.w.map(x => x.n).join(), gap: r6.gap === base.gap };
+        // Trockenlauf: Stufe ignoriert, Auftragsnummer wirkt wie bisher (3 s je Auftrag, 0,34 Beamte je Auftrag und Welle)
+        const o3 = job(100, 3, 0), s = D.CFG.series; o.off = { at: o3.at === Math.max(D.CFG.policeForced, base.at - s.at * 3), n: o3.w.map(x => x.n).join() === base.w.map((x, i) => x.n + Math.floor(3 * s.wave)).join(), gap: o3.gap === base.gap, shield: o3.w.map(x => x.shield).join() === base.w.map(x => x.shield).join() };
+        F.on = 1; o.on = F.on; return o;
+      });
+      t.eq(r.bad, [], 'Abweichungen: ' + JSON.stringify(r.bad));
+      t.ok(r.lv[5].at < r.lv[0].at && r.lv[5].gapR < 1 && r.lv[5].n[0] > r.lv[0].n[0], 'Stufe 5 ist frueher, schneller und groesser als Stufe 0: ' + JSON.stringify([r.lv[0], r.lv[5]]));
+      t.eq(r.lv[3].shield.concat(r.lv[4].shield), [false, false, true, false, true, true], 'Schild-Beamte: ab Stufe 4 schon in Welle 2, vorher erst ab Welle 3');
+      t.eq(r.round, { at: true, n: true, gap: true }, 'die Auftragsnummer zaehlt mit on 1 nicht');
+      t.eq(r.off, { at: true, n: true, gap: true, shield: true }, 'mit on 0 (Trockenlauf) gilt die Steigerung nach Auftragsnummer, die Stufe wirkt nicht');
     },
   },
   {
