@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=86"></script>
+<script src="js/ui.js?v=93"></script>
 <script>
-const BUILD={n:86,d:'2026-10-23'};//BUILD
+const BUILD={n:93,d:'2026-10-23'};//BUILD
 const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -245,7 +245,7 @@ CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
 CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:70};
 CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*(1+CFG.waveGapPer*Math.max(0,players.length-1));
-let M,TILES,LOBBY,SUNW,st,so,gone=[],dcv,dc,LAY=null,LANE=null,lgForce=null,turnForce=null,goal=null,goalForce=null;
+let M,TILES,LOBBY,SUNW,st,so,gone=[],stm=new Map(),vanSt=null,dcv,dc,LAY=null,LANE=null,lgForce=null,turnForce=null,goal=null,goalForce=null;
 /* Lage-Tags lesen: lgOn fragt einen Tag ab, lgM bildet das Produkt, lgA die Summe eines Schluessels ueber alle aktiven Tags */
 const lgList=()=>(LAY&&LAY.mission&&LAY.mission.lg)||[],lgOn=k=>lgList().includes(k),
 lgM=k=>{let v=1;for(const t of lgList()){const x=(CFG.lage[t]||{})[k];if(x!=null)v*=x}return v},
@@ -1142,7 +1142,7 @@ lay.paintTop(s);
 for(const [x,y] of TILES){if(cell(x,y)!=='f')continue;const X=x*T,Y=y*T,hz=cell(x-1,y)==='f'||cell(x+1,y)==='f';
 if(hz){s.fillStyle='rgba(0,0,0,.2)';s.fillRect(X,Y+17,T,4);s.fillStyle='rgba(165,173,182,.5)';s.fillRect(X,Y+12,T,6);s.fillStyle='#59616b';s.fillRect(X,Y+12,T,1);s.fillRect(X,Y+17,T,1);s.fillRect(X+2,Y+9,3,11)}
 else{s.fillStyle='rgba(0,0,0,.2)';s.fillRect(X+17,Y,4,T);s.fillStyle='rgba(165,173,182,.5)';s.fillRect(X+12,Y,6,T);s.fillStyle='#59616b';s.fillRect(X+12,Y,1,T);s.fillRect(X+17,Y,1,T);s.fillRect(X+9,Y+2,11,3)}}
-so=document.createElement('canvas');so.width=WPX*2;so.height=WPY*2;gone=[];paintObjs();
+so=document.createElement('canvas');so.width=WPX*2;so.height=WPY*2;gone=[];stm.clear();vanSt=null;paintObjs();
 dcv=document.createElement('canvas');dcv.width=WPX*2;dcv.height=WPY*2;dc=dcv.getContext('2d');dc.setTransform(2,0,0,2,-2*WX0*T,-2*WY0*T)}
 const dk=document.createElement('canvas');dk.width=VW;dk.height=VH;const d=dk.getContext('2d');
 const D4=[[1,0],[-1,0],[0,1],[0,-1]],D8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
@@ -1212,6 +1212,7 @@ function mk(k,row,tx,ty,o){const n=Object.assign({id:npcs.length,k,row,x:tx*T+16
 function setRoute(n,pts){n.route=pts;n.line=[];for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];n.line.push([a[0]*T+16,a[1]*T+16]);for(const q of pathTo(a[0]*T+16,a[1]*T+16,b[0],b[1]))n.line.push(q)}}
 function reset(){selIt=-1;
 if(gone.length){for(const q of gone){setc(q[0],q[1],q[2]);if(q[3])q[3].gone=false}gone=[];paintObjs()}
+if(stm.size){for(const k of stm.keys()){const q=k.split(',');setc(+q[0],+q[1],'o')}stm.clear();flowT=0}vanSt=null;
 for(const b of bars)if(b.lv>0)b.cells.forEach((c,i)=>setc(c[0],c[1],b.pv[i]));bars=[];
 if(tk&&tk.cells)for(const c of tk.cells)setc(c[0],c[1],'o');tk=null;
 if(mapSeed!==null&&(LAY.seed!==mapSeed||scOf(LAY)!==jobSc))buildWorld(layoutFor(mapSeed));
@@ -1268,28 +1269,43 @@ const freePost=e=>{const fr=LAY.posts.filter(po=>!en.some(q=>q.post===po));if(!L
 /* Parkplaetze: die der Karte (LANE.slots, eine Reihe vor dem Gebaeude), danach eine zweite Reihe auf der Strassenseite gegenueber (CFG.pol.car.row weiter weg), soweit dort begehbare Flaeche liegt.
    Ist alles belegt, kommen Beamte zu Fuss vom Kartenrand (fps, footStep). Wagen einer Seite fahren als Kolonne (carStep: Abstand CFG.pol.carGap), fruehere Wagen fahren voran und parken weiter weg. */
 const awayC=()=>-(LANE.axis==='x'?LANE.n[1]:LANE.n[0]);
-function slotsOf(sd){const a=LANE.slots.filter(q=>q.end===sd),R=CFG.pol.car.row;return a.map(q=>Object.assign({},q,{row:0})).concat(!CFG.pol.car.tier2?[]:a.filter(q=>LANE.box(q.u*T-48,q.u*T+80,LANE.pos+awayC()*R,32).every(c=>!OOB(c[0],c[1])&&!isSol(c[0],c[1]))).map(q=>Object.assign({},q,{row:1})))}
+function slotsOf(sd){const a=LANE.slots.filter(q=>q.end===sd),R=CFG.pol.car.row;return a.map(q=>Object.assign({},q,{row:0})).concat(!CFG.pol.car.tier2?[]:a.filter(q=>LANE.box(q.u*T-48,q.u*T+80,LANE.pos+awayC()*R,32).every(c=>!OOB(c[0],c[1])&&(!isSol(c[0],c[1])||stm.has(c[0]+','+c[1])))).map(q=>Object.assign({},q,{row:1})))}
 function mkCar(crew,k){const ends=LANE.ends;let side=ends[(waveN+k)%2?1:0];const fs=sd=>slotsOf(sd).findIndex((_,j)=>!pcs.some(c=>c.side===sd&&c.slot===j));let i=fs(side);if(i<0){side=side===ends[0]?ends[1]:ends[0];i=fs(side)}if(i<0)return null;
 const sl=slotsOf(side)[i],w=side===ends[0],A=LANE.A,C=LANE.C,cross=LANE.pos+sl.row*awayC()*CFG.pol.car.row+(Math.random()-.5)*8,car={id:++eid,side,slot:i,row:sl.row,a:LANE.ang[w?0:1],tilt:(i%2?1:-1)*(.1+Math.random()*.1),tg:sl.tg,st:'in',ex:0,sk:0,crew,lead:k===0?1:0,hp:CFG.pol.car.hp,dead:false};
 car[A]=w?LANE.lo-CFG.pol.lead:LANE.hi+CFG.pol.lead;car[C]=cross;car.a0=car.a;return car}
 /* Beamter an Posten schicken (Weg, Haltezeit), danach ins Spiel */
 function toPost(e){const po=freePost(e);e.a=LANE.face;if(po){const pa=pathTo(e.x,e.y,po.x,po.y);if(pa.length){e.post=po;e.path=pa;e.mode='run';e.rt=tH+(po.anchor?CFG.pol.anchorHold:CFG.pol.hold)}}en.push(e)}
-function unload(c){const q=c.crew.shift(),n=LANE.n,u=LANE.u,j=(Math.random()-.5)*56,d=44+(c.row|0)*CFG.pol.car.row,x=c.x+n[0]*d+u[0]*j,y=c.y+n[1]*d+u[1]*j;
+function unload(c){const q=c.crew.shift(),n=LANE.n,u=LANE.u,j=(Math.random()-.5)*56,d=44+(c.row|0)*CFG.pol.car.row,[x,y]=freeNear(c.x+n[0]*d+u[0]*j,c.y+n[1]*d+u[1]*j);
 if(q&&q.sn)snipeOut(q.sn,x,y);else toPost(mkCop(x,y,q));
 if(c.lead){c.lead=0;say('Beamte steigen aus und umstellen '+PLACE[scOf(LAY)].a)}}
-/* Einstieg zu Fuss: erste begehbare Kachel am Kartenrand auf der Strassenachse (die Randkachel selbst ist Wand) */
-function entryPt(w){const st=w?1:-1;let s0=Math.floor((w?LANE.lo:LANE.hi-1)/T);for(let i=0;i<8;i++,s0+=st){const p=LANE.pt(s0*T+16,LANE.pos+(Math.random()-.5)*40);if(!isSol(Math.floor(p[0]/T),Math.floor(p[1]/T)))return p}return LANE.pt(w?LANE.lo+3*T:LANE.hi-3*T,LANE.pos)}
+/* Einstieg zu Fuss: erste begehbare Kachel am Kartenrand auf der Randsteinseite der Strassenachse (wie der Ausstieg aus dem Wagen, die Fahrbahn selbst steht voller Wagen, die Randkachel ist Wand) */
+function entryPt(w){const st=w?1:-1,cn=(LANE.C==='x'?LANE.n[0]:LANE.n[1])*44;let s0=Math.floor((w?LANE.lo:LANE.hi-1)/T);for(let i=0;i<8;i++,s0+=st){const p=LANE.pt(s0*T+16,LANE.pos+cn+(Math.random()-.5)*20);if(!isSol(Math.floor(p[0]/T),Math.floor(p[1]/T)))return freeNear(p[0],p[1])}const q=LANE.pt(w?LANE.lo+3*T:LANE.hi-3*T,LANE.pos+cn);return freeNear(q[0],q[1])}
 function footStep(f,dt){f.ex-=dt;if(f.ex>0)return;f.ex=CFG.pol.exitGap;const q=f.crew.shift(),pt=entryPt(f.side===LANE.ends[0]);if(q&&q.sn)snipeOut(q.sn,pt[0],pt[1]);else toPost(mkCop(pt[0],pt[1],q))}
+/* Fahrzeuge im Raster (Oktober 2026): Ein geparkter Streifenwagen, ein Wrack und der haltende Fluchtwagen stempeln ihren Fussabdruck als v (solide, kugelsperrend, wie der Panzerwagen mit tkStamp), damit niemand hindurchlaeuft und Kugeln beider Seiten am Wagen enden.
+   Nur Kacheln mit o werden gestempelt, stm zaehlt je Kachel mit, wie viele Fahrzeuge sie belegen (ein Fahrzeug raeumt nie die Kachel eines anderen). Der Fussabdruck rechnet aus auf 1 px gerundeten Netzwerten (rq), damit Host und Client dieselben Kacheln stempeln.
+   Wer beim Stempeln im Fussabdruck steht oder die Kante beruehrt (Figurenradius 9), wird zur naechsten freien Kachel geschoben (nur der Host, die Clients bekommen die Positionen im Schnappschuss). reset und buildWorld raeumen auf. */
+const rq=v=>Math.round(Math.round(v*10)/10);
+function stampOn(cs){const out=[];for(const c of cs){const k=c[0]+','+c[1],n=stm.get(k)||0;if(n>0||cell(c[0],c[1])==='o'){stm.set(k,n+1);if(!n)setc(c[0],c[1],'v');out.push(c)}}flowT=0;return out}
+function stampOff(cs){for(const c of cs||[]){const k=c[0]+','+c[1],n=stm.get(k)||0;if(n<=1){stm.delete(k);if(n===1)setc(c[0],c[1],'o')}else stm.set(k,n-1)}flowT=0}
+function freeNear(x,y){const tx=Math.floor(x/T),ty=Math.floor(y/T);if([[0,0],[9,9],[-9,9],[9,-9],[-9,-9]].every(d=>!isSol(Math.floor((x+d[0])/T),Math.floor((y+d[1])/T))))return[x,y];let b=null,bd=1e9;
+for(let r=1;r<=8&&!b;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r||isSol(tx+dx,ty+dy))continue;const px=(tx+dx)*T+16,py=(ty+dy)*T+16,d=Math.hypot(px-x,py-y);if(d<bd){bd=d;b=[px,py]}}return b||[x,y]}
+function eject(cs){const k=new Set(cs.map(c=>c[0]+','+c[1]));for(const o of players.concat(en,npcs)){if(![[0,0],[9,9],[-9,9],[9,-9],[-9,-9]].some(d=>k.has(Math.floor((o.x+d[0])/T)+','+Math.floor((o.y+d[1])/T))))continue;const p=freeNear(o.x,o.y);o.x=p[0];o.y=p[1]}}
+function carCells(x,y){const R=CFG.pol.car,a=rq(LANE.A==='x'?x:y),k=rq(LANE.C==='x'?x:y);return LANE.box(a-R.bx,a+R.bx,k,R.by)}
+function stampCar(c,x,y){if(c.cells)return;c.cells=stampOn(carCells(x,y));if(NET.role!=='client')eject(c.cells)}
+const carOfCell=(tx,ty,x,y)=>carAt(x,y)||pcs.find(c=>c.cells&&c.cells.some(q=>q[0]===tx&&q[1]===ty))||null;
+/* Der Fluchtwagen haelt vor der Fluchttuer: die Kacheln unmittelbar vor jeder Tuer bleiben frei, sonst waere die Tuer zu und niemand kaeme zum Wagen. */
+function vanCells(){const ex=new Set();for(const sp of LAY.spots||[])for(const c of sp.cells)ex.add((c[0]-sp.iv[0])+','+(c[1]-sp.iv[1]));return LANE.box(LANE.van.stop,LANE.van.stop+128,LANE.van.pos,32).filter(c=>!ex.has(c[0]+','+c[1]))}
+function vanSync(){const want=vanMode===0&&vanAtStop();if(want&&!vanSt){vanSt=stampOn(vanCells());if(NET.role!=='client')eject(vanSt)}else if(!want&&vanSt){stampOff(vanSt);vanSt=null}}
 function carStep(c,dt){if(c.dead)return;if(c.st==='in'){const A=LANE.A,C=LANE.C,dx=c.tg-c[A],dd=Math.abs(dx),dir=dx<0?-1:1;
 if(pcs.some(o=>o!==c&&!o.dead&&o.st==='in'&&o.id<c.id&&o.side===c.side&&Math.abs(o[C]-c[C])<60&&(o[A]-c[A])*dir>0&&(o[A]-c[A])*dir<CFG.pol.carGap))return;
 const v=Math.min(CFG.pol.carSpd,Math.max(40,dd*2.4)),m=Math.min(dd,v*dt);c[A]+=Math.sign(dx)*m;c.a=c.a0+c.tilt*(1-Math.min(1,dd/260));
-if(!c.sk&&dd<230){c.sk=1;snd('skid',c.x,c.y)}if(dd<.6){c.st='park';c.ex=.5}}
+if(!c.sk&&dd<230){c.sk=1;snd('skid',c.x,c.y)}if(dd<.6){c.st='park';c.ex=.5;stampCar(c,c.x,c.y)}}
 else if(c.crew.length){c.ex-=dt;if(c.ex<=0){c.ex=CFG.pol.exitGap;unload(c)}}}
 /* Streifenwagen sind zerschiessbar: Spielerkugeln treffen die Karosserie (Kasten 2 mal bx, by um die Mitte), bei 0 HP explodiert er wie eine Zapfsaeule (blastAt), die Besatzung im Wagen stirbt,
    das ausgebrannte Wrack bleibt auf dem Platz. */
 function carAt(x,y){const R=CFG.pol.car;for(const c of pcs){if(c.dead)continue;const ca=Math.cos(-c.a),sa=Math.sin(-c.a),dx=x-c.x,dy=y-c.y;if(Math.abs(dx*ca-dy*sa)<R.bx&&Math.abs(dx*sa+dy*ca)<R.by)return c}return null}
 function carHurt(c,d,own,x,y){if(c.dead)return;c.hp-=d;evt('hw',[x,y]);evt('sp',[x,y,5]);if(c.hp<=0)carBlow(c,own)}
-function carBlow(c,own){if(c.dead)return;c.dead=true;c.hp=0;const po=players[own],n=c.crew.length;for(const q of c.crew){kills++;if(po)po.st.k++}c.crew.length=0;if(po)po.st.boom++;
+function carBlow(c,own){if(c.dead)return;c.dead=true;c.hp=0;stampCar(c,c.x,c.y);const po=players[own],n=c.crew.length;for(const q of c.crew){kills++;if(po)po.st.k++}c.crew.length=0;if(po)po.st.boom++;
 say('Streifenwagen explodiert!'+(n?' ('+n+' im Wagen)':''));blastAt(c.x,c.y,CFG.pol.car,own)}
 function spawnWave(){waveN++;let ns=0,nh=0;const n=CFG.waveBase+(LAY.wb||0)+waveN+(players.length-1)*CFG.perPlayer+Math.floor(SESSION.round*CFG.series.wave),crew=[];
 for(let i=0;i<n;i++){const sw=waveN>=CFG.swatFrom&&i%CFG.swatEvery===CFG.swatEvery-1,sh=!sw&&waveN>=CFG.shield.from+lgA('shield')&&i%CFG.shield.every===0;if(sw)ns++;if(sh)nh++;crew.push(sw?'swat':sh?'shield':'cop')}
@@ -1594,7 +1610,7 @@ if(alarmT<=0){if(sus<100)return;if(!(W.grace>0)){startHeist(true,by);return}alar
 if(by)alarmBy=by;if(sus<W.back){alarmT=0;alarmBy=null;say('Alarm abgewendet.');ban('Alarm abgewendet',1.8);snd('ev','power');return}alarmT-=dt;if(alarmT<=0){const b=alarmBy;alarmT=0;alarmBy=null;startHeist(true,b)}}
 /* Starren (CFG.watch.stare, cool): Wer einen Spieler nur mit Beute sieht, bleibt stehen und dreht sich zu ihm (look), der Kegel folgt ihm. Dauert die Sicht ohne Luecke laenger als stare s, geht der Beobachter cool s lang wieder seinen Weg und schaut danach erneut hin. stare 0 schaltet die Grenze ab. */
 function gaze(q,o){const W=CFG.watch;if(W.stare>0){if(time-(q.lkL==null?-9:q.lkL)>.35)q.lkS=time;q.lkL=time;if(time<(q.lkC||0)){q.lkS=time;return}if(time-q.lkS>=W.stare){q.lkC=time+W.cool;return}}q.look={x:o.x,y:o.y,t:.7}}
-function hostStep(dt){time+=dt;rT+=dt;evStep(dt);gadStep(dt);if(LAY.truck){tkStep(dt);tkSync()}const now=performance.now();
+function hostStep(dt){time+=dt;rT+=dt;evStep(dt);gadStep(dt);vanSync();if(LAY.truck){tkStep(dt);tkSync()}const now=performance.now();
 for(const o of players)if(o!==me&&o.inp!==IDLE&&now-o.lastIn>400)o.inp=IDLE;
 if(live(me)){const c=readInput(dt);movePl(me,c);me.inp=c;stepSnd(me,c)}else me.inp=IDLE;
 let act=actv();goalStep();for(const o of act){const q=o.st,c=o.inp;q.t+=dt;if(!c.vx&&!c.vy&&!c.e&&!c.fire&&!c.ln)q.idle+=dt}
@@ -1654,7 +1670,7 @@ tx+=sx*S.k*ml;ty+=sy*S.k*ml;const m2=Math.hypot(tx,ty);if(m2>ml){tx*=ml/m2;ty*=m
 const ox=e.x,oy=e.y;mv(e,tx*sp*dt,ty*sp*dt);const mvd=Math.hypot(e.x-ox,e.y-oy);e.mvg=mvd>.05;e.w+=mvd/9;e.fl-=dt}
 bl=bl.filter(b=>{b.l-=dt;for(let k=0;k<4;k++){b.x+=b.vx*dt/4;b.y+=b.vy*dt/4;
 if(b.o&&tk&&tk.st==='drive'&&Math.abs(b.x-tk.x)<TKL/2&&Math.abs(b.y-tk.y)<TKH/2){tk.tire-=(b.d||34);evt('hw',[b.x,b.y]);evt('sp',[b.x,b.y,6]);if(tk.tire<=0&&!tk.flat){tk.flat=1;say('Reifen getroffen: Der Wagen verliert Fahrt!')}return false}
-if(isBul(Math.floor(b.x/T),Math.floor(b.y/T))){const c0=cell(Math.floor(b.x/T),Math.floor(b.y/T));if(b.ov&&(c0==='X'||c0==='Y'))b.ov=2;else if(b.sn&&c0==='W')breakWin(Math.floor(b.x/T),Math.floor(b.y/T));else{if(c0==='u')pumpHit(Math.floor(b.x/T),Math.floor(b.y/T),b.d||b.dmg||8,b.own);evt('hw',[b.x,b.y]);return false}}else if(b.ov===2)b.ov=0;
+if(isBul(Math.floor(b.x/T),Math.floor(b.y/T))){const c0=cell(Math.floor(b.x/T),Math.floor(b.y/T));if(b.ov&&(c0==='X'||c0==='Y'))b.ov=2;else if(b.sn&&c0==='W')breakWin(Math.floor(b.x/T),Math.floor(b.y/T));else{if(c0==='u')pumpHit(Math.floor(b.x/T),Math.floor(b.y/T),b.d||b.dmg||8,b.own);if(c0==='v'&&b.o){const cr=carOfCell(Math.floor(b.x/T),Math.floor(b.y/T),b.x,b.y);if(cr&&!cr.dead){carHurt(cr,b.d||34,b.own,b.x,b.y);return false}}evt('hw',[b.x,b.y]);return false}}else if(b.ov===2)b.ov=0;
 if(b.o){{const cr=carAt(b.x,b.y);if(cr){carHurt(cr,b.d||34,b.own,b.x,b.y);if(!CFG.pol.car.pierce)return false}}for(const e of en){if(e.hp>0&&Math.hypot(e.x-b.x,e.y-b.y)<e.r+1){(players[b.own]||me).st.ht++;if(e.sh>0&&angd(e.a,Math.atan2(-b.vy,-b.vx))<CFG.shield.arc){e.sh=Math.max(0,e.sh-(b.d||34));e.sx=1;evt('sk',[b.x,b.y]);if(e.sh<=0){snd('ev','crash');say('Ein Schild ist zerstört!')}return false}e.hp-=(b.d||34);e.h=.1;evt('hf',[b.x,b.y,5]);
 if(e.hp<=0){const sh=players[b.own]||me;corp.push({x:e.x,y:e.y,a:e.a+3.1,t:14,row:e.row});kills++;sh.st.k++;if(e.sur&&!e.cap){surKilled++;say('Eine ergebene Wache wurde erschossen!')}sh.res+=6;snd('kill',e.x,e.y);say((players.length>1?pn(sh.id):'YOU')+'  >  Rifle  >  '+(e.kind==='grd'?'Wachmann':e.kind==='swat'?'SWAT':e.kind==='shield'?'Schild-Beamter':e.kind==='sniper'?'Scharfschütze':'Polizist'));const rr=Math.random();if(rr<.35)pk.push({x:e.x+8,y:e.y+4,k:5});else if(rr<.5)pk.push({x:e.x+8,y:e.y+4,k:6})}return false}}
 for(const q of npcs){if(q.st==='dead')continue;if(Math.hypot(q.x-b.x,q.y-b.y)<q.r+1){q.hp-=(b.d||34);evt('hf',[b.x,b.y,5]);if(q.hp<=0){q.st='dead';civKills++;(players[b.own]||me).st.civ++;snd('kill',q.x,q.y);corp.push({x:q.x,y:q.y,a:q.a+3.1,t:30,row:q.row});say('Zivilist getroffen!');ban('Zivilist getroffen',1.6)}return false}}}
@@ -1691,7 +1707,7 @@ if(selIt>=0&&!inReach(its[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=24,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=25,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());c.on('error',()=>w.onclose&&w.onclose());return w};
@@ -1770,7 +1786,7 @@ else{o.tx=a[1];o.ty=a[2];o.ta=a[3];o.mvg=!!(f&16);o.w=a[11];o.mv=a[15];if(!o.ini
 const seen=new Set();for(const a of s.np){const q=npcs.find(n=>n.id===a[0]);if(!q)continue;seen.add(q.id);q.tx=a[1];q.ty=a[2];q.ta=a[3];q.w=a[4];q.mvg=!!a[5];q.st=a[6]===1?'cower':a[6]===2?'away':'idle';q.alert=a[7]?.5:0;q.rk=!!a[8];if(!q.init){q.x=a[1];q.y=a[2];q.a=a[3];q.init=1}}
 npcs=npcs.filter(q=>seen.has(q.id));
 const oe=new Map(en.map(e=>[e.id,e]));en=s.en.map(a=>{let e=oe.get(a[0]);if(!e)e={id:a[0],kind:['cop','swat','grd','shield','sniper'][a[1]],row:[0,8,2,0,8][a[1]],r:9,muz:a[1]===2?16:a[1]===4?30:32,fl:0,h:0,x:a[2],y:a[3],a:a[4]};e.tx=a[2];e.ty=a[3];e.ta=a[4];e.hp=a[5];e.mhp=a[6];e.w=a[7];e.mvg=!!a[8];e.h=Math.max(e.h,a[9]);e.sur=!!a[10];e.cp=a[11]||0;e.sh=a[12]|0;e.aimA=a[13]||0;e.stun=a[14]|0;return e});
-const opc=new Map(pcs.map(c=>[c.id,c]));pcs=(s.pc||[]).map(a=>{let c=opc.get(a[0]);if(!c)c={id:a[0],x:a[1],y:a[2],a:a[3]};c.tx=a[1];c.ty=a[2];c.ta=a[3];c.st=a[4]?'park':'in';c.hp=a[5];c.dead=a[5]<=0;return c});
+const opc=new Map(pcs.map(c=>[c.id,c]));pcs=(s.pc||[]).map(a=>{let c=opc.get(a[0]);if(!c)c={id:a[0],x:a[1],y:a[2],a:a[3]};c.tx=a[1];c.ty=a[2];c.ta=a[3];c.st=a[4]?'park':'in';c.hp=a[5];c.dead=a[5]<=0;if(!c.cells&&(c.st==='park'||c.dead))stampCar(c,c.tx,c.ty);return c});for(const o of opc.values())if(!pcs.includes(o)){stampOff(o.cells);o.cells=null};vanSync()
 const ob=new Map(bl.map(b=>[b.id,b]));bl=s.bl.map(a=>{let b=ob.get(a[0]);if(!b)b={id:a[0]};b.x=a[1];b.y=a[2];b.vx=a[3];b.vy=a[4];b.o=a[5];b.own=a[6];b.l=a[7];b.sn=a[8]|0;return b});
 corp=s.cp.map(a=>({x:a[0],y:a[1],a:a[2],t:a[3],row:a[4]}));pk=s.pk.map(a=>({x:a[0],y:a[1],k:a[2]}));
 its.forEach((it,i)=>{if('done'in it){const nd=!!((s.it[i/30|0]|0)>>(i%30)&1);if(nd&&!it.done&&it.t==='mat')matGone(it);it.done=nd}it.pr=0});for(const q of s.ip)if(its[q[0]])its[q[0]].pr=q[1];
