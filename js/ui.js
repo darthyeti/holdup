@@ -20,7 +20,8 @@ const JOBS=[
 {k:'casino',n:'Casino',i:'casino',be:3,ri:3,s:'Chips und Cage',d:['Viele Wachen und Kameras. Chips zählen nur halb, wenn du sie nicht am Cage tauschst (dauert).','Chips, Automaten, VIP-Fächer, Tresor. Erst kämpft der Hausdienst, dann die Polizei.']}],
 RANDOM={k:'random',n:'Zufall',i:'dice',s:'Würfelt unter allem, was dein Rang freischaltet',d:['Jeder Auftrag wird neu gewürfelt, unter allem, was dein Rang freischaltet.','Bank, Juwelier, Transporter und Tankstelle von Anfang an, Museum ab Auftrag 3, Casino ab Auftrag 5.']};
 const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','Blend, Rauch, Ablenker werfen'],['Esc, P','Pause'],['M','Ton an/aus']];
-const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.','Beute in der Tasche fällt Wachen nur langsam auf,','Stehlen im Blick von Kameras sofort. Bei 100 %','läuft ein Countdown: raus aus dem Blick.'];
+const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.','Beute in der Tasche fällt Wachen nur langsam auf,','Stehlen im Blick von Kameras sofort. Bei 100 %','läuft ein Countdown: raus aus dem Blick.'],
+FLOW_FH_OFF=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie, für die ganze Serie. Noch ohne Wirkung.'],FLOW_FH_ON=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie. Hoch: Polizei früher und härter.'];
 const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH',['jam','med','ad','bt']],['WURFGERÄTE',['fl','sm','dc']]];
 
 /* ---------- Hilfen ---------- */
@@ -66,12 +67,31 @@ if(ch&&!t.nochip){g.font='11px monospace';g.textAlign='right';const w=g.measureT
 if(lk&&!t.paint){icon('lock',t.x+t.w-18,t.y+t.h-18,16,MU)}
 g.restore()}
 
+/* Fahndungs-Badge (Teamwert SESSION.heat, Stufe aus X.heatLv): Beschriftung, fuenf Segmente bis zur Stufe gefuellt (gelb bis rot), Stufenname. al = Ausrichtung von x ('l' links, 'r' rechts, 'c' Mitte), y = Grundlinie, small = ohne Namen (Spiel-HUD). */
+const HCOL=['#ffd27a','#ffb000','#ff8a00','#ff5a30','#ff2a2a'];
+function pips(x,y,lv,sw,sh,sg){const{g}=X;for(let i=0;i<HCOL.length;i++){const bx=x+i*(sw+sg);if(i<lv){g.fillStyle=HCOL[i];g.fillRect(bx,y-sh,sw,sh)}else{g.fillStyle='rgba(0,0,0,.45)';g.fillRect(bx,y-sh,sw,sh);g.strokeStyle='rgba(255,255,255,.28)';g.lineWidth=1;g.strokeRect(bx+.5,y-sh+.5,sw-1,sh-1)}}}
+function fhBadge(x,y,al,small){const{g,SESSION,CFG}=X,F=CFG.fahndung,lv=X.heatLv(SESSION.heat),nm=F.names[lv],sw=small?10:14,sh=small?6:8,sg=small?2:3,lf=(small?'bold 9px':'bold 11px')+' monospace',nf='bold 11px monospace';
+g.save();g.font=lf;const lw=g.measureText('FAHNDUNG').width,pw=HCOL.length*sw+(HCOL.length-1)*sg;let nw=0;if(!small){g.font=nf;nw=g.measureText(nm).width}
+const tot=lw+8+pw+(small?0:10+nw),x0=al==='r'?x-tot:al==='c'?x-tot/2:x;
+g.textAlign='left';g.font=lf;g.fillStyle=MU;g.fillText('FAHNDUNG',x0,y);pips(x0+lw+8,y,lv,sw,sh,sg);
+if(!small){g.font=nf;g.fillStyle=lv?HCOL[lv-1]:G;g.fillText(nm,x0+lw+8+pw+10,y)}
+g.restore()}
+/* Fahndungs-Tafel im Ergebnis (Seite 1, rechts neben den Zeilen): neuer Stand, Stufe vorher und nachher, die Gruende des Auftrags, Punkte. Ohne Wirkung (CFG.fahndung.on 0) steht darunter der Hinweis auf den Trockenlauf. */
+function pageFh(f){const{g,CFG}=X,F=CFG.fahndung,a=X.heatLv(f.from),b=X.heatLv(f.to),x=748,y=226,w=196,rows=f.items,dry=F.on?[]:wrap('Trockenlauf: wirkt noch nicht auf die Polizei.',w-24,'10px monospace',2),h=96+rows.length*16+(dry.length?dry.length*13+10:0);
+g.save();g.textAlign='left';g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,h-1);
+g.font='bold 11px monospace';g.fillStyle=A;g.fillText('FAHNDUNG',x+12,y+20);g.textAlign='right';g.font='11px monospace';g.fillStyle=a===b?MU:b>a?RD:G;g.fillText(a===b?'Stufe '+b:'Stufe '+a+' → '+b,x+w-12,y+20);
+g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=b?HCOL[b-1]:G;g.fillText(fit(F.names[b],w-24,g.font),x+12,y+42);pips(x+12,y+62,b,14,8,3);
+g.strokeStyle='rgba(255,255,255,.14)';g.beginPath();g.moveTo(x+12,y+72.5);g.lineTo(x+w-12,y+72.5);g.stroke();
+rows.forEach((q,i)=>{const yy=y+90+i*16;g.textAlign='left';g.font='11px monospace';g.fillStyle=TX;g.fillText(fit(q[0],w-62,g.font),x+12,yy);g.textAlign='right';g.font='bold 11px monospace';g.fillStyle=q[1]>0?RD:G;g.fillText((q[1]>0?'+':'')+q[1],x+w-12,yy)});
+const ys=y+90+rows.length*16;g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=Y;g.fillText('Punkte',x+12,ys);g.textAlign='right';g.fillText(f.from+' → '+f.to,x+w-12,ys);
+g.textAlign='left';g.font='10px monospace';g.fillStyle=MU;dry.forEach((l,i)=>g.fillText(l,x+12,ys+20+i*13));g.restore()}
+
 /* ---------- Seiten ---------- */
 const jobOf=k=>k==='random'?RANDOM:JOBS.find(j=>j.k===k)||JOBS[0];
 function sTitle(){const{SESSION,fmt,scenario}=X,r=SESSION.round;
 return{def:'serie',t:[
 {id:'serie',x:60,y:176,w:510,h:236,kind:'p',act:'solo',chip:'Enter',paint(t){const{g}=X;icon('play',t.x+60,t.y+70,58,G);g.textAlign='left';g.font='bold 28px monospace';g.fillStyle=G;g.fillText(r>0?'Serie fortsetzen':'Neue Serie',t.x+110,t.y+78);
-g.font='14px monospace';g.fillStyle=TX;const L=r>0?['Auftrag '+(r+1)+'   Konto '+fmt(SESSION.wallet),'Bester Auftrag '+fmt(SESSION.best)]:['Wer einen Auftrag verliert, verliert alles.','Ausrüstung kaufst du im Shop zwischen den Aufträgen.'];L.forEach((l,i)=>g.fillText(l,t.x+24,t.y+140+i*22));
+g.font='14px monospace';g.fillStyle=TX;const L=r>0?['Auftrag '+(r+1)+'   Konto '+fmt(SESSION.wallet),'Bester Auftrag '+fmt(SESSION.best)]:['Wer einen Auftrag verliert, verliert alles.','Ausrüstung kaufst du im Shop zwischen den Aufträgen.'];L.forEach((l,i)=>g.fillText(l,t.x+24,t.y+140+i*22));fhBadge(t.x+24,t.y+186,'l');
 g.font='13px monospace';g.fillStyle=Y;g.fillText('Nächster Auftrag: '+jobOf(X.scLocked(scenario)?'bank':scenario).n,t.x+24,t.y+206)}},
 {id:'coop',x:590,y:176,w:310,h:72,key:'c',act:'coop',icon:'coop',title:'Coop',sub:'Raum erstellen oder beitreten'},
 {id:'help',x:590,y:258,w:310,h:72,key:'?',act:'ui:help',icon:'help',title:'So wird gespielt',sub:'Steuerung und Symbole'},
@@ -86,7 +106,7 @@ t.push({id:'back',x:60,y:466,w:170,h:44,kind:'g',act:'missionBack',title:'Zurüc
 if(NET.role!=='client')t.push({id:'same',x:246,y:466,w:340,h:44,key:'k',act:'same',title:'Gleiche Karte nochmal: '+(sameMap?'an':'aus'),chosen:sameMap});
 t.push({id:'start',x:620,y:466,w:280,h:44,kind:'p',act:'missionStart',title:from==='lobby'?'Übernehmen':'Auftrag starten',chip:'Enter'});
 return{def:'start',back:'missionBack',t,deco(){const{g}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('AUFTRAG WÄHLEN',60,64);
-g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'Neue Serie',900,58);
+g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'Neue Serie',900,58);fhBadge(900,76,'r');
 const ft=t.find(q=>q.id===focus&&q.job),j=(ft?ft.job:jobOf(scenario)),dl=ft&&ft.lock?[ft.job.n+' ist gesperrt: erreichbar '+ft.lock+'.','Jeder überstandene Auftrag zählt, auch beim Zufall.']:j.d;
 g.fillStyle='rgba(0,0,0,.55)';g.fillRect(60,366,840,74);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(60.5,366.5,839,73);g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=Y;g.fillText(j.n,74,386);
 g.font='12px monospace';g.fillStyle=TX;dl.forEach((l,i)=>g.fillText(l,74,408+i*18));
@@ -123,7 +143,7 @@ if(host)t.push({id:'link',x:486,y:366,w:352,h:56,key:'l',act:'copyLink',icon:'li
 t.push({id:'leave',x:60,y:488,w:200,h:40,kind:'g',act:'lobbyBack',title:host?'Raum schließen':'Verlassen',chip:'Esc'});
 t.push({id:'start',x:620,y:484,w:280,h:44,kind:host?'p':'g',act:host?'lobbyStart':'',nofocus:!host,title:host?'Starten ('+NET.roster.length+(NET.roster.length===1?' Spieler)':' Spieler)'):'Der Host startet ...',chip:host?'Enter':'',nochip:!host});
 return{def:host?'start':'leave',back:'lobbyBack',t,deco(){const{g}=X;g.textAlign='center';g.font='13px monospace';g.fillStyle=TX;g.fillText(host?'Dein Raum':'Du bist im Raum',480,188);g.font='bold 44px monospace';g.fillStyle=A;g.fillText(NET.code,480,232);
-if(host){g.font='11px monospace';g.fillStyle=MU;g.fillText(roomLink(),480,252)}g.font='13px monospace';g.fillStyle=Y;g.fillText(NET.msg||'',480,452)}}}
+if(host){g.font='11px monospace';g.fillStyle=MU;g.fillText(roomLink(),480,252)}g.font='13px monospace';g.fillStyle=Y;g.fillText(NET.msg||'',480,452);fhBadge(480,474,'c')}}}
 function paintPlayer(t){const{g,PC,pn,myName,nameEdit,time,NET}=X,{i,r,me}=t.pl;g.textAlign='left';g.fillStyle=r?PC[i].c:'rgba(255,255,255,.18)';g.fillRect(t.x+12,t.y+14,12,12);
 if(r){g.font='bold 14px monospace';g.fillStyle='#e6eaf0';const nm=me&&nameEdit?myName+(Math.floor(time*2)%2?'|':' '):pn(i);g.fillText(fit(nm,t.w-60,g.font),t.x+32,t.y+25);g.font='11px monospace';g.fillStyle=SU;g.fillText((me?'du':'Mitspieler')+(i===0?', Host':''),t.x+12,t.y+50);if(me){g.fillStyle=MU;g.fillText(nameEdit?'tippen, Enter':'Klick: Name',t.x+12,t.y+68)}}
 else{g.font='12px monospace';g.fillStyle='#6c7480';g.fillText('wartet auf',t.x+32,t.y+25);g.fillText('Spieler ...',t.x+12,t.y+50)}}
@@ -133,7 +153,7 @@ items.forEach((it,i)=>{if(!cols.some(c=>c.ix.includes(i)))cols[cols.length-1].ix
 cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
-return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);
+return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);fhBadge(160,62,'l');
 g.textAlign='right';g.font='bold 22px monospace';g.fillStyle=G;g.fillText('Konto '+fmt(SESSION.wallet),900,58);g.font='12px monospace';g.fillStyle=TX;g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Bester Auftrag '+fmt(SESSION.best),900,80);
 g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;cols.forEach((c,ci)=>g.fillText(c.n,60+ci*212,96));
 const k=curKit(),nm=[CFG.wpn[k.w].n].concat(items.filter(it=>it.t&&k[it.k]).map(it=>it.n+' '+k[it.k]),k.mask?['Gasmaske']:[]),gd=[['jam','Stör'],['med','Med'],['fl','Blend'],['sm','Rauch'],['dc','Ablenker'],['ad','Adrenalin'],['bt','Bretter']].filter(q=>k[q[0]]).map(q=>q[1]+' x'+k[q[0]]);
@@ -161,13 +181,13 @@ return{def:'resume',back:'resume',t:[
 {id:'opt',x:330,y:278,w:300,h:50,key:'o',act:'ui:options',icon:'opt',title:'Optionen'},
 {id:'leave',x:330,y:338,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'}],
 deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=Y;g.font='bold 34px monospace';g.fillText('PAUSE',480,122);
-g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424)}}}
+g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424);fhBadge(480,446,'c')}}}
 /* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
 function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft,aw=ended.aw||[],pg=aw.length?ended.pg|0:0,last=!aw.length||pg===1;
 const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
 {id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen',tf:'bold 13px monospace'}];
 if(pg===1)t.push({id:'endPrev',x:250,y:468,w:190,h:58,nofocus:true,act:'endPrev',chip:'←',title:'Übersicht',tf:'bold 13px monospace'});
-return{t,back:'endBack',deco:aw.length?()=>pageAw(aw,pg):null}}
+return{t,back:'endBack',deco:aw.length||ended.fh?()=>{if(ended.fh&&pg!==1)pageFh(ended.fh);if(aw.length)pageAw(aw,pg)}:null}}
 function medal(cx,cy,c){const{g}=X;g.fillStyle=c;g.beginPath();g.arc(cx,cy,19,0,6.283);g.fill();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=2;g.stroke();
 g.fillStyle='rgba(10,12,18,.72)';g.beginPath();for(let k=0;k<10;k++){const r=k%2?4.5:10,an=-1.5708+k*.62832;g.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}g.closePath();g.fill()}
 function pageAw(aw,pg){const{g,VW,VH}=X,cx=pg===1?585:480;g.textAlign='center';
@@ -209,7 +229,7 @@ function mHelp(){const px=70,pw=820,py=24,ph=496;
 return{def:'close',back:'ui:close',t:[{id:'close',x:480-90,y:py+ph-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'}],
 deco(){const{g,drawLegend}=X;panelFrame(px,py,pw,ph,'SO WIRD GESPIELT');g.font='bold 11px monospace';g.fillStyle=MU;g.textAlign='left';g.fillText('STEUERUNG',px+24,py+66);g.fillText('ABLAUF',px+430,py+66);
 CTRL.forEach((r,i)=>{const y=py+92+i*22;g.font='bold 12px monospace';g.fillStyle=Y;g.fillText(r[0],px+24,y);g.font='12px monospace';g.fillStyle=TX;g.fillText(r[1],px+190,y)});
-FLOW.forEach((l,i)=>{g.font='12px monospace';g.fillStyle=TX;g.fillText(l,px+430,py+92+i*24)});
+FLOW.concat(X.CFG.fahndung.on?FLOW_FH_ON:FLOW_FH_OFF).forEach((l,i)=>{g.font='12px monospace';g.fillStyle=TX;g.fillText(l,px+430,py+92+i*24)});
 g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('SYMBOLE',px+24,py+376);drawLegend(py+398);g.textAlign='left'}}}
 function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
 return{def:'no',back:'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'}],
@@ -284,5 +304,5 @@ S0();g.fillStyle='rgba(8,10,16,.68)';g.fillRect(0,0,VW,VH);
 const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.55)');g.fillStyle=v;g.fillRect(0,0,VW,VH);
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
-return{drawMenu,drawPause,drawEnded,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus})):[]}}}
-mkUI.api=4;
+return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus})):[]}}}
+mkUI.api=5;

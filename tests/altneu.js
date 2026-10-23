@@ -7,7 +7,7 @@
 //     Beide Staende spielen die Basiskarte (dbg.setTurn('S'), seit Sprint 5 dazu CFG.map.tpW 0: Treffpunkt der Bank immer Ost, seit Sprint 6 CFG.gasGen.on 0: Tankstelle nur die vier Hand-Hallen): Seit Sprint 4 des Plans Mehr Abwechslung dreht layoutFor die handgebauten Karten aus dem Seed, der Vergleich beweist, dass die Basis und Bank und Transporter unveraendert sind.
 //  2. Balance-Bot (tools/bot.js des jeweiligen Stands) mit mehreren Optionen (frueh rufen, warten, Barrikaden, Extras, die neuen Karten): Ergebnis, Zeit, Rest-HP, Beute, Wellen, Abschuesse je Lauf.
 // Ausgabe IDENTISCH oder die erste abweichende Zeile. Ein Lauf dauert rund 30 Sekunden, mit `schnell` rund 10 (geprueft: eine einzige Pixelverschiebung beim Aussteigen der Beamten wird erkannt).
-// Das Ende-Objekt wird ohne aw und pg verglichen (Auszeichnungen, Oktober 2026: neue Felder, kein Spielablauf).
+// Das Ende-Objekt wird ohne aw, pg und fh verglichen (Auszeichnungen und Fahndungs-Tafel, Oktober 2026: neue Felder, kein Spielablauf).
 // Nicht geprueft wird, was kein Zufallsstrom erreicht (Ton, Menues, Netz: dafuer die Tests in cases/). Aenderungen am Bot selbst zeigen sich als Abweichung, dann den Bot in beiden Staenden vergleichen.
 process.env.HOLDUP_PORT = process.env.HOLDUP_PORT || '18830';
 const fs = require('fs'), path = require('path');
@@ -51,7 +51,7 @@ async function spielen(root) {
       const L = D.LAY();
       for (let i = 0; i < 30 * 170; i++) {
         const G = D.get(), me = G.me;
-        if (G.ended) { lines.push('ENDE ' + i + ' ' + JSON.stringify((({ aw, pg, ...e }) => e)(G.ended)).slice(0, 80)); break; }
+        if (G.ended) { lines.push('ENDE ' + i + ' ' + JSON.stringify((({ aw, pg, fh, ...e }) => e)(G.ended)).slice(0, 80)); break; }
         me.hp = 1e6; me.ar = 1e6;
         if (i === 30 * 12 && !G.vanCalled) D.callVan();
         if (G.vanArr && Math.abs(G.vanX - L.van.stop) <= 2 && me.x < L.exit.x + L.exit.dir * 40 && !me.out) { me.x = L.exit.x + L.exit.dir * 48; me.y = (L.exit.y0 + L.exit.y1) / 2; }

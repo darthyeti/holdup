@@ -29,10 +29,10 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=86"></script>
+<script src="js/ui.js?v=59"></script>
 <script>
-const BUILD={n:86,d:'2026-10-23'};//BUILD
-const UI_API=4;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
+const BUILD={n:59,d:'2026-10-23'};//BUILD
+const UI_API=5;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
    Vollbild gilt fuer die ganze Seite (nicht fuers Canvas: object-fit dehnt es dort, dann stimmt das Zielen nicht mehr). Alles ist CSS ueber html[data-view] und html[data-fs],
@@ -175,8 +175,8 @@ function toggleMute(){muted=!muted;try{localStorage.setItem('holdup.mute',muted?
 return{init,resume,pause,frame,toggleMute,isMuted:()=>muted,vol:k=>vol[k],setVol,blip,skid,_gains:()=>({sfx:sfx&&sfx.gain.value,mus:mus&&mus.gain.value}),on:()=>!!ac,listen:(x,y)=>{lx=x;ly=y},
 shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
 /* Sitzungsfortschritt: nur im Speicher, ueberlebt Auftraege, nicht den Neustart. Niederlage setzt alles zurueck (Serie). */
-const SESSION={wallet:0,own:{},cons:{},wear:{vest:null,helm:null},round:0,earned:0,best:0};
-function sessReset(){SESSION.wallet=0;SESSION.own={};SESSION.cons={};SESSION.wear={vest:null,helm:null};SESSION.round=0;SESSION.earned=0;SESSION.best=0}
+const SESSION={wallet:0,own:{},cons:{},wear:{vest:null,helm:null},round:0,earned:0,best:0,heat:0};
+function sessReset(){SESSION.wallet=0;SESSION.own={};SESSION.cons={};SESSION.wear={vest:null,helm:null};SESSION.round=0;SESSION.earned=0;SESSION.best=0;SESSION.heat=0}
 function start(ch,chF,pr,p2,cars,opt){opt=opt||{};
 const cv=opt.cv||document.getElementById('c'),g=cv.getContext('2d');
 const VW=960,VH=544,T=32;let W=44,H=28,WX0=-6,WY0=-5,WPX=W*T,WPY=H*T;
@@ -217,6 +217,8 @@ turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,30],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
+/* Fahndungslevel (Teamwert der Serie, SESSION.heat in Punkten 0 bis max, Stufe = Punkte / step). on 0 = Trockenlauf (nur Anzeige und Buchung, keine Wirkung auf die Polizei), 1 = wirkt (Schritt 2, noch nicht gebaut). Gebucht wird am Auftragsende (heatCalc): drift Grundrauschen je Auftrag, loud Ueberfall gestartet, kill je ausgeschaltetem Gegner (Deckel killMax), civ je getroffenem Zivilisten (Deckel civMax), wave je Welle ueber waveFree (Deckel waveMax); senkend quiet lautlos gewonnen, calm Ueberfall ohne einen Toten, goal Nebenziel erfuellt. Alle Gewichte sind Startwerte, ungemessen. */
+fahndung:{on:0,max:100,step:20,drift:3,loud:10,kill:1.5,killMax:15,civ:6,civMax:18,wave:3,waveFree:2,waveMax:12,quiet:-24,calm:-6,goal:-6,names:['Unauffällig','Aufmerksam','Gesucht','Fahndung','Großfahndung','Ausnahmezustand']},
 ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
 bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40},
 lean:{reach:26,spd:0},
@@ -1528,6 +1530,16 @@ out.push({k:A.k,t:A.n,p:w.map(o=>o.id),n:w.map(o=>pn(o.id)).join(' & '),v:A.v(mx
 return out}
 /* Liste aus dem Ende-Paket fuer die Anzeige bereinigen (Farbe aus der Spielerfarbe, Texte gekuerzt) */
 const cleanAw=a=>Array.isArray(a)?a.slice(0,CFG.awards.max).map(q=>({k:String(q.k||'').slice(0,12),t:String(q.t||'').slice(0,28),n:String(q.n||'').slice(0,44),v:String(q.v||'').slice(0,44),s:String(q.s||'').slice(0,64),cl:(Array.isArray(q.p)?q.p:[]).slice(0,4).map(i=>(PC[i|0]||PC[0]).c)})):[];
+/* Fahndungslevel: Stufe aus den Punkten, Buchung am Auftragsende nur aus generischen Groessen (Phase, Gegner, Zivilisten, Wellen, Nebenziel, nie aus Kartenfeldern), Bereinigung fuer das Netz. Gewichte: CFG.fahndung. */
+const heatClamp=h=>Math.max(0,Math.min(CFG.fahndung.max,Math.round(+h||0))),heatLv=h=>Math.max(0,Math.min(CFG.fahndung.names.length-1,Math.floor(heatClamp(h)/CFG.fahndung.step)));
+function heatBook(from,i){const F=CFG.fahndung,it=[],add=(t,d)=>{d=Math.round(d);if(d)it.push([t,d])};
+add('Grundrauschen',F.drift);
+if(i.phase===1&&i.win)add('Lautlos entkommen',F.quiet);
+else{add('Überfall',F.loud);add('Ausgeschaltet ('+i.kills+')',Math.min(F.killMax,i.kills*F.kill));add('Zivilisten ('+i.civ+')',Math.min(F.civMax,i.civ*F.civ));add('Wellen ('+i.waves+')',Math.min(F.waveMax,Math.max(0,i.waves-F.waveFree)*F.wave));if(!i.kills&&!i.civ)add('Ohne Tote',F.calm)}
+if(i.goal)add('Nebenziel',F.goal);
+return{from,to:heatClamp(from+it.reduce((s,q)=>s+q[1],0)),items:it}}
+const heatCalc=win=>heatBook(heatClamp(SESSION.heat),{win,phase,kills,civ:civKills,waves:waveN,goal:!!goal&&goalOk()});
+const cleanFh=f=>f&&typeof f==='object'&&Array.isArray(f.items)?{from:heatClamp(f.from),to:heatClamp(f.to),items:f.items.slice(0,8).map(q=>[String(q[0]).slice(0,28),Math.max(-100,Math.min(100,Math.round(+q[1]||0)))])}:null;
 function finish(win,title,extra,soft){if(ended)return;let score=secured;const lines=[];lines.push('Beute: '+fmt(secured));
 const lost=players.reduce((s,o)=>s+(!o.out&&o.loot>0?o.loot:0),0);
 if(win&&phase===1){const b=secured*((LAY.stl!=null?LAY.stl:CFG.stealthBonus)+lgA('stl'));score+=b;lines.push('Bonus lautlos: '+fmt(b))}
@@ -1538,7 +1550,7 @@ if(civKills>0){const pn=civKills*5000;score-=pn;lines.push('Zivilisten getroffen
 if(lost>0)lines.push('Beute verloren: '+fmt(lost));
 score=Math.max(0,score);lines.push('Ausgeschaltet: '+kills);if(phase===2)lines.push('Dauer: '+tm(tH));
 const hi=lines.length;lines.push('Ergebnis: '+fmt(score));
-const res={win,title,extra:extra||'',lines,hi,score,n:players.length,soft:!!soft};if(players.length>1){const aw=awards();if(aw.length)res.aw=aw}
+const res={win,title,extra:extra||'',lines,hi,score,n:players.length,soft:!!soft};if(win||soft)res.fh=heatCalc(win);if(players.length>1){const aw=awards();if(aw.length)res.aw=aw}
 if(NET.role==='host')bcast({t:'end',res});endLocal(res)}
 /* Nach einem Auftrag bleibt, was uebrig ist: Vorraete, Westenrest und Helmtreffer */
 function keepKit(){for(const q of CONS)SESSION.cons[q]=me[q]|0;if(SESSION.own.vest)SESSION.wear.vest=Math.max(0,Math.round(me.ar));if(SESSION.own.helm)SESSION.wear.helm=Math.max(0,me.hh|0)}
@@ -1547,8 +1559,9 @@ if(!res.soft)SESSION.round++;
 if(res.win){SESSION.wallet+=share;SESSION.earned+=share;if(share>SESSION.best){SESSION.best=share;lines.push('Bester Auftrag der Serie!')}keepKit();lines.push('Konto: '+fmt(SESSION.wallet))}
 else if(res.soft){keepKit();lines.push('Auftrag gescheitert. Die Serie läuft weiter, Konto '+fmt(SESSION.wallet))}
 else{lines.push('Serie beendet. Überstandene Aufträge: '+(SESSION.round-1)+', Beute gesamt '+fmt(SESSION.earned));sessReset()}
+const fh=res.win||res.soft?cleanFh(res.fh):null;if(fh)SESSION.heat=fh.to;
 if(NET.role==='client'&&NET.conn)NET.conn.send({t:'kit',k:curKit()});
-SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines,hi:res.hi}}
+SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines,hi:res.hi,fh}}
 function canSee(sx,sy,sa,fov,rng,tx,ty){const dx=tx-sx,dy=ty-sy,dd=Math.hypot(dx,dy);if(dd>rng)return false;if(angd(sa,Math.atan2(dy,dx))>fov)return false;return los(sx,sy,tx,ty)}
 const camAng=(c,i)=>c.a0+Math.sin(time*c.sp+i*1.7)*c.amp;
 function updNpc(n,i,dt){if(n.st==='cower'||n.st==='dead'||n.st==='away')return;n.alert=Math.max(0,n.alert-dt);
@@ -1691,7 +1704,7 @@ if(selIt>=0&&!inReach(its[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=24,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=25,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());c.on('error',()=>w.onclose&&w.onclose());return w};
@@ -1704,7 +1717,7 @@ peer.on('open',()=>{const c=peer.connect('holdup-'+code,{serialization:'json',re
 peer.on('error',e=>h.onError(e&&e.type||String(e)));
 return{close:()=>{try{peer.destroy()}catch(e){}}}}}}
 const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m)};
-const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario});
+const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario,h:SESSION.heat});
 function netReset(){atLast='';const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],ping:0});nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
@@ -1729,23 +1742,23 @@ else if(m.t==='u'){if(scr==='play')useGadget(o,m.n|0,+m.x,+m.y)}
 else if(m.t==='kit'){c.kit=sanKit(m.k)}
 else if(m.t==='at'){const r=NET.roster.find(q=>q.id===c.pid);if(r&&'lsmep'.includes(String(m.v))&&String(m.v).length===1){r.at=m.v;bcastRoster()}} else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);if(r){r.rdy=m.v?1:0;bcastRoster()}}
 else if(m.t==='ping')c.send({t:'pong',n:m.n})}
-function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;mapSeed=newSeed();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc});beginPlay()}
+function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;mapSeed=newSeed();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat});beginPlay()}
 function joinRoom(code){netReset();NET.role='client';NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
 NET.srv=TR.join(code,{onOpen(c){NET.conn=c;c.onmsg=clientMsg;c.onclose=()=>{if(NET.role==='client'&&NET.conn===c)leaveGame('Verbindung zum Host verloren.')};c.send({t:'hi',ver:VER,b:BUILD.n,k:curKit(),nm:myName})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
 setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.msg='Keine Antwort. Code prüfen und erneut versuchen.'},15000)}
 function clientMsg(m){
 if(m.t==='wel'){NET.myId=m.id;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...'}
-else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc}
+else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h)}
 else if(m.t==='rej'){const w=m.why;leaveGame(w)}
-else if(m.t==='go'){nPl=m.n;if(m.sc)jobSc=m.sc;kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
+else if(m.t==='go'){nPl=m.n;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
 else if(m.t==='snap'){if(scr==='play'&&!ended)applySnap(m)}
 else if(m.t==='end'){if(scr==='play'&&!ended)endLocal(m.res)}
-else if(m.t==='rst'){if(scr==='play'||scr==='shop'){if(m.sc)jobSc=m.sc;kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
+else if(m.t==='rst'){if(scr==='play'||scr==='shop'){if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong')NET.ping=performance.now()-m.n}
 function leaveGame(msg){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
 function beginPlay(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.init();SND.resume();SND.ev('start');cv.focus()}
 function restartRound(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.ev('start')}
-function startNext(){mapSeed=newSeed();if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcastRoster();bcast({t:'rst',k:buildKits(),sd:mapSeed,sc:jobSc})}restartRound()}
+function startNext(){mapSeed=newSeed();if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcastRoster();bcast({t:'rst',k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat})}restartRound()}
 let snapT=0;
 function netHostTick(dt){if(!NET.conns.length){evq.length=0;return}snapT+=dt;if(snapT<.05)return;snapT=0;const s=buildSnap();
 for(const c of NET.conns)if(c.ok)c.send(Object.assign({ev:evq.filter(e=>e[0]===-1||e[0]===c.pid).map(e=>[e[1],e[2]])},s));evq.length=0}
@@ -2002,7 +2015,7 @@ let ax=p.x-camX+Math.cos(p.a)*90,ay=p.y-camY+Math.sin(p.a)*90;if(time-mouse.t<4)
 if(focus&&p===me&&live(me)&&me.armed){const gp=4+(p.wp.spread+.05*p.mv+p.rec+lsp(p))*180;g.strokeStyle='rgba(120,255,140,.95)';g.lineWidth=1.6;g.beginPath();g.moveTo(ax-gp-6,ay);g.lineTo(ax-gp,ay);g.moveTo(ax+gp,ay);g.lineTo(ax+gp+6,ay);g.moveTo(ax,ay-gp-6);g.lineTo(ax,ay-gp);g.moveTo(ax,ay+gp);g.lineTo(ax,ay+gp+6);g.stroke()}
 if(!ended)hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('TON AUS (M)',VW-12,VH-52);g.textAlign='left'}
 if(MLOCK.on&&MLOCK.can&&plWant()&&!plHeld()&&focus&&!paused&&!ended){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('KLICKEN: MAUS FANGEN',VW-12,VH-(SND.isMuted()?68:52));g.textAlign='left'}
-if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}g.textAlign='left'}
+if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}fhBadge(480,352,'c');g.textAlign='left'}
 if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';if(ended.pg!==1){g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
 ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=(i===ended.hi?'bold 20px':'15px')+' monospace';g.fillText(l,480,244+i*28)})}
 g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}}
@@ -2030,12 +2043,12 @@ const reqHeist=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.s
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
 /* Menues als Kacheln: js/ui.js (mkUI). Der Kontext liest nur (Getter), geschrieben wird hier im Kern ueber uiAct. Neue Namen im Kontext ergaenzen, sobald ui.js sie braucht. */
 const UI=mkUI({act:uiAct,volAdj,get camX(){return camX},get camY(){return camY},get CFG(){return CFG},get curKit(){return curKit},get DBG(){return DBG},get drawLegend(){return drawLegend},
-get ended(){return ended},get errTxt(){return errTxt},get fmt(){return fmt},get g(){return g},get joinText(){return joinText},get missionFrom(){return missionFrom},
+get ended(){return ended},get errTxt(){return errTxt},get fmt(){return fmt},get g(){return g},get heatLv(){return heatLv},get joinText(){return joinText},get missionFrom(){return missionFrom},
 get myName(){return myName},get nameEdit(){return nameEdit},get NET(){return NET},get paused(){return paused},get PC(){return PC},get pn(){return pn},
 get roomLink(){return roomLink},get S0(){return S0},get sameMap(){return sameMap},get scenario(){return scenario},get scLocked(){return scLocked},get scr(){return scr},
 get SESSION(){return SESSION},get SHOPKEYS(){return SHOPKEYS},get shopNote(){return shopNote},get shopState(){return shopState},get itemPrice(){return itemPrice},get repCost(){return repCost},get so(){return so},get st(){return st},
 get T(){return T},get time(){return time},get titleNote(){return titleNote},get unlockAll(){return unlockAll},get VH(){return VH},get VW(){return VW},
-get W1(){return W1},get WX0(){return WX0},get WY0(){return WY0}}),{drawMenu,drawPause,drawEnded}=UI;
+get W1(){return W1},get WX0(){return WX0},get WY0(){return WY0}}),{drawMenu,drawPause,drawEnded,fhBadge}=UI;
 let shopNote={s:'',t:0},shopConf=-9,missionFrom='title',unlockAll=false;
 const SHOPKEYS='1234567890-';
 /* Aktionen der Menues (ui.js ruft sie ueber X.act): Auftragswahl mit Rang-Sperre, Coop-Wege, Shop, Pause, Ergebnis */
@@ -2124,7 +2137,7 @@ plate(10,y,250,22);g.font='bold 11px monospace';g.fillStyle='#8d95a1';g.fillText
 const st=f?'verfehlt':goal.k==='full'?goalDone()+' / '+goalNeed():goal.k==='fast'?tm(phase===2?goalLim()-tH:goalLim()):goal.k==='calm'&&phase===1?'< '+CFG.goal.calm+' %':'läuft';
 g.textAlign='right';g.fillStyle=f?'#ff6a5a':'#c9d4de';g.fillText(st,242,y+15);g.textAlign='left'}
 function hud(){const am='#ffb000';
-const lgl=lageLines(),ph=phase===1?(LAY.truck?108+14*(lgl.length-1):152+14*(lgl.length-1)):(LAY.truck?84:56);plate(10,10,250,ph);goalHud(10+ph+4);g.font='bold 13px monospace';g.fillStyle=phase===1?'#7fe8ff':'#ff6a5a';g.fillText(phase===1?(LAY.truck?'VORBEREITUNG':'ERKUNDUNG'):'ÜBERFALL',20,28);
+const lgl=lageLines(),ph=phase===1?(LAY.truck?108+14*(lgl.length-1):152+14*(lgl.length-1)):(LAY.truck?84:56);plate(10,10,250,ph);goalHud(10+ph+4);g.font='bold 13px monospace';g.fillStyle=phase===1?'#7fe8ff':'#ff6a5a';g.fillText(phase===1?(LAY.truck?'VORBEREITUNG':'ERKUNDUNG'):'ÜBERFALL',20,28);fhBadge(250,28,'r',true);
 if(phase===1&&LAY.truck)tkHud(lgl);else if(phase===1){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('VERDACHT',20,46);g.fillStyle='#10161f';g.fillRect(90,38,160,9);g.fillStyle=sus>60?'#ff4a3a':'#ffb000';g.fillRect(90,38,160*sus/100,9);if(players.length>1){g.font='9px monospace';g.fillStyle='#8d95a1';g.fillText('Team: Balken x'+(1/susScale()).toFixed(2).replace('.',','),90,56);g.font='11px monospace'}
 const ck=cams.filter(c=>c.k).length,rk=npcs.filter(n=>n.route&&n.rk).length,rt=npcs.filter(n=>n.route).length;
 const rows=[['KAMERAS',ck+' / '+cams.length,ck===cams.length],['KAMERAS AUS',camDown>0?tm(camDown):cams.filter(c=>c.off).length+' / '+cams.length,camDown>0||cams.some(c=>c.off)],['ROUTEN',rk+' / '+rt,rk===rt],['TRESORCODE',code?LAY.mission.code:LAY.mission.vault==='drill'?'kein Code':'unbekannt',code],['MONITORE',mon?'geprüft':'offen',mon]];
@@ -2196,7 +2209,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,gasParams,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,heatLv,heatBook,heatCalc,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,gasParams,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
