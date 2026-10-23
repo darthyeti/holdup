@@ -190,7 +190,7 @@ module.exports = [
       await t.loadTool('bot.js');
       const r = await t.page.evaluate(() => {
         const D = __dbg, out = {};
-        for (const [sc, seed, side, n, min] of [['jewel', 5000, 'E', 4, 1], ['jewel', 5000, 'W', 4, 1], ['jewel', 5000, 'N+', 4, 2], ['gas', 5000, 'N', 3, 2], ['gas', 5000, 'W', 3, 2], ['bank', 5017, 'E', 3, 2]]) {
+        for (const [sc, seed, side, n, min] of [['jewel', 5000, 'E', 8, 1], ['jewel', 5000, 'W', 8, 1], ['jewel', 5000, 'N+', 8, 2], ['gas', 5000, 'N', 3, 2], ['gas', 5000, 'W', 3, 2], ['bank', 5017, 'E', 3, 2]]) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           D.buildLay(D.turnLayout(D.layoutBase(seed), side[0], side[1] === '+'));
           let w = 0, loot = 0; for (let i = 0; i < n; i++) { const q = bot.run({ sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt' }); if (q.res === 'WIN') { w++; loot += q.loot; } }
