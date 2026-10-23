@@ -4,7 +4,7 @@ Top-down Bankraub im Browser. Vanilla JS, Canvas 2D, eine Datei (`index.html`) p
 
 Idee (Till): Cyberdogs-Gefühl (1992, Top-down-Shooter), moderne realistische Optik bei Tageslicht, Szenario Payday: Du bist der Räuber. Erst unbewaffnet erkunden, dann Waffe ziehen, Überfall durchhalten, fliehen. Später Coop-Mehrspieler (Aufgaben teilen: auskundschaften vs. Polizei abwehren). Zugehöriges claude.ai-Projekt: "Holdup" (früher "wardogs", Idee dort: iso, Comic-Stil, Coop gegen KI oder Free-for-all).
 
-Sprache mit Till: Deutsch. Er mag empathisch, lösungsorientiert, ehrlichen Widerspruch bei unklugen Entscheidungen, keine Em-Dashes. Arbeitsweise: Till pusht selbst (nie pushen, nicht danach fragen), committet wird nur auf Zuruf. Neue Spielsachen erst bauen, wenn Till die letzten getestet hat, außer er sagt ausdrücklich, dass es weitergehen soll.
+Sprache mit Till: Deutsch. Er mag empathisch, lösungsorientiert, ehrlichen Widerspruch bei unklugen Entscheidungen, keine Em-Dashes. Arbeitsweise: Lokal pusht Till selbst (nie pushen, nicht danach fragen), in Cloud-Sitzungen gilt der Abschnitt Cloud-Sitzungen unten. Committet wird nur auf Zuruf. Neue Spielsachen erst bauen, wenn Till die letzten getestet hat, außer er sagt ausdrücklich, dass es weitergehen soll.
 
 ## Wo steht was
 
@@ -34,6 +34,7 @@ Pflege: Neue Fakten dorthin schreiben, wo sie hingehören. Die Liste hier nur ä
 - `js/ui.js`: Menüs als Kacheln (Hauptmenü, Auftragswahl, Coop-Hub, Raumcode, Lobby, Shop, Pause, Optionen, Anleitung, Ergebnis), Zeichnen und Bedienung (Fokus, Tastatur, Maus), klassische Skriptdatei vor dem Spielkern, `mkUI(X)` mit Kontextobjekt, siehe docs/spielsystem.md. Der Hook zählt Änderungen in `js/` wie `index.html`.
 - `tests/`: automatische Tests (Node und `playwright-core`, startet das lokale Chromium, rund 4 Minuten je Lauf: `cd tests && npm install && npm test`). Siehe docs/tests-und-messwerte.md. Vor größeren Änderungen und vor dem Commit laufen lassen. `tests/render.js` zeichnet Karten und Grundrisse samt Straße als PNG zum Ansehen (`node render.js casino Reihen`, mit Seite `node render.js jewel 5 E`), `tests/sheet.js` legt eine Karte in allen acht Lagen auf einen Kontaktbogen (`node sheet.js jewel Klassik Ring`), `npm run test:long` ist der Langlauf für gedrehte Karten (mehrere Minuten, `tests/long/`), `tests/altneu.js` vergleicht zwei Stände des Spiels (alten per `git archive`, neuen Arbeitsordner) mit festem Zufallsstrom und beweist so einen Umbau ohne Verhaltensänderung (`node altneu.js /tmp/holdup-alt`, rund 30 s).
 - `tools/hooks/pre-commit`: Versionierung, siehe Entwicklung und Tests (Einrichten einmal je Klon: `git config core.hooksPath tools/hooks`).
+- `.claude/settings.json`, `.claude/hooks/session-start.sh`: Einrichtung für Cloud-Sitzungen, siehe Cloud-Sitzungen.
 
 ## Grundlagen und Regeln beim Ändern
 
@@ -62,6 +63,15 @@ Grundregeln beim Ändern:
 - Server: `python3 -m http.server 8765 --bind 127.0.0.1` im Projektordner (per Bash starten, `preview_start` mit `launch.json` scheitert auf dem Mac an Zugriffsrechten für Documents). Browser cacht stark, beim Testen `?v=N` an die URL hängen.
 - Debug-Hook: `index.html#debug` setzt `window.__dbg` (`get`, `update`, `tick`, `draw`, `keys`, `startHeist`, `callVan`, `reset`, `pathTo`, `los`, `clear`, `POSTS`, `CFG`, `NET`, `hostRoom`, `joinRoom`, `startCoop`, `leaveGame`, `state`, `setFocus`, `world`, `LAY`) und sammelt alle Instanzen in `window.__dbgs`. `CFG` ist live änderbar. Mit `__dbg.update(1/30)` in Schleifen lässt sich Spielzeit schnell simulieren. Im Browser-Pane pausiert `requestAnimationFrame` im Hintergrund, nach Zustandsänderungen `__dbg.draw()` selbst aufrufen, bevor man einen Screenshot macht.
 - Balance-Bot, Richtwerte, Messwerte und alle Testverfahren (Barrikaden, Transporter, Coop mit Test-Leitung, Ton): `docs/tests-und-messwerte.md`.
+
+## Cloud-Sitzungen
+
+Claude Code im Web läuft in einem flüchtigen Container mit frischem Klon. Es gelten dieselben Regeln wie lokal, mit diesen Unterschieden:
+
+- Branch und Push: Claude arbeitet auf einer Branch `claude/...` und pusht nie auf `main`. Nur Gepushtes überlebt die Sitzung, deshalb pusht Claude nach einem Commit (weiterhin nur auf Zuruf) auf diese Claude-Branch. Till holt sie auf den Mac und mergt selbst: `git fetch origin <branch>`, `git checkout main`, `git pull origin main`, `git merge --ff-only origin/<branch>`, `git push origin main`. Weil Till lokal parallel arbeitet, ist `main` oft weitergewandert: Meldet `--ff-only` "Not possible to fast-forward", nimmt er `git merge --no-ff origin/<branch> -m "..."` (kein Rebase). Vorab kann Claude in der Cloud prüfen, ob das ohne Konflikt geht: `git fetch origin main`, dann `git merge-tree --write-tree HEAD origin/main` (Exit 0 heißt sauber). Pull Requests nur auf Zuruf. Scheitert der Push mit 403, fehlt die GitHub-Verbindung (https://claude.ai/connect-github, dort auch die Claude GitHub App für das Repo prüfen).
+- Einrichtung: `.claude/hooks/session-start.sh` (registriert in `.claude/settings.json`, läuft nur mit `CLAUDE_CODE_REMOTE=true`) setzt `core.hooksPath` auf `tools/hooks`, damit die Build-Nummer zählt, führt `npm install` in `tests/` aus und exportiert `HOLDUP_CHROME=/opt/pw-browsers/chromium`, weil `tests/lib.js` Chromium sonst nur im Mac-Pfad sucht. Neue Sitzungen nutzen den Hook erst, wenn er in `main` liegt.
+- Tests laufen wie lokal (`cd tests && npm test`), brauchen in der Cloud aber rund 17 Minuten statt 4 (gemessen am 22. Oktober 2026). Im Hintergrund mit absolutem Pfad und großem Zeitlimit starten (`node /home/user/holdup/tests/run.js`, Limit mindestens 30 Minuten). Bricht das Limit den Lauf ab, scheitern alle späteren Tests sofort mit "browser has been closed": kein Spielfehler, nur die Restdateien neu starten (`node run.js <Dateiname> ...`).
+- Grenzen: Spielgefühl, Ton, Latenz und echte Coop-Partien testet nur Till an seinem Rechner. Parallele Sitzungen nur für Bereiche, die nicht beide `index.html` ändern. Die Regel "erst bauen, wenn Till die letzten Sachen getestet hat" gilt hier besonders, weil sich ungetestete Branches in der Cloud leicht stapeln.
 
 ## Stand und nächste Schritte
 
