@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=103"></script>
+<script src="js/ui.js?v=106"></script>
 <script>
-const BUILD={n:103,d:'2026-10-23'};//BUILD
+const BUILD={n:106,d:'2026-10-23'};//BUILD
 const UI_API=5;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -2036,7 +2036,7 @@ for(const b of bl){const k=b.sn?.05:b.o?.03:.02;g.strokeStyle=b.sn?'rgba(255,245
 for(const o of players){if(o.flash<=0||!live(o)||(o!==p&&!los(p.x,p.y,o.x,o.y)))continue;const fx2=o.x+Math.cos(o.a)*34,fy2=o.y+Math.sin(o.a)*34;glow(fx2,fy2,34,'255,200,110',.9);g.save();g.translate(fx2,fy2);g.rotate(o.a);g.fillStyle='rgba(255,235,170,.9)';g.beginPath();g.moveTo(0,0);g.lineTo(14,-3);g.lineTo(9,0);g.lineTo(14,3);g.closePath();g.fill();g.restore()}
 for(const e of en)if(e.fl>0&&los(p.x,p.y,e.x,e.y))glow(e.x+Math.cos(e.a)*(e.muz+2),e.y+Math.sin(e.a)*(e.muz+2),22,'255,170,90',.8);
 for(const q of pt)if(q.t==='s'){g.fillStyle='rgba('+q.c+','+q.l/q.m+')';g.fillRect(q.x-1,q.y-1,2,2)}else if(q.t==='g')glow(q.x,q.y,q.r,q.c,q.l/q.m*.9);
-for(const c of pcs){if(c.dead){glow(c.x,c.y,64,'255,120,40',.22+.1*Math.sin(time*9+c.id));continue}const ph=Math.floor(time*5+c.id)%2,ux=Math.cos(c.a)*6,uy=Math.sin(c.a)*6;glow(c.x-ux,c.y-uy,70,ph?'255,50,50':'60,100,255',.38);glow(c.x+ux*1.6,c.y+uy*1.6,70,ph?'60,100,255':'255,50,50',.38)}
+for(const c of pcs){if(c.dead){glow(c.x,c.y,64,'255,120,40',.22+.1*Math.sin(time*9+c.id));continue}if(c.civ)continue;const ph=Math.floor(time*5+c.id)%2,ux=Math.cos(c.a)*6,uy=Math.sin(c.a)*6;glow(c.x-ux,c.y-uy,70,ph?'255,50,50':'60,100,255',.38);glow(c.x+ux*1.6,c.y+uy*1.6,70,ph?'60,100,255':'255,50,50',.38)}
 g.globalCompositeOperation='source-over';
 for(const q of pt)if(q.t==='d'){const a=q.l/q.m;g.fillStyle='rgba('+q.c+','+a*.45+')';g.beginPath();g.arc(q.x,q.y,2+(1-a)*5,0,6.283);g.fill()}
 d.globalCompositeOperation='source-over';d.clearRect(0,0,VW,VH);d.fillStyle='rgba(10,12,20,'+(LAY.theme.dark+(blk>0?.2:0)+lgA('dark'))+')';d.fillRect(0,0,VW,VH);
