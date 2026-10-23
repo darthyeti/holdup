@@ -88,4 +88,24 @@ module.exports = [
       t.ok(r.timed >= r.naive && r.timed > .8, 'Warten auf ein Fenster hilft: naiv ' + r.naive + ', mit Warten ' + r.timed);
     },
   },
+  {
+    name: 'Echtspiel-Messung (stealth.live): spielt n Spieler durch das echte Spiel, ein Regelsatz ohne Alarm gelingt immer, ein scharfer scheitert, danach ist die Seite wieder solo',
+    timeout: 180000,
+    async run(t) {
+      await t.loadTool('stealth.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
+        let sd = 1; for (; sd < 200; sd++) { D.buildLay(D.layoutFor(sd)); if (D.get().npcs.filter(q => q.k === 'grd').length === 1) break; }
+        let np = 0; const o = {};
+        const leicht = { net: 1, grace: 999, carry: { grd: 0, staff: 0 } }, scharf = { net: 0, stare: 0, grace: 0, carry: { grd: 100, staff: 100 } };
+        o.leicht = stealth.live({ n: 3, k: 2, trials: 3, cfg: leicht, idle: 20 });
+        o.scharf = stealth.live({ n: 1, k: 4, trials: 8, cfg: scharf, idle: 20 });
+        o.spieler = D.get().players.length;
+        return o;
+      });
+      t.eq(r.leicht, 1, 'ohne Alarmmoeglichkeit (Gnadenfrist 999 s) gelingt jeder Lauf zu dritt');
+      t.ok(r.scharf < 1, 'mit Rate 100 fuer den Rucksack scheitert mindestens ein Lauf: ' + r.scharf);
+      t.eq(r.spieler, 1, 'die Seite ist danach wieder solo (setN 1)');
+    },
+  },
 ];

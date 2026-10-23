@@ -93,5 +93,32 @@ function rules(variants,o){o=Object.assign({secs:120,k:3,cut:6,sneak:true},o||{}
  return res.map(r=>r.ok/r.n)}
 function rulesSweep(variants,n,from,o){const acc={},cnt={};for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario('jewel');D.setSeedMode('random');D.setLage([]);D.buildLay(D.layoutFor(sd));const g=D.get().npcs.filter(q=>q.k==='grd').length;if(g===0)continue;const r=rules(variants,o),key=g+' Wache(n)';cnt[key]=(cnt[key]||0)+1;acc[key]=acc[key]||variants.map(()=>0);r.forEach((x,k)=>acc[key][k]+=x)}
  for(const k in acc)acc[k]=acc[k].map(x=>+(x/cnt[k]).toFixed(2));return{seeds:cnt,res:acc}}
-window.stealth={measure,sweep,record,team,teamSweep,rules,rulesSweep};
+// Echtes Spiel (Oktober 2026, leiser Coop): stealth.live({n,k,cut,trials,sneak,spread,idle,cfg,top}) spielt n Spieler (__dbg.setN, ein Host ohne Netz) durch das echte Spiel statt durch das Modell:
+// jeder schneidet k zufaellige Vitrinen (Standpunkte wie in measure) und geht zur Tuer, versetzt gestartet (spread s), Kameras aus, ohne Warten, schleichend. Position, Beute (units) und Diebstahl-Merker (thf) setzt das Werkzeug jeden Schritt,
+// alles andere (Sicht, Starren, Abbau, Teambalken, Gnadenfrist) rechnet das Spiel. Ergebnis: Anteil der Laeufe ohne Ueberfall. cfg ueberschreibt CFG.watch, top ueberschreibt CFG. Alte Regeln zum Vergleich: cfg {net:0,stare:0}, top {susPer:.25}.
+// stealth.liveSweep(n,from,o) laeuft ueber Juwelier-Seeds und mittelt je Zahl der Wachen (1W, 2W, 0W). Grenzen: kein Warten auf Luecken, keine Absprache (Untergrenze fuer Menschen), Kameras aus, Karten streuen stark (mindestens 20 Karten mit 8 Laeufen nehmen).
+const RC=new Map();
+function routeC(a,b){const k=a.map(Math.round).join()+'>'+b.map(Math.round).join();let r=RC.get(k);if(!r){r=route(a,b);RC.set(k,r)}return r}
+function livePlan(o,L,spots,exitT,speed){const left=spots.slice().sort(()=>Math.random()-.5).slice(0,Math.min(o.k,spots.length)),order=[];let cur=[L.spawn.x,L.spawn.y];
+ while(left.length){let bi=0,bd=1e9;left.forEach((s,j)=>{const d=routeC(cur,s.at).d;if(d<bd){bd=d;bi=j}});order.push(left[bi]);cur=left[bi].at;left.splice(bi,1)}
+ const pts=[];cur=[L.spawn.x,L.spawn.y];let loot=false;
+ for(const s of order){for(const q of samples(cur,routeC(cur,s.at).p,speed))pts.push([q[0],q[1],loot?'carry':'walk']);for(let i=0;i<Math.round(o.cut*HZ);i++)pts.push([s.at[0],s.at[1],'cut']);loot=true;cur=s.at}
+ for(const q of samples(cur,routeC(cur,exitT).p,speed))pts.push([q[0],q[1],'carry']);return pts}
+function live(o){o=Object.assign({k:3,n:1,cut:6,trials:10,sneak:true,idle:60,spread:15,cfg:null,top:null},o||{});
+ const L=D.LAY(),speed=o.sneak?50:85,items=D.get().its.filter(i=>i.t==='vit'),spots=items.map(i=>({it:i,at:spotFor(i)})).filter(s=>s.at),exitT=frontOut(L);let ok=0;
+ for(let tr=0;tr<o.trials;tr++){D.setN(o.n);D.reset();D.get().cams.forEach(c=>{c.off=true});if(o.cfg)Object.assign(D.CFG.watch,o.cfg);if(o.top)Object.assign(D.CFG,o.top);
+  const P=D.get().players,idleTicks=Math.floor(Math.random()*o.idle*10);for(let i=0;i<idleTicks;i++){for(const q of P){q.x=-200;q.y=-200;q.units=0}D.update(1/10)}
+  const plans=P.map(()=>({pts:livePlan(o,L,spots,exitT,speed),off:Math.floor(Math.random()*o.spread*HZ)})),IN={dt:0,vx:0,vy:0,sn:o.sneak?1:0,e:0,fire:0,rl:0,aim:0,ln:0,a:0,w:-1};
+  const end=Math.max(...plans.map(p=>p.off+p.pts.length)),loot=P.map(()=>0),prev=P.map(()=>'walk');let fail=false;D.keys.Shift=!!o.sneak;
+  for(let st=0;st<end&&!fail;st++)for(let s=0;s<6&&!fail;s++){
+   P.forEach((q,i)=>{const j=st-plans[i].off;if(i>0){q.inp=IN;q.lastIn=performance.now()}
+    if(j<0){q.x=L.spawn.x;q.y=L.spawn.y;q.units=0;return}if(j>=plans[i].pts.length){q.x=-200;q.y=-200;q.units=0;return}
+    const pt=plans[i].pts[j];if(s===0){if(prev[i]==='cut'&&pt[2]!=='cut')loot[i]++;prev[i]=pt[2]}q.x=pt[0];q.y=pt[1];q.units=.5*loot[i];if(pt[2]==='cut')q.thf=.6});
+   D.update(1/30);if(D.get().phase!==1)fail=true}
+  D.keys.Shift=false;if(!fail)ok++}
+ D.setN(1);return ok/o.trials}
+function liveSweep(n,from,o){const acc={},cnt={};for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario('jewel');D.setSeedMode('random');D.setLage([]);D.setN(1);D.buildLay(D.layoutFor(sd));RC.clear();
+  const g=D.get().npcs.filter(q=>q.k==='grd').length,r=live(o),key=g+'W';cnt[key]=(cnt[key]||0)+1;acc[key]=(acc[key]||0)+r}
+ const out={seeds:cnt};for(const key in acc)out[key]=+(acc[key]/cnt[key]).toFixed(2);return out}
+window.stealth={measure,sweep,record,team,teamSweep,rules,rulesSweep,live,liveSweep};
 })();

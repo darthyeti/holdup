@@ -2,6 +2,8 @@
 // Beobachterregeln (CFG.watch): In Sperrzone oder beim Stehlen (E gehalten an einer Beute-Stelle, o.thf) sehen alle mit der vollen Rate (Wache 48, Angestellte 34, Kamera 26).
 // Nur Beute in der Tasche: Kameras ignorieren es, Wache (carry.grd 20) und Angestellte (carry.staff 10) finden es langsam verdaechtig, die Wache bleibt stehen und schaut.
 // Gnadenfrist: Bei 100 laeuft ein Countdown (grace 4 s, im Coop mal 1 + susPer * (n - 1)), faellt der Balken unter back (70 %), ist der Alarm abgewendet, sonst startet der erzwungene Ueberfall. Netz: g[24], VER 19.
+// Leiser Coop (Oktober 2026): Der Abbau (down 9 pro s) laeuft auch bei Sicht weiter (net 1: der Balken waechst um Rate minus down, die gemessenen Raten unten sind deshalb Rate minus down),
+// ein Beobachter starrt hoechstens stare s (1,5) auf einen Traeger und geht dann cool s (4) wieder seinen Weg, und Museumswachen sehen nur im Gebaeude.
 async function setup(t) {
   await t.loadTool('loopnet.js');
   await t.loadInpage('coop.js');
@@ -17,26 +19,27 @@ const HELP = `(() => {
 
 module.exports = [
   {
-    name: 'Beobachter: Wache sieht nur Beute langsam (20/s), beim Stehlen oder in der Sperrzone voll (48/s), ohne Beute nichts, und bleibt stehen und schaut',
+    name: 'Beobachter: Wache sieht nur Beute langsam (20/s minus Abbau), beim Stehlen oder in der Sperrzone voll (48/s minus Abbau), ohne Beute nichts, und bleibt stehen und schaut',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
         const run = (units, thf, secs) => { D.setSus(0); me.units = units; me.loot = units * 1000; g.look = null; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
-        const o = { lg: D.lgM('sus') };
+        const o = { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0 };
         o.leer = run(0, 0, .5); o.carry = run(1, 0, .5); o.theft = run(0, 1, .5);
         // Sperrzone: Wache und Spieler in der Mitte einer Zone mit Sicht, Rucksack
         const zn = D.LAY().zones[0], zx = (zn[0] + zn[2]) / 2 * 32 + 16, zy = (zn[1] + zn[3]) / 2 * 32 + 16; o.zone = null;
         o.look = (() => { D.setSus(0); me.units = 1; me.thf = 0; g.look = null; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = 0; g.a = sp.a; D.update(1 / 30); } return !!(g.look && g.look.t > 0); })();
         return o; })()`);
       t.ok(!r.err, r.err);
-      t.ok(Math.abs(r.carry - 20 * r.lg) < 20 * r.lg * .12, 'Rucksack: ' + r.carry.toFixed(1) + ' pro s, erwartet ' + (20 * r.lg).toFixed(1));
-      t.ok(Math.abs(r.theft - 48 * r.lg) < 48 * r.lg * .12, 'Stehlen: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + (48 * r.lg).toFixed(1));
+      const wc = 20 * r.lg - r.dn, wt = 48 * r.lg - r.dn;   // Rate minus Abbau
+      t.ok(Math.abs(r.carry - wc) < wc * .12 + .3, 'Rucksack: ' + r.carry.toFixed(1) + ' pro s, erwartet ' + wc.toFixed(1));
+      t.ok(Math.abs(r.theft - wt) < wt * .12 + .3, 'Stehlen: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + wt.toFixed(1));
       t.ok(r.leer <= 0.01, 'ohne Beute und nicht beim Stehlen sieht die Wache nichts: ' + r.leer);
       t.eq(r.look, true, 'die Wache schaut zum Spieler mit dem Rucksack (look)');
     },
   },
   {
-    name: 'Beobachter: Angestellte (Kassierer) finden den Rucksack nur sehr langsam verdaechtig (10/s), beim Stehlen voll (34/s)',
+    name: 'Beobachter: Angestellte (Kassierer) finden den Rucksack nur sehr langsam verdaechtig (10/s minus Abbau), beim Stehlen voll (34/s minus Abbau)',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D; D.setScenario('bank'); D.setSeedMode('classic'); D.setLage([]); D.buildSeed('classic'); D.CFG.watch.grace = 0;
         const tel = D.get().npcs.find(q => q.k === 'tel'), me = D.get().me; H.isolate(tel, -1);
@@ -44,15 +47,16 @@ module.exports = [
         let sp = null; for (const d of [60, 80, 100, 50]) { const x = tel.x, y = tel.y + d; if (!D.isSol(Math.floor(x / 32), Math.floor(y / 32)) && D.los(tel.x, tel.y, x, y) && !D.world().restricted(x, y)) { sp = { x, y }; break; } }
         if (!sp) return { err: 'kein freier Punkt vor dem Kassierer' };
         const run = (units, thf) => { D.setSus(0); me.units = units; let s = 0; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
-        return { lg: D.lgM('sus'), carry: run(1, 0), theft: run(0, 1), leer: run(0, 0) }; })()`);
+        return { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0, carry: run(1, 0), theft: run(0, 1), leer: run(0, 0) }; })()`);
       t.ok(!r.err, r.err);
-      t.ok(Math.abs(r.carry - 10 * r.lg) < 10 * r.lg * .15, 'Rucksack: ' + r.carry.toFixed(1) + ' pro s, erwartet ' + (10 * r.lg).toFixed(1));
-      t.ok(Math.abs(r.theft - 34 * r.lg) < 34 * r.lg * .15, 'Stehlen: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + (34 * r.lg).toFixed(1));
+      const sc = 10 * r.lg - r.dn, st = 34 * r.lg - r.dn;
+      t.ok(Math.abs(r.carry - sc) < Math.abs(sc) * .15 + .3, 'Rucksack: ' + r.carry.toFixed(1) + ' pro s, erwartet ' + sc.toFixed(1));
+      t.ok(Math.abs(r.theft - st) < st * .15 + .3, 'Stehlen: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + st.toFixed(1));
       t.ok(r.leer <= 0.01, 'ohne Beute nichts: ' + r.leer);
     },
   },
   {
-    name: 'Beobachter: Kameras ignorieren den Rucksack ausserhalb der Sperrzone, sehen aber das Stehlen (26/s)',
+    name: 'Beobachter: Kameras ignorieren den Rucksack ausserhalb der Sperrzone, sehen aber das Stehlen (26/s minus Abbau)',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D; D.setScenario('bank'); D.setSeedMode('classic'); D.setLage([]); D.buildSeed('classic'); D.CFG.watch.grace = 0;
         const me = D.get().me, cams = D.get().cams; let ci = -1, sp = null;
@@ -60,14 +64,15 @@ module.exports = [
         if (ci < 0) return { err: 'keine Kamera mit freiem Punkt im Kegel ausserhalb der Sperrzone' };
         H.isolate(null, ci); D.get().cams[ci].amp = 0; D.get().cams[ci].off = false;
         const run = (units, thf) => { D.setSus(0); me.units = units; let s = 0; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
-        return { lg: D.lgM('sus'), carry: run(1, 0), theft: run(0, 1) }; })()`);
+        return { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0, carry: run(1, 0), theft: run(0, 1) }; })()`);
       t.ok(!r.err, r.err);
       t.ok(r.carry <= 0.01, 'Rucksack allein: die Kamera reagiert nicht (' + r.carry + ')');
-      t.ok(Math.abs(r.theft - 26 * r.lg) < 26 * r.lg * .15, 'beim Stehlen im Kegel: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + (26 * r.lg).toFixed(1));
+      const wk = 26 * r.lg - r.dn;
+      t.ok(Math.abs(r.theft - wk) < wk * .15 + .3, 'beim Stehlen im Kegel: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + wk.toFixed(1));
     },
   },
   {
-    name: 'Beobachter: echtes Stehlen (E gehalten an einer Vitrine) setzt den Diebstahl-Merker, er klingt nach 0,6 s ab; Museum: Wachen sehen weiter jeden',
+    name: 'Beobachter: echtes Stehlen (E gehalten an einer Vitrine) setzt den Diebstahl-Merker, er klingt nach 0,6 s ab; Museum: Wachen sehen jeden im Gebaeude',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
         const me = D.get().me; D.get().npcs.forEach(q => { q.st = 'away'; });
@@ -83,13 +88,74 @@ module.exports = [
         D.setScenario('museum'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(31); D.CFG.watch.grace = 0; const g = D.get().npcs.find(q => q.k === 'grd'), m2 = D.get().me; H.isolate(g, -1); const sp2 = H.spotFor(g, false);
         if (!sp2) { o.museum = 'kein Punkt'; return o; }
         D.setSus(0); m2.units = 0; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < 6; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp2.a; m2.x = sp2.x; m2.y = sp2.y; D.update(1 / 30); s++; }
-        o.museum = D.get().sus / (s / 30); o.seen = D.CFG.museum.seen * D.lgM('sus'); return o; })()`);
+        o.museum = D.get().sus / (s / 30); o.seen = D.CFG.museum.seen * D.lgM('sus') - (D.CFG.watch.net ? D.CFG.watch.down : 0); return o; })()`);
       t.ok(!r.err, r.err);
       t.ok(r.beimStehlen > .3, 'beim Stehlen gesetzt: ' + r.beimStehlen + ' (Fortschritt ' + r.pr + ')');
       t.ok(r.kurz > 0, 'direkt nach dem Loslassen noch kurz gesetzt: ' + r.kurz);
       t.eq(r.nachher, 0, 'nach 0,8 s weg');
       t.ok(r.museum !== 'kein Punkt', 'Punkt im Sichtfeld der Museumswache');
       t.ok(Math.abs(r.museum - r.seen) < r.seen * .15, 'Museum: Wache sieht auch ohne Beute mit CFG.museum.seen: ' + r.museum + ' gegen ' + r.seen);
+    },
+  },
+  {
+    name: 'Museum: die Wache sieht niemanden draussen vor dem Fenster (auch nicht durch das Glas), im Gebaeude jeden',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('museum'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(31); D.CFG.watch.grace = 0;
+        const L = D.LAY(), B = L.bld, Wd = D.world(), T = 32, ins = (tx, ty) => tx > B.x0 && tx < B.x1 && ty > B.y0 && ty < B.y1, free = (tx, ty) => !D.isSol(tx, ty), mid = (tx, ty) => [tx * T + 16, ty * T + 16];
+        // Ein Fenster oder eine Glastuer in der Huelle: drinnen vier freie Kacheln hintereinander, draussen zwei (nicht in der Sperrzone Nord oder Ost), Sicht durch das Glas
+        let pair = null;
+        for (let ty = B.y0; ty <= B.y1 && !pair; ty++) for (let tx = B.x0; tx <= B.x1 && !pair; tx++) { const c = Wd.cell(tx, ty); if (c !== 'W' && c !== 'D') continue;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { let ok = true;
+            for (let k = 1; k <= 4; k++) if (!ins(tx + dx * k, ty + dy * k) || !free(tx + dx * k, ty + dy * k)) ok = false;
+            for (let k = 1; k <= 2; k++) if (ins(tx - dx * k, ty - dy * k) || !free(tx - dx * k, ty - dy * k)) ok = false;
+            if (!ok) continue; const gi = mid(tx + dx * 2, ty + dy * 2), po = mid(tx - dx * 2, ty - dy * 2), pi = mid(tx + dx, ty + dy), gf = mid(tx + dx * 4, ty + dy * 4);
+            if (!Wd.restricted(po[0], po[1]) && !Wd.restricted(pi[0], pi[1]) && D.los(gi[0], gi[1], po[0], po[1]) && D.los(gf[0], gf[1], pi[0], pi[1])) { pair = { gi, po, pi, gf, d: [dx, dy] }; break; } } }
+        if (!pair) return { err: 'kein Fenster mit freier Sicht gefunden' };
+        const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1);
+        const run = (gp, pp, units, thf) => { D.setSus(0); me.units = units; me.loot = units * 1000; let s = 0; for (let i = 0; i < 15; i++) { g.x = gp[0]; g.y = gp[1]; g.a = Math.atan2(pp[1] - gp[1], pp[0] - gp[0]); me.x = pp[0]; me.y = pp[1]; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
+        const ga = (gp, pp) => Math.atan2(pp[1] - gp[1], pp[0] - gp[0]);
+        o.sieht = D.canSee(pair.gi[0], pair.gi[1], ga(pair.gi, pair.po), g.fov, g.rng, pair.po[0], pair.po[1]);   // ohne die Regel wuerde die Wache durch das Glas sehen
+        o.draussen = run(pair.gi, pair.po, 0, 0); o.drinnen = run(pair.gf, pair.pi, 0, 0);
+        o.seen = D.CFG.museum.seen * D.lgM('sus') - (D.CFG.watch.net ? D.CFG.watch.down : 0);
+        // Der Startpunkt liegt vor dem Eingang, ausserhalb der Huelle (mit Beute draussen ist man ohnehin raus, secure)
+        o.spawnDraussen = !ins(Math.floor(L.spawn.x / T), Math.floor(L.spawn.y / T));
+        return o; })()`);
+      t.ok(!r.err, r.err);
+      t.eq(r.sieht, true, 'Sichtlinie durch das Glas besteht (die Wache koennte den Spieler sehen)');
+      t.ok(r.draussen <= .01, 'draussen vor dem Fenster: kein Verdacht (' + r.draussen + ' pro s)');
+      t.ok(Math.abs(r.drinnen - r.seen) < r.seen * .15 + .3, 'im Gebaeude sieht die Wache jeden mit CFG.museum.seen: ' + r.drinnen.toFixed(1) + ' gegen ' + r.seen.toFixed(1));
+      t.eq(r.spawnDraussen, true, 'der Startpunkt liegt ausserhalb der Gebaeudekacheln');
+    },
+  },
+  {
+    name: 'Starren: ein Beobachter schaut hoechstens stare s auf einen Traeger, geht cool s lang wieder seinen Weg und schaut dann erneut; der Balken waechst in der Zeit weiter',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 999;
+        const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
+        const W = D.CFG.watch, g0 = [g.x, g.y], run = (stare) => { W.stare = stare; D.buildSeed(654); D.CFG.watch.grace = 999; const gg = D.get().npcs.find(q => q.k === 'grd'), m = D.get().me; H.isolate(gg, -1); D.setSus(0);
+          const at = {}, sus = {}; for (let i = 0; i <= 30 * 7; i++) { gg.x = g0[0]; gg.y = g0[1]; gg.a = sp.a; m.x = sp.x; m.y = sp.y; m.units = 1; m.thf = 0; D.update(1 / 30); const tt = Math.round(i / 30 * 10) / 10; at[tt] = !!(gg.look && gg.look.t > 0); sus[tt] = D.get().sus; } return { at, sus }; };
+        const a = run(W.stare), b = run(0); o.stare = W.stare; o.cool = W.cool; o.a = [a.at[.5], a.at[1.2], a.at[3.5], a.at[5.0], a.at[6.2], a.at[6.8]]; o.b = [b.at[.5], b.at[3.5], b.at[6.8]];
+        o.rateKuehl = (a.sus[4.5] - a.sus[2.5]) / 2; o.lg = D.lgM('sus'); o.dn = W.net ? W.down : 0; return o; })()`);
+      t.ok(!r.err, r.err);
+      t.eq(r.a, [true, true, false, false, true, true], 'mit Grenze: schaut, wendet sich ab (' + r.stare + ' s Hinsehen, ' + r.cool + ' s Weitergehen), schaut wieder');
+      t.eq(r.b, [true, true, true], 'stare 0: der Beobachter bleibt, solange er den Traeger sieht');
+      const w = 20 * r.lg - r.dn;
+      t.ok(Math.abs(r.rateKuehl - w) < w * .15 + .3, 'der Balken waechst waehrend des Weitergehens mit derselben Rate: ' + r.rateKuehl.toFixed(1) + ' gegen ' + w.toFixed(1));
+    },
+  },
+  {
+    name: 'Abbau laeuft bei Sicht weiter (net): eine Rate unter CFG.watch.down senkt den Balken, mit net 0 steigt er; ohne Beobachter sinkt er mit down',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0; D.CFG.watch.stare = 0;
+        const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
+        const W = D.CFG.watch, g0 = [g.x, g.y]; W.carry.grd = 5;   // unter down
+        const run = (net, see, secs) => { W.net = net; D.setSus(50); me.units = see ? 1 : 0; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = see ? sp.x : 0; me.y = see ? sp.y : 4000; me.thf = 0; D.update(1 / 30); } return D.get().sus - 50; };
+        o.lg = D.lgM('sus'); o.down = W.down; o.netSicht = run(1, true, 1); o.altSicht = run(0, true, 1); o.netLeer = run(1, false, 1); o.altLeer = run(0, false, 1); W.down = 3; o.drei = run(1, false, 2); return o; })()`);
+      t.ok(!r.err, r.err);
+      t.ok(Math.abs(r.netSicht - (5 * r.lg - r.down)) < 1, 'net 1: bei Rate 5 sinkt der Balken um ' + r.down + ' minus 5 pro s: ' + r.netSicht.toFixed(1));
+      t.ok(Math.abs(r.altSicht - 5 * r.lg) < 1, 'net 0: bei Sicht steigt er mit der Rate 5: ' + r.altSicht.toFixed(1));
+      t.ok(Math.abs(r.netLeer + r.down) < 1 && Math.abs(r.altLeer + r.down) < 1, 'ohne Beobachter sinkt er mit down in beiden Faellen: ' + r.netLeer.toFixed(1) + ' / ' + r.altLeer.toFixed(1));
+      t.ok(Math.abs(r.drei + 6) < 1, 'down 3 senkt 2 s lang um 6: ' + r.drei.toFixed(1));
     },
   },
   {
@@ -134,17 +200,17 @@ module.exports = [
         A.get().npcs.forEach(q => { if (q !== g) q.st = 'away'; }); A.get().cams.forEach(c => { c.off = true; });
         let sp = null; for (const a of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) { const x = g.x + Math.cos(a) * 50, y = g.y + Math.sin(a) * 50; if (!A.isSol(Math.floor(x / 32), Math.floor(y / 32)) && A.los(g.x, g.y, x, y) && !A.world().restricted(x, y)) { sp = { x, y, a }; break; } }
         if (!sp) return { err: 'kein Punkt' }; const g0 = [g.x, g.y];
-        A.setSus(99); for (let i = 0; i < 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; p1.x = sp.x; p1.y = sp.y; p1.units = 1; p1.thf = 1; step(G.insts, G.net, 1 / 60); }
+        out.max = A.CFG.watch.grace * (1 + A.CFG.susPer); A.setSus(99); for (let i = 0; i < 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; p1.x = sp.x; p1.y = sp.y; p1.units = 1; p1.thf = 1; step(G.insts, G.net, 1 / 60); }
         G.run(.2); out.host = A.get().alarmT; out.client = B.get().alarmT; out.phase = [A.get().phase, B.get().phase]; out.feedB = B.msgs().feed.filter(f => /Entdeckt/.test(f));
         const draw = [], ctx = B.cv.getContext('2d'), o0 = ctx.fillText; ctx.fillText = function (s) { draw.push(String(s)); return o0.apply(this, arguments); }; try { B.draw(); } finally { ctx.fillText = o0; }
         out.hud = draw.find(s => /^ENTDECKT! Alarm in/.test(s)) || null;
         // Abbruch: aus dem Blick
-        p1.units = 0; p1.thf = 0; p1.x = A.get().players[0].x; p1.y = A.get().players[0].y; A.get().players[0].units = 0; for (let i = 0; i < 60 * 5; i++) { p1.thf = 0; p1.units = 0; step(G.insts, G.net, 1 / 60); }
+        p1.units = 0; p1.thf = 0; p1.x = A.get().players[0].x; p1.y = A.get().players[0].y; A.get().players[0].units = 0; for (let i = 0; i < 60 * 7; i++) { p1.thf = 0; p1.units = 0; step(G.insts, G.net, 1 / 60); }   // zu zweit baut sich der Balken mit 9 / (1 + susPer) pro s ab: 30 Prozent in 5 s
         out.abgewendet = [A.get().alarmT, B.get().alarmT, A.get().phase, B.msgs().feed.some(f => /abgewendet/.test(f))];
         return out;
       });
       t.ok(!r.err, r.err);
-      t.ok(r.host > 0 && r.host <= 5 && Math.abs(r.client - r.host) < 1.2, 'Host und Client kennen den Countdown (zu zweit hoechstens 4 mal 1,25 s): ' + r.host + ' / ' + r.client); t.eq(r.phase, [1, 1], 'noch Phase 1');
+      t.ok(r.host > 0 && r.host <= r.max + .1 && Math.abs(r.client - r.host) < 1.2, 'Host und Client kennen den Countdown (zu zweit hoechstens grace mal 1 + susPer = ' + r.max + ' s): ' + r.host + ' / ' + r.client); t.eq(r.phase, [1, 1], 'noch Phase 1');
       t.ok(r.feedB.length >= 1 && /Blau/.test(r.feedB[0]), 'Meldung nennt Blau: ' + JSON.stringify(r.feedB));
       t.ok(/s$/.test(r.hud || ''), 'HUD zeigt den Countdown: ' + r.hud);
       t.eq(r.abgewendet.slice(0, 3), [0, 0, 1], 'Abbruch bei Host und Client, noch Phase 1'); t.eq(r.abgewendet[3], true, 'Client liest Alarm abgewendet');
