@@ -108,6 +108,7 @@ module.exports = [
       await t.loadInpage('coop.js');
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {};
+        // fester Wert, unabhaengig vom Standard in CFG (zum Pruefen der Logik, nicht der Balance)
         D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.vanLock = 60;
         const run = n => { for (let i = 0; i < n; i++) { D.get().me.hp = 1e9; D.update(1 / 30); } };
         const start = radio => { D.reset(); D.startHeist(false, D.get().me); D.get().me.kit.radio = radio; };
