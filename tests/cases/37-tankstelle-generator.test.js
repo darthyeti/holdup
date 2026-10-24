@@ -25,7 +25,7 @@ module.exports = [
     },
   },
   {
-    name: 'Tankstelle: Generator wuerfelt die Huelle (alle Werte von Breite, Tiefe, Fluchttuer und Zapfsaeulenzahl kommen vor), deterministisch, kein Rueckfall, hoechstens 5 Versuche, mindestens 50 verschiedene Huellen in 300 Seeds, Klassik rund 10 %',
+    name: 'Tankstelle: Generator wuerfelt die Huelle (alle Werte von Breite, Tiefe, Fluchttuer und Zapfsaeulenzahl kommen vor), deterministisch, kein Rueckfall, hoechstens 20 Versuche, mindestens 50 verschiedene Huellen in 300 Seeds, Klassik rund 10 %',
     timeout: 120000,
     async run(t) {
       await t.loadInpage('turn.js'); await t.loadTool('mapcheck.js');
@@ -42,7 +42,7 @@ module.exports = [
       t.eq(r.nondet, 0, 'gleiche Seeds, gleiche Karten');
       t.ok(Object.keys(r.vals.sw).length === 7 && Object.keys(r.vals.sd).length === 3 && Object.keys(r.vals.er).length === 3 && Object.keys(r.vals.np).length === 3, 'alle Werte kommen vor: ' + JSON.stringify(r.vals));
       t.ok(r.classic >= 60 && r.classic <= 160, 'Klassik-Huelle rund 10 % (CFG.gasGen.classic): ' + r.classic + ' von 1000');
-      t.ok(Math.max(...Object.keys(r.tries).map(Number)) <= 5, 'hoechstens 5 Versuche je Karte: ' + JSON.stringify(r.tries));
+      t.ok(Math.max(...Object.keys(r.tries).map(Number)) <= 20, 'hoechstens 20 Versuche je Karte (seit Paket P1 braucht das Muster Gaenge Tiefe 5, im Mittel 3 Versuche): ' + JSON.stringify(r.tries));
       t.ok(r.huellen >= 50, 'mindestens 50 verschiedene Huellen in 300 Seeds auf der Basis: ' + r.huellen);
     },
   },

@@ -14,7 +14,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 
 | Paket | Thema | Plan | Status |
 |---|---|---|---|
-| P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | Plan steht und ist entschieden, wartet auf Tills Go (frühestens nach dem Cloud-Umbau) |
+| P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | gebaut (24. Oktober 2026, Till gab das Go), wartet auf Tills Spieltest |
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | gebaut (24. Oktober 2026, Till gab das Go), wartet auf Tills Spieltest |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
@@ -43,11 +43,20 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 
 **Entscheidung (Till, 24. Oktober 2026):** "Gänge auf der Klassik-Hülle" (Breite 14, Tiefe 4) bleibt als Ausnahme, wie es ist. Die Klassik-Hülle läuft weiter ohne die neue Breitenregel und ohne Änderung der Schnappschüsse (Schritt 3 trägt sie mit Begründung in `KNOWN` ein, `minSd` und die Raster-Regel gelten nur für erzeugte Hüllen).
 
+**Bau** (24. Oktober 2026), Abweichungen vom Plan:
+- Die Breitenprüfung ist ein 2x2-Block, der über freie Kacheln der Verkaufsfläche von einem Startblock an der Vordertür (unterste Zeile, überlappt die zwei Türkacheln) zu einem Zielblock an der Fluchttür (Spalte `sw`, überlappt die zwei Türzeilen) rutscht (`gasWide`, im Test eine eigene Fassung). Gemessen: Klassik-Muster bei Tiefe 3 und Gänge bei Tiefe 3 und 4 sind in allen Breiten Schlauch (21 von 84 Kombinationen wie im Plan), Insel und Wandregale nie. Erste Fassungen der Prüfung (Startblock innen vor der Tür) hielten auch Insel 12 x 4 und 13 x 4 für Schlauch, weil ein Regal vor einer der zwei Türkacheln steht, tatsächlich öffnet sich dort aber gleich daneben der Raum.
+- `minArea` 42 (Breite mal Tiefe) greift zusätzlich bei Tiefe 3 und Breite 12 und 13 (36 und 39), also bleiben 59 von 84 Kombinationen (70 %), nicht 63. 19 von 21 Kombinationen aus Breite und Tiefe kommen noch vor.
+- Die Klassik-Hülle ist im Code ausgenommen (`lay.q` fehlt), nicht über `KNOWN`: So prüft `validateMap` die Regel in den Läufen des Kartenvertrags weiter streng für alle erzeugten Hüllen. Gedrehte Karten (`lay.turned`) sind dieselbe Halle und werden an der Basis geprüft.
+- Das Muster hängt am Seed (`gsShopOf`), die Versuche würfeln nur Breite, Tiefe, Fluchttür, Inseln. Karten mit Gängen brauchen deshalb im Mittel 3 Versuche (gemessen höchstens 14 in 3000 Seeds, Grenze `tries` 30), Tests 37 und 92 erwarten höchstens 20 statt 5.
+- Gedränge (Schritt 4): `CFG.gasGen.crowd` (`few` 40, `camsFew` 2, `two` 48), freie Fläche = `sw*sd` minus acht Regalkacheln. Unter 40: höchstens 2 Kameras und eine Wache (betrifft 14 x 3 und 15 x 3 mit Insel und Wandregale, rund 7 % der erzeugten Karten), unter 48 nur eine Wache (rund 27 %, die Lage Sicher behält ihren Tag, hat dort aber nur eine Wache). Der Wachwechsel-Wachmann beginnt eine Zeile weiter drin. Die Zahlen sind die des Plans, ohne Messung mit Menschen (die Schleichmessung `tools/stealth.js` gilt nur dem Juwelier, der Bot gewinnt in allen Gruppen 98 bis 100 %).
+- Schnappschüsse `layout-hash` und `turn-hash` geändert (nur die Tankstelle), `gas-basis` bleibt im Raster gleich. `VER` 30, weil derselbe Seed eine andere Tankstelle baut. Für Tests erzwingt `P.shop` ein Regalmuster und `GS_SHOPS` steht im Debug-Hook.
+
 **Risiken:** Der Umbau berührt `GS_SHOPS`, `gasParams`, `gasLayout`, `genGas`, `CFG.gasGen` (etwa 15 Zeilen) sowie die Tests 37 und 92 und liegt damit im Bereich des parallelen Cloud-Umbaus von `index.html`: erst nach dessen Merge bauen. Weniger kleine Hallen heißt weniger Abwechslung bei der Hüllengröße (75 % der Kombinationen bleiben, Breite und Tiefe variieren weiter).
 
 **Änderungsprotokoll**
 - v1 (24. Oktober 2026): Plan zu B1.
 - v1.1 (24. Oktober 2026): Entscheidung eingetragen (Gänge auf der Klassik-Hülle bleibt als Ausnahme), keine offene Frage mehr.
+- Bau (24. Oktober 2026): Go von Till, gebaut mit den Abweichungen oben, Status gebaut.
 
 ## P2 Runde endet sofort mit "Lautlos entkommen" (Brettersatz im Kit)
 

@@ -1,5 +1,5 @@
 // Langlauf fuer den Tankstellen-Generator (Plan Mehr Abwechslung, Sprint 6): npm run test:long. Zusaetzlich zu 90-gedrehte-karten (das die Tankstelle mit Generator in allen acht Lagen prueft):
-//   1 3000 Seeds auf der Basis: validateMap ohne Fehler und Warnungen, die Bauregeln relativ zur Huelle, kaum Rueckfall, hoechstens 5 Versuche, jede Kombination aus Breite und Tiefe kommt vor
+//   1 3000 Seeds auf der Basis: validateMap ohne Fehler und Warnungen, die Bauregeln relativ zur Huelle, kaum Rueckfall, hoechstens 20 Versuche, jede erlaubte Kombination aus Breite und Tiefe kommt vor (19 von 21, Paket P1)
 //   2 voller Aufbau und mapcheck.check fuer 400 Seeds
 //   3 Bot mit fruehem Rufen auf 450 Karten (neun Gruppen nach Breite und Tiefe): keine Haenger, hoechstens 3 fruehe Verluste, Quote je Gruppe mindestens 85 %, dazu zur Information der gierige Lauf (goods)
 //   4 Coop zu zweit auf 20 generierten Karten (verschiedene Breite, Tiefe, Zapfsaeulenzahl)
@@ -25,9 +25,9 @@ module.exports = [
       });
       t.note(r.n + ' Karten, Klassik ' + r.classic + ', Versuche ' + JSON.stringify(r.tries) + ', Kombinationen Breite x Tiefe ' + r.combos + ', Saeule zu Tuer ' + r.minPump + ', Route zu Eingang ' + r.minRoute);
       t.eq(r.bad, [], 'Abweichungen');
-      t.eq(r.combos, 21, 'jede Kombination aus sieben Breiten und drei Tiefen kommt vor');
+      t.eq(r.combos, 19, 'jede erlaubte Kombination aus sieben Breiten und drei Tiefen kommt vor (21 minus Tiefe 3 bei Breite 12 und 13, die unter CFG.gasGen.minArea 42 liegen, Paket P1)');
       t.ok(r.classic > 150 && r.classic < 450, 'Klassik-Huelle rund 10 % (150 bis 450 von 3000): ' + r.classic);
-      t.ok(Math.max(...Object.keys(r.tries).map(Number)) <= 5, 'hoechstens 5 Versuche je Karte');
+      t.ok(Math.max(...Object.keys(r.tries).map(Number)) <= 20, 'hoechstens 20 Versuche je Karte (seit Paket P1 braucht das Muster Gaenge Tiefe 5)');
     },
   },
   {

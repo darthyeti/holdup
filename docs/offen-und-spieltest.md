@@ -72,6 +72,7 @@ Solo hat Till am 22. Oktober 2026 gespielt und für gut befunden: die Szenarien 
 
 ### Tankstelle als Generator (Mehr Abwechslung, Sprint 6, docs/szenarien.md)
 
+- [ ] Tankstelle, Enge (Paket P1, 24. Oktober 2026): Keine Halle ist mehr ein Schlauch (Gänge nur ab Tiefe 5, Klassik-Muster ab 4, nichts unter 42 Kacheln), kleine Hallen haben höchstens 2 Kameras und eine Wache, der Wachwechsel-Wachmann steht nicht mehr direkt an der Tür. Fühlt sich die kleinste Halle (14 x 3) jetzt fair an, oder ist sie zu eng oder zu leer? Die Klassik-Hülle mit dem Muster Gänge (etwa jede vierzigste Tankstelle) bleibt absichtlich eng. Zahlen zum Verstellen: `GS_SHOPS[].minSd`, `CFG.gasGen.minArea`, `CFG.gasGen.crowd`.
 - [ ] Tankstelle: Jeder Auftrag hat eine andere Hülle (Ladenbreite, Tiefe, Zeile der Fluchttür, ein bis drei Zapfsäuleninseln, dazu die vier Regalmuster und die Straße an wechselnden Seiten). Wirkt das abwechslungsreich und bleibt es fair, sind Wege, Deckung, Polizei (28 s) und Zapfsäulen lesbar? Die Klassik-Hülle kommt rund jedes zehnte Mal.
 - [ ] Breite Läden (16 bis 18) sind für den gierigen Bot etwas schwerer (94 statt 100 %), schmale Läden haben weniger Zigaretten (3 bis 4 statt 5, Beute 25.200 statt 28.200). Fühlt sich das fair an? Wenn nicht: `CFG.gasGen.sw` einschränken (zum Beispiel auf `[13,16]`) oder `CFG.gasGen.classic` erhöhen.
 - [ ] Coop auf einer neuen Tankstelle (der Test mit der Test-Leitung ist grün).
