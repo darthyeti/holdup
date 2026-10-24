@@ -16,6 +16,7 @@ Diese Datei ist der Kern: Idee, Arbeitsweise, Dateiübersicht, Grundregeln, Stan
 - `docs/spielsystem.md`: Spielablauf Phase 1 und 2, Serie, Fahndungslevel, Shop, Ausrüstung, Beute, Ton, Bildschirmzustände, Spieler.
 - `docs/tests-und-messwerte.md`: Balance-Bot, Richtwerte und Messwerte, Testverfahren für Barrikaden, Transporter, Coop und Ton, Alt-Neu-Vergleich (`tests/altneu.js`), Freie Straße testen.
 - `docs/ideen-und-planung.md`: Barrikaden-Ausbau, lautloser Raub, weitere Ideen, Struktur und Wartbarkeit, Langzeitmotivation.
+- `docs/bugfix-plaene.md`: Bugfix-Pakete (laufende Nummer P1, P2, ...) mit Bugs, Befund, versioniertem Plan und Status, gebaut wird erst auf Tills Go.
 - `docs/offen-und-spieltest.md`: Fragen für Tills Spieltest (nach Bereichen), offene Entscheidungen, technisch Offenes (Coop, Karten, Transporter, Struktur), ungemessene Stellschrauben, Messhinweise.
 
 Pflege: Neue Fakten dorthin schreiben, wo sie hingehören. Die Liste hier nur ändern, wenn eine Datei dazukommt. Keine Chronik in dieser Datei: Gebautes steht in der Themendatei (mit Werten und Tests), offene Spieltest-Fragen und Entscheidungen in `docs/offen-und-spieltest.md`, die Reihenfolge der Builds in der Git-Historie. Der Abschnitt Stand unten bleibt kurz (Richtwert: die ganze Datei unter 20 KB).
