@@ -29,7 +29,7 @@ Stand der Prüfung (23. Oktober 2026, `VER` 28, `UI_API` 5, die Build-Nummer ste
 ### Fluchtwagen, Sperrfrist (docs/spielsystem.md, Fluchtwagen rufen)
 
 - [ ] Ist 60 Sekunden Sperrfrist für den Funk richtig (Till wünschte "zum Beispiel eine Minute")? Ist der Wagen jetzt kein Selbstläufer mehr (vorher kam Till solo bis Auftrag 11 ohne Probleme), oder ist es zu hart? Die Bot-Messung zeigt eine deutlich härtere Lage (Stufe 0 bis 2 Bank 43 bis 50 %, hohe Stufen auf der Tankstelle null), der Bot nutzt aber keine Deckung. Stellschrauben: `CFG.vanLock` (live mit `__dbg.CFG.vanLock=45`), `CFG.vanCall`, Funkgerät, `CFG.fahndung.eff` für die Stufen. Alternative, falls es zu hart ist: Sperrfrist wächst mit der Fahndungsstufe (zum Beispiel 30 s auf Stufe 0 bis 60 s auf Stufe 5), dann bleiben die ersten Aufträge fair.
-- [ ] Ist das HUD klar (Countdown `Funk gesperrt: noch M:SS`, Hinweis beim Drücken von G)?
+- [ ] Ist das HUD klar (Countdown `Fahrer erreichbar in M:SS`, Banner `Fahrer noch nicht erreichbar` beim Drücken von G)?
 
 ### Geiseln (docs/spielsystem.md, Geiseln)
 
@@ -38,6 +38,13 @@ Stand der Prüfung (23. Oktober 2026, `VER` 28, `UI_API` 5, die Build-Nummer ste
 - [ ] Passen die Fahndungswerte (Geiselnahme +4, Tod +6 zusätzlich zum Zivilistenschreck +6)? Lohnt sich die Geisel noch, oder ist sie zu teuer?
 - [ ] Coop: Jeder nimmt eine Geisel, kommt alles bei allen an (Ring, HUD-Zeile, Aufschub)? Wer eine Geisel versehentlich erschießt, bucht auf das Team.
 - [ ] Offen aus dem Entwurf: Soll die Geisel auch beim Einsteigen in den Fluchtwagen etwas bewirken (heute wird sie beim Verlassen des Gebäudes bedeutungslos, bleibt aber folgsam und wird erst frei, wenn der Besitzer geht)?
+
+### Skillbaum (docs/spielsystem.md, Skillbaum)
+
+- [ ] Passt das Tempo der Punkte (1 je Sieg, +1 Nebenziel, +1 lautlos)? Nach etwa 6 bis 9 Aufträgen ist eine Kette (9 Punkte) voll, ist das richtig für 5 bis 15 Aufträge, und reicht es zum Spezialisieren, ohne dass alles gleichzeitig geht?
+- [ ] Sind die 15 Fähigkeiten spürbar (Munition, Ruhige Hand, Durchschlag, Sprengmeister, Jäger, Panzerung, Baumeister, Deckung, Bollwerk, Zäh, Werkzeug, Sanitäter, Schleicher, Fahrer, Verhandler)? Welche sind zu stark, welche zu schwach, welche braucht niemand? Zäh (einmal selbst aufstehen, auch solo) und Fahrer (Wagen früher) sind nach der Bot-Messung die stärksten.
+- [ ] Das Menü: Ist die Kachel Fähigkeiten im Shop gut zu finden, ist der Baum lesbar (Kreuzung, Stufenquadrate, Jetzt und Nächste Stufe)? Fehlt Umschulen, oder sollen Punkte über die Serie hinaus bleiben (heute endet alles bei Niederlage)?
+- [ ] Coop: Spezialisieren sich die Mitspieler (jeder eigener Baum)? Wirken Fahrer und Verhandler fürs Team (bester Spieler)?
 
 ### Parkende Autos und Wracks (docs/polizei-und-barrikaden.md)
 

@@ -24,6 +24,7 @@ module.exports = [
         T.run(30, q => { if (n.st === 'cower') { q.x = n.x; q.y = n.y; } }); d.keys.e = false;
         o.after = [n.st, n.own, d.hasHost(m), d.hostSt().n];
         const n2 = d.get().npcs.find(q => q.st === 'cower' && q.k !== 'grd'); o.second = n2 ? d.hostMi(n2).ok(m) : null;
+        const fake = Object.assign({}, n, { k: 'grd', st: 'cower', own: -1, mi: undefined }); o.guard = D.hostMi(fake).ok(m);   // eine Wache waere kein Ziel
         return o; })()`);
       t.eq(r.p1, 0, 'in Phase 1 gibt es keine Geisel-Objekte');
       t.ok(r.found, 'ein Ziel fuer E gefunden');
@@ -31,6 +32,7 @@ module.exports = [
       t.eq(r.mid[0], 'cower', 'nach 0,7 s noch nicht genommen (E halten dauert 1,2 s): ' + JSON.stringify(r.mid));
       t.eq(r.after, ['hostage', 0, true, 1], 'danach Geisel des Spielers 0, Zaehler 1');
       t.eq(r.second, false, 'eine zweite Geisel geht nicht (hoechstens eine je Spieler)');
+      t.eq(r.guard, false, 'eine Wache ist keine Geisel');
     },
   },
   {
@@ -68,7 +70,7 @@ module.exports = [
         // 2 mit Geisel im Gebaeude: Freigabe erst nach 5 s plus cap (10 s)
         T = S(5017); D = T.D; const n = T.pick(); if (!n) return { found: false }; const m = D.get().me;
         D.keys.e = true; T.run(45, q => { if (n.st === 'cower') { q.x = n.x; q.y = n.y; } }); D.keys.e = false;
-        o.hostage = n.st; D.get().en.length = 0; cop = post(D, 5); T.run(30 * 12); o.w12 = [cop.mode, +D.hostSt().x.toFixed(1)]; T.run(30 * 6); o.w18 = [cop.mode, +D.hostSt().x.toFixed(1)];
+        o.hostage = n.st; D.get().en.length = 0; cop = post(D, 5); T.run(30 * 12); o.w12 = [cop.mode, +D.hostSt().x.toFixed(1)]; { const c2 = D.mkCop(m.x, m.y + 2, false); D.toPost(c2); o.hx = [c2.hx, +D.hostSt().x.toFixed(2), c2.mode]; } T.run(30 * 6); o.w18 = [cop.mode, +D.hostSt().x.toFixed(1)];
         // 3 Geisel und Besitzer draussen: kein Aufschub
         T = S(5017); D = T.D; const n3 = T.pick(); const m3 = D.get().me, B = D.LAY().bld;
         D.keys.e = true; T.run(45, q => { if (n3.st === 'cower') { q.x = n3.x; q.y = n3.y; } }); D.keys.e = false; D.get().en.length = 0;
@@ -79,6 +81,7 @@ module.exports = [
       t.eq([r.free4, r.free6 !== 'post'], ['post', true], 'ohne Geisel wird der Beamte nach 5 s frei: ' + JSON.stringify([r.free4, r.free6]));
       t.eq(r.hostage, 'hostage', 'Geisel genommen');
       t.ok(r.w12[0] === 'post' && r.w12[1] > 8 && r.w12[1] <= 10, 'mit Geisel wartet der Beamte nach 12 s noch (holdX ' + r.w12[1] + '): ' + JSON.stringify(r.w12));
+      t.ok(r.hx[0] > 0 && Math.abs(r.hx[0] - r.hx[1]) < .02 && r.hx[2] === 'run', 'ein spaeter eintreffender Beamter merkt sich holdX beim Erreichen des Postens (toPost, hx): ' + JSON.stringify(r.hx));
       t.ok(r.w18[0] !== 'post' && r.w18[1] <= 10.01, 'nach 5 s plus cap 10 s ist er frei, holdX bleibt im Deckel: ' + JSON.stringify(r.w18));
       t.ok(r.out[0] === 'hostage' && r.out[1] !== 'post' && r.out[2] === 0, 'draussen vor dem Gebaeude gibt es keinen Aufschub: ' + JSON.stringify(r.out));
     },
@@ -111,10 +114,13 @@ module.exports = [
         const hp0 = n.hp; m.x = n.x - 200; m.y = n.y; shot(0, n.x - 30, n.y, false); T.run(8, q => { q.x = n.x - 200; q.y = n.y; }); o.police = [n.st, n.hp === hp0];
         const civ0 = D.get().civKills; m.x = n.x - 200; shot(0, n.x - 30, n.y, true); T.run(8, q => { q.x = n.x - 200; q.y = n.y; });
         o.dead = [n.st, D.hostSt().k, D.get().civKills - civ0, D.hasHost(m)];
+        // zweite Geisel stirbt durch eine Explosion
+        const n2 = D.get().npcs.find(q => q.st === 'cower' && q.k !== 'grd'); if (n2) { D.grabHost(n2, m); const k0 = D.hostSt().k; D.blastAt(n2.x, n2.y, { dmg: 300, r: 80, scorch: 10 }, 0); o.blast = [n2.hp <= 0 || n2.st === 'dead', D.hostSt().k - k0]; }
         return o; })()`);
       t.ok(r.found !== false, 'Ziel gefunden');
       t.eq(r.police, ['hostage', true], 'die Polizei trifft die Geisel nicht');
       t.eq(r.dead, ['dead', 1, 1, false], 'Spielerkugel: Geisel tot, Team-Zaehler hostK 1 und civKills plus 1, Besitzer wieder frei');
+      t.eq(r.blast, [true, 1], 'auch eine Explosion toetet die Geisel und zaehlt in hostK');
     },
   },
   {
@@ -131,15 +137,16 @@ module.exports = [
         const p1 = A.get().players[1]; let n = null;
         for (const q of A.get().npcs) { if (q.st !== 'cower' || q.k === 'grd') continue; p1.x = q.x; p1.y = q.y; const it = A.pickIt(p1, -1); if (it && it === A.hostMi(q)) { n = q; break; } }
         if (!n) return { found: false };
-        B.keys.e = true;
-        for (let i = 0; i < 60 * 3; i++) { live(); p1.x = n.x; p1.y = n.y; p1.vx = p1.vy = 0; step(G.insts, G.net, 1 / 60); if (n.st !== 'cower') break; }
+        B.keys.e = true; let seenPr = 0;
+        for (let i = 0; i < 60 * 3; i++) { live(); p1.x = n.x; p1.y = n.y; p1.vx = p1.vy = 0; step(G.insts, G.net, 1 / 60); const q2 = B.get().npcs.find(q => q.id === n.id); if (q2 && q2.mi) seenPr = Math.max(seenPr, q2.mi.pr); if (n.st !== 'cower') break; }
         B.keys.e = false; for (let i = 0; i < 30; i++) { live(); step(G.insts, G.net, 1 / 60); }
         const nb = () => B.get().npcs.find(q => q.id === n.id);
-        o.host = [n.st, n.own]; o.cl = [nb().st, nb().own]; o.cnt = [A.hostSt().n, B.hostSt().n];
+        o.seenPr = +seenPr.toFixed(2); o.host = [n.st, n.own]; o.cl = [nb().st, nb().own]; o.cnt = [A.hostSt().n, B.hostSt().n];
         B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true })); for (let i = 0; i < 30; i++) { live(); step(G.insts, G.net, 1 / 60); }
         o.rel = [n.st, nb().st]; return o;
       });
       t.ok(r.found !== false, 'Ziel gefunden');
+      t.ok(r.seenPr > .2, 'der Client sieht den Fortschritt des Nehmens (Ring): ' + r.seenPr);
       t.eq(r.host, ['hostage', 1], 'der Host hat die Geisel des Clients (Spieler 1)');
       t.eq(r.cl, ['hostage', 1], 'der Client sieht Zustand und Besitzer');
       t.eq(r.cnt, [1, 1], 'der Zaehler kommt beim Client an');

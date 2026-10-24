@@ -116,7 +116,9 @@ module.exports = [
         document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown', { key: 'g', bubbles: true }));
         o.hint = D.msgs().banner; o.t30key = D.get().vanCalled;
         run(30 * 31); const g = D.get(); D.callVan(); o.call = [D.get().vanCalled, +D.get().tH.toFixed(1), D.get().vanAt];
-        start(3); run(30 * 61); D.callVan(); o.radio3 = [D.get().vanCalled, +D.get().tH.toFixed(1), D.get().vanAt];
+        start(3); run(30 * 30); D.callVan(); o.radio3early = D.get().vanCalled; run(30 * 31); D.callVan(); o.radio3 = [D.get().vanCalled, +D.get().tH.toFixed(1), D.get().vanAt];
+        // Transporter: die Sperre gilt in allen Szenarien
+        D.setScenario('truck'); D.setSeedMode('random'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; start(0); D.callVan(); o.truck0 = D.get().vanCalled; run(30 * 61); D.callVan(); o.truck61 = D.get().vanCalled; D.setScenario('bank'); D.buildSeed(5017);
         D.CFG.vanLock = 0; start(0); D.callVan(); o.off = [D.get().vanCalled, D.get().vanAt];
         D.CFG.vanLock = 60;
         // Coop: der Client hat keine Sperre (CFG.vanLock 0 im Test), der Host prueft allein
@@ -131,8 +133,9 @@ module.exports = [
         return o;
       });
       t.eq([r.t0, r.t30, r.t30key], [false, false, false], 'vor Ablauf der Sperrfrist wird nichts gerufen (Aufruf bei 0 s, bei 30 s, Taste G bei 30 s)');
-      t.ok(r.hint && /Funk gesperrt/.test(r.hint), 'die Taste G zeigt den Hinweis: ' + r.hint);
+      t.ok(r.hint && /Fahrer noch nicht erreichbar/.test(r.hint), 'die Taste G zeigt den Hinweis: ' + r.hint);
       t.ok(r.call[0] && r.call[1] >= 60 && r.call[2] >= 60 + 40 - 1 && r.call[2] <= r.call[1] + 40.5, 'nach 60 s ist der Ruf moeglich, Ankunft fruehestens bei 100 s: ' + JSON.stringify(r.call));
+      t.eq([r.radio3early, r.truck0, r.truck61], [false, false, true], 'Funk Stufe 3 verkuerzt die Sperrfrist nicht (Ruf bei 30 s abgewiesen), beim Transporter gilt sie ebenso');
       t.ok(r.radio3[0] && r.radio3[2] >= 60 + 20 - 1, 'das Funkgeraet Stufe 3 kuerzt nur die Anfahrt (20 s), nicht die Sperrfrist: ' + JSON.stringify(r.radio3));
       t.ok(r.off[0] && r.off[1] <= 41, 'mit vanLock 0 geht der Ruf sofort wie frueher: ' + JSON.stringify(r.off));
       t.eq(r.coopEarly, [false, false], 'Coop: der Host weist den Ruf des Clients vor Ablauf ab');
