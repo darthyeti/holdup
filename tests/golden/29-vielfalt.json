@@ -15,10 +15,10 @@
   "jewel": {
    "sc": "jewel",
    "seeds": 200,
-   "huelle": 8,
-   "groessen": 2,
-   "flucht": 8,
-   "beute": 8,
+   "huelle": 150,
+   "groessen": 28,
+   "flucht": 52,
+   "beute": 67,
    "hallen": 5,
    "hallenVerteilung": {
     "Reihen": 48,
@@ -27,16 +27,16 @@
     "Salon": 41,
     "Ring": 28
    },
-   "raster": 16,
+   "raster": 20,
    "rasterVon": 20
   },
   "gas": {
    "sc": "gas",
    "seeds": 200,
    "huelle": 175,
-   "groessen": 42,
-   "flucht": 94,
-   "beute": 133,
+   "groessen": 38,
+   "flucht": 111,
+   "beute": 131,
    "hallen": 4,
    "hallenVerteilung": {
     "Insel": 55,

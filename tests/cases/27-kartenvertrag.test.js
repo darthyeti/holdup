@@ -153,7 +153,7 @@ module.exports = [
         const D = __dbg, out = {};
         // Juwelier Seed 1 ohne Aufbau (layoutFor allein, das Raster ist dann noch ohne verriegelte Tueren), danach eine Aenderung an Raster oder Feldern, danach die Pruefung (findSpots laeuft dabei neu)
         const run = (name, f) => {
-          D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]);
+          D.setScenario('jewel'); D.CFG.jewGen.on = 0; D.setSeedMode('random'); D.setLage([]);
           const lay = D.layoutBase(1), w = D.world(); f(w.setc, lay, w);
           const rep = D.validateMap(lay);
           out[name] = { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) };
@@ -233,7 +233,7 @@ module.exports = [
       await t.loadTool('mapcheck.js');
       const r = await t.page.evaluate(() => {
         const out = {}, runs = { bank: [5000, 5037, 5074, 5111], jewel: [1], gas: [1], museum: [1], casino: [1] };
-        __dbg.CFG.gasGen.on = 0;   // der Vergleich mit der Handliste gilt fuer die Klassik-Huelle (die generierten Tankstellen haben abgeleitete Listen)
+        __dbg.CFG.gasGen.on = 0; __dbg.CFG.jewGen.on = 0;   // der Vergleich mit der Handliste gilt fuer die Klassik-Huelle (die generierten Tankstellen und Juweliere haben abgeleitete Listen)
         for (const sc of Object.keys(runs)) out[sc] = runs[sc].map(s => mapcheck.autocmp(sc, s));
         // Gesund: jeder abgeleitete Posten steht frei und ist von der Strasse erreichbar (validateMap-Regeln auf die abgeleitete Liste)
         const bad = [], D = __dbg;

@@ -21,7 +21,7 @@ module.exports = [
   {
     name: 'Beobachter: Wache sieht nur Beute langsam (20/s minus Abbau), beim Stehlen oder in der Sperrzone voll (48/s minus Abbau), ohne Beute nichts, und bleibt stehen und schaut',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D; D.setScenario('jewel'); D.CFG.jewGen.on = 0; D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
         const run = (units, thf, secs, lootV) => { D.setSus(0); me.units = units; me.loot = lootV != null ? lootV : units * 1000; g.look = null; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
         const o = { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0 };
@@ -75,7 +75,7 @@ module.exports = [
   {
     name: 'Beobachter: echtes Stehlen (E gehalten an einer Vitrine) setzt den Diebstahl-Merker, er klingt nach 0,6 s ab; Museum: Wachen sehen jeden im Gebaeude',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.CFG.jewGen.on = 0; D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
         const me = D.get().me; D.get().npcs.forEach(q => { q.st = 'away'; });
         // Standpunkt wie tools/stealth.js: Kachelrand (Figurenradius 9), erreichbar vom Spawn, innerhalb der Reichweite der Vitrine
         const spot = it => { const L = D.LAY(); let best = 1e9, at = null; for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const tx = Math.floor(it.x / 32) + dx, ty = Math.floor(it.y / 32) + dy; if (D.isSol(tx, ty)) continue;
@@ -131,7 +131,7 @@ module.exports = [
   {
     name: 'Starren: ein Beobachter schaut hoechstens stare s auf einen Traeger, geht cool s lang wieder seinen Weg und schaut dann erneut; der Balken waechst in der Zeit weiter',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 999;
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.CFG.jewGen.on = 0; D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 999;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
         const W = D.CFG.watch, g0 = [g.x, g.y], run = (stare) => { W.stare = stare; D.buildSeed(654); D.CFG.watch.grace = 999; const gg = D.get().npcs.find(q => q.k === 'grd'), m = D.get().me; H.isolate(gg, -1); D.setSus(0);
           const at = {}, sus = {}; for (let i = 0; i <= 30 * 7; i++) { gg.x = g0[0]; gg.y = g0[1]; gg.a = sp.a; m.x = sp.x; m.y = sp.y; m.units = 1; m.loot = 1000; m.thf = 0; D.update(1 / 30); const tt = Math.round(i / 30 * 10) / 10; at[tt] = !!(gg.look && gg.look.t > 0); sus[tt] = D.get().sus; } return { at, sus }; };
@@ -147,7 +147,7 @@ module.exports = [
   {
     name: 'Abbau laeuft bei Sicht weiter (net): eine Rate unter CFG.watch.down senkt den Balken, mit net 0 steigt er; ohne Beobachter sinkt er mit down',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0; D.CFG.watch.stare = 0;
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.CFG.jewGen.on = 0; D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0; D.CFG.watch.stare = 0;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
         const W = D.CFG.watch, g0 = [g.x, g.y]; W.carry.grd = 5;   // unter down
         const run = (net, see, secs) => { W.net = net; D.setSus(50); me.units = see ? 1 : 0; me.loot = (see ? 1 : 0) * 1000; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = see ? sp.x : 0; me.y = see ? sp.y : 4000; me.thf = 0; D.update(1 / 30); } return D.get().sus - 50; };
@@ -162,7 +162,7 @@ module.exports = [
   {
     name: 'Gnadenfrist: bei 100 laeuft ein Countdown (kein sofortiger Alarm), er endet im erzwungenen Ueberfall, F und grace 0 verhalten sich wie vorher',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654);
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.CFG.jewGen.on = 0; D.setSeedMode('random'); D.setLage([]); D.buildSeed(654);
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); const g0 = [g.x, g.y];
         const see = (secs, on) => { for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; if (on) { me.x = sp.x; me.y = sp.y; me.units = 1; me.loot = 1000; me.thf = 1; } else { me.x = 0; me.y = 4000; me.units = 0; me.loot = 0; me.thf = 0; } D.update(1 / 30); if (D.get().phase !== 1) break; } };
         // 1) Beobachtung bis 100: Countdown, noch Phase 1
