@@ -1,0 +1,18 @@
+{
+ "jewel-basis": {
+  "hash": {
+   "Reihen": "4b939748",
+   "Salon": "58c67011",
+   "Klassik": "cd4c789b",
+   "Ring": "445fd07a",
+   "Gänge": "624b9484"
+  },
+  "n": {
+   "Reihen": 41,
+   "Salon": 37,
+   "Klassik": 46,
+   "Ring": 36,
+   "Gänge": 40
+  }
+ }
+}
