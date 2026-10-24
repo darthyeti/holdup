@@ -26,6 +26,11 @@ Stand der Prüfung (23. Oktober 2026, `VER` 28, `UI_API` 5, die Build-Nummer ste
 - [ ] Serie ohne Fahndung: Wer leise spielt, bleibt auf Stufe 0 und hat in jedem Auftrag dieselbe Polizei (45 s, Welle 4 plus Wellennummer), früher stieg sie mit jedem Auftrag (3 s, ein Beamter je drei Aufträge). Ist das richtig, oder soll eine milde Grundsteigerung nach Auftragsnummer bleiben (zum Beispiel nur die erste Polizei, `CFG.series.at`)?
 - [ ] Coop zu dritt und zu viert auf Stufe 3 oder höher: Stimmt die Härte (die Wellen wachsen schon mit `perPlayer` und `waveGapPer`), kommen die Stufen bei allen gleich an (Wellen, Anzeige "nächste in")?
 
+### Fluchtwagen, Sperrfrist (docs/spielsystem.md, Fluchtwagen rufen)
+
+- [ ] Ist 60 Sekunden Sperrfrist für den Funk richtig (Till wünschte "zum Beispiel eine Minute")? Ist der Wagen jetzt kein Selbstläufer mehr (vorher kam Till solo bis Auftrag 11 ohne Probleme), oder ist es zu hart? Die Bot-Messung zeigt eine deutlich härtere Lage (Stufe 0 bis 2 Bank 43 bis 50 %, hohe Stufen auf der Tankstelle null), der Bot nutzt aber keine Deckung. Stellschrauben: `CFG.vanLock` (live mit `__dbg.CFG.vanLock=45`), `CFG.vanCall`, Funkgerät, `CFG.fahndung.eff` für die Stufen. Alternative, falls es zu hart ist: Sperrfrist wächst mit der Fahndungsstufe (zum Beispiel 30 s auf Stufe 0 bis 60 s auf Stufe 5), dann bleiben die ersten Aufträge fair.
+- [ ] Ist das HUD klar (Countdown `Funk gesperrt: noch M:SS`, Hinweis beim Drücken von G)?
+
 ### Parkende Autos und Wracks (docs/polizei-und-barrikaden.md)
 
 - [x] (Till, 23. Oktober 2026: erstmal bestanden, auch der Juwelier mit gedrehter Straße, nach der Korrektur des Blaulichts an zivilen Autos) Sind die Autos eine gute Deckung und fühlt sich das Zerschießen richtig an (3 Treffer à 50 für 140 HP)? Passt die Explosion (Radius 110, in 80 px Abstand rund 50 Schaden, auch für dich und die Polizei, Kettenreaktion)? Oder ist sie in der Nähe der Wellen zu stark?

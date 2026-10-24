@@ -62,6 +62,8 @@ async function openGame(env, opts) {
   await page.goto(env.url + '/index.html' + (opts.hash || '#debug'));
   await page.waitForFunction(() => window.__dbg && window.__dbg.get && window.__dbg.get().players, null, { timeout: 30000 });
   await page.evaluate(() => { __dbg.setFocus(true); });
+  // Die Sperrfrist fuers Rufen des Fluchtwagens (CFG.vanLock) gilt in den Tests nicht, die meisten rufen sofort (opts.lock behaelt sie, 32-fluchtwagen prueft sie)
+  if (!opts.lock) await page.evaluate(() => { __dbg.CFG.vanLock = 0; });
   page.ctx = ctx;
   return page;
 }

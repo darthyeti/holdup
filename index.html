@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=108"></script>
+<script src="js/ui.js?v=114"></script>
 <script>
-const BUILD={n:108,d:'2026-10-23'};//BUILD
+const BUILD={n:114,d:'2026-10-24'};//BUILD
 const UI_API=5;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -180,7 +180,7 @@ function sessReset(){SESSION.wallet=0;SESSION.own={};SESSION.cons={};SESSION.wea
 function start(ch,chF,pr,p2,cars,opt){opt=opt||{};
 const cv=opt.cv||document.getElementById('c'),g=cv.getContext('2d');
 const VW=960,VH=544,T=32;let W=44,H=28,WX0=-6,WY0=-5,WPX=W*T,WPY=H*T;
-const CFG={bag:7,slow:.05,policeAt:45,policeForced:20,waveBase:3,perPlayer:2,waveGap:28,waveGapMin:17,waveGapStep:2.2,waveGapPer:.08,swatFrom:3,swatEvery:2,vanAuto:150,vanCall:40,vanStay:60,stealthBonus:.5,
+const CFG={bag:7,slow:.05,policeAt:45,policeForced:20,waveBase:3,perPlayer:2,waveGap:28,waveGapMin:17,waveGapStep:2.2,waveGapPer:.08,swatFrom:3,swatEvery:2,vanAuto:150,vanCall:40,vanStay:60,vanLock:60,stealthBonus:.5,
 pol:{seats:3,carSpd:250,lead:600,exitGap:.45,run:1.7,dash:1.35,hold:14,anchorHold:45,breachT:2.5,reactD:240,react:.45,sep:{r:36,k:.7,brake:.5},carGap:140,foot:1,car:{tier2:1,hp:280,r:110,chainR:90,dmg:90,scorch:44,row:80,bx:60,by:28}},
 van:{bt:1.5,bu:.15,r:110,leave:5,back:8,spd:170},
 loiter:{warn:3,after:5,rate:14,still:28},
@@ -1527,7 +1527,7 @@ else if(vanMode===2){vanBk+=dt;if(vanBk>=F.back&&!copsNearVan()){vanMode=3;say('
 else{mvTo(LANE.van.stop);if(vanAtStop()){vanMode=0;vanNv=0;say('Der Fluchtwagen ist wieder da.')}}}
 function vanBoard(act,dt){const F=CFG.van,open=vanMode===0&&vanAtStop()&&vanNv===0;
 for(const o of act){if(open&&LANE.exit.has(o.x,o.y)&&!(o.hurt>0)){o.bd=Math.min(1,o.bd+dt/(F.bt+F.bu*o.units));if(o.bd>=1){o.bd=0;secure(o)}}else o.bd=0}}
-function callVan(){if(phase!==2||vanCalled||vanArr||ended)return;const vt=vanT();vanCalled=true;snd('radio');vanAt=Math.min(vanAt,tH+vt);ban('Fluchtwagen unterwegs: '+vt+' s',2.4);say('Fahrer alarmiert. Ankunft in '+vt+' s')}
+function callVan(){if(phase!==2||vanCalled||vanArr||ended||tH<CFG.vanLock)return;const vt=vanT();vanCalled=true;snd('radio');vanAt=Math.min(vanAt,tH+vt);ban('Fluchtwagen unterwegs: '+vt+' s',2.4);say('Fahrer alarmiert. Ankunft in '+vt+' s')}
 const DBG=location.hash==='#debug';try{localStorage.removeItem('holdup.save')}catch(e){}
 /* Kartenseed: Debug und Tests nutzen die klassische Bank, sonst wuerfelt der Host pro Auftrag neu. #seed=N erzwingt die erste Karte, sameMap haelt sie. */
 const rndSeed=()=>1+Math.floor(Math.random()*999999);let seedMode=DBG?'classic':'random',firstSeed=(/seed=(\d+)/.exec(location.hash)||[])[1],mapSeed=null,sameMap=false,scenario='bank',jobSc='bank';
@@ -2092,7 +2092,7 @@ function copyLink(){try{navigator.clipboard.writeText(roomLink()).then(()=>{NET.
 let aimG=0;const aimOk=n=>{const W=THROW[n];return W&&live(me)&&!ended&&phase===W.ph&&me[W.c]>0},
 aimPoint=()=>{let tx=me.x+Math.cos(me.a)*160,ty=me.y+Math.sin(me.a)*160;if(time-mouse.t<4&&isFinite(mouse.x)&&isFinite(mouse.y)){tx=mouse.x;ty=mouse.y}return throwPoint(me,tx,ty)},
 reqThrow=(n,x,y)=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'u',n,x:Math.round(x),y:Math.round(y)}):useGadget(me,n,x,y)};
-const reqHeist=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'f'}):startHeist(false,me)},reqVan=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'g'}):callVan()},reqGadget=n=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'u',n}):useGadget(me,n)};
+const reqHeist=()=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'f'}):startHeist(false,me)},reqVan=()=>{if(!live(me))return;if(phase===2&&!vanCalled&&!vanArr&&tH<CFG.vanLock){ban('Funk gesperrt: noch '+tm(CFG.vanLock-tH),1.6,me.id);sndTo(me,'ev','deny');return}NET.role==='client'?NET.conn&&NET.conn.send({t:'g'}):callVan()},reqGadget=n=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'u',n}):useGadget(me,n)};
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
 /* Menues als Kacheln: js/ui.js (mkUI). Der Kontext liest nur (Getter), geschrieben wird hier im Kern ueber uiAct. Neue Namen im Kontext ergaenzen, sobald ui.js sie braucht. */
 const UI=mkUI({act:uiAct,volAdj,get camX(){return camX},get camY(){return camY},get CFG(){return CFG},get curKit(){return curKit},get DBG(){return DBG},get drawLegend(){return drawLegend},
@@ -2205,7 +2205,7 @@ const rows=[['KAMERAS',ck+' / '+cams.length,ck===cams.length],['KAMERAS AUS',cam
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,66+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,66+i*15)});
 g.fillStyle='#8d95a1';g.fillText('LAGE',20,66+rows.length*15);g.fillStyle=LAY.mission.tags.length?'#ffd27a':'#c9d4de';lgl.forEach((l,i)=>g.fillText(l,62,66+(rows.length+i)*15))}
 else{g.font='12px monospace';g.fillStyle='#c9d4de';let l1=policeShown?'Welle '+waveN+' · nächste in '+tm(waveGap(waveN)-waveT):'Polizei in '+tm(policeAt-tH);g.fillText(l1,20,46);if(LAY.truck){g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('LADERAUM',20,64);g.fillStyle=cargoOpen?'#7ee34a':'#c9d4de';g.fillText(cargoOpen?'offen':keyTaken?'Schlüssel da':'verschlossen',120,64);g.fillStyle='#8d95a1';g.fillText('ÜBERWÄLTIGT',20,79);g.fillStyle=capt>0?'#7ee34a':'#c9d4de';g.fillText(String(capt),120,79)}}
-vanPointer();if(phase===2){const hint=!vanCalled&&!vanArr;plate(VW/2-120,10,240,hint?50:36);g.textAlign='center';g.font='bold 15px monospace';const vl=tm(vanAt+CFG.vanStay-tH),vt=vanArr?(vanMode===0?(vanNv>0?['#ff6a5a','Polizei! Abfahrt in '+Math.ceil(CFG.van.leave-vanNv)+' s']:['#7ee34a','Fluchtwagen wartet '+vl]):vanMode===1?['#ff6a5a','Der Fahrer haut ab!']:vanMode===2?['#8d95a1','Wagen weg '+vl]:['#ffb000','Wagen kommt '+vl]):[am,'Fluchtwagen in '+tm(vanAt-tH)];g.fillStyle=vt[0];g.fillText(vt[1],VW/2,33);if(hint){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('G: Fahrer jetzt rufen ('+vanT()+' s)',VW/2,50)}g.textAlign='left'}
+vanPointer();if(phase===2){const hint=!vanCalled&&!vanArr;plate(VW/2-120,10,240,hint?50:36);g.textAlign='center';g.font='bold 15px monospace';const vl=tm(vanAt+CFG.vanStay-tH),vt=vanArr?(vanMode===0?(vanNv>0?['#ff6a5a','Polizei! Abfahrt in '+Math.ceil(CFG.van.leave-vanNv)+' s']:['#7ee34a','Fluchtwagen wartet '+vl]):vanMode===1?['#ff6a5a','Der Fahrer haut ab!']:vanMode===2?['#8d95a1','Wagen weg '+vl]:['#ffb000','Wagen kommt '+vl]):[am,'Fluchtwagen in '+tm(vanAt-tH)];g.fillStyle=vt[0];g.fillText(vt[1],VW/2,33);if(hint){g.font='11px monospace';const lk=CFG.vanLock-tH;g.fillStyle=lk>0?'#8d95a1':'#c9d4de';g.fillText(lk>0?'Funk gesperrt: noch '+tm(lk):'G: Fahrer jetzt rufen ('+vanT()+' s)',VW/2,50)}g.textAlign='left'}
 if(phase===1&&LAY.truck&&tk&&tk.st!=='gone'){plate(VW/2-120,10,240,36);g.textAlign='center';g.font='bold 15px monospace';g.fillStyle=tk.st==='wait'?am:'#ff8a6a';g.fillText(tk.st==='wait'?'Panzerwagen in '+tm(tkArrive()-rT):tk.st==='drive'?'Der Panzerwagen kommt!':'Der Wagen steht',VW/2,33);g.textAlign='left'}
 feed.forEach((f,i)=>{g.font='12px monospace';const w=g.measureText(f.s).width+16;plate(VW-10-w,10+i*22,w,19);g.fillStyle='#fff';g.fillText(f.s,VW-2-w,24+i*22)});
 if(players.length>1){const y0=(phase===1?172+14*(lageLines().length-1):76)+(goal?26:0);plate(10,y0,206,players.length*20+10);players.forEach((o,i)=>{const y=y0+20+i*20;g.fillStyle=PC[o.id].c;g.fillRect(18,y-9,8,8);g.font='11px monospace';if(o===me){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(14,y-12,198,18)}g.fillStyle=live(o)?'#e6eaf0':'#8d95a1';g.fillText(pn(o.id)+(o===me&&pn(o.id).length<=6?' (du)':''),32,y);

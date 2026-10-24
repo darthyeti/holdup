@@ -101,4 +101,42 @@ module.exports = [
       t.ok(r.weg[0] >= 1 && r.weg[1] === r.weg[0], 'Abfahrt kommt beim Client an: ' + JSON.stringify(r.weg));
     },
   },
+  {
+    name: 'Fluchtwagen: Sperrfrist fuers Rufen (CFG.vanLock), vorher bleibt G wirkungslos mit Hinweis, danach kommt der Wagen fruehestens nach Sperrfrist plus Anfahrt (Funk verkuerzt nur die Anfahrt), im Coop weist der Host den Ruf ab',
+    async run(t) {
+      await t.loadTool('loopnet.js');
+      await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, o = {};
+        D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.vanLock = 60;
+        const run = n => { for (let i = 0; i < n; i++) { D.get().me.hp = 1e9; D.update(1 / 30); } };
+        const start = radio => { D.reset(); D.startHeist(false, D.get().me); D.get().me.kit.radio = radio; };
+        start(0); D.callVan(); o.t0 = D.get().vanCalled;
+        run(30 * 30); D.callVan(); o.t30 = D.get().vanCalled;
+        document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown', { key: 'g', bubbles: true }));
+        o.hint = D.msgs().banner; o.t30key = D.get().vanCalled;
+        run(30 * 31); const g = D.get(); D.callVan(); o.call = [D.get().vanCalled, +D.get().tH.toFixed(1), D.get().vanAt];
+        start(3); run(30 * 61); D.callVan(); o.radio3 = [D.get().vanCalled, +D.get().tH.toFixed(1), D.get().vanAt];
+        D.CFG.vanLock = 0; start(0); D.callVan(); o.off = [D.get().vanCalled, D.get().vanAt];
+        D.CFG.vanLock = 60;
+        // Coop: der Client hat keine Sperre (CFG.vanLock 0 im Test), der Host prueft allein
+        const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0];
+        A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6; A.CFG.vanLock = 60;
+        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true })); G.run(1);
+        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', bubbles: true })); G.run(1);
+        o.coopEarly = [A.get().vanCalled, B.get().vanCalled];
+        for (let i = 0; i < 62 * 60; i++) { A.get().players.forEach(q => { q.hp = 1e9; q.dead = false; }); step(G.insts, G.net, 1 / 60); }   // die Wachen werden im Ueberfall zu Gegnern, die Spieler bleiben unverwundbar
+        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', bubbles: true })); G.run(1);
+        o.coopLate = [A.get().vanCalled, B.get().vanCalled, A.get().vanAt > A.get().tH];
+        return o;
+      });
+      t.eq([r.t0, r.t30, r.t30key], [false, false, false], 'vor Ablauf der Sperrfrist wird nichts gerufen (Aufruf bei 0 s, bei 30 s, Taste G bei 30 s)');
+      t.ok(r.hint && /Funk gesperrt/.test(r.hint), 'die Taste G zeigt den Hinweis: ' + r.hint);
+      t.ok(r.call[0] && r.call[1] >= 60 && r.call[2] >= 60 + 40 - 1 && r.call[2] <= r.call[1] + 40.5, 'nach 60 s ist der Ruf moeglich, Ankunft fruehestens bei 100 s: ' + JSON.stringify(r.call));
+      t.ok(r.radio3[0] && r.radio3[2] >= 60 + 20 - 1, 'das Funkgeraet Stufe 3 kuerzt nur die Anfahrt (20 s), nicht die Sperrfrist: ' + JSON.stringify(r.radio3));
+      t.ok(r.off[0] && r.off[1] <= 41, 'mit vanLock 0 geht der Ruf sofort wie frueher: ' + JSON.stringify(r.off));
+      t.eq(r.coopEarly, [false, false], 'Coop: der Host weist den Ruf des Clients vor Ablauf ab');
+      t.ok(r.coopLate[0] && r.coopLate[1] && r.coopLate[2], 'Coop: nach Ablauf klappt der Ruf des Clients, der Wagen ist bei beiden gerufen: ' + JSON.stringify(r.coopLate));
+    },
+  },
 ];

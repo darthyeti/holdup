@@ -1,18 +1,18 @@
 // Balance-Bot fuer Holdup. Nur mit index.html#debug nutzbar (setzt window.__dbg).
 // Laden im Browser: fetch('tools/bot.js').then(r=>r.text()).then(eval)
 // Dann: bot.batch(20,{call:null}) oder bot.run({call:10,extras:true}), je Grundriss bot.batchHalls(n,o,from,halls)
-// Optionen: goodsN (nur so viele Stuecke), goods (true = Beute-Stuecke der neuen Karten einsammeln, dazu Cage-Tausch im Casino, 'cheap' = Automaten auslassen), lage (Tags erzwingen), sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
+// Optionen: lock (Sperrfrist fuer den Funk in Sekunden, sonst der Wert aus CFG.vanLock, 0 = wie vor dem 24. Oktober 2026), goodsN (nur so viele Stuecke), goods (true = Beute-Stuecke der neuen Karten einsammeln, dazu Cage-Tausch im Casino, 'cheap' = Automaten auslassen), lage (Tags erzwingen), sigma (Zielstreuung rad), react (Reaktionszeit s), call (null = Wagen kommt von selbst, sonst Sekunden
 // nach der letzten Beute bis zum Anruf), extras (Geldautomaten und Kassen mitnehmen), wait (Wartekachel),
 // seed (Kartenseed, sonst die aktuelle Karte), turn (Lage der Strasse fuer alle folgenden Karten, 'N', 'E', 'W' oder 'S', mit + dahinter laengs gespiegelt, null schaltet ab, setzt dbg.setTurn und baut die Karte neu), wait ('vault' = Tresorinneres, sonst Kachel), kit ('old' = Gewehr und Weste wie vor dem Shop, 'base' = Pistole, 'mid' = SMG und Weste, 'full' = alles), bar ('all' = alle Eingaenge samt Fluchttuer verbarrikadieren, 'noexit' = ohne Fluchttuer, die Fluchttuer wird zum Wagen wieder abgebaut), barLv (Stufen je Tuer, 1 oder 2), cons ({jam,med}), round (bereits ueberstandene Auftraege der Serie, skaliert die Polizei), heat (Fahndungspunkte zu Beginn des Laufs, 0 bis 100, Standard 0, wirkt erst mit CFG.fahndung.on), van ('alt' = altes Verhalten des Fluchtwagens: sofort an Bord, Fahrer wartet immer; ein Objekt setzt CFG.van; ohne Angabe gelten die Regeln des Spiels, der Bot hat keine Taktik fuer Polizei am Wagen), shieldSmart (Standard an: Schild-Beamte, deren Schild zum Bot zeigt, werden nur beschossen, wenn sonst nichts in Sicht ist; false = stur auf den Naechsten, Obergrenze fuer die Wirkung der Schilde)
 (function(){
 const D=__dbg,k=D.keys,S=()=>D.get(),dt=1/30;
-const VAN0=Object.assign({},D.CFG.van);
+const VAN0=Object.assign({},D.CFG.van),LOCK0=D.CFG.vanLock;
 const KITS={base:{},old:{rifle:1,vest:1},mid:{smg:1,vest:1},full:{rifle:1,vest:1,helm:1,pack:1,drill:1,pick:1,radio:1}};
 const gauss=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
 const tileOf=o=>[Math.floor(o.x/32),Math.floor(o.y/32)];
 function steer(tx,ty){const p=S().p;k.a=k.d=k.w=k.s=0;const t=tileOf(p);if(t[0]===tx&&t[1]===ty)return true;const path=D.pathTo(p.x,p.y,tx,ty);if(!path.length)return false;const q=path[0],dx=q[0]-p.x,dy=q[1]-p.y;if(dx>2)k.d=1;if(dx<-2)k.a=1;if(dy>2)k.s=1;if(dy<-2)k.w=1;return false}
 function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT:400,wait:'vault',kit:'old',cons:{},round:0,heat:0,bar:null,barLv:1},o||{});
- Object.assign(D.CFG.van,VAN0,o.van==='alt'?{bt:0,bu:0,r:0}:o.van&&typeof o.van==='object'?o.van:{});
+ Object.assign(D.CFG.van,VAN0,o.van==='alt'?{bt:0,bu:0,r:0}:o.van&&typeof o.van==='object'?o.van:{});D.CFG.vanLock=o.lock!=null?o.lock:LOCK0;
  D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;D.SESSION.heat=o.heat||0;
  if(o.lage!==undefined)D.setLage(o.lage);if(o.turn!==undefined)D.setTurn(o.turn);if(o.seed!=null){if(o.lage!==undefined||o.turn!==undefined)D.buildLay(D.layoutFor(o.seed));else D.buildSeed(o.seed)}
  D.reset();const L=D.LAY(),LN=D.LANE(),exitT=LN.exit.goal,waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
@@ -59,7 +59,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
     const xb=bars.find(b=>b.n==='Fluchttür');
     if(xb&&xb.lv>0&&(s.vanArr||calledAt!=null)){const c0=xb.cells[0];if(steer(c0[0]+xb.iv[0],c0[1]+xb.iv[1]))k.e=1}
     else if(vanReady||(o.call!=null&&calledAt!=null&&s.vanArr))steer(exitT[0],exitT[1]);else steer(waitT[0],waitT[1]);
-    if(o.call!=null&&calledAt==null&&(gi>=goals.length||s.tH>=s.vanAt-5)&&s.tH>=(R.milestones.looted==null?s.tH:R.milestones.looted)+o.call){D.callVan();calledAt=s.tH}
+    if(o.call!=null&&calledAt==null&&(gi>=goals.length||s.tH>=s.vanAt-5)&&s.tH>=(R.milestones.looted==null?s.tH:R.milestones.looted)+o.call&&s.tH>=D.CFG.vanLock){D.callVan();calledAt=s.tH}
    }
    if(gi>=goals.length||s.tH>=s.vanAt-5)mark('looted')}
   D.update(dt);
