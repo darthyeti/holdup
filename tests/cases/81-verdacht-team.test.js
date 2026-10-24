@@ -19,7 +19,7 @@ module.exports = [
           const G = CT.mkGame('jewel', 654, n), A = G.A, g = A.get().npcs.find(q => q.k === 'grd');
           if (!g) return { err: 'keine Wache auf der Karte' };
           A.CFG.watch.grace = 0; A.setSus(0); const p1 = A.get().players[n > 1 ? 1 : 0]; let s = 0;
-          const hold = () => { p1.x = g.x + 50; p1.y = g.y; p1.units = 1; g.a = 0; };
+          const hold = () => { p1.x = g.x + 50; p1.y = g.y; p1.units = 1; p1.loot = 1000; g.a = 0; };
           for (let i = 0; i < 60 * 40 && A.get().phase === 1; i++) { hold(); step(G.insts, G.net, 1 / 60); s++; }
           out[n] = { t: +(s / 60).toFixed(2), phase: A.get().phase, rate: A.CFG.watch.carry.grd * A.lgM('sus') - (A.CFG.watch.net ? A.CFG.watch.down : 0), per: A.CFG.susPer };
         }
@@ -48,7 +48,7 @@ module.exports = [
         const rate = (n, nSee) => {
           const G = CT.mkGame('jewel', 654, n), A = G.A, g = A.get().npcs.find(q => q.k === 'grd'); A.CFG.watch.grace = 0; A.setSus(0);
           const P = A.get().players; let s = 0;
-          for (let i = 0; i < 30; i++) { for (let k = 0; k < nSee; k++) { P[k].x = g.x + 50 + k * 6; P[k].y = g.y; P[k].units = 1; } g.a = 0; step(G.insts, G.net, 1 / 60); s++; }
+          for (let i = 0; i < 30; i++) { for (let k = 0; k < nSee; k++) { P[k].x = g.x + 50 + k * 6; P[k].y = g.y; P[k].units = 1; P[k].loot = 1000; } g.a = 0; step(G.insts, G.net, 1 / 60); s++; }
           return A.get().sus / (s / 60);
         };
         out.eins = rate(4, 1); out.vier = rate(4, 4);
@@ -67,15 +67,15 @@ module.exports = [
         const out = {};
         const G = CT.mkGame('jewel', 654, 3), A = G.A, B = G.clients[0], g = A.get().npcs.find(q => q.k === 'grd');
         const p = A.get().players[1]; A.setSus(0);
-        for (let i = 0; i < 90; i++) { p.x = g.x + 50; p.y = g.y; p.units = 1; g.a = 0; step(G.insts, G.net, 1 / 60); }
-        p.units = 0; p.x = A.get().players[0].x; p.y = A.get().players[0].y; G.run(1); out.host = A.get().sus; out.client = B.get().sus;   // nicht mehr im Blick: der Balken sinkt langsam, der Vergleich ist stabil
+        for (let i = 0; i < 90; i++) { p.x = g.x + 50; p.y = g.y; p.units = 1; p.loot = 1000; g.a = 0; step(G.insts, G.net, 1 / 60); }
+        p.units = 0; p.loot = 0; p.x = A.get().players[0].x; p.y = A.get().players[0].y; G.run(1); out.host = A.get().sus; out.client = B.get().sus;   // nicht mehr im Blick: der Balken sinkt langsam, der Vergleich ist stabil
         const draw = [];
         const ctx = A.cv.getContext('2d'), o = ctx.fillText; ctx.fillText = function (s) { draw.push(String(s)); return o.apply(this, arguments); };
         try { A.draw(); } finally { ctx.fillText = o; }
         out.hint = draw.find(s => /^Team: Balken/.test(s)) || null; out.per = A.CFG.susPer;
         // abgeschaltet: gleiche Beobachtung wie solo
         const sp0 = A.CFG.susPer; A.CFG.susPer = 0; A.CFG.watch.grace = 0; A.setSus(0);
-        for (let i = 0; i < 30; i++) { p.x = g.x + 50; p.y = g.y; p.units = 1; g.a = 0; step(G.insts, G.net, 1 / 60); }
+        for (let i = 0; i < 30; i++) { p.x = g.x + 50; p.y = g.y; p.units = 1; p.loot = 1000; g.a = 0; step(G.insts, G.net, 1 / 60); }
         out.aus = A.get().sus; A.CFG.susPer = sp0;
         return out;
       });
@@ -92,7 +92,7 @@ module.exports = [
         const D = __dbg; D.reset(); D.CFG.watch.grace = 0; D.setSus(0);
         const g = D.get().npcs.find(q => q.k === 'grd'), m = D.get().me;
         if (!g) return { err: 'keine Wache' };
-        let s = 0; for (let i = 0; i < 30; i++) { m.x = g.x + 50; m.y = g.y; m.units = 1; g.a = 0; D.update(1 / 60); s++; }
+        let s = 0; for (let i = 0; i < 30; i++) { m.x = g.x + 50; m.y = g.y; m.units = 1; m.loot = 1000; g.a = 0; D.update(1 / 60); s++; }
         const draw = [], c = document.querySelector('canvas').getContext('2d'), o = c.fillText; c.fillText = function (x) { draw.push(String(x)); return o.apply(this, arguments); };
         try { D.draw(); } finally { c.fillText = o; }
         return { rate: D.get().sus / (s / 60), lg: D.lgM('sus'), car: D.CFG.watch.carry.grd, dn: D.CFG.watch.net ? D.CFG.watch.down : 0, hint: draw.some(x => /^Team:/.test(x)) };

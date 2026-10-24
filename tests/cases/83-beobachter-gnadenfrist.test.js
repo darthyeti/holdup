@@ -23,18 +23,19 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
-        const run = (units, thf, secs) => { D.setSus(0); me.units = units; me.loot = units * 1000; g.look = null; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
+        const run = (units, thf, secs, lootV) => { D.setSus(0); me.units = units; me.loot = lootV != null ? lootV : units * 1000; g.look = null; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
         const o = { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0 };
-        o.leer = run(0, 0, .5); o.carry = run(1, 0, .5); o.theft = run(0, 1, .5);
+        o.leer = run(0, 0, .5); o.material = run(1, 0, .5, 0); o.carry = run(1, 0, .5); o.theft = run(0, 1, .5);
         // Sperrzone: Wache und Spieler in der Mitte einer Zone mit Sicht, Rucksack
         const zn = D.LAY().zones[0], zx = (zn[0] + zn[2]) / 2 * 32 + 16, zy = (zn[1] + zn[3]) / 2 * 32 + 16; o.zone = null;
-        o.look = (() => { D.setSus(0); me.units = 1; me.thf = 0; g.look = null; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = 0; g.a = sp.a; D.update(1 / 30); } return !!(g.look && g.look.t > 0); })();
+        o.look = (() => { D.setSus(0); me.units = 1; me.loot = 1000; me.thf = 0; g.look = null; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = 0; g.a = sp.a; D.update(1 / 30); } return !!(g.look && g.look.t > 0); })();
         return o; })()`);
       t.ok(!r.err, r.err);
       const wc = 20 * r.lg - r.dn, wt = 48 * r.lg - r.dn;   // Rate minus Abbau
       t.ok(Math.abs(r.carry - wc) < wc * .12 + .3, 'Rucksack: ' + r.carry.toFixed(1) + ' pro s, erwartet ' + wc.toFixed(1));
       t.ok(Math.abs(r.theft - wt) < wt * .12 + .3, 'Stehlen: ' + r.theft.toFixed(1) + ' pro s, erwartet ' + wt.toFixed(1));
       t.ok(r.leer <= 0.01, 'ohne Beute und nicht beim Stehlen sieht die Wache nichts: ' + r.leer);
+      t.ok(r.material <= 0.01, 'Material im Rucksack (Brettersatz, zerlegte Moebel, Paket P2) ist keine Beute: die Wache sieht nichts: ' + r.material);
       t.eq(r.look, true, 'die Wache schaut zum Spieler mit dem Rucksack (look)');
     },
   },
@@ -46,7 +47,7 @@ module.exports = [
         // Kassierer schauen nach Sueden (base), Spieler davor
         let sp = null; for (const d of [60, 80, 100, 50]) { const x = tel.x, y = tel.y + d; if (!D.isSol(Math.floor(x / 32), Math.floor(y / 32)) && D.los(tel.x, tel.y, x, y) && !D.world().restricted(x, y)) { sp = { x, y }; break; } }
         if (!sp) return { err: 'kein freier Punkt vor dem Kassierer' };
-        const run = (units, thf) => { D.setSus(0); me.units = units; let s = 0; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
+        const run = (units, thf) => { D.setSus(0); me.units = units; me.loot = (units) * 1000; let s = 0; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
         return { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0, carry: run(1, 0), theft: run(0, 1), leer: run(0, 0) }; })()`);
       t.ok(!r.err, r.err);
       const sc = 10 * r.lg - r.dn, st = 34 * r.lg - r.dn;
@@ -63,7 +64,7 @@ module.exports = [
         for (let i = 0; i < cams.length && ci < 0; i++) { const c = cams[i]; for (const d of [100, 70, 130, 50]) { const a = c.a0, x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d; if (D.isSol(Math.floor(x / 32), Math.floor(y / 32)) || !D.los(c.x, c.y, x, y) || D.world().restricted(x, y)) continue; if (D.canSee(c.x, c.y, a, c.fov, c.rng, x, y)) { ci = i; sp = { x, y }; break; } } }
         if (ci < 0) return { err: 'keine Kamera mit freiem Punkt im Kegel ausserhalb der Sperrzone' };
         H.isolate(null, ci); D.get().cams[ci].amp = 0; D.get().cams[ci].off = false;
-        const run = (units, thf) => { D.setSus(0); me.units = units; let s = 0; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
+        const run = (units, thf) => { D.setSus(0); me.units = units; me.loot = (units) * 1000; let s = 0; for (let i = 0; i < 15; i++) { me.x = sp.x; me.y = sp.y; me.thf = thf; D.update(1 / 30); s++; } return D.get().sus / (s / 30); };
         return { lg: D.lgM('sus'), dn: D.CFG.watch.net ? D.CFG.watch.down : 0, carry: run(1, 0), theft: run(0, 1) }; })()`);
       t.ok(!r.err, r.err);
       t.ok(r.carry <= 0.01, 'Rucksack allein: die Kamera reagiert nicht (' + r.carry + ')');
@@ -87,7 +88,7 @@ module.exports = [
         // Museum: Wache ohne Beute und ausserhalb der Sperrzone
         D.setScenario('museum'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(31); D.CFG.watch.grace = 0; const g = D.get().npcs.find(q => q.k === 'grd'), m2 = D.get().me; H.isolate(g, -1); const sp2 = H.spotFor(g, false);
         if (!sp2) { o.museum = 'kein Punkt'; return o; }
-        D.setSus(0); m2.units = 0; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < 6; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp2.a; m2.x = sp2.x; m2.y = sp2.y; D.update(1 / 30); s++; }
+        D.setSus(0); m2.units = 0; m2.loot = 0; const g0 = [g.x, g.y]; let s = 0; for (let i = 0; i < 6; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp2.a; m2.x = sp2.x; m2.y = sp2.y; D.update(1 / 30); s++; }
         o.museum = D.get().sus / (s / 30); o.seen = D.CFG.museum.seen * D.lgM('sus') - (D.CFG.watch.net ? D.CFG.watch.down : 0); return o; })()`);
       t.ok(!r.err, r.err);
       t.ok(r.beimStehlen > .3, 'beim Stehlen gesetzt: ' + r.beimStehlen + ' (Fortschritt ' + r.pr + ')');
@@ -133,7 +134,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 999;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
         const W = D.CFG.watch, g0 = [g.x, g.y], run = (stare) => { W.stare = stare; D.buildSeed(654); D.CFG.watch.grace = 999; const gg = D.get().npcs.find(q => q.k === 'grd'), m = D.get().me; H.isolate(gg, -1); D.setSus(0);
-          const at = {}, sus = {}; for (let i = 0; i <= 30 * 7; i++) { gg.x = g0[0]; gg.y = g0[1]; gg.a = sp.a; m.x = sp.x; m.y = sp.y; m.units = 1; m.thf = 0; D.update(1 / 30); const tt = Math.round(i / 30 * 10) / 10; at[tt] = !!(gg.look && gg.look.t > 0); sus[tt] = D.get().sus; } return { at, sus }; };
+          const at = {}, sus = {}; for (let i = 0; i <= 30 * 7; i++) { gg.x = g0[0]; gg.y = g0[1]; gg.a = sp.a; m.x = sp.x; m.y = sp.y; m.units = 1; m.loot = 1000; m.thf = 0; D.update(1 / 30); const tt = Math.round(i / 30 * 10) / 10; at[tt] = !!(gg.look && gg.look.t > 0); sus[tt] = D.get().sus; } return { at, sus }; };
         const a = run(W.stare), b = run(0); o.stare = W.stare; o.cool = W.cool; o.a = [a.at[.5], a.at[1.2], a.at[3.5], a.at[5.0], a.at[6.2], a.at[6.8]]; o.b = [b.at[.5], b.at[3.5], b.at[6.8]];
         o.rateKuehl = (a.sus[4.5] - a.sus[2.5]) / 2; o.lg = D.lgM('sus'); o.dn = W.net ? W.down : 0; return o; })()`);
       t.ok(!r.err, r.err);
@@ -149,7 +150,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654); D.CFG.watch.grace = 0; D.CFG.watch.stare = 0;
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); if (!sp) return { err: 'kein Punkt im Sichtfeld der Wache' };
         const W = D.CFG.watch, g0 = [g.x, g.y]; W.carry.grd = 5;   // unter down
-        const run = (net, see, secs) => { W.net = net; D.setSus(50); me.units = see ? 1 : 0; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = see ? sp.x : 0; me.y = see ? sp.y : 4000; me.thf = 0; D.update(1 / 30); } return D.get().sus - 50; };
+        const run = (net, see, secs) => { W.net = net; D.setSus(50); me.units = see ? 1 : 0; me.loot = (see ? 1 : 0) * 1000; for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; me.x = see ? sp.x : 0; me.y = see ? sp.y : 4000; me.thf = 0; D.update(1 / 30); } return D.get().sus - 50; };
         o.lg = D.lgM('sus'); o.down = W.down; o.netSicht = run(1, true, 1); o.altSicht = run(0, true, 1); o.netLeer = run(1, false, 1); o.altLeer = run(0, false, 1); W.down = 3; o.drei = run(1, false, 2); return o; })()`);
       t.ok(!r.err, r.err);
       t.ok(Math.abs(r.netSicht - (5 * r.lg - r.down)) < 1, 'net 1: bei Rate 5 sinkt der Balken um ' + r.down + ' minus 5 pro s: ' + r.netSicht.toFixed(1));
@@ -163,21 +164,21 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(654);
         const g = D.get().npcs.find(q => q.k === 'grd'), me = D.get().me; H.isolate(g, -1); const sp = H.spotFor(g, false); const g0 = [g.x, g.y];
-        const see = (secs, on) => { for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; if (on) { me.x = sp.x; me.y = sp.y; me.units = 1; me.thf = 1; } else { me.x = 0; me.y = 4000; me.units = 0; me.thf = 0; } D.update(1 / 30); if (D.get().phase !== 1) break; } };
+        const see = (secs, on) => { for (let i = 0; i < secs * 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; if (on) { me.x = sp.x; me.y = sp.y; me.units = 1; me.loot = 1000; me.thf = 1; } else { me.x = 0; me.y = 4000; me.units = 0; me.loot = 0; me.thf = 0; } D.update(1 / 30); if (D.get().phase !== 1) break; } };
         // 1) Beobachtung bis 100: Countdown, noch Phase 1
         D.setSus(0); D.CFG.watch.grace = 4; see(3, true); o.sus1 = D.get().sus; o.alarmT1 = D.get().alarmT; o.phase1 = D.get().phase; o.msg = D.msgs().feed.filter(f => /Entdeckt/.test(f));
         // 2) Weiter beobachtet: nach 4 s erzwungener Ueberfall
         let tt = 0; for (let i = 0; i < 30 * 8 && D.get().phase === 1; i++) { see(1 / 30, true); tt += 1 / 30; } o.phase2 = D.get().phase; o.dauer = +tt.toFixed(1);
         // 3) Abbruch: neues Spiel, Balken auf 100, dann aus dem Blick
         D.buildSeed(654); D.CFG.watch.grace = 4; const g2 = D.get().npcs.find(q => q.k === 'grd'), m2 = D.get().me; H.isolate(g2, -1);
-        D.setSus(100); const f = () => { m2.x = 0; m2.y = 4000; m2.units = 0; m2.thf = 0; D.update(1 / 30); };
-        D.get().me.units = 1; D.setSus(100); m2.x = sp.x; m2.y = sp.y; m2.thf = 1; for (let i = 0; i < 3; i++) { g2.x = g0[0]; g2.y = g0[1]; g2.a = sp.a; D.update(1 / 30); }
+        D.setSus(100); const f = () => { m2.x = 0; m2.y = 4000; m2.units = 0; m2.loot = 0; m2.thf = 0; D.update(1 / 30); };
+        D.get().me.units = 1; D.get().me.loot = 1000; D.setSus(100); m2.x = sp.x; m2.y = sp.y; m2.thf = 1; for (let i = 0; i < 3; i++) { g2.x = g0[0]; g2.y = g0[1]; g2.a = sp.a; D.update(1 / 30); }
         o.start = D.get().alarmT; let k = 0; while (D.get().alarmT > 0 && k < 30 * 8) { f(); k++; } o.abgewendet = [D.get().phase, D.get().alarmT, +(k / 30).toFixed(1), D.get().sus < 70]; o.msg2 = D.msgs().feed.some(x => /abgewendet/.test(x));
         for (let i = 0; i < 30 * 10; i++) f(); o.dannNoch = D.get().phase;
         // 4) grace 0: sofort
-        D.buildSeed(654); D.CFG.watch.grace = 0; D.setSus(100); const m3 = D.get().me, g3 = D.get().npcs.find(q => q.k === 'grd'); H.isolate(g3, -1); m3.x = sp.x; m3.y = sp.y; m3.units = 1; m3.thf = 1; g3.x = g0[0]; g3.y = g0[1]; g3.a = sp.a; D.update(1 / 30); o.grace0 = D.get().phase;
+        D.buildSeed(654); D.CFG.watch.grace = 0; D.setSus(100); const m3 = D.get().me, g3 = D.get().npcs.find(q => q.k === 'grd'); H.isolate(g3, -1); m3.x = sp.x; m3.y = sp.y; m3.units = 1; m3.loot = 1000; m3.thf = 1; g3.x = g0[0]; g3.y = g0[1]; g3.a = sp.a; D.update(1 / 30); o.grace0 = D.get().phase;
         // 5) F waehrend des Countdowns: Ueberfall, Countdown weg
-        D.buildSeed(654); D.CFG.watch.grace = 4; D.setSus(100); const m4 = D.get().me, g4 = D.get().npcs.find(q => q.k === 'grd'); H.isolate(g4, -1); m4.x = sp.x; m4.y = sp.y; m4.units = 1; m4.thf = 1; g4.x = g0[0]; g4.y = g0[1]; g4.a = sp.a; D.update(1 / 30);
+        D.buildSeed(654); D.CFG.watch.grace = 4; D.setSus(100); const m4 = D.get().me, g4 = D.get().npcs.find(q => q.k === 'grd'); H.isolate(g4, -1); m4.x = sp.x; m4.y = sp.y; m4.units = 1; m4.loot = 1000; m4.thf = 1; g4.x = g0[0]; g4.y = g0[1]; g4.a = sp.a; D.update(1 / 30);
         o.vorF = D.get().alarmT; D.startHeist(false, m4); o.nachF = [D.get().phase, D.get().alarmT];
         return o; })()`);
       t.ok(r.sus1 >= 99.9, 'Balken voll: ' + r.sus1);
@@ -200,12 +201,12 @@ module.exports = [
         A.get().npcs.forEach(q => { if (q !== g) q.st = 'away'; }); A.get().cams.forEach(c => { c.off = true; });
         let sp = null; for (const a of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) { const x = g.x + Math.cos(a) * 50, y = g.y + Math.sin(a) * 50; if (!A.isSol(Math.floor(x / 32), Math.floor(y / 32)) && A.los(g.x, g.y, x, y) && !A.world().restricted(x, y)) { sp = { x, y, a }; break; } }
         if (!sp) return { err: 'kein Punkt' }; const g0 = [g.x, g.y];
-        out.max = A.CFG.watch.grace * (1 + A.CFG.susPer); A.setSus(99); for (let i = 0; i < 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; p1.x = sp.x; p1.y = sp.y; p1.units = 1; p1.thf = 1; step(G.insts, G.net, 1 / 60); }
+        out.max = A.CFG.watch.grace * (1 + A.CFG.susPer); A.setSus(99); for (let i = 0; i < 30; i++) { g.x = g0[0]; g.y = g0[1]; g.a = sp.a; p1.x = sp.x; p1.y = sp.y; p1.units = 1; p1.loot = 1000; p1.thf = 1; step(G.insts, G.net, 1 / 60); }
         G.run(.2); out.host = A.get().alarmT; out.client = B.get().alarmT; out.phase = [A.get().phase, B.get().phase]; out.feedB = B.msgs().feed.filter(f => /Entdeckt/.test(f));
         const draw = [], ctx = B.cv.getContext('2d'), o0 = ctx.fillText; ctx.fillText = function (s) { draw.push(String(s)); return o0.apply(this, arguments); }; try { B.draw(); } finally { ctx.fillText = o0; }
         out.hud = draw.find(s => /^ENTDECKT! Alarm in/.test(s)) || null;
         // Abbruch: aus dem Blick
-        p1.units = 0; p1.thf = 0; p1.x = A.get().players[0].x; p1.y = A.get().players[0].y; A.get().players[0].units = 0; for (let i = 0; i < 60 * 7; i++) { p1.thf = 0; p1.units = 0; step(G.insts, G.net, 1 / 60); }   // zu zweit baut sich der Balken mit 9 / (1 + susPer) pro s ab: 30 Prozent in 5 s
+        p1.units = 0; p1.loot = 0; p1.thf = 0; p1.x = A.get().players[0].x; p1.y = A.get().players[0].y; A.get().players[0].units = 0; A.get().players[0].loot = 0; for (let i = 0; i < 60 * 7; i++) { p1.thf = 0; p1.units = 0; p1.loot = 0; step(G.insts, G.net, 1 / 60); }   // zu zweit baut sich der Balken mit 9 / (1 + susPer) pro s ab: 30 Prozent in 5 s
         out.abgewendet = [A.get().alarmT, B.get().alarmT, A.get().phase, B.msgs().feed.some(f => /abgewendet/.test(f))];
         return out;
       });

@@ -46,7 +46,7 @@ module.exports = [
         if (!g) return { err: 'keine Wache auf der Karte' };
         A.setSus(97);
         const p1 = A.get().players[1];
-        for (let i = 0; i < 60 * 12 && A.get().phase === 1; i++) { p1.x = g.x + 50; p1.y = g.y; p1.units = 1; g.a = 0; p1.vx = p1.vy = 0; step(G.insts, G.net, 1 / 60); }
+        for (let i = 0; i < 60 * 12 && A.get().phase === 1; i++) { p1.x = g.x + 50; p1.y = g.y; p1.units = 1; p1.loot = 1000; g.a = 0; p1.vx = p1.vy = 0; step(G.insts, G.net, 1 / 60); }
         G.run(1);
         return { phase: A.get().phase, a: A.msgs(), b: B.msgs() };
       });

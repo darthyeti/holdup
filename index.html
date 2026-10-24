@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=123"></script>
+<script src="js/ui.js?v=124"></script>
 <script>
-const BUILD={n:123,d:'2026-10-24'};//BUILD
+const BUILD={n:124,d:'2026-10-24'};//BUILD
 const UI_API=6;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -1712,7 +1712,7 @@ for(const q of npcs)if(q.route&&!q.rk&&q.st!=='away')for(const o of act)if(Math.
 let wr=0,wrBy=null,wrK='';const wu=(v,o,k)=>{if(v>wr){wr=v;wrBy=o;wrK=k||''}};
 /* Beobachter (CFG.watch): hot = Sperrzone oder gerade beim Stehlen (o.thf, E gehalten an einer Beute-Stelle): da sehen alle mit der vollen Rate (Wache 48, Angestellte 34, Kamera 26). Nur Beute in der Tasche (carry):
    Kameras ignorieren es, Wache und Angestellte finden es langsam verdaechtig (carry.grd, carry.staff, der Beobachter bleibt kurz stehen und schaut, siehe gaze). Im Museum (LAY.gAll) sehen Wachen jeden im Gebaeude mit CFG.museum.seen, draussen nicht (Fenster und Glastuer lassen Blicke durch). */
-for(const o of act){o.thf=Math.max(0,(o.thf||0)-dt);const hot=restricted(o.x,o.y)||o.thf>0,carry=o.units>0,gIn=LAY.gAll&&inBld(o.x,o.y);if(!hot&&!carry&&!gIn)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1,W=CFG.watch;
+for(const o of act){o.thf=Math.max(0,(o.thf||0)-dt);const hot=restricted(o.x,o.y)||o.thf>0,carry=o.loot>0,gIn=LAY.gAll&&inBld(o.x,o.y);if(!hot&&!carry&&!gIn)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1,W=CFG.watch;
 for(const q of npcs){if(q.k==='civ'||q.st==='dead'||q.st==='away')continue;const g=q.k==='grd',all=g&&gIn;if(!hot&&!carry&&!all)continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*rm*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){wu((all?CFG.museum.seen:hot?(g?48:34):(g?W.carry.grd:W.carry.staff))*kf,o,g?'Wache':'Angestellter');if(!hot&&!all)gaze(q,o);if(q.alert<=.01)snd('alert');q.alert=.5}}
 cams.forEach((c,i)=>{if(hot&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*rm*lgM('sight'),o.x,o.y)){wu(26*kf,o,'Kamera');if(c.alert<=.01)snd('alert');c.alert=.5}})}
 for(const o of act){const ins=inBld(o.x,o.y);o.dwT+=dt;if(o.dwT>=1){o.sl=Math.hypot(o.x-o.dx,o.y-o.dy)<CFG.loiter.still;o.dwT=0;o.dx=o.x;o.dy=o.y}
@@ -1728,7 +1728,7 @@ for(const o of act){const rt=revTarget(o);if(rt){if(o.inp.e){rvd.add(rt);rt.rv+=
 for(const q of players)if(q.dn>0&&!rvd.has(q))q.rv=0;
 for(const e of en)if(e.sur&&!cpd.has(e))e.cp=0;
 for(const it of itsAll())if(!worked.has(it)&&!it.keep)it.pr=0;
-if(phase===1&&!LAY.truck){for(const o of act)if((o.units>0||escaped>0)&&(o.y>(LAY.bld.y1+.7)*T||o.x>(LAY.bld.x1+.7)*T||o.x<(LAY.bld.x0-.7)*T||o.y<(LAY.bld.y0-.7)*T))secure(o);if(ended)return;act=actv()}
+if(phase===1&&!LAY.truck){for(const o of act)if((o.loot>0||escaped>0)&&(o.y>(LAY.bld.y1+.7)*T||o.x>(LAY.bld.x1+.7)*T||o.x<(LAY.bld.x0-.7)*T||o.y<(LAY.bld.y0-.7)*T))secure(o);if(ended)return;act=actv()}
 if(phase===2){tH+=dt;
 for(const o of act)plCombat(o,dt);
 if(!policeShown&&tH>=policeAt)spawnWave();else if(policeShown){waveT+=dt*(bars.some(b=>b.lv>0&&(b.tk||b.st==='fuse'))?CFG.bar.wave:1);if(waveT>=waveGap(waveN)){waveT=0;spawnWave()}}

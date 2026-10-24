@@ -15,7 +15,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | Paket | Thema | Plan | Status |
 |---|---|---|---|
 | P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | Plan steht und ist entschieden, wartet auf Tills Go (frühestens nach dem Cloud-Umbau) |
-| P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | Ursache gefunden und nachgestellt, Plan steht und ist entschieden, wartet auf Tills Go |
+| P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | gebaut (24. Oktober 2026, Till gab das Go), wartet auf Tills Spieltest |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -70,8 +70,11 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 4. Prüfung: Test `83-beobachter-gnadenfrist` um den Fall Material in Sicht der Wache ergänzen (Rate 0 statt 20), alle Tests und der Bot (Bank, Juwelier, Tankstelle, Museum, Casino mit Brettersatz im Kit, früh rufen), danach Spieltest-Frage: Brettersatz kaufen, Serie weiterspielen.
 5. Eine zweite Absicherung (optional, Entscheidung Till): `finish` in den ersten Sekunden einer Runde ohne Beute und ohne Tat bei Phase 1 nie als Sieg zählen. Empfehlung: nicht nötig, wenn Schritt 2 sitzt.
 
+**Bau** (24. Oktober 2026): Statt einer Hilfe `loot(o)` genügt `o.loot>0` (der Wert der Beute, Material zählt nie hinein): zwei Zeilen in `hostStep` (Ausgangsregel der Phase 1, Beobachterblock `carry`). Test `91-brettersatz-start` (solo mit Brettersatz, Material allein, Gegenprobe echte Beute draußen, Coop zu dritt mit einem Brettersatz) war vorher rot ("Lautlos entkommen" nach 2 s) und ist jetzt grün, `83-beobachter-gnadenfrist` hat den Fall Material in Sicht der Wache (Rate 0). Die Gegenprobe (Beobachterblock mit `o.units>0`) schlägt an. 23 Stellen in den Tests 41, 81 und 83 setzten `units` allein als Rucksack und setzen jetzt zusätzlich `loot`. Schritt 5 (zusätzliche Absicherung in `finish`) entfällt wie empfohlen. Der Bot ist nicht betroffen (er startet im Überfall, die Regel gilt nur in Phase 1).
+
 **Risiken:** Klein, zwei Zeilen im Host-Schritt (Beobachterblock und Ausgangsregel) und eine Hilfe. Berührt `hostStep` in `index.html`, liegt also nahe am Cloud-Umbau. Spieler, die Material absichtlich nach draußen tragen, sind künftig nicht mehr "raus" (bisher unabsichtlich gesichert).
 
 **Änderungsprotokoll**
 - v1 (24. Oktober 2026): Plan zu B2.
 - v1.1 (24. Oktober 2026): Entscheidung zu Schritt 3 eingetragen (Material nie Beute, auch nicht für den Verdacht), Schritt 3 ist keine offene Frage mehr.
+- Bau (24. Oktober 2026): Go von Till, gebaut als `o.loot>0` statt `loot(o)`, Status gebaut.
