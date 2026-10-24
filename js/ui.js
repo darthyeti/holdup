@@ -19,7 +19,7 @@ const JOBS=[
 {k:'museum',n:'Museum',i:'museum',be:3,ri:2,s:'Nacht, Laser, Lichtkegel',d:['Im Lichtkegel einer Wache fällst du sofort auf, Laser lösen bei Berührung Alarm aus (Schalter: 50 s aus).','Gemälde, Statue, Relikte, Depot. Lautlos mit Beute raus: 100 % Bonus. Schwere Stücke machen langsam.']},
 {k:'casino',n:'Casino',i:'casino',be:3,ri:3,s:'Chips und Cage',d:['Viele Wachen und Kameras. Chips zählen nur halb, wenn du sie nicht am Cage tauschst (dauert).','Chips, Automaten, VIP-Fächer, Tresor. Erst kämpft der Hausdienst, dann die Polizei.']}],
 RANDOM={k:'random',n:'Zufall',i:'dice',s:'Würfelt unter allem, was dein Rang freischaltet',d:['Jeder Auftrag wird neu gewürfelt, unter allem, was dein Rang freischaltet.','Bank, Juwelier, Transporter und Tankstelle von Anfang an, Museum ab Auftrag 3, Casino ab Auftrag 5.']};
-const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','Blend, Rauch, Ablenker werfen'],['Esc, P','Pause'],['M','Ton an/aus']];
+const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen'],['E halten','Interaktion, Geisel nehmen'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2','Störsender, Medkit'],['3 / 4 / 5 halten','Blend, Rauch, Ablenker werfen'],['Esc, P','Pause'],['M','Ton an/aus']];
 const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.','Beute in der Tasche fällt Wachen nur langsam auf,','Stehlen im Blick von Kameras sofort. Bei 100 %','läuft ein Countdown: raus aus dem Blick.'],
 FLOW_FH_OFF=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie, für die ganze Serie. Noch ohne Wirkung.'],FLOW_FH_ON=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie. Hoch: Polizei früher und härter.'];
 const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH UND RECHT',['jam','med','ad','bt','law']],['WURFGERÄTE',['fl','sm','dc']]];
@@ -151,6 +151,8 @@ function sShop(){const{CFG,NET,SESSION,fmt,shopState,SHOPKEYS}=X,items=CFG.shop.
 const cols=SHOPGRP.map(([n,ks])=>({n,ix:ks.map(k=>items.findIndex(it=>it.k===k)).filter(i=>i>=0)}));
 items.forEach((it,i)=>{if(!cols.some(c=>c.ix.includes(i)))cols[cols.length-1].ix.push(i)});
 cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':items[i].l?'a':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
+/* Kopfzeile: links SHOP und Fahndungs-Badge (bis x 400), rechts Konto und Serienzeile (ab y 70, ab x 590), oben die Team-Leiste (y 6 bis 30): die Kachel passt dazwischen, einzeilig */
+t.push({id:'skills',x:404,y:36,w:196,h:30,tf:'bold 13px monospace',key:'k',act:'ui:skills',kind:SESSION.pts>0?'p':'n',title:SESSION.pts>0?'Fähigkeiten ('+SESSION.pts+')':'Fähigkeiten',nochip:false});
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);fhBadge(160,62,'l');
@@ -231,6 +233,30 @@ deco(){const{g,drawLegend}=X;panelFrame(px,py,pw,ph,'SO WIRD GESPIELT');g.font='
 CTRL.forEach((r,i)=>{const y=py+92+i*22;g.font='bold 12px monospace';g.fillStyle=Y;g.fillText(r[0],px+24,y);g.font='12px monospace';g.fillStyle=TX;g.fillText(r[1],px+190,y)});
 FLOW.concat(X.CFG.fahndung.on?FLOW_FH_ON:FLOW_FH_OFF).forEach((l,i)=>{g.font='12px monospace';g.fillStyle=TX;g.fillText(l,px+430,py+92+i*24)});
 g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('SYMBOLE',px+24,py+376);drawLegend(py+398);g.textAlign='left'}}}
+/* Skillbaum (Modal ueber dem Shop, Tills Skizze vom 24. Oktober 2026): drei Baeume nebeneinander, je Wurzel unten (Stufen 1 bis 3), darueber zwei mittlere und zwei obere Knoten, die oberen sind kreuzweise mit den mittleren verbunden (Freischaltung X.skOk, Daten CFG.skill). Kauf mit Enter oder Klick (act 'skill', ein Punkt je Stufe). */
+const skTxt=(d,n,r)=>String(d).replace(/\{(\w+)(%?)\}/g,(m,k,pc)=>{const v=((n[k]||[])[Math.max(0,Math.min(2,r-1))])||0;return pc?Math.round(v*100):v});
+function paintSkill(t){const{g,CFG,SESSION}=X,S=CFG.skill,n=S[t.node],r=SESSION.sk[t.node]|0,ok=X.skOk(SESSION.sk,t.node),mx=r>=S.max,c=mx?G:ok?t.tree.c:MU;
+g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=c;g.fillText(fit(n.n,t.w-20,g.font),t.x+10,t.y+20);
+for(let q=0;q<3;q++){g.fillStyle=q<r?c:'rgba(255,255,255,.18)';g.fillRect(t.x+10+q*14,t.y+t.h-20,10,10)}
+g.font='11px monospace';g.fillStyle=ok?(mx?G:SU):RD;g.fillText(fit(ok?(mx?'voll':r?'Stufe '+r:'frei'):'gesperrt',t.w-58,g.font),t.x+58,t.y+t.h-11)}
+function mSkills(){const{CFG,SESSION}=X,S=CFG.skill,px=40,pw=880,py=20,ph=504,nh=62,colW=266,cw=(colW-10)/2,t=[],rows=[98,180,262];
+S.trees.forEach((tr,ci)=>{const cx=px+36+ci*(colW+12),pos=[{x:cx,y:rows[2],w:colW},{x:cx,y:rows[1],w:cw},{x:cx+cw+10,y:rows[1],w:cw},{x:cx,y:rows[0],w:cw},{x:cx+cw+10,y:rows[0],w:cw}];
+for(let n=0;n<5;n++){const id=tr.k+n,r=SESSION.sk[id]|0,p=pos[n],ok=X.skOk(SESSION.sk,id);t.push({id:'sk:'+id,x:p.x,y:p.y,w:p.w,h:nh,act:'skill',arg:id,node:id,tree:tr,pos:p,lock:!ok||r>=S.max||SESSION.pts<1,paint:paintSkill,nochip:true})}});
+t.push({id:'close',x:480-90,y:py+ph-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
+return{def:'sk:A0',back:'ui:close',t,deco(){const{g}=X;panelFrame(px,py,pw,ph,'FÄHIGKEITEN');
+g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=SESSION.pts>0?G:MU;g.fillText('Skillpunkte offen: '+SESSION.pts,px+pw-20,py+34);
+g.textAlign='left';g.font='bold 11px monospace';[['7-9',rows[0]],['4-6',rows[1]],['1-3',rows[2]]].forEach(([l,y])=>{g.fillStyle=MU;g.fillText(l,px+6,y+nh/2+4)});
+S.trees.forEach((tr,ci)=>{const cx=px+36+ci*(colW+12);g.font='bold 12px monospace';g.fillStyle=tr.c;g.fillText(tr.n,cx,py+74)});
+/* Linien: Wurzel zu beiden mittleren Knoten, oberer Knoten kreuzweise zum gegenueberliegenden mittleren */
+g.lineWidth=2;const by=id=>t.find(q=>q.node===id);
+S.trees.forEach(tr=>{for(const [a,b] of [[tr.k+'0',tr.k+'1'],[tr.k+'0',tr.k+'2'],[tr.k+'2',tr.k+'3'],[tr.k+'1',tr.k+'4']]){const A1=by(a),B1=by(b),open=X.skOk(SESSION.sk,b);g.strokeStyle=open?tr.c:'rgba(255,255,255,.14)';g.globalAlpha=open?.7:1;g.beginPath();g.moveTo(A1.x+A1.w/2,A1.y);g.lineTo(B1.x+B1.w/2,B1.y+B1.h);g.stroke();g.globalAlpha=1}});
+/* Beschreibung des gewaehlten Knotens */
+const f=focus&&/^sk:/.test(focus)?focus.slice(3):null;g.textAlign='left';
+if(f){const n=S[f],r=SESSION.sk[f]|0,tr=S.trees.find(q=>q.k===f[0]),nd=X.skNeed(f);g.font='bold 13px monospace';g.fillStyle=tr.c;g.fillText(n.n+(r>=S.max?' (Stufe '+r+', voll)':' (Stufe '+r+' von '+S.max+')'),px+36,356);
+ g.font='12px monospace';g.fillStyle=TX;g.fillText(fit('Jetzt: '+(r?skTxt(n.d,n,r):'noch nichts'),pw-72,g.font),px+36,376);
+ g.fillStyle=r>=S.max?MU:Y;g.fillText(fit(r>=S.max?'Höchste Stufe erreicht.':'Nächste Stufe: '+skTxt(n.d,n,r+1),pw-72,g.font),px+36,396);
+ g.fillStyle=X.skOk(SESSION.sk,f)?MU:RD;g.font='11px monospace';g.fillText(X.skOk(SESSION.sk,f)?(SESSION.pts>0&&r<S.max?'Enter oder Klick: eine Stufe für einen Punkt.':r>=S.max?'':'Kein Skillpunkt offen: Punkte gibt es für gewonnene Aufträge.'):'Gesperrt: '+S[nd].n+' muss auf Stufe '+S.max+' stehen.',px+36,418)}
+g.fillStyle=MU;g.font='11px monospace';g.fillText(fit('Punkte: '+S.pts.win+' je gewonnenem Auftrag, +'+S.pts.goal+' Nebenziel, +'+S.pts.quiet+' lautlos. Die Serie endet bei Niederlage, dann sind Punkte und Baum weg.',pw-72,g.font),px+36,448)}}}
 function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
 return{def:'no',back:'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'}],
 deco(){const{g}=X;panelFrame(px,py,pw,ph,m.title||'Sicher?');g.textAlign='left';g.font='13px monospace';g.fillStyle=TX;wrap(m.msg||'',pw-40,'13px monospace',3).forEach((l,i)=>g.fillText(l,px+20,py+66+i*20))}}}
@@ -242,7 +268,7 @@ function closeAll(){const m=stack[0];stack=[];modal=null;if(m)focus=m.ret}
 function base(){const{scr,paused,ended,NET}=X;
 if(scr==='title')return sTitle();if(scr==='mission')return sMission();if(scr==='coop')return sCoop();if(scr==='join')return sJoin();if(scr==='lobby')return sLobby();if(scr==='shop')return sShop();
 if(scr==='play'){if(ended)return sEnded();if(paused)return sPause()}return null}
-function modalSpec(m){if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);return null}
+function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);return null}
 function cur(){const b=base();if(!b){stack=[];modal=null;sig='';return null}
 const sg=X.scr+'|'+(X.paused?1:0)+'|'+(X.ended?1:0);if(sg!==sig){sig=sg;stack=[];modal=null;focus=null;hov=null}
 const c=modal?modalSpec(modal):b;
@@ -254,7 +280,7 @@ function tileAt(x,y){const c=cur();if(!c)return null;for(let i=c.t.length-1;i>=0
 function setSlider(t,x){X.volAdj(t.slider,Math.max(0,Math.min(1,(x-(t.x+130))/(t.w-200))),true)}
 function activate(t){if(!t||!t.act)return;if(t.lock){SND.ev('deny');return}const a=t.act;
 if(a==='ui:close'){closeModal();return}
-if(a==='ui:options'||a==='ui:help'){openModal({k:a.slice(3)});return}
+if(a==='ui:options'||a==='ui:help'||a==='ui:skills'){openModal({k:a.slice(3)});return}
 if(a==='ui:confirm'){const solo=X.NET.role==='solo',host=X.NET.role==='host';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:host?{title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und alle Mitspieler werden getrennt.',yesLabel:'Ja, Raum schließen',yes:'leave'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}
 if(a==='ui:yes'){const y=modal.yes;closeAll();X.act(y);return}
 /* Raum schliessen (Host mit verbundenen Mitspielern): Lobby, Shop und Ergebnis fragen zurueck, denn ein geschlossener Raum trennt alle (Esc aus Gewohnheit, siehe docs/coop-und-netz.md). Ohne Mitspieler, solo und fuer Clients geht es direkt. */
@@ -305,4 +331,4 @@ const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
 return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus})):[]}}}
-mkUI.api=5;
+mkUI.api=6;
