@@ -1,6 +1,6 @@
-// Skillbaum (Tills Idee vom 24. Oktober 2026, Skizze mit drei Baeumen, docs/spielsystem.md, Skillbaum): Punkte je gewonnenem Auftrag (SESSION.pts), je Baum Wurzel (Knoten 0), zwei mittlere
-// (1 links, 2 rechts, offen mit Wurzel 3 von 3) und zwei obere Knoten (3 links braucht 2, 4 rechts braucht 1, jeweils 3 von 3), Stufen 0 bis 3, die Werte stehen in CFG.skill und wirken ueber skv(Kit, Knoten, Schluessel).
-// Skills gehoeren zum Kit jedes Spielers (curKit, sanKit, mkPl), der Host rechnet (VER 29 traegt sie schon mit dem Kit).
+// Skillbaum (Tills Idee vom 24. Oktober 2026, umgebaut als MRU 1 B1 am 25. Oktober 2026, docs/spielsystem.md, Skillbaum): Punkte je gewonnenem Auftrag (SESSION.pts), je Baum Wurzel (Knoten 0), zwei Pfade
+// (1 und 2, offen mit Wurzel 3 von 3, Entweder-oder) und je Pfad ein Gegenstand (3 hinter 1, 4 hinter 2, offen mit dem Pfad auf 3, noch nicht gebaut: soon), Stufen 0 bis 3, die Werte stehen in CFG.skill und wirken
+// ueber skv(Kit, Knoten, Schluessel). Die Struktur (Entweder-oder, Gegenstaende, Rücknahme, Layout) prueft 98-skillbaum-umbau. Skills gehoeren zum Kit jedes Spielers (curKit, sanKit, mkPl), der Host rechnet.
 const SETUP = `(sk, o) => {
   const D = __dbg; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017);
   D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.vanLock = 0;
@@ -11,36 +11,36 @@ const SETUP = `(sk, o) => {
 
 module.exports = [
   {
-    name: 'Skillbaum: 15 Knoten mit Werten und Text, Freischaltung (Mitte braucht Wurzel 3, Spitze den gegenueberliegenden mittleren Knoten auf 3), Kauf kostet einen Punkt, hoechstens Stufe 3, eine Kette kostet 9 Punkte',
+    name: 'Skillbaum: 15 Knoten (neun mit Werten und Text, sechs Gegenstaende noch nicht gebaut), Wurzel offen, Pfade mit Wurzel 3 von 3, Kauf kostet einen Punkt, hoechstens Stufe 3, Wurzel plus Pfad kosten 6 Punkte',
     async run(t) {
       const r = await t.page.evaluate(() => {
-        const D = __dbg, S = D.CFG.skill, o = { bad: [] };
+        const D = __dbg, S = D.CFG.skill, o = { bad: [], soon: [] };
         o.ids = D.SKID.length;
         for (const id of D.SKID) {
           const n = S[id]; if (!n || !n.n || !n.d) { o.bad.push(id + ' fehlt'); continue; }
+          if (n.soon) { o.soon.push(id); continue; }
+          const rising = (k, zero) => Array.isArray(n[k]) && n[k].length === 3 && n[k].every((v, i) => (zero && i < 2 ? v === 0 : v > 0) && (!i || v >= n[k][i - 1]));
           const keys = [...n.d.matchAll(/\{(\w+)%?\}/g)].map(m => m[1]); if (!keys.length) o.bad.push(id + ' ohne Wert');
-          for (const k of keys) if (!Array.isArray(n[k]) || n[k].length !== 3 || n[k].some((v, i) => !(v > 0) || (i && v < n[k][i - 1]))) o.bad.push(id + '.' + k + ' keine steigende Liste');
+          for (const k of keys) if (!rising(k)) o.bad.push(id + '.' + k + ' keine steigende Liste');
+          for (const k of [...(n.b || '').matchAll(/\{(\w+)%?\}/g)].map(m => m[1])) if (!rising(k, true)) o.bad.push(id + '.' + k + ' kein Wert erst in Stufe 3');
         }
         D.sessReset(); D.SESSION.pts = 20; const ok = id => D.skOk(D.SESSION.sk, id), buy = id => D.skillBuy(id);
         o.lock0 = ['A0', 'A1', 'A2', 'A3', 'A4'].map(ok); o.denied = [buy('A1'), buy('A3')];
         buy('A0'); buy('A0'); o.root2 = ok('A1'); buy('A0'); o.open1 = [ok('A1'), ok('A2'), ok('A3'), ok('A4')];
-        o.denied2 = [buy('A3'), buy('A4')]; buy('A2'); buy('A2'); o.a2at2 = ok('A3'); buy('A2'); o.cross = [ok('A3'), ok('A4')];
-        for (let i = 0; i < 3; i++) buy('A3'); o.beyond = buy('A3'); o.sk = Object.assign({}, D.SESSION.sk); o.pts = D.SESSION.pts;
+        buy('A2'); buy('A2'); buy('A2'); o.beyond = buy('A2'); o.sk = Object.assign({}, D.SESSION.sk); o.pts = D.SESSION.pts;
         D.SESSION.pts = 0; o.nopts = buy('A1');
-        o.other = [ok('V1'), ok('U3')];   // andere Baeume bleiben gesperrt
+        o.other = [ok('V1'), ok('U2')];   // andere Baeume bleiben gesperrt
         return o;
       });
       t.eq(r.ids, 15, 'fuenfzehn Knoten');
       t.eq(r.bad, [], 'Daten und Texte: ' + JSON.stringify(r.bad));
+      t.eq(r.soon, ['A3', 'A4', 'V3', 'V4', 'U3', 'U4'], 'die sechs Gegenstaende sind als soon markiert');
       t.eq(r.lock0, [true, false, false, false, false], 'am Anfang nur die Wurzel offen');
       t.eq(r.denied, [false, false], 'gesperrte Knoten lassen sich nicht kaufen');
-      t.eq(r.root2, false, 'Wurzel 2 von 3 schaltet die Mitte noch nicht frei');
-      t.eq(r.open1, [true, true, false, false], 'Wurzel 3 von 3 schaltet beide mittleren Knoten frei, die oberen noch nicht');
-      t.eq(r.denied2, [false, false], 'obere Knoten bleiben gesperrt');
-      t.eq(r.a2at2, false, 'der gegenueberliegende mittlere Knoten (A2) muss auf 3 stehen, 2 reichen nicht');
-      t.eq(r.cross, [true, false], 'A2 auf 3 schaltet A3 frei (kreuzweise), A4 braucht A1');
-      t.eq([r.sk.A0, r.sk.A2, r.sk.A3, r.beyond], [3, 3, 3, false], 'Kette Wurzel, Mitte, Spitze auf 3, mehr als Stufe 3 geht nicht');
-      t.eq(r.pts, 11, 'die Kette hat 9 der 20 Punkte gekostet');
+      t.eq(r.root2, false, 'Wurzel 2 von 3 schaltet die Pfade noch nicht frei');
+      t.eq(r.open1, [true, true, false, false], 'Wurzel 3 von 3 schaltet beide Pfade frei, die Gegenstaende nicht');
+      t.eq([r.sk.A0, r.sk.A2, r.beyond], [3, 3, false], 'Wurzel und Pfad auf 3, mehr als Stufe 3 geht nicht');
+      t.eq(r.pts, 14, 'Wurzel und ein Pfad haben 6 der 20 Punkte gekostet');
       t.eq(r.nopts, false, 'ohne Punkte kein Kauf');
       t.eq(r.other, [false, false], 'andere Baeume sind unabhaengig gesperrt');
     },
@@ -66,7 +66,7 @@ module.exports = [
     },
   },
   {
-    name: 'Skillbaum: Wirkungen auf Reserve, Nachladen, Schilde, Elite, Explosion, Weste, Lehnen, Bauen, Barrikaden-Haltbarkeit, Zaeh, Werkzeug, Dietrich, Fluchtwagen, Geiseln',
+    name: 'Skillbaum: Wirkungen auf Reserve, Nachladen, Schilde, Weste, Lehnen, Bauen, Zaeh (Deckung 3), Werkzeug, Dietrich, Fluchtwagen (Techniker 3), Geiseln (Sanitaeter 3); Sprengmeister, Jaeger und Bollwerk gibt es nicht mehr',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}, o = {};
         const base = S({}), D = base.D, m0 = base.me, wp = D.CFG.wpn.pistol;
@@ -101,19 +101,19 @@ module.exports = [
       t.eq(r.sk.res, Math.round(r.base.res * 1.75), 'Munition 3: Reserve +75 %');
       t.ok(Math.abs(r.rl[0] - r.rl[1] * .7) < .05, 'Ruhige Hand 3: Nachladen 30 % schneller: ' + JSON.stringify(r.rl));
       t.ok(Math.abs(r.shield3 / r.shield0 - 1.6) < .02, 'Durchschlag 3: Schaden gegen Schilde +60 %: ' + JSON.stringify([r.shield0, r.shield3]));
-      t.ok(Math.abs(r.swat3 / r.swat0 - 1.45) < .02, 'Jaeger 3: Schaden gegen SWAT +45 %: ' + JSON.stringify([r.swat0, r.swat3]));
-      t.ok(Math.abs(r.blast3 / r.blast0 - 1.75) < .02, 'Sprengmeister 3: Explosion +75 % gegen Beamte: ' + JSON.stringify([r.blast0, r.blast3]));
+      t.ok(Math.abs(r.swat3 / r.swat0 - 1) < .02, 'Jaeger ist entfallen (steckt kuenftig im Praezisionsgewehr): Schaden gegen SWAT unveraendert: ' + JSON.stringify([r.swat0, r.swat3]));
+      t.ok(Math.abs(r.blast3 / r.blast0 - 1) < .02, 'Sprengmeister ist entfallen (steckt kuenftig im Granatwerfer): Explosion unveraendert: ' + JSON.stringify([r.blast0, r.blast3]));
       t.ok(Math.abs(r.ar3 / r.ar0 - .25) < .02, 'Panzerung 3: die Weste verliert 75 % weniger: ' + JSON.stringify([r.ar0, r.ar3]));
       t.ok(Math.abs(r.lean3 / r.lean0 - .45) < .02, 'Deckung 3: beim Lehnen 55 % weniger Schaden: ' + JSON.stringify([r.lean0, r.lean3]));
       t.ok(r.bar && Math.abs(r.bar[0] / r.bar[1] - .5) < .02, 'Baumeister 3: Barrikaden 50 % schneller: ' + JSON.stringify(r.bar));
-      t.ok(r.barhp && Math.abs(r.barhp[0] / r.barhp[1] - 1.75) < .01, 'Bollwerk 3: gebaute Barrikaden halten 75 % mehr aus: ' + JSON.stringify(r.barhp));
-      t.eq(r.sw, [60, 0, true], 'Zaeh 3: einmal mit 60 % Leben wieder auf, danach verbraucht');
+      t.ok(r.barhp && Math.abs(r.barhp[0] / r.barhp[1] - 1) < .01, 'Bollwerk ist entfallen: gebaute Barrikaden halten wie ohne Skill: ' + JSON.stringify(r.barhp));
+      t.eq(r.sw, [45, 0, true], 'Deckung 3 bringt Zaeh: einmal mit 45 % Leben wieder auf, danach verbraucht');
       t.ok(r.sw2, 'der zweite Treffer wirkt wieder (kein zweites Aufstehen)');
       t.eq([r.sk.jam - r.base.jam, r.sk.dc - r.base.dc], [2, 3], 'Werkzeug 3: zwei Stoersender und drei Ablenker mehr');
-      t.ok(Math.abs(r.pick[0] / r.pick[1] - 1.3) < .01, 'Schleicher 3: Dietrich (Aufbrechen) 30 % schneller: ' + JSON.stringify(r.pick));
-      t.eq(r.van, [28, 40], 'Fahrer 3: der Wagen kommt 12 s frueher (28 statt 40 s)');
-      t.eq(r.cap, [54, 30], 'Verhandler 3: Geisel-Aufschub +24 s');
-      t.eq(r.heat, [1], 'Verhandler 3: die Geiselnahme kostet 75 % weniger Fahndung (4 wird 1)');
+      t.ok(Math.abs(r.pick[0] / r.pick[1] - 1.3) < .01, 'Techniker 3: Dietrich (Aufbrechen) 30 % schneller: ' + JSON.stringify(r.pick));
+      t.eq(r.van, [32, 40], 'Techniker 3 bringt Fahrer: der Wagen kommt 8 s frueher (32 statt 40 s)');
+      t.eq(r.cap, [46, 30], 'Sanitaeter 3 bringt Verhandler: Geisel-Aufschub +16 s');
+      t.eq(r.heat, [2], 'Sanitaeter 3 bringt Verhandler: die Geiselnahme kostet 50 % weniger Fahndung (4 wird 2)');
     },
   },
   {

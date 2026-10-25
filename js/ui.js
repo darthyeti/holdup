@@ -52,7 +52,7 @@ function dotsRow(x,y,n,c){const{g}=X;for(let i=0;i<3;i++){g.beginPath();g.arc(x+
 
 /* ---------- Kacheln zeichnen ---------- */
 function drawTile(t,under){const{g}=X,f=!under&&focus===t.id&&!t.nofocus,h=!under&&hov===t.id&&t.nofocus&&!!t.act,k=t.kind||'n',lk=!!t.lock;
-g.save();g.globalAlpha=lk?.62:1;
+g.save();g.globalAlpha=lk&&!t.nodim?.62:1;
 if(k!=='g'||f){g.fillStyle=k==='p'?(f||h?'rgba(52,104,40,.94)':'rgba(30,70,25,.88)'):k==='x'?(f||h?'rgba(110,34,30,.92)':'rgba(70,24,22,.84)'):(f||h?'rgba(30,34,46,.95)':'rgba(8,10,16,.86)');g.fillRect(t.x,t.y,t.w,t.h)}
 const lw=f||t.chosen?2:1;g.lineWidth=lw;
 g.strokeStyle=f||h?(k==='x'?'#ff6a5a':k==='p'?'#b6ff90':A):t.chosen?G:k==='g'?'rgba(255,255,255,.2)':k==='p'?'rgba(126,227,74,.7)':k==='x'?'rgba(255,106,90,.55)':'rgba(255,176,0,.3)';
@@ -64,7 +64,7 @@ else{const ic=t.icon,iw=ic?(t.h>=100?44:30):0,tx=t.x+12+iw;if(ic)icon(ic,t.x+12+
  else g.fillText(fit(t.title,cw,g.font),tx,t.y+t.h/2+5)}
 const ch=t.chip||(t.key?(t.key.length===1?t.key.toUpperCase():t.key):'');
 if(ch&&!t.nochip){g.font='11px monospace';g.textAlign='right';const w=g.measureText(ch).width+10;g.strokeStyle='rgba(255,176,0,.45)';g.lineWidth=1;g.strokeRect(t.x+t.w-w-8+.5,t.y+8+.5,w,17);g.fillStyle=A;g.fillText(ch,t.x+t.w-13,t.y+21)}
-if(lk&&!t.paint){icon('lock',t.x+t.w-18,t.y+t.h-18,16,MU)}
+if(lk&&!t.paint&&!t.nolock){icon('lock',t.x+t.w-18,t.y+t.h-18,16,MU)}
 g.restore()}
 
 /* Fahndungs-Badge (Teamwert SESSION.heat, Stufe aus X.heatLv): Beschriftung, fuenf Segmente bis zur Stufe gefuellt (gelb bis rot), Stufenname. al = Ausrichtung von x ('l' links, 'r' rechts, 'c' Mitte), y = Grundlinie, small = ohne Namen (Spiel-HUD). */
@@ -233,30 +233,47 @@ deco(){const{g,drawLegend}=X;panelFrame(px,py,pw,ph,'SO WIRD GESPIELT');g.font='
 CTRL.forEach((r,i)=>{const y=py+92+i*22;g.font='bold 12px monospace';g.fillStyle=Y;g.fillText(r[0],px+24,y);g.font='12px monospace';g.fillStyle=TX;g.fillText(r[1],px+190,y)});
 FLOW.concat(X.CFG.fahndung.on?FLOW_FH_ON:FLOW_FH_OFF).forEach((l,i)=>{g.font='12px monospace';g.fillStyle=TX;g.fillText(l,px+430,py+92+i*24)});
 g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('SYMBOLE',px+24,py+376);drawLegend(py+398);g.textAlign='left'}}}
-/* Skillbaum (Modal ueber dem Shop, Tills Skizze vom 24. Oktober 2026): drei Baeume nebeneinander, je Wurzel unten (Stufen 1 bis 3), darueber zwei mittlere und zwei obere Knoten, die oberen sind kreuzweise mit den mittleren verbunden (Freischaltung X.skOk, Daten CFG.skill). Kauf mit Enter oder Klick (act 'skill', ein Punkt je Stufe). */
+/* Skillbaum (Modal ueber dem Shop, Layout B, MRU 1 B1, Tills Wunsch vom 25. Oktober 2026): drei Zeilen (Angriff, Verteidigung, Unterstuetzung), links die Wurzel, in der Mitte die zwei Pfade untereinander (dazwischen ENTWEDER-ODER), rechts je Pfad
+   der Gegenstand, keine Kreuzlinien. Wer einen Knoten anwaehlt (Fokus oder Maus), sieht die Kette von der Wurzel bis dorthin leuchten (glow), der gesperrte Nachbarpfad nennt den Grund (verbaut). Freischaltung X.skOk, Entweder-oder X.skBlock, Ruecknahme
+   X.skCanSell (Kachel skundo oder Rueckschritt, act 'skillsell' auf den zuletzt angewaehlten Knoten skLast), Daten CFG.skill. Kauf mit Enter oder Klick (act 'skill', ein Punkt je Stufe). */
 const skTxt=(d,n,r)=>String(d).replace(/\{(\w+)(%?)\}/g,(m,k,pc)=>{const v=((n[k]||[])[Math.max(0,Math.min(2,r-1))])||0;return pc?Math.round(v*100):v});
-function paintSkill(t){const{g,CFG,SESSION}=X,S=CFG.skill,n=S[t.node],r=SESSION.sk[t.node]|0,ok=X.skOk(SESSION.sk,t.node),mx=r>=S.max,c=mx?G:ok?t.tree.c:MU;
-g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=c;g.fillText(fit(n.n,t.w-20,g.font),t.x+10,t.y+20);
-for(let q=0;q<3;q++){g.fillStyle=q<r?c:'rgba(255,255,255,.18)';g.fillRect(t.x+10+q*14,t.y+t.h-20,10,10)}
-g.font='11px monospace';g.fillStyle=ok?(mx?G:SU):RD;g.fillText(fit(ok?(mx?'voll':r?'Stufe '+r:'frei'):'gesperrt',t.w-58,g.font),t.x+58,t.y+t.h-11)}
-function mSkills(){const{CFG,SESSION}=X,S=CFG.skill,px=40,pw=880,py=20,ph=504,nh=62,colW=266,cw=(colW-10)/2,t=[],rows=[98,180,262];
-S.trees.forEach((tr,ci)=>{const cx=px+36+ci*(colW+12),pos=[{x:cx,y:rows[2],w:colW},{x:cx,y:rows[1],w:cw},{x:cx+cw+10,y:rows[1],w:cw},{x:cx,y:rows[0],w:cw},{x:cx+cw+10,y:rows[0],w:cw}];
-for(let n=0;n<5;n++){const id=tr.k+n,r=SESSION.sk[id]|0,p=pos[n],ok=X.skOk(SESSION.sk,id);t.push({id:'sk:'+id,x:p.x,y:p.y,w:p.w,h:nh,act:'skill',arg:id,node:id,tree:tr,pos:p,lock:!ok||r>=S.max||SESSION.pts<1,paint:paintSkill,nochip:true})}});
-t.push({id:'close',x:480-90,y:py+ph-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
+let skLast='A0';
+const skChain=id=>{const t=id[0],n=+id[1];return n===0?[id]:n<3?[t+'0',id]:[t+'0',X.skNeed(id),id]};
+function paintSkill(t){const{g,CFG,SESSION}=X,S=CFG.skill,n=S[t.node],r=SESSION.sk[t.node]|0,soon=!!n.soon,bl=X.skBlock(SESSION.sk,t.node),ok=X.skOk(SESSION.sk,t.node),mx=r>=S.max,c=soon?MU:bl?RD:mx?G:ok||r?t.tree.c:MU;
+if(t.glow){g.save();g.globalAlpha=.16;g.fillStyle=t.tree.c;g.fillRect(t.x+1,t.y+1,t.w-2,t.h-2);g.globalAlpha=.9;g.strokeStyle=t.tree.c;g.lineWidth=2;g.strokeRect(t.x+1,t.y+1,t.w-2,t.h-2);g.restore()}
+g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=c;g.fillText(fit(n.n,t.w-20,g.font),t.x+10,t.y+17);
+g.font='11px monospace';g.fillStyle=soon||(!ok&&!r)?MU:r?TX:SU;g.fillText(fit(soon?n.d:skTxt(n.s||n.d,n,r||1),t.w-20,g.font),t.x+10,t.y+32);
+if(!soon)for(let q=0;q<3;q++){g.fillStyle=q<r?c:'rgba(255,255,255,.18)';g.fillRect(t.x+10+q*14,t.y+t.h-18,10,10)}
+g.font='11px monospace';g.fillStyle=soon?MU:bl?RD:ok?(mx?G:SU):MU;g.fillText(soon?'folgt':bl?'verbaut':ok||r?(mx?'voll':r?'Stufe '+r:'frei'):'gesperrt',t.x+(soon?10:58),t.y+t.h-9);
+if(n.b){const nm='+'+n.bn;g.textAlign='right';g.font=r>=S.max?'bold 11px monospace':'11px monospace';g.fillStyle=r>=S.max?t.tree.c:MU;g.fillText(nm,t.x+t.w-8,t.y+t.h-9);g.textAlign='left'}}
+function mSkills(){const{CFG,SESSION}=X,S=CFG.skill,px=40,pw=880,py=20,ph=504,nh=54,rw=180,pwd=230,iw=190,gp=28,rowH=120,rowGap=6,y0=58,pg=12,rx=px+36,ax=rx+rw+gp,ix=ax+pwd+gp,t=[];
+const fn=focus&&/^sk:/.test(focus)?focus.slice(3):null;if(fn)skLast=fn;const f=fn||skLast,chain=skChain(f);
+S.trees.forEach((tr,ci)=>{const ry=y0+ci*(rowH+rowGap),pos=[{x:rx,y:ry+(2*nh+pg-nh)/2,w:rw},{x:ax,y:ry,w:pwd},{x:ax,y:ry+nh+pg,w:pwd},{x:ix,y:ry,w:iw},{x:ix,y:ry+nh+pg,w:iw}];
+for(let n=0;n<5;n++){const id=tr.k+n,r=SESSION.sk[id]|0,p=pos[n],ok=X.skOk(SESSION.sk,id);t.push({id:'sk:'+id,x:p.x,y:p.y,w:p.w,h:nh,act:'skill',arg:id,node:id,tree:tr,pos:p,glow:chain.includes(id),nodim:true,lock:!ok||r>=S.max||SESSION.pts<1,paint:paintSkill,nochip:true})}});
+t.push({id:'skundo',x:744,y:412,w:156,h:44,kind:'n',act:'skillsell',arg:skLast,key:'Backspace',chip:'Rück',tf:'bold 12px monospace',title:'Zurücknehmen',nolock:true,lock:!X.skCanSell(SESSION.sk,skLast)});
+t.push({id:'close',x:744,y:464,w:156,h:44,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
 return{def:'sk:A0',back:'ui:close',t,deco(){const{g}=X;panelFrame(px,py,pw,ph,'FÄHIGKEITEN');
 g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=SESSION.pts>0?G:MU;g.fillText('Skillpunkte offen: '+SESSION.pts,px+pw-20,py+34);
-g.textAlign='left';g.font='bold 11px monospace';[['7-9',rows[0]],['4-6',rows[1]],['1-3',rows[2]]].forEach(([l,y])=>{g.fillStyle=MU;g.fillText(l,px+6,y+nh/2+4)});
-S.trees.forEach((tr,ci)=>{const cx=px+36+ci*(colW+12);g.font='bold 12px monospace';g.fillStyle=tr.c;g.fillText(tr.n,cx,py+74)});
-/* Linien: Wurzel zu beiden mittleren Knoten, oberer Knoten kreuzweise zum gegenueberliegenden mittleren */
-g.lineWidth=2;const by=id=>t.find(q=>q.node===id);
-S.trees.forEach(tr=>{for(const [a,b] of [[tr.k+'0',tr.k+'1'],[tr.k+'0',tr.k+'2'],[tr.k+'2',tr.k+'3'],[tr.k+'1',tr.k+'4']]){const A1=by(a),B1=by(b),open=X.skOk(SESSION.sk,b);g.strokeStyle=open?tr.c:'rgba(255,255,255,.14)';g.globalAlpha=open?.7:1;g.beginPath();g.moveTo(A1.x+A1.w/2,A1.y);g.lineTo(B1.x+B1.w/2,B1.y+B1.h);g.stroke();g.globalAlpha=1}});
-/* Beschreibung des gewaehlten Knotens */
-const f=focus&&/^sk:/.test(focus)?focus.slice(3):null;g.textAlign='left';
-if(f){const n=S[f],r=SESSION.sk[f]|0,tr=S.trees.find(q=>q.k===f[0]),nd=X.skNeed(f);g.font='bold 13px monospace';g.fillStyle=tr.c;g.fillText(n.n+(r>=S.max?' (Stufe '+r+', voll)':' (Stufe '+r+' von '+S.max+')'),px+36,356);
- g.font='12px monospace';g.fillStyle=TX;g.fillText(fit('Jetzt: '+(r?skTxt(n.d,n,r):'noch nichts'),pw-72,g.font),px+36,376);
- g.fillStyle=r>=S.max?MU:Y;g.fillText(fit(r>=S.max?'Höchste Stufe erreicht.':'Nächste Stufe: '+skTxt(n.d,n,r+1),pw-72,g.font),px+36,396);
- g.fillStyle=X.skOk(SESSION.sk,f)?MU:RD;g.font='11px monospace';g.fillText(X.skOk(SESSION.sk,f)?(SESSION.pts>0&&r<S.max?'Enter oder Klick: eine Stufe für einen Punkt.':r>=S.max?'':'Kein Skillpunkt offen: Punkte gibt es für gewonnene Aufträge.'):'Gesperrt: '+S[nd].n+' muss auf Stufe '+S.max+' stehen.',px+36,418)}
-g.fillStyle=MU;g.font='11px monospace';g.fillText(fit('Punkte: '+S.pts.win+' je gewonnenem Auftrag, +'+S.pts.goal+' Nebenziel, +'+S.pts.quiet+' lautlos. Die Serie endet bei Niederlage, dann sind Punkte und Baum weg.',pw-72,g.font),px+36,448)}}}
+g.textAlign='left';g.font='bold 12px monospace';S.trees.forEach((tr,ci)=>{g.fillStyle=tr.c;g.fillText(tr.n,rx,y0+ci*(rowH+rowGap)+18)});
+/* Linien: Wurzel zu beiden Pfaden (Knick), Pfad zu seinem Gegenstand (gerade), hell in der Kette des angewaehlten Knotens, farbig wenn offen, sonst grau */
+const by=id=>t.find(q=>q.node===id);g.lineWidth=2;
+S.trees.forEach(tr=>{const link=(a,b,elbow)=>{const A1=by(a),B1=by(b),open=X.skOk(SESSION.sk,b)||(SESSION.sk[b]|0)>0,hot=chain.includes(a)&&chain.includes(b),y1=A1.y+A1.h/2,y2=B1.y+B1.h/2,xa=A1.x+A1.w,xm=xa+gp/2;
+g.strokeStyle=hot?tr.c:open?tr.c:'rgba(255,255,255,.14)';g.globalAlpha=hot?1:open?.45:1;g.lineWidth=hot?3:2;g.beginPath();g.moveTo(xa,y1);if(elbow){g.lineTo(xm,y1);g.lineTo(xm,y2)}g.lineTo(B1.x,y2);g.stroke();g.globalAlpha=1};
+link(tr.k+'0',tr.k+'1',true);link(tr.k+'0',tr.k+'2',true);link(tr.k+'1',tr.k+'3',false);link(tr.k+'2',tr.k+'4',false);
+const a=by(tr.k+'1'),b=by(tr.k+'2');g.textAlign='center';g.font='bold 9px monospace';g.fillStyle=MU;g.fillText('ODER',a.x+a.w/2,a.y+a.h+pg/2+3);g.textAlign='left'});
+/* rechte Spalte: Punkteregel */
+g.fillStyle=MU;g.font='11px monospace';wrap('Punkte: '+S.pts.win+' je gewonnenem Auftrag, +'+S.pts.goal+' Nebenziel, +'+S.pts.quiet+' lautlos. Die Serie endet bei Niederlage, dann sind Punkte und Baum weg. Zurücknehmen geht bis zum Verlassen des Shops.',156,'11px monospace',9).forEach((l,i)=>g.fillText(l,744,y0+22+i*14));
+/* Beschreibung des angewaehlten Knotens (Fokus oder zuletzt angewaehlt) */
+const n=S[f],r=SESSION.sk[f]|0,tr=S.trees.find(q=>q.k===f[0]),bl=X.skBlock(SESSION.sk,f),W=650,ly=448;g.textAlign='left';
+g.font='bold 13px monospace';g.fillStyle=tr.c;g.fillText(fit(n.n+(n.soon?'  (noch nicht gebaut)':r>=S.max?'  (Stufe '+r+', voll)':'  (Stufe '+r+' von '+S.max+')'),W,g.font),rx,ly);
+g.font='12px monospace';
+if(n.soon){g.fillStyle=TX;g.fillText(fit(n.x||n.d,W,g.font),rx,ly+16)}
+else{g.fillStyle=TX;g.fillText(fit('Jetzt: '+(r?skTxt(n.d,n,r):'noch nichts'),W,g.font),rx,ly+16);
+ g.fillStyle=r>=S.max?MU:Y;g.fillText(fit(r>=S.max?'Höchste Stufe erreicht.':'Nächste Stufe: '+skTxt(n.d,n,r+1),W,g.font),rx,ly+32);
+ if(n.b){g.fillStyle=r>=S.max?G:'#d9a5ff';g.fillText(fit('Mit Stufe '+S.max+' ('+n.bn+'): '+skTxt(n.b,n,S.max),W,g.font),rx,ly+48)}}
+const nd=X.skNeed(f),can=X.skCanSell(SESSION.sk,f);g.font='11px monospace';
+const hint=n.soon?['Dieser Gegenstand folgt in einem späteren Schritt und ist noch nicht kaufbar.',MU]:bl?['Verbaut: Du hast '+S[bl].n+' gewählt (ENTWEDER-ODER). Nimm dort die Punkte zurück.',RD]:!X.skOk(SESSION.sk,f)?['Gesperrt: '+S[nd].n+' muss auf Stufe '+S.max+' stehen.',RD]:r>=S.max?[can?'Rückschritt oder Zurücknehmen: eine Stufe zurück.':'',MU]:SESSION.pts>0?['Enter oder Klick: eine Stufe für einen Punkt.'+(can?' Rückschritt: eine Stufe zurück.':''),MU]:['Kein Skillpunkt offen: Punkte gibt es für gewonnene Aufträge.'+(can?' Rückschritt: eine Stufe zurück.':''),MU];
+g.fillStyle=hint[1];g.fillText(fit(hint[0],W,g.font),rx,ly+64)}}}
 function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
 return{def:'no',back:'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'}],
 deco(){const{g}=X;panelFrame(px,py,pw,ph,m.title||'Sicher?');g.textAlign='left';g.font='13px monospace';g.fillStyle=TX;wrap(m.msg||'',pw-40,'13px monospace',3).forEach((l,i)=>g.fillText(l,px+20,py+66+i*20))}}}
@@ -330,5 +347,5 @@ S0();g.fillStyle='rgba(8,10,16,.68)';g.fillRect(0,0,VW,VH);
 const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.55)');g.fillStyle=v;g.fillRect(0,0,VW,VH);
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
-return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus})):[]}}}
-mkUI.api=6;
+return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus,glow:!!t.glow})):[]}}}
+mkUI.api=7;
