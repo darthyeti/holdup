@@ -52,7 +52,7 @@ module.exports = [
         for (let i = 0; i < 30; i++) D.update(1 / 30);
         out.stun = g.en.some(e => e.stun > 0) || g.npcs.some(n => n.stun > 0);
         const txt = await (await fetch('js/ui.js')).text();
-        out.ctrl = /Blend, Rauch/.test(txt) || /Blend/.test(txt.slice(txt.indexOf('const CTRL'), txt.indexOf('const FLOW'))); out.ctrl45 = /4 \/ 5 halten/.test(txt); out.shopFl = /'fl'/.test(txt);
+        out.ctrl = /Blend, Rauch/.test(txt) || /Blend/.test(txt.slice(txt.indexOf('const CTRL'), txt.indexOf('const FLOW'))); out.ctrl45 = /4 \/ 5( \/ 6)? halten/.test(txt); out.shopFl = /'fl'/.test(txt);
         return out;
       });
       t.ok(r.bl, 'die Blendgranate der Polizei blendet den Spieler weiter');

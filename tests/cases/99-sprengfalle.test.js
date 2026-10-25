@@ -28,7 +28,7 @@ module.exports = [
         o.k0 = kit({}); o.mine = [1, 2, 3].map(l => kit({ V3: l })); o.claw = [1, 2, 3].map(l => kit({ V4: l })); o.mod = D.CFG.shop.items.every(i => i.k !== 'trap');
         return o; })()`);
       t.eq(r.nodes, [['Barrikaden-Mine', false, [1, 2, 3]], ['Claymore', false, [1, 2, 3]]], 'beide Knoten kaufbar, Stueck je Stufe 1, 2, 3');
-      t.eq(r.still, [true, true, true], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer bleiben Platzhalter (C4 ist seit B3 gebaut)');
+      t.eq(r.still, [false, false, false], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer sind seit B4 und B5 keine Platzhalter mehr');
       t.eq(r.cfg, ['claw', 'mine', 'reach'], 'CFG.trap hat mine, claw und reach');
       t.eq(r.k0, [0, null], 'ohne Knoten kein Vorrat und keine Art');
       t.eq(r.mine, [[1, 'mine'], [2, 'mine'], [3, 'mine']], 'V3: Mine, 1 bis 3 Stueck');

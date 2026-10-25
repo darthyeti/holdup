@@ -1,6 +1,6 @@
 // MRU 1 B1 (docs/major-release-update-1.md, docs/ideen-und-planung.md, Skillbaum-Umbau, beschlossen von Till am 25. Oktober 2026): Der Skillbaum bekommt eine neue Struktur und ein neues Fenster.
 // Struktur: je Baum eine Wurzel (k0), zwei Pfade (k1 und k2, offen mit Wurzel 3 von 3, ENTWEDER-ODER: der erste Punkt in einem Pfad sperrt den anderen) und hinter jedem Pfad ein Gegenstand (k3 hinter k1,
-// k4 hinter k2, offen mit dem Pfad auf 3). Die sechs Gegenstaende sind in B1 noch nicht gebaut (soon, nicht kaufbar, B2 bis B5). Zaeh, Verhandler und Fahrer sind kein eigener Knoten mehr, sondern kommen mit Stufe 3
+// k4 hinter k2, offen mit dem Pfad auf 3). Die sechs Gegenstaende sind in B1 noch nicht gebaut (soon, nicht kaufbar), seit B2 bis B5 sind alle da. Zaeh, Verhandler und Fahrer sind kein eigener Knoten mehr, sondern kommen mit Stufe 3
 // von Deckung (V2), Sanitaeter (U1) und Techniker (U2, frueher Schleicher). Punkte lassen sich bis zum Verlassen des Shops zuruecknehmen (nur im aktuellen Besuch gekaufte Stufen, nichts Abhaengiges darauf).
 // Die Zusaetze mit Stufe 3 gibt es in allen sechs Pfaden: Laeufer (Ruhige Hand, Laufen kostet keine Zusatzstreuung), Durchschuss (Durchschlag, die Kugel trifft auch den Beamten dahinter mit halbem Schaden),
 // Materialsammler (Baumeister, jedes Moebelstueck gibt ein Material mehr), dazu Zaeh, Verhandler, Fahrer (Tills Wunsch vom 25. Oktober 2026: Go fuer 1 bis 3 noch oben drauf).
@@ -32,8 +32,8 @@ module.exports = [
         t.eq(o.frei, [null, null], k + ': vor der Wahl ist kein Pfad verbaut');
         t.eq(o.nach1, [null, k + '1', false], k + ': der erste Punkt in Pfad 1 sperrt Pfad 2 (verbaut durch ' + k + '1)');
         t.eq([o.kaufB, o.ptsB], [false, 0], k + ': der gesperrte Pfad laesst sich nicht kaufen und kostet nichts');
-        t.eq(o.item, k === 'V' ? [true, true, false, false] : [false, false, false, false], k + (k === 'V' ? ': die Mine hinter Baumeister ist kaufbar (B2), die Claymore bleibt durch das Entweder-oder zu' : ': die Gegenstaende sind noch nicht kaufbar (noch nicht gebaut)'));
-        t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, k === 'V' ? 1 : undefined, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3' + (k === 'V' ? ', die Mine auf 1' : ''));
+        t.eq(o.item, [true, true, false, false], k + ': der Gegenstand hinter Pfad 1 ist kaufbar, der hinter Pfad 2 bleibt durch das Entweder-oder zu');
+        t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, 1, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3, der Gegenstand auf 1');
         t.eq(o.umgekehrt, [k + '2', null, false, false], k + ': mit Pfad 2 zuerst ist Pfad 1 verbaut');
       }
     },
@@ -96,7 +96,7 @@ module.exports = [
       t.eq(r.rev, [.25, .4, .55], 'Sanitaeter bringt weiter das schnellere Wiederbeleben');
       t.eq(r.sus, [.1, .2, .3], 'Techniker (frueher Schleicher) bringt weiter den langsameren Verdacht');
       t.eq(r.marker, [0, 0, 0, 1], 'der Zaeh-Marker am Spieler (sw) steht nur mit Deckung 3');
-      t.eq(r.gone, [[], [], []], 'die noch nicht gebauten Gegenstaende haben keine Wirkungswerte (B4 und B5 bauen sie, Mine, Claymore und C4 haben cnt)');
+      t.eq(r.gone, [['cnt'], ['cnt'], ['cnt', 'hps']], 'Praezisionsgewehr und Granatwerfer haben nur die Stueckzahl, der Notfallkoffer Stueckzahl und Heilung (hps)');
     },
   },
   {
@@ -136,7 +136,7 @@ module.exports = [
     },
   },
   {
-    name: 'Skillbaum-Fenster: Aufleuchten der Kette (Wurzel bis zum angewaehlten Knoten), der gesperrte Nachbarpfad nennt den Grund, Gegenstaende zeigen folgt, Rücknahme per Entf-Kachel und Rueckschritt',
+    name: 'Skillbaum-Fenster: Aufleuchten der Kette (Wurzel bis zum angewaehlten Knoten), der gesperrte Nachbarpfad nennt den Grund, die Gegenstaende nennen Taste und Stueckzahl, Rücknahme per Entf-Kachel und Rueckschritt',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('menu.js');
       const r = await t.page.evaluate(() => {
@@ -144,7 +144,7 @@ module.exports = [
         const glow = () => d.ui().tiles().filter(q => q.glow).map(q => q.id.slice(3)).sort();
         const texts = () => { const ctx = d.cv.getContext('2d'), orig = ctx.fillText, log = []; ctx.fillText = function (s) { log.push(String(s)); return orig.apply(this, arguments); }; try { d.draw(); } finally { ctx.fillText = orig; } return log; };
         MT.hover(d, 'sk:A3'); o.itemKette = glow(); MT.hover(d, 'sk:A2'); o.pfadKette = glow(); MT.hover(d, 'sk:V0'); o.wurzel = glow(); MT.hover(d, 'sk:U4'); o.uKette = glow();
-        o.itemText = texts().filter(s => /folgt/i.test(s)).length > 0;
+        o.itemText = [/Shift: 3 Schuss/, /Shift: 2 Granaten/, /C: 1 Stück/].map(re => texts().some(s => re.test(s)));
         for (let i = 0; i < 3; i++) MT.click(d, 'sk:A0'); MT.click(d, 'sk:A1'); o.gekauft = [Object.assign({}, d.SESSION.sk), d.SESSION.pts];
         MT.hover(d, 'sk:A2'); const tx = texts(); o.grund = tx.filter(s => /verbaut/i.test(s)); o.grundName = tx.some(s => /Ruhige Hand/.test(s));
         o.kette2 = glow(); o.lock = d.ui().tiles().find(q => q.id === 'sk:A2').lock;
@@ -162,7 +162,7 @@ module.exports = [
       t.eq(r.pfadKette, ['A0', 'A2'], 'Pfad A2 angewaehlt: Wurzel und Pfad leuchten');
       t.eq(r.wurzel, ['V0'], 'die Wurzel leuchtet allein');
       t.eq(r.uKette, ['U0', 'U2', 'U4'], 'U4 gehoert zu Pfad 2 (U2)');
-      t.ok(r.itemText, 'ein noch nicht gebauter Gegenstand sagt, dass er folgt');
+      t.eq(r.itemText, [true, true, true], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer nennen ihre Taste und die Stueckzahl der Stufe 1 in der Kachel');
       t.eq(r.gekauft, [{ A0: 3, A1: 1 }, 0], 'Wurzel dreimal und Pfad 1 einmal gekauft, vier Punkte');
       t.ok(r.grund.length > 0 && r.grundName, 'A2 nennt den Grund: verbaut durch Ruhige Hand: ' + JSON.stringify(r.grund));
       t.eq(r.kette2, ['A0', 'A2'], 'auch der gesperrte Pfad zeigt seine Kette');
@@ -230,14 +230,14 @@ module.exports = [
     },
   },
   {
-    name: 'Skillbaum-Fenster: Pixel in sechs Zustaenden (leer, verbaut, Kette, Gegenstand folgt, voll, ohne Punkte), gleich dem eingecheckten Stand dieser Maschine',
+    name: 'Skillbaum-Fenster: Pixel in sechs Zustaenden (leer, verbaut, Kette, Gegenstand, voll, ohne Punkte), gleich dem eingecheckten Stand dieser Maschine',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('menu.js');
       const hashes = await t.page.evaluate(() => {
         const d = MT.solo(null, 's'), out = {}; d.sessReset(); d.SESSION.round = 2; d.SESSION.pts = 5; d.openShop(); d.ui().tiles(); MT.k(d, 'k');
         MT.hover(d, 'sk:A0'); MT.shot(d, out, 'leer');
         for (let i = 0; i < 3; i++) MT.click(d, 'sk:V0'); MT.click(d, 'sk:V2'); MT.click(d, 'sk:V2');
-        MT.hover(d, 'sk:V1'); MT.shot(d, out, 'verbaut'); MT.hover(d, 'sk:V2'); MT.shot(d, out, 'kette'); MT.hover(d, 'sk:U3'); MT.shot(d, out, 'folgt');
+        MT.hover(d, 'sk:V1'); MT.shot(d, out, 'verbaut'); MT.hover(d, 'sk:V2'); MT.shot(d, out, 'kette'); MT.hover(d, 'sk:U3'); MT.shot(d, out, 'gegenstand');
         MT.hover(d, 'sk:U1'); MT.shot(d, out, 'ohne-punkte'); d.SESSION.sk = { A0: 3, A1: 3, V0: 3, V2: 3, U0: 3, U1: 3 }; d.SESSION.pts = 0; MT.hover(d, 'sk:U1'); MT.shot(d, out, 'voll');
         return out;
       });
