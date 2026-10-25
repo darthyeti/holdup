@@ -218,6 +218,8 @@ Parkende Autos und Wracks (Plan und Umsetzung, Tills Wunsch vom 23. Oktober 2026
 
 Transporter (docs/szenarien.md): Schritt B bis D und weitere Karten. Die Besatzung hat keine echte Deckungs-KI (steht am Posten, stürmt nach `crewHold`). Es fehlen Bot, Vorhut mit Verdacht auf der Fahrbahn, Sprengladung und Generator-Varianten.
 
+Serien-Code (Plan v1, Idee von Till am 25. Oktober 2026, noch nicht gebaut, Einzelheiten in docs/ideen-und-planung.md, Abschnitt Serien-Code): Eine Serie bekommt einen Code (`VER-XXXXX`), aus dem Szenario und Kartenseed jedes Auftrags folgen. Gewertete Serie mit fester Länge, Nochmal mit demselben Code, Ergebnistext zum Teilen und Vergleichen, Tagesserie, Coop (Schritte S1 bis S5). Wartet auf Tills Go, unabhängig von Major Release Update 1.
+
 Menüs, Serie, Langzeit (docs/ideen-und-planung.md): Auftragsbörse (Menü Stufe 5), Karriere-Serie mit Rang und Nebenzielen (Entwurf), Touch für iPad und iPhone (Entwurf), Langzeitmotivation.
 
 Nach dem Merge der Parkenden Autos auf dem Mac (einmalig, erledigt für `gas-basis`): `cd tests && node run.js --update "ohne Generator" "Pixel: Hauptmenue" "Pixel: Coop-Lobby"` (Tankstellen-Schnappschuss `gas-basis` und die lokalen Pixel-Referenzen der Menüs, Gründe in docs/tests-und-messwerte.md), danach `npm test`. Nach der Korrektur des Blaulichts an zivilen Autos (Build danach) braucht der Mac noch einmal `node run.js --update "Pixel: Hauptmenue"` (fünf Bildschirme mit Spiel dahinter ändern sich, `gas-basis` nicht). Mit Schritt 2 des Fahndungslevels (Hilfetext der Anleitung, `CFG.fahndung.on` 1) ändert sich zusätzlich der Bildschirm `anleitung`, derselbe Befehl `node run.js --update "Pixel: Hauptmenue"` nach dem Merge schreibt beides.
