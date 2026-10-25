@@ -94,4 +94,4 @@ Entschieden am 25. Oktober 2026: Die Spuren laufen nacheinander. Der Mindestabst
 - v1 (25. Oktober 2026): Überbau aus Tills Plänen vom selben Tag (Skillbaum-Umbau, Zusätze, Wachsamkeit der Läden) und dem neuen Plan zum Fluchtwagen (D0 bis D3), Schritte, Reihenfolge, Test-Stopps.
 - v1.1 (25. Oktober 2026): Tills Antworten eingearbeitet (Spuren nacheinander, Mindestabstand 10, Umleitung situativ mit Wechsel auch nach dem Wegfahren), Zähler der Wachsamkeit serienweit über alle fünf Szenarien.
 - v1.2 (25. Oktober 2026): Reihenfolge entschieden, Spur 1 zuerst, Spur 2 danach.
-- Bau (25. Oktober 2026, Go von Till: "mit Major Release beginnen"): P3 gebaut (Commit `b22ca26`), A1 gebaut (Blendgranate des Shops gestrichen, `VER` 34), A2 und A3 folgen bis zum Test-Stopp 1.
+- Bau (25. Oktober 2026, Go von Till: "mit Major Release beginnen"): P3 gebaut (Commit `b22ca26`), A1 gebaut (Blendgranate des Shops gestrichen, `VER` 34), A2 gebaut (Ablenker macht Angestellte blind, `decT` 11, `decHold` 10, Zeichen über dem Kopf, Test `96-ablenker-blind`, kein neues `VER`), A3 folgt bis zum Test-Stopp 1.
