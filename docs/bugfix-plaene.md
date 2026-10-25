@@ -16,6 +16,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 |---|---|---|---|
 | P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | abgenommen (24. Oktober 2026, Till hat gespielt: passt) |
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
+| P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1 (25. Oktober 2026) | Plan steht, wartet auf Go (Till sammelt noch weitere Punkte) |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -89,3 +90,30 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 - v1.1 (24. Oktober 2026): Entscheidung zu Schritt 3 eingetragen (Material nie Beute, auch nicht für den Verdacht), Schritt 3 ist keine offene Frage mehr.
 - Bau (24. Oktober 2026): Go von Till, gebaut als `o.loot>0` statt `loot(o)`, Status gebaut.
 - Abnahme (25. Oktober 2026): Till hat gespielt, der Brettersatz funktioniert, Status abgenommen.
+
+## P3 HUD: Lage-Tags fallen weg, wenn es zu viele sind
+
+**Bugs**
+- B3 (25. Oktober 2026, Till): In manchen Runden werden nicht alle Lage-Tags angezeigt, wenn zu viele aktiv sind.
+
+**Befund** (gemessen am 25. Oktober 2026 mit einem Wegwerf-Skript im echten Spiel: `layoutFor(seed).mission.tags` für 1500 Seeds je Szenario, dazu die Umbruchlogik von `lageLines` nachgebaut):
+- `lageLines` füllt höchstens zwei Zeilen zu je 28 Zeichen. Passt ein Tag in keine der beiden Zeilen mehr, wird er verworfen, ohne Hinweis und ohne dass der Rahmen wächst. Betroffen ist nur das Erkunden-HUD (Phase 1). Im Überfall zeigt das HUD gar keine Lage-Zeile, das ist nicht Teil von P3.
+- Die Reihenfolge der Tags ist fest: Lagen, dann Ereignisse, dann die Struktur-Tags (Tresor nur laut, keine oder zwei Wachen, Fluchtweg, Kundschaft, Kameras, Szenario-Zusätze). Es fallen also zuerst die Struktur-Tags weg, genau die, die man zum Planen braucht.
+- Seeds mit verlorenen Tags: Bank 38,5 % (höchstens 7 Tags), Juwelier 6,3 % (6), Casino 5,3 % (5), Museum 3,5 % (5), Tankstelle 1,6 % (4), Transporter 0 % (immer 3 Tags, 2 Zeilen).
+- Beispiel Bank, Seed 798: sieben Tags, angezeigt werden "Streife in der Nähe" und "Geldtransport, zwei Wachen", verloren gehen "Tresor nur laut", "Fluchtweg: Seitentür", "viel Kundschaft" und "8 Kameras".
+- Zeilen bei Umbruch ohne Grenze (3000 Seeds je Szenario): Bank 1 Zeile 737, 2 Zeilen 1163, 3 Zeilen 910, 4 Zeilen 178, 5 Zeilen 12. Juwelier höchstens 4 Zeilen (14 Seeds), Museum 4 (1), Casino 4 (6), Tankstelle 3, Transporter immer 2. Das längste Einzel-Tag hat 20 Zeichen, passt also immer in eine Zeile.
+- Nicht verloren geht die volle Liste beim Rundenstart im Feed (`say 'Lage: ...'`), sie verschwindet aber nach wenigen Sekunden.
+
+**Plan v1** (25. Oktober 2026)
+1. Test zuerst (rot): `94-lage-tags` (Nummer beim Bau die nächste freie). Über `D.draw()` mit abgefangenem `fillText` (wie Test 89): Bank Seed 798 zeigt alle sieben Tags im HUD, keine Zeile länger als 28 Zeichen. Wiederholt über 300 Seeds je Szenario: jeder Tag steht im HUD, oder die Zeile endet mit "+N weitere" und gezeigte Tags plus N ergeben die Gesamtzahl. Überlauf erzwungen (Tags der Mission von Hand auf 12 setzen, Cache `_l` leeren): genau 4 Zeilen, die letzte mit richtigem N. Der Rahmen wächst mit: Höhe des Kastens und Position von Zielkasten und Team-Leiste folgen der Zeilenzahl, kein Überlappen.
+2. Umbruch ohne Verlust (Till: Vorschlag 1): `lageLines` bricht bis zu `CFG.hud.lageLines` (4) Zeilen zu je `CFG.hud.lageW` (28) Zeichen um. Ein Tag steht ungeteilt in einer Zeile, ein einzelner Tag über der Zeilenbreite steht allein in seiner Zeile.
+3. Hinweis bei Überlauf (Till: Vorschlag 3): Brauchen die Tags mehr als 4 Zeilen, endet Zeile 4 mit ", +N weitere", N = Zahl der nicht gezeigten Tags. Dazu werden hinten Tags aus Zeile 4 genommen, bis der Hinweis in 28 Zeichen passt. Nach Messung nur in 12 von 3000 Bank-Seeds (0,4 %), in den anderen Szenarien nie.
+4. Folgepositionen prüfen: Kastenhöhe (`152 + 14 * (n - 1)`, Transporter `108 + 14 * (n - 1)`), `goalHud(10 + ph + 4)` und `y0` der Team-Leiste hängen schon an `lageLines().length` und müssen mit bis zu 4 Zeilen (statt 2) nur geprüft werden, nicht neu gebaut. Vier Zeilen sind 28 Pixel mehr als bisher, bei 544 Pixel Höhe und vier Spielern im Team ist Platz.
+5. Abnahme: Test grün, schneller Lauf, Bild-Prüfung der Fälle (Bank Seed 798, Überlauf), Spieltest-Frage für Till: Bank mehrmals spielen und die Lage-Zeile prüfen (alle Tags da, Rahmen sauber, Team-Leiste nicht überdeckt).
+
+**Entscheidung (Till, 25. Oktober 2026):** Vorschlag 1 (Umbruch, Rahmen wächst) und Vorschlag 3 ("+N weitere") werden gebaut. Vorschlag 2 (Tags weglassen, die schon als Zeile im HUD stehen: Kamerazahl, "Tresor nur laut") entfällt: Die Zeile KAMERAS zählt Kameras erst nach dem Aufdecken, und ob TRESORCODE den Tag wirklich ersetzt, ist nicht gemessen.
+
+**Risiken:** Klein. Berührt `lageLines`, `CFG` (zwei Werte) und höchstens ein paar Zeilen im HUD in `index.html`, kein Netzformat (kein `VER`), kein Karten-Vertrag, keine `LAY`-Felder. Liegt `index.html` nahe an einem parallelen Umbau (Sprints, Skillbaum-Umbau), erst nach dessen Merge bauen oder auf einer eigenen Branch. Offen bleibt die Frage, ob die Lage im Überfall überhaupt sichtbar sein soll (nicht Teil von P3).
+
+**Änderungsprotokoll**
+- v1 (25. Oktober 2026): Plan zu B3, Entscheidung Till (Vorschläge 1 und 3).
