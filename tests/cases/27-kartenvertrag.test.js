@@ -233,7 +233,7 @@ module.exports = [
       await t.loadTool('mapcheck.js');
       const r = await t.page.evaluate(() => {
         const out = {}, runs = { bank: [5000, 5037, 5074, 5111], jewel: [1], gas: [1], museum: [1], casino: [1] };
-        __dbg.CFG.gasGen.on = 0; __dbg.CFG.jewGen.on = 0;   // der Vergleich mit der Handliste gilt fuer die Klassik-Huelle (die generierten Tankstellen und Juweliere haben abgeleitete Listen)
+        __dbg.CFG.gasGen.on = 0; __dbg.CFG.jewGen.on = 0; __dbg.CFG.museumGen.on = 0;   // der Vergleich mit der Handliste gilt fuer die Klassik-Huelle (die generierten Tankstellen, Juweliere und Museen haben abgeleitete Listen)
         for (const sc of Object.keys(runs)) out[sc] = runs[sc].map(s => mapcheck.autocmp(sc, s));
         // Gesund: jeder abgeleitete Posten steht frei und ist von der Strasse erreichbar (validateMap-Regeln auf die abgeleitete Liste)
         const bad = [], D = __dbg;

@@ -1,0 +1,16 @@
+{
+ "museum-basis": {
+  "hash": {
+   "Klassik": "5abc0ea3",
+   "Ring": "29670ff",
+   "Kabinette": "5b9d58b4",
+   "Säulenhalle": "1252b553"
+  },
+  "n": {
+   "Klassik": 57,
+   "Ring": 46,
+   "Kabinette": 55,
+   "Säulenhalle": 42
+  }
+ }
+}

@@ -50,10 +50,10 @@
   "museum": {
    "sc": "museum",
    "seeds": 200,
-   "huelle": 8,
-   "groessen": 2,
-   "flucht": 8,
-   "beute": 32,
+   "huelle": 165,
+   "groessen": 32,
+   "flucht": 54,
+   "beute": 176,
    "hallen": 4,
    "hallenVerteilung": {
     "Klassik": 43,
@@ -61,7 +61,7 @@
     "Kabinette": 56,
     "Säulenhalle": 53
    },
-   "raster": 13,
+   "raster": 20,
    "rasterVon": 20
   },
   "casino": {
