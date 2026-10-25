@@ -17,7 +17,7 @@ const BOT = { gas: {}, museum: { goods: true, goodsN: 2 }, casino: {} };
 
 // Je Szenario und Grundriss die ersten k Seeds ab `from` (layoutFor allein genuegt, der Name steht in LAY.hall)
 const FIND = `(sc, from, k) => {
-  const D = __dbg, out = {}; D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0;
+  const D = __dbg, out = {}; D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0;
   for (let s = from; s < from + 3000; s++) { const h = D.layoutFor(s).hall; (out[h] = out[h] || []).length < k && out[h].push(s); }
   return out;
 }`;
@@ -31,7 +31,7 @@ module.exports = [
       const r = await t.page.evaluate(VAR => {
         const D = __dbg, out = {};
         for (const sc of Object.keys(VAR)) {
-          D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0;
+          D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0;
           const halls = {}, comp = new Set(), grids = new Set();
           for (let i = 0; i < 160; i++) {
             D.buildLay(D.layoutFor(1 + i * 11)); const L = D.LAY(), c = {};
@@ -63,7 +63,7 @@ module.exports = [
         const D = __dbg, h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(16); };
         const out = {};
         for (const sc of SC) {
-          D.setScenario(sc); D.setSeedMode('random'); D.setLage(null); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0;
+          D.setScenario(sc); D.setSeedMode('random'); D.setLage(null); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0;
           let acc = '';
           for (let i = 0; i < 120; i++) {
             D.buildLay(D.layoutFor(1 + i * 13)); const L = D.LAY(), ms = L.mission;
@@ -90,7 +90,7 @@ module.exports = [
             const key = sc + '/' + hall; out[key] = { runs: 0, bad: [], maxT: 0 };
             let done = 0;
             for (const sd of list) {
-              D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; D.buildLay(D.layoutFor(sd)); const L = D.LAY();
+              D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildLay(D.layoutFor(sd)); const L = D.LAY();
               if (!(L.guards || []).length) continue;
               if (++done > 3) break;
               const w = D.world(), me = D.get().me; me.x = (w.WX0 + w.W - 3) * T; me.y = (w.WY0 + w.H - 3) * T; // Spieler weit draussen, damit nichts Alarm ausloest
@@ -147,7 +147,7 @@ module.exports = [
       const r = await t.page.evaluate(([FIND]) => {
         const D = __dbg, find = eval(FIND), bad = [], seeds = find('gas', 1, 4);
         for (const [hall, list] of Object.entries(seeds)) for (const sd of list) {
-          D.setScenario('gas'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; D.buildLay(D.layoutFor(sd)); const L = D.LAY(), w = D.world();
+          D.setScenario('gas'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildLay(D.layoutFor(sd)); const L = D.LAY(), w = D.world();
           // Tuerkacheln (7,10) und (8,10), Mitte (x+.5, y+.5): Die Explosion der Saeulen reicht 3 Kacheln
           for (const q of L.pumps) { const d = Math.min(Math.hypot(q.x - 7, q.y - 10), Math.hypot(q.x - 8, q.y - 10)); if (d < 3.5) bad.push(hall + ': Zapfsaeule ' + q.x + ',' + q.y + ' nur ' + d.toFixed(1) + ' Kacheln von der Tuer'); }
           // Jeder Routenpunkt kann Startpunkt der Wache beim Alarm sein
@@ -172,7 +172,7 @@ module.exports = [
         const D = __dbg, T = 32, find = eval(FIND), seeds = find('museum', 1, 2), out = { lasers: new Set(), bad: [], drawn: 0 }, far = pts => Math.max(...pts.slice(1).map(p => Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1])));
         const cfg = D.CFG.guard, cone = {};
         for (const [hall, list] of Object.entries(seeds)) {
-          D.setScenario('museum'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; D.buildLay(D.layoutFor(list[0])); const L = D.LAY(), w = D.world();
+          D.setScenario('museum'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildLay(D.layoutFor(list[0])); const L = D.LAY(), w = D.world();
           out.lasers.add(JSON.stringify(L.lasers));
           // Fluchtweg: die Zeilen 8 und 9 der Ostgalerie (x18..26) bleiben frei, und vom Atrium (11,9) kommt man durch die Durchgaenge bis zum Ende der Ostgalerie (26,9)
           for (const y of [8, 9]) for (let x = 18; x <= 26; x++) if (w.isSol(x, y)) out.bad.push(hall + ': Fluchtweg blockiert bei ' + x + ',' + y);
@@ -210,7 +210,7 @@ module.exports = [
       const r = await t.page.evaluate(([FIND]) => {
         const D = __dbg, find = eval(FIND), seeds = find('casino', 1, 3), bad = [], tabs = {};
         for (const [hall, list] of Object.entries(seeds)) for (const sd of list) {
-          D.setScenario('casino'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; D.buildLay(D.layoutFor(sd)); const L = D.LAY(), w = D.world();
+          D.setScenario('casino'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildLay(D.layoutFor(sd)); const L = D.LAY(), w = D.world();
           const chips = L.goods.filter(g => g.k === 'chips'); tabs[hall] = chips.length;
           for (const g of chips) {
             // Stapel liegt an der Suedseite des Tischs (Kachelspalten tx+1 und tx+2 in der Zeile ty+2 darunter): dort muss eine freie Kachel sein
@@ -243,7 +243,7 @@ module.exports = [
           for (const [hall, list] of Object.entries(seeds)) {
             let win = 0, loot = 0, n = 0, lost = [];
             for (const sd of list) {
-              D.setScenario(sc); D.setSeedMode('random'); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0;
+              D.setScenario(sc); D.setSeedMode('random'); D.setTurn('S'); if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0;
               const res = bot.run(Object.assign({ sigma: .05, react: .35, kit: 'old', call: 0, seed: sd, van: 'alt' }, BOT[sc])); n++;
               if (res.res === 'WIN') { win++; loot += res.loot } else lost.push(sd);
             }

@@ -67,10 +67,10 @@
   "casino": {
    "sc": "casino",
    "seeds": 200,
-   "huelle": 8,
-   "groessen": 2,
-   "flucht": 8,
-   "beute": 32,
+   "huelle": 170,
+   "groessen": 30,
+   "flucht": 91,
+   "beute": 161,
    "hallen": 4,
    "hallenVerteilung": {
     "Klassik": 62,
@@ -78,7 +78,7 @@
     "Reihen": 47,
     "Staffel": 45
    },
-   "raster": 14,
+   "raster": 20,
    "rasterVon": 20
   },
   "truck": {

@@ -217,15 +217,19 @@
    "Vordertür (N) | Fluchttür (W) | Hintertür 1 (S) | Hintertür 2 (S)": 7,
    "Hintertür 1 (N) | Hintertür 2 (N) | Fluchttür (E) | Vordertür (S)": 7,
    "Vordertür (N) | Fluchttür (E) | Hintertür 1 (S) | Hintertür 2 (S)": 6,
-   "Fluchttür (N) | Hintertür 1 (E) | Vordertür (W) | Hintertür 2 (E)": 9,
-   "Hintertür 1 (W) | Vordertür (E) | Hintertür 2 (W) | Fluchttür (S)": 5,
-   "Hintertür 1 (E) | Vordertür (W) | Hintertür 2 (E) | Fluchttür (S)": 5,
-   "Fluchttür (N) | Hintertür 1 (W) | Vordertür (E) | Hintertür 2 (W)": 5
+   "Fluchttür (N) | Hintertür 1 (E) | Hintertür 2 (E) | Vordertür (W)": 2,
+   "Fluchttür (N) | Hintertür 1 (E) | Vordertür (W) | Hintertür 2 (E)": 7,
+   "Hintertür 1 (W) | Vordertür (E) | Hintertür 2 (W) | Fluchttür (S)": 3,
+   "Hintertür 1 (E) | Vordertür (W) | Hintertür 2 (E) | Fluchttür (S)": 2,
+   "Vordertür (E) | Hintertür 1 (W) | Hintertür 2 (W) | Fluchttür (S)": 2,
+   "Vordertür (W) | Hintertür 1 (E) | Hintertür 2 (E) | Fluchttür (S)": 3,
+   "Fluchttür (N) | Hintertür 1 (W) | Hintertür 2 (W) | Vordertür (E)": 2,
+   "Fluchttür (N) | Hintertür 1 (W) | Vordertür (E) | Hintertür 2 (W)": 3
   },
   "range": {
    "pathSV": [
-    36,
-    36
+    35,
+    43
    ],
    "pathVE": [
     20,
@@ -249,11 +253,11 @@
    ],
    "slots": [
     10,
-    10
+    12
    ],
    "posts": [
     24,
-    24
+    26
    ]
   }
  },

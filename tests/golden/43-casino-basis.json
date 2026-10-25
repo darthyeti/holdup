@@ -1,0 +1,16 @@
+{
+ "casino-basis": {
+  "hash": {
+   "Klassik": "eff2835a",
+   "Promenade": "a27d73b0",
+   "Reihen": "e4421459",
+   "Staffel": "b7343696"
+  },
+  "n": {
+   "Klassik": 54,
+   "Promenade": 54,
+   "Reihen": 52,
+   "Staffel": 40
+  }
+ }
+}
