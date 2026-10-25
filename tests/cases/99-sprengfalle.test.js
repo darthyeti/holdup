@@ -23,12 +23,12 @@ module.exports = [
   {
     name: 'Sprengfalle: Barrikaden-Mine (V3) und Claymore (V4) sind keine Platzhalter mehr, Stueck je Stufe 1, 2, 3 beim Start, die Art folgt dem Knoten, ohne Knoten kein Vorrat',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, S = D.CFG.skill, o = {}; o.nodes = ['V3', 'V4'].map(id => [S[id].n, !!S[id].soon, S[id].cnt]); o.still = ['A3', 'A4', 'U3', 'U4'].map(id => !!S[id].soon); o.cfg = Object.keys(D.CFG.trap || {}).sort();
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, S = D.CFG.skill, o = {}; o.nodes = ['V3', 'V4'].map(id => [S[id].n, !!S[id].soon, S[id].cnt]); o.still = ['A3', 'A4', 'U3'].map(id => !!S[id].soon); o.cfg = Object.keys(D.CFG.trap || {}).sort();
         const kit = sk => { const sc = H.scene(sk, true); return [sc.me.trap | 0, D.trapKind(sc.me)]; };
         o.k0 = kit({}); o.mine = [1, 2, 3].map(l => kit({ V3: l })); o.claw = [1, 2, 3].map(l => kit({ V4: l })); o.mod = D.CFG.shop.items.every(i => i.k !== 'trap');
         return o; })()`);
       t.eq(r.nodes, [['Barrikaden-Mine', false, [1, 2, 3]], ['Claymore', false, [1, 2, 3]]], 'beide Knoten kaufbar, Stueck je Stufe 1, 2, 3');
-      t.eq(r.still, [true, true, true, true], 'die uebrigen vier Gegenstaende bleiben Platzhalter');
+      t.eq(r.still, [true, true, true], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer bleiben Platzhalter (C4 ist seit B3 gebaut)');
       t.eq(r.cfg, ['claw', 'mine', 'reach'], 'CFG.trap hat mine, claw und reach');
       t.eq(r.k0, [0, null], 'ohne Knoten kein Vorrat und keine Art');
       t.eq(r.mine, [[1, 'mine'], [2, 'mine'], [3, 'mine']], 'V3: Mine, 1 bis 3 Stueck');
