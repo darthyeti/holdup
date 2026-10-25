@@ -8,6 +8,10 @@ Stand der Prüfung (23. Oktober 2026, `VER` 28, `UI_API` 5, die Build-Nummer ste
 
 ## Spieltest-Fragen (Till)
 
+### Lage-Tags im HUD (Paket P3, docs/bugfix-plaene.md)
+
+- [ ] Bank mehrmals spielen (nach Möglichkeit mit vielen Tags): Stehen in der Lage-Zeile des Erkunden-HUD jetzt alle Tags (bis zu vier Zeilen), ist der Kasten sauber (Zielzeile und Team-Leiste darunter nicht überdeckt), und ist der Hinweis "+N weitere" bei den seltenen Karten mit mehr als vier Zeilen (rund 0,4 % der Bank-Seeds, Beispiel Seed 798) verständlich? Zum Verstellen `CFG.hud.lageLines` und `CFG.hud.lageW`.
+
 ### Fahndungslevel, Trockenlauf (docs/spielsystem.md, Serie, Shop und Ausrüstung)
 
 - [x] (Till, 23. Oktober 2026: Fahndungslevel insgesamt erstmal bestanden, die Einzelgewichte bleiben ungemessen und können nachjustiert werden) Stimmt die Zahl mit deinem Gefühl? Fällt sie nach einem lautlosen Auftrag (Startwerte: Grundrauschen +3, Lautlos -24, Nebenziel -6) und steigt sie nach einem lauten Überfall (Überfall +10, je Gegner +1,5, je Zivilist +6, Wellen ab der dritten +3, ohne Tote -6) so, dass nach etwa drei lauten Aufträgen Stufe 3 bis 4 erreicht ist? Die Gewichte sind ungemessen, sag, in welche Richtung sie wandern sollen.

@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=135"></script>
+<script src="js/ui.js?v=141"></script>
 <script>
-const BUILD={n:135,d:'2026-10-25'};//BUILD
+const BUILD={n:141,d:'2026-10-25'};//BUILD
 const UI_API=6;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -217,6 +217,7 @@ map:{a:[10,15],b:[20,23],bs:[24,28],c:[12,16],tries:40,back:'vault',gate:2,tpW:.
 turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:.5},
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,camsFew:2,two:48}},
 jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],tries:30,crowd:{few:93,camsFew:5,two:96}},
+hud:{lageLines:4,lageW:28},
 museumGen:{on:1,classic:.1,ww:[7,12],ew:[9,11],dy:[0,1],vx:[-1,1],tries:30},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,32],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
@@ -2302,7 +2303,10 @@ function tkHud(lgl){g.font='11px monospace';const st=!tk||tk.st==='wait'?'in '+t
 const rows=[['WAGEN',st,!!tk&&tk.st==='stopped'],['SPERRE',nb?nb+' gebaut':pk?pk+' von '+gs[0].n+' Teilen':'keine',nb>0],['FUNK',radioDown>0?'gestört '+tm(radioDown):'frei',radioDown>0]];
 rows.forEach((r,i)=>{g.fillStyle='#8d95a1';g.fillText(r[0],20,46+i*15);g.fillStyle=r[2]?'#7ee34a':'#c9d4de';g.fillText(r[1],120,46+i*15)});
 g.fillStyle='#8d95a1';g.fillText('LAGE',20,46+rows.length*15);g.fillStyle='#ffd27a';lgl.forEach((l,i)=>g.fillText(l,62,46+(rows.length+i)*15))}
-function lageLines(){const m=LAY.mission;if(!m._l){const l=[''];for(const t of m.tags){const c=l[l.length-1],n=c?c+', '+t:t;if(n.length<=28||!c)l[l.length-1]=n;else if(l.length<2)l.push(t)}if(!m.tags.length)l[0]='Standard';m._l=l}return m._l}
+/* Lage-Zeilen des Erkunden-HUD (P3): Die Tags brechen ungeteilt um, bis zu CFG.hud.lageLines Zeilen zu CFG.hud.lageW Zeichen (ein einzelner Tag ueber der Breite steht allein in seiner Zeile). Brauchen sie mehr Zeilen, endet die letzte mit "+N weitere" (N = Zahl der nicht gezeigten Tags), dazu werden hinten Tags aus ihr genommen, bis der Hinweis passt. */
+function lageLines(){const m=LAY.mission;if(!m._l){const H=CFG.hud,W=H.lageW,rows=[[]];for(const t of m.tags){const c=rows[rows.length-1];if(!c.length||(c.join(', ')+', '+t).length<=W)c.push(t);else rows.push([t])}
+let out;if(rows.length<=H.lageLines)out=rows.map(a=>a.join(', '));else{const keep=rows.slice(0,H.lageLines),last=keep[H.lageLines-1];let n=m.tags.length-keep.reduce((s,a)=>s+a.length,0);const hint=k=>'+'+k+' weitere',txt=()=>last.length?last.join(', ')+', '+hint(n):hint(n);while(last.length&&txt().length>W){last.pop();n++}out=keep.map((a,j)=>j<H.lageLines-1?a.join(', '):txt())}
+if(!m.tags.length)out=['Standard'];m._l=out}return m._l}
 /* Fluchtwagen-Zeiger: ab Anruf (gelb, Treffpunkt) und bei Ankunft (gruen) zeigt ein Pfeil am Bildrand zum Wagen, liegt er im Bild, steht ein Marker darueber. Gezeichnet im HUD, also auch durch die Dunkelzone sichtbar. */
 function vanPointer(){if(phase!==2||ended||!(vanCalled||vanArr)||p.out||p.gone)return;
 const vm=LANE.van.mid(LANE.van.stop),sx=vm[0]-camX,sy=vm[1]-camY,L=34,R=VW-34,Tp=112,B=VH-76,nv=vanArr&&vanMode===0&&vanNv>0,col=vanArr?(nv?'#ff6a5a':vanMode===0?'#7ee34a':vanMode===3?'#ffb000':'#8d95a1'):'#ffb000',lab=vanArr?(nv?'FAHRER NERVÖS':vanMode===0?'FLUCHTWAGEN':vanMode===1?'FAHRER WEG':vanMode===2?'WARTET ABSEITS':'KOMMT ZURÜCK'):'TREFFPUNKT',on=sx>=L&&sx<=R&&sy>=Tp&&sy<=B,bob=Math.sin(time*5)*3;

@@ -16,7 +16,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 |---|---|---|---|
 | P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | abgenommen (24. Oktober 2026, Till hat gespielt: passt) |
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
-| P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1 (25. Oktober 2026) | Plan steht, wartet auf Go (Till sammelt noch weitere Punkte) |
+| P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | gebaut (25. Oktober 2026, erster Schritt von Major Release Update 1), wartet auf Tills Spieltest |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -115,5 +115,12 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 
 **Risiken:** Klein. Berührt `lageLines`, `CFG` (zwei Werte) und höchstens ein paar Zeilen im HUD in `index.html`, kein Netzformat (kein `VER`), kein Karten-Vertrag, keine `LAY`-Felder. Liegt `index.html` nahe an einem parallelen Umbau (Sprints, Skillbaum-Umbau), erst nach dessen Merge bauen oder auf einer eigenen Branch. Offen bleibt die Frage, ob die Lage im Überfall überhaupt sichtbar sein soll (nicht Teil von P3).
 
+**Bau** (25. Oktober 2026, Go von Till: "mit Major Release beginnen", Spur 1 beginnt bei P3), Abweichungen vom Plan:
+- Der Plan nannte für Bank Seed 798 "alle sieben Tags im HUD". Das geht mit vier Zeilen zu 28 Zeichen nicht: Die sieben Tags (19, 13, 15, 11, 20, 15 und 9 Zeichen) brauchen ungeteilt fünf Zeilen. Der Seed gehört zu den 12 von 3000 Bank-Seeds mit fünf Zeilen, bei denen der Hinweis erscheint: Er zeigt "Streife in der Nähe", "Geldtransport", "Tresor nur laut, zwei Wachen" und "+3 weitere". Ein Test prüft das genau, dazu einen Bank-Seed mit vier vollen Zeilen ohne Hinweis.
+- Der Umbruch bleibt in der Tag-Reihenfolge (passt ein Tag nicht mehr in die Zeile, beginnt die nächste), anders als der alte Code, der später Tags in frühere Zeilen nachfüllte. Die Reihenfolge der Tags (Lagen, Ereignisse, Struktur) bleibt lesbar.
+- `lageLines` in `index.html`, `CFG.hud` ({`lageLines` 4, `lageW` 28}). Kastenhöhe, Zielzeile und Team-Leiste folgten der Zeilenzahl schon, geprüft mit einem Bild (Bank Seed 798: Kasten, Ziel-Kasten darunter, kein Überlappen). Kein Netzformat (kein `VER`), keine `LAY`-Felder.
+- Test `94-lage-tags` (drei Tests, rund 65 s): Bank Seed 798, 300 Karten (je Szenario bis zu 60 Seeds mit mindestens fünf Tags: jeder Tag im HUD oder "+N weitere" mit richtiger Zahl, Zeilen höchstens 28 Zeichen, Kasten wächst) und ein erzwungener Überlauf (12 Tags: genau vier Zeilen, "+5 weitere", Kasten 194 hoch, langer Einzel-Tag steht allein, Transporter unverändert).
+
 **Änderungsprotokoll**
 - v1 (25. Oktober 2026): Plan zu B3, Entscheidung Till (Vorschläge 1 und 3).
+- Bau (25. Oktober 2026): gebaut mit den Abweichungen oben, Status gebaut, Spieltest steht aus (v1.1).
