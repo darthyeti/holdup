@@ -8,7 +8,7 @@
 // anwaehlt, sieht die Kette von der Wurzel bis dorthin leuchten; der gesperrte Nachbarpfad nennt den Grund (verbaut).
 module.exports = [
   {
-    name: 'Skillbaum-Umbau: Entweder-oder (der erste Punkt in einem Pfad sperrt den anderen, in beiden Richtungen, in allen drei Baeumen), Gegenstaende sind noch nicht kaufbar, die Namen stimmen',
+    name: 'Skillbaum-Umbau: Entweder-oder (der erste Punkt in einem Pfad sperrt den anderen, in beiden Richtungen, in allen drei Baeumen), noch nicht gebaute Gegenstaende sind nicht kaufbar (Angriff, Unterstuetzung), gebaute schon (Verteidigung seit B2), die Namen stimmen',
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, S = D.CFG.skill, out = { names: {}, trees: {} };
@@ -32,8 +32,8 @@ module.exports = [
         t.eq(o.frei, [null, null], k + ': vor der Wahl ist kein Pfad verbaut');
         t.eq(o.nach1, [null, k + '1', false], k + ': der erste Punkt in Pfad 1 sperrt Pfad 2 (verbaut durch ' + k + '1)');
         t.eq([o.kaufB, o.ptsB], [false, 0], k + ': der gesperrte Pfad laesst sich nicht kaufen und kostet nichts');
-        t.eq(o.item, [false, false, false, false], k + ': die Gegenstaende sind in B1 nicht kaufbar (noch nicht gebaut)');
-        t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, undefined, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3');
+        t.eq(o.item, k === 'V' ? [true, true, false, false] : [false, false, false, false], k + (k === 'V' ? ': die Mine hinter Baumeister ist kaufbar (B2), die Claymore bleibt durch das Entweder-oder zu' : ': die Gegenstaende sind noch nicht kaufbar (noch nicht gebaut)'));
+        t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, k === 'V' ? 1 : undefined, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3' + (k === 'V' ? ', die Mine auf 1' : ''));
         t.eq(o.umgekehrt, [k + '2', null, false, false], k + ': mit Pfad 2 zuerst ist Pfad 1 verbaut');
       }
     },
@@ -82,7 +82,7 @@ module.exports = [
         o.run = lv('A1', 'run'); o.pierce = lv('A2', 'pierce'); o.mat = lv('V1', 'mat'); o.sw = lv('V2', 'sw'); o.lean = lv('V2', 'lean'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
         o.marker = [0, 1, 2, 3].map(r => { D.sessReset(); if (r) D.SESSION.sk.V2 = r; D.reset(); return D.get().me.sw; });
-        o.gone = ['A3', 'A4', 'V3', 'V4', 'U3', 'U4'].map(id => Object.keys(D.CFG.skill[id]).filter(k => Array.isArray(D.CFG.skill[id][k])));
+        o.gone = ['A3', 'A4', 'U3', 'U4'].map(id => Object.keys(D.CFG.skill[id]).filter(k => Array.isArray(D.CFG.skill[id][k])));
         return o;
       });
       t.eq(r.run, [0, 0, 1], 'Laeufer: erst mit Ruhige Hand 3, die Zusatzstreuung beim Laufen faellt ganz weg');
@@ -96,7 +96,7 @@ module.exports = [
       t.eq(r.rev, [.25, .4, .55], 'Sanitaeter bringt weiter das schnellere Wiederbeleben');
       t.eq(r.sus, [.1, .2, .3], 'Techniker (frueher Schleicher) bringt weiter den langsameren Verdacht');
       t.eq(r.marker, [0, 0, 0, 1], 'der Zaeh-Marker am Spieler (sw) steht nur mit Deckung 3');
-      t.eq(r.gone, [[], [], [], [], [], []], 'die Gegenstaende haben noch keine Wirkungswerte (B2 bis B5 bauen sie)');
+      t.eq(r.gone, [[], [], [], []], 'die noch nicht gebauten Gegenstaende haben keine Wirkungswerte (B3 bis B5 bauen sie, Mine und Claymore haben seit B2 cnt)');
     },
   },
   {
@@ -237,7 +237,7 @@ module.exports = [
         const d = MT.solo(null, 's'), out = {}; d.sessReset(); d.SESSION.round = 2; d.SESSION.pts = 5; d.openShop(); d.ui().tiles(); MT.k(d, 'k');
         MT.hover(d, 'sk:A0'); MT.shot(d, out, 'leer');
         for (let i = 0; i < 3; i++) MT.click(d, 'sk:V0'); MT.click(d, 'sk:V2'); MT.click(d, 'sk:V2');
-        MT.hover(d, 'sk:V1'); MT.shot(d, out, 'verbaut'); MT.hover(d, 'sk:V2'); MT.shot(d, out, 'kette'); MT.hover(d, 'sk:V4'); MT.shot(d, out, 'folgt');
+        MT.hover(d, 'sk:V1'); MT.shot(d, out, 'verbaut'); MT.hover(d, 'sk:V2'); MT.shot(d, out, 'kette'); MT.hover(d, 'sk:U4'); MT.shot(d, out, 'folgt');
         MT.hover(d, 'sk:U1'); MT.shot(d, out, 'ohne-punkte'); d.SESSION.sk = { A0: 3, A1: 3, V0: 3, V2: 3, U0: 3, U1: 3 }; d.SESSION.pts = 0; MT.hover(d, 'sk:U1'); MT.shot(d, out, 'voll');
         return out;
       });

@@ -11,7 +11,7 @@ const SETUP = `(sk, o) => {
 
 module.exports = [
   {
-    name: 'Skillbaum: 15 Knoten (neun mit Werten und Text, sechs Gegenstaende noch nicht gebaut), Wurzel offen, Pfade mit Wurzel 3 von 3, Kauf kostet einen Punkt, hoechstens Stufe 3, Wurzel plus Pfad kosten 6 Punkte',
+    name: 'Skillbaum: 15 Knoten (elf mit Werten und Text, vier Gegenstaende noch nicht gebaut), Wurzel offen, Pfade mit Wurzel 3 von 3, Kauf kostet einen Punkt, hoechstens Stufe 3, Wurzel plus Pfad kosten 6 Punkte',
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, S = D.CFG.skill, o = { bad: [], soon: [] };
@@ -36,7 +36,7 @@ module.exports = [
       });
       t.eq(r.ids, 15, 'fuenfzehn Knoten');
       t.eq(r.bad, [], 'Daten und Texte: ' + JSON.stringify(r.bad));
-      t.eq(r.soon, ['A3', 'A4', 'V3', 'V4', 'U3', 'U4'], 'die sechs Gegenstaende sind als soon markiert');
+      t.eq(r.soon, ['A3', 'A4', 'U3', 'U4'], 'vier Gegenstaende sind noch als soon markiert (Mine und Claymore sind seit MRU 1 B2 gebaut)');
       t.eq(r.bonus, ['A1', 'A2', 'V1', 'V2', 'U1', 'U2'], 'jeder der sechs Pfade hat einen Zusatz mit Stufe 3');
       t.eq(r.lock0, [true, false, false, false, false], 'am Anfang nur die Wurzel offen');
       t.eq(r.denied, [false, false], 'gesperrte Knoten lassen sich nicht kaufen');
