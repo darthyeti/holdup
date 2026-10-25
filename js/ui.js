@@ -75,6 +75,9 @@ g.save();g.font=lf;const lw=g.measureText('FAHNDUNG').width,pw=HCOL.length*sw+(H
 const tot=lw+8+pw+(small?0:10+nw),x0=al==='r'?x-tot:al==='c'?x-tot/2:x;
 g.textAlign='left';g.font=lf;g.fillStyle=MU;g.fillText('FAHNDUNG',x0,y);pips(x0+lw+8,y,lv,sw,sh,sg);
 if(!small){g.font=nf;g.fillStyle=lv?HCOL[lv-1]:G;g.fillText(nm,x0+lw+8+pw+10,y)}
+/* Wachsamkeit der Laeden (MRU 1 C1): ab CFG.alert.at lautlosen Siegen in Folge steht dazu, dass der naechste Auftrag erschwert ist. Rechts bündig links vom Badge auf derselben Zeile (Auftragswahl, dort liegen darunter die Kacheln), sonst eine Zeile darunter. */
+if(!small&&X.warned()){const wt='LÄDEN GEWARNT: nächster Auftrag erschwert';g.font='bold 11px monospace';g.fillStyle=A;
+ if(al==='r'){g.textAlign='right';g.fillText(wt,x0-16,y)}else{g.textAlign=al==='c'?'center':'left';g.fillText(wt,al==='c'?x:x0,y+15)}}
 g.restore()}
 /* Fahndungs-Tafel im Ergebnis (Seite 1, rechts neben den Zeilen): neuer Stand, Stufe vorher und nachher, die Gruende des Auftrags, Punkte. Ohne Wirkung (CFG.fahndung.on 0) steht darunter der Hinweis auf den Trockenlauf. */
 function pageFh(f){const{g,CFG}=X,F=CFG.fahndung,a=X.heatLv(f.from),b=X.heatLv(f.to),x=748,y=216,w=196,rows=f.items,dry=F.on?[]:wrap('Trockenlauf: wirkt noch nicht auf die Polizei.',w-24,'10px monospace',2),h=96+rows.length*16+(dry.length?dry.length*13+10:0);
@@ -348,4 +351,4 @@ const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
 return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus,glow:!!t.glow})):[]}}}
-mkUI.api=7;
+mkUI.api=8;
