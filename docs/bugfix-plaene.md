@@ -14,8 +14,8 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 
 | Paket | Thema | Plan | Status |
 |---|---|---|---|
-| P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | gebaut (24. Oktober 2026, Till gab das Go), wartet auf Tills Spieltest |
-| P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | gebaut (24. Oktober 2026, Till gab das Go), wartet auf Tills Spieltest |
+| P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | abgenommen (24. Oktober 2026, Till hat gespielt: passt) |
+| P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -57,6 +57,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 - v1 (24. Oktober 2026): Plan zu B1.
 - v1.1 (24. Oktober 2026): Entscheidung eingetragen (Gänge auf der Klassik-Hülle bleibt als Ausnahme), keine offene Frage mehr.
 - Bau (24. Oktober 2026): Go von Till, gebaut mit den Abweichungen oben, Status gebaut.
+- Abnahme (24. Oktober 2026): Till hat die Tankstelle gespielt (Hüllen, kleine und breite Läden), es passt, Status abgenommen.
 
 ## P2 Runde endet sofort mit "Lautlos entkommen" (Brettersatz im Kit)
 
@@ -87,3 +88,4 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 - v1 (24. Oktober 2026): Plan zu B2.
 - v1.1 (24. Oktober 2026): Entscheidung zu Schritt 3 eingetragen (Material nie Beute, auch nicht für den Verdacht), Schritt 3 ist keine offene Frage mehr.
 - Bau (24. Oktober 2026): Go von Till, gebaut als `o.loot>0` statt `loot(o)`, Status gebaut.
+- Abnahme (25. Oktober 2026): Till hat gespielt, der Brettersatz funktioniert, Status abgenommen.
