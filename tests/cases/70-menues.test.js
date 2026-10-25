@@ -93,7 +93,7 @@ module.exports = [
         k('Enter'); k('Enter'); o.go = d.state().scr; o.round = d.SESSION.round;
         return o;
       });
-      t.eq(r.scr, 'shop'); t.eq(r.n, 18, 'achtzehn Posten als Kacheln (der letzte ist der Anwalt)'); t.eq(r.focus, 'next', 'Standardfokus Weiter');
+      t.eq(r.scr, 'shop'); t.eq(r.n, 17, 'siebzehn Posten als Kacheln (der letzte ist der Anwalt, die Blendgranate des Shops ist seit MRU 1 A1 gestrichen)'); t.eq(r.focus, 'next', 'Standardfokus Weiter');
       t.ok(r.clickBuy > 0, 'Klick kauft'); t.ok(r.bought.every(Boolean), 'alles gekauft: ' + JSON.stringify(r.bought));
       t.eq(r.next, ['mission', 'shop'], 'Weiter oeffnet die Auftragswahl'); t.eq(r.back, 'shop', 'Esc zurueck in den Shop');
       t.eq(r.go, 'play', 'Auftrag starten beginnt den naechsten Auftrag');

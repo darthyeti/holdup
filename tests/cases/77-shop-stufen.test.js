@@ -62,15 +62,15 @@ module.exports = [
         D.sessReset(); D.SESSION.cons.ad = 1; D.reset(); me = D.get().me; me.hp = 10; me.ar = 0; me.inv = 0;
         D.hitPlayer(me, 50); out.ad1 = [me.hp, me.inv > 0, me.ad];
         me.inv = 0; D.hitPlayer(me, 50); out.ad2 = me.hp <= 0;
-        D.sessReset(); D.SESSION.cons = { fl: 2, sm: 1, dc: 3, ad: 1, bt: 1 }; D.reset(); me = D.get().me; me.fl = 1; D.keepKit(); out.keep = Object.assign({}, D.SESSION.cons);
-        out.san = D.sanKit({ vest: 9, helm: -3, jam: 99, fl: 99, vh: 1e9, hh: 99, ad: 5 });
+        D.sessReset(); D.SESSION.cons = { sm: 2, dc: 3, ad: 1, bt: 1 }; D.reset(); me = D.get().me; me.sm = 1; D.keepKit(); out.keep = Object.assign({}, D.SESSION.cons);
+        out.san = D.sanKit({ vest: 9, helm: -3, jam: 99, sm: 99, vh: 1e9, hh: 99, ad: 5 });
         return out;
       });
       t.eq(r.bt, [4, 2, 1], 'Start mit 4 Material (2 Plätze), ein Satz bleibt'); t.eq(r.cons, 1, 'Vorrat zählt weiter');
       t.eq(r.bt2, [4, 0], 'zweiter Auftrag benutzt den letzten Satz');
       t.eq(r.ad1, [25, true, 0], 'Adrenalin: 25 HP, kurz unverwundbar, verbraucht'); t.ok(r.ad2, 'danach stirbt man wieder');
-      t.eq(r.keep.fl, 1, 'Blendgranaten: verbrauchte zählen nicht mehr'); t.eq(r.keep.sm, 1); t.eq(r.keep.dc, 3);
-      t.eq([r.san.vest, r.san.helm, r.san.jam, r.san.fl, r.san.vh, r.san.hh, r.san.ad], [3, 0, 3, 3, 200, null, 1], 'sanKit begrenzt Stufen, Vorräte und Verschleiss');
+      t.eq(r.keep.sm, 1, 'Rauchgranaten: verbrauchte zählen nicht mehr'); t.eq(r.keep.dc, 3); t.ok(!('fl' in r.keep), 'kein Vorrat an Blendgranaten mehr (gestrichen)');
+      t.eq([r.san.vest, r.san.helm, r.san.jam, r.san.sm, r.san.vh, r.san.hh, r.san.ad], [3, 0, 3, 3, 200, null, 1], 'sanKit begrenzt Stufen, Vorräte und Verschleiss');
     },
   },
   {
@@ -79,14 +79,14 @@ module.exports = [
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
       const r = await t.page.evaluate(() => {
         const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0];
-        B.SESSION.own = { vest: 3, helm: 2, pack: 2 }; B.SESSION.wear = { vest: 77, helm: 5 }; B.SESSION.cons = { fl: 2, ad: 1 };
+        B.SESSION.own = { vest: 3, helm: 2, pack: 2 }; B.SESSION.wear = { vest: 77, helm: 5 }; B.SESSION.cons = { sm: 2, dc: 3, ad: 1 };
         B.openShop(); G.run(1);
         A.startNext(); G.run(2);
         const pa = A.get().players[1], pb = B.get().players[1];
-        return { host: [pa.ar, pa.hh, pa.helm, pa.bag, pa.fl, pa.ad], client: [pb.ar, pb.hh, pb.fl, pb.ad] };
+        return { host: [pa.ar, pa.hh, pa.helm, pa.bag, pa.sm, pa.ad, pa.dc], client: [pb.ar, pb.hh, pb.sm, pb.ad, pb.dc] };
       });
-      t.eq(r.host, [77, 5, 2, 10, 2, 1], 'Host baut den Spieler mit dem Kit des Clients');
-      t.eq(r.client, [77, 5, 2, 1], 'der Client sieht denselben Stand im Schnappschuss');
+      t.eq(r.host, [77, 5, 2, 10, 2, 1, 3], 'Host baut den Spieler mit dem Kit des Clients');
+      t.eq(r.client, [77, 5, 2, 1, 3], 'der Client sieht denselben Stand im Schnappschuss (die Vorräte hinter dem gestrichenen Blendgranaten-Feld rutschen nach vorn)');
     },
   },
 ];

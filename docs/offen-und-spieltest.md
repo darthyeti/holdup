@@ -8,6 +8,10 @@ Stand der Prüfung (23. Oktober 2026, `VER` 28, `UI_API` 5, die Build-Nummer ste
 
 ## Spieltest-Fragen (Till)
 
+### Major Release Update 1, Spur 1: A1 bis A3 (docs/major-release-update-1.md, Test-Stopp 1)
+
+- [ ] A1, Shop ohne Blendgranate: Der Shop hat 17 Posten, die Spalte Wurfgeräte nur noch Rauchgranate und Ablenker, Taste 3 tut nichts (frei für den Gegenstand aus dem Skillbaum-Umbau), die Steuerung in der Anleitung nennt nur 4 und 5. Fehlt die Blendgranate im Spiel gegen die Polizei, oder ist es so aufgeräumter? (Die Blendgranate der Polizei gegen dich bleibt.)
+
 ### Lage-Tags im HUD (Paket P3, docs/bugfix-plaene.md)
 
 - [ ] Bank mehrmals spielen (nach Möglichkeit mit vielen Tags): Stehen in der Lage-Zeile des Erkunden-HUD jetzt alle Tags (bis zu vier Zeilen), ist der Kasten sauber (Zielzeile und Team-Leiste darunter nicht überdeckt), und ist der Hinweis "+N weitere" bei den seltenen Karten mit mehr als vier Zeilen (rund 0,4 % der Bank-Seeds, Beispiel Seed 798) verständlich? Zum Verstellen `CFG.hud.lageLines` und `CFG.hud.lageW`.
