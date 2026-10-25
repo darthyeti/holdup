@@ -1,5 +1,5 @@
 // Geiseln (Tills Idee vom 23. Oktober 2026, entschieden am 24. Oktober 2026, Rolle Schutzschild): Im Ueberfall nimmt jeder Spieler per E (halten) einen geduckten Zivilisten oder Angestellten
-// zur Geisel (hoechstens eine je Spieler), sie folgt der Laufspur, die Polizei schiesst nicht auf sie, Spielerkugeln koennen sie toeten (Team-Konto), solange eine Geisel im Gebaeude lebt warten
+// zur Geisel (hoechstens eine je Spieler), sie folgt der Laufspur, Spielerkugeln koennen sie toeten (Team-Konto; seit MRU 1 A3 treffen auch Polizeikugeln sie und die Beamten schiessen nicht durch sie, Test 97-geisel-kugelfang), solange eine Geisel im Gebaeude lebt warten
 // die Beamten laenger auf ihren Posten (hoechstens CFG.hostage.cap Sekunden je Auftrag), der Scharfschuetze kommt eine Welle frueher, Nehmen und Tod buchen auf das Fahndungslevel (VER 29).
 const SETUP = `(seed) => {
   const D = __dbg; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(seed || 5017);
@@ -106,19 +106,17 @@ module.exports = [
     },
   },
   {
-    name: 'Geiseln: Spielerkugeln toeten die Geisel (Team-Konto civKills und hostK), Kugeln der Polizei treffen sie nicht',
+    name: 'Geiseln: Spielerkugeln toeten die Geisel (Team-Konto civKills und hostK), auch eine Explosion',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}, T = S(5017), D = T.D, o = {}; const n = T.pick(); if (!n) return { found: false };
         D.keys.e = true; T.run(45, q => { if (n.st === 'cower') { q.x = n.x; q.y = n.y; } }); D.keys.e = false; const m = D.get().me;
         const shot = (own, x, y, mine) => D.get().bl.push(Object.assign({ id: 9100 + Math.random() * 1e5 | 0, x, y, vx: 720, vy: 0, l: .8, ov: false }, mine ? { o: 1, own, d: 200 } : { o: 0, own: -1, dmg: 8 }));
-        const hp0 = n.hp; m.x = n.x - 200; m.y = n.y; shot(0, n.x - 30, n.y, false); T.run(8, q => { q.x = n.x - 200; q.y = n.y; }); o.police = [n.st, n.hp === hp0];
         const civ0 = D.get().civKills; m.x = n.x - 200; shot(0, n.x - 30, n.y, true); T.run(8, q => { q.x = n.x - 200; q.y = n.y; });
         o.dead = [n.st, D.hostSt().k, D.get().civKills - civ0, D.hasHost(m)];
         // zweite Geisel stirbt durch eine Explosion
         const n2 = D.get().npcs.find(q => q.st === 'cower' && q.k !== 'grd'); if (n2) { D.grabHost(n2, m); const k0 = D.hostSt().k; D.blastAt(n2.x, n2.y, { dmg: 300, r: 80, scorch: 10 }, 0); o.blast = [n2.hp <= 0 || n2.st === 'dead', D.hostSt().k - k0]; }
         return o; })()`);
       t.ok(r.found !== false, 'Ziel gefunden');
-      t.eq(r.police, ['hostage', true], 'die Polizei trifft die Geisel nicht');
       t.eq(r.dead, ['dead', 1, 1, false], 'Spielerkugel: Geisel tot, Team-Zaehler hostK 1 und civKills plus 1, Besitzer wieder frei');
       t.eq(r.blast, [true, 1], 'auch eine Explosion toetet die Geisel und zaehlt in hostK');
     },
