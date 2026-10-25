@@ -23,6 +23,8 @@ module.exports = [
           const keys = [...n.d.matchAll(/\{(\w+)%?\}/g)].map(m => m[1]); if (!keys.length) o.bad.push(id + ' ohne Wert');
           for (const k of keys) if (!rising(k)) o.bad.push(id + '.' + k + ' keine steigende Liste');
           for (const k of [...(n.b || '').matchAll(/\{(\w+)%?\}/g)].map(m => m[1])) if (!rising(k, true)) o.bad.push(id + '.' + k + ' kein Wert erst in Stufe 3');
+          if (n.b && (!n.bn || ![...n.b.matchAll(/\{(\w+)%?\}/g)].length)) o.bad.push(id + ' Zusatz ohne Namen oder ohne Wert');
+          o.bonus = (o.bonus || []).concat(n.b ? [id] : []);
         }
         D.sessReset(); D.SESSION.pts = 20; const ok = id => D.skOk(D.SESSION.sk, id), buy = id => D.skillBuy(id);
         o.lock0 = ['A0', 'A1', 'A2', 'A3', 'A4'].map(ok); o.denied = [buy('A1'), buy('A3')];
@@ -35,6 +37,7 @@ module.exports = [
       t.eq(r.ids, 15, 'fuenfzehn Knoten');
       t.eq(r.bad, [], 'Daten und Texte: ' + JSON.stringify(r.bad));
       t.eq(r.soon, ['A3', 'A4', 'V3', 'V4', 'U3', 'U4'], 'die sechs Gegenstaende sind als soon markiert');
+      t.eq(r.bonus, ['A1', 'A2', 'V1', 'V2', 'U1', 'U2'], 'jeder der sechs Pfade hat einen Zusatz mit Stufe 3');
       t.eq(r.lock0, [true, false, false, false, false], 'am Anfang nur die Wurzel offen');
       t.eq(r.denied, [false, false], 'gesperrte Knoten lassen sich nicht kaufen');
       t.eq(r.root2, false, 'Wurzel 2 von 3 schaltet die Pfade noch nicht frei');

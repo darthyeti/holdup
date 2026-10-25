@@ -2,6 +2,8 @@
 // Struktur: je Baum eine Wurzel (k0), zwei Pfade (k1 und k2, offen mit Wurzel 3 von 3, ENTWEDER-ODER: der erste Punkt in einem Pfad sperrt den anderen) und hinter jedem Pfad ein Gegenstand (k3 hinter k1,
 // k4 hinter k2, offen mit dem Pfad auf 3). Die sechs Gegenstaende sind in B1 noch nicht gebaut (soon, nicht kaufbar, B2 bis B5). Zaeh, Verhandler und Fahrer sind kein eigener Knoten mehr, sondern kommen mit Stufe 3
 // von Deckung (V2), Sanitaeter (U1) und Techniker (U2, frueher Schleicher). Punkte lassen sich bis zum Verlassen des Shops zuruecknehmen (nur im aktuellen Besuch gekaufte Stufen, nichts Abhaengiges darauf).
+// Die Zusaetze mit Stufe 3 gibt es in allen sechs Pfaden: Laeufer (Ruhige Hand, Laufen kostet keine Zusatzstreuung), Durchschuss (Durchschlag, die Kugel trifft auch den Beamten dahinter mit halbem Schaden),
+// Materialsammler (Baumeister, jedes Moebelstueck gibt ein Material mehr), dazu Zaeh, Verhandler, Fahrer (Tills Wunsch vom 25. Oktober 2026: Go fuer 1 bis 3 noch oben drauf).
 // Fenster: drei Zeilen (Angriff, Verteidigung, Unterstuetzung), links die Wurzel, in der Mitte die zwei Pfade untereinander mit ODER dazwischen, rechts je Pfad der Gegenstand, keine Kreuzlinien; wer einen Knoten
 // anwaehlt, sieht die Kette von der Wurzel bis dorthin leuchten; der gesperrte Nachbarpfad nennt den Grund (verbaut).
 module.exports = [
@@ -77,12 +79,15 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {}, lv = (id, key) => [1, 2, 3].map(r => D.skv({ sk: { [id]: r } }, id, key));
-        o.sw = lv('V2', 'sw'); o.lean = lv('V2', 'lean'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
+        o.run = lv('A1', 'run'); o.pierce = lv('A2', 'pierce'); o.mat = lv('V1', 'mat'); o.sw = lv('V2', 'sw'); o.lean = lv('V2', 'lean'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
         o.marker = [0, 1, 2, 3].map(r => { D.sessReset(); if (r) D.SESSION.sk.V2 = r; D.reset(); return D.get().me.sw; });
         o.gone = ['A3', 'A4', 'V3', 'V4', 'U3', 'U4'].map(id => Object.keys(D.CFG.skill[id]).filter(k => Array.isArray(D.CFG.skill[id][k])));
         return o;
       });
+      t.eq(r.run, [0, 0, 1], 'Laeufer: erst mit Ruhige Hand 3, die Zusatzstreuung beim Laufen faellt ganz weg');
+      t.eq(r.pierce, [0, 0, .5], 'Durchschuss: erst mit Durchschlag 3, der Beamte dahinter bekommt die Haelfte');
+      t.eq(r.mat, [0, 0, 1], 'Materialsammler: erst mit Baumeister 3, ein Material mehr je Moebelstueck');
       t.eq(r.sw, [0, 0, .45], 'Zaeh: erst mit Deckung 3, 45 % Leben');
       t.eq(r.cap, [0, 0, 16], 'Verhandler: erst mit Sanitaeter 3, 16 s Aufschub');
       t.eq(r.heat, [0, 0, .5], 'Verhandler: erst mit Sanitaeter 3, Fahndung durch Geiseln halbiert');
@@ -118,7 +123,7 @@ module.exports = [
         ctx.fillText = function (s, x, y) { const al = ctx.textAlign, w = ctx.measureText(String(s)).width; log.push({ s: String(s), x0: al === 'center' ? x - w / 2 : al === 'right' ? x - w : x, w, y }); return orig.apply(this, arguments); };
         try { d.draw(); } finally { ctx.fillText = orig; }
         const start = log.findIndex(l => l.s === 'FÄHIGKEITEN'), fenster = start < 0 ? [] : log.slice(start);   // vorher zeichnet der Shop darunter
-        o.oder = fenster.filter(l => l.s === 'ODER').length; o.fenster = fenster.length;
+        o.oder = fenster.filter(l => l.s === 'ODER').length; o.fenster = fenster.length; o.tags = ['+Läufer', '+Durchschuss', '+Sammler', '+Zäh', '+Verhandler', '+Fahrer'].filter(x => fenster.some(l => l.s === x));
         for (const q of all.filter(q => /^sk:/.test(q.id))) { const inn = fenster.filter(l => l.x0 >= q.x - .5 && l.x0 <= q.x + q.w && l.y >= q.y && l.y <= q.y + q.h); if (inn.length < 2) o.bad.push(q.id + ': zu wenig Text im Knoten (' + inn.length + ')'); for (const l of inn) if (l.x0 + l.w > q.x + q.w - 2) o.bad.push(q.id + ': "' + l.s.slice(0, 30) + '" ragt aus dem Knoten'); }
         o.ov = OV.check(d, { modal: true });
         return o;
@@ -126,6 +131,7 @@ module.exports = [
       t.eq(r.bad, [], 'Layout: ' + JSON.stringify(r.bad));
       t.ok(r.fenster > 50, 'das Fenster wurde gezeichnet (' + r.fenster + ' Texte)');
       t.eq(r.oder, 3, 'je Baum ein ODER zwischen den Pfaden');
+      t.eq(r.tags, ['+Läufer', '+Durchschuss', '+Sammler', '+Zäh', '+Verhandler', '+Fahrer'], 'jeder der sechs Pfade mit Zusatz zeigt ihn im Knoten');
       t.eq(r.ov, [], 'Ueberlappungen von Text, Kacheln und Rand: ' + JSON.stringify(r.ov));
     },
   },
@@ -168,6 +174,59 @@ module.exports = [
       t.eq(r.rebuy, [3, 1, 0], 'wieder gekauft: Wurzel auf 3, Pfad 1, keine Punkte uebrig');
       t.eq(r.tile, [undefined, 3, 1], 'die Kachel Zuruecknehmen nimmt die Stufe des angewaehlten Knotens (A1) zurueck, die Wurzel bleibt');
       t.ok(r.closed && r.scr === 'shop', 'Esc schliesst das Fenster, der Shop bleibt');
+    },
+  },
+  {
+    name: 'Zusatz Laeufer (Ruhige Hand 3): Laufen kostet keine Zusatzstreuung mehr, Streuung im Stehen und die -30 % der Ruhigen Hand bleiben; mit Stufe 2 zaehlt das Laufen noch',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, o = {}, sp0 = D.CFG.wpn.pistol.spread, sp = lv => { D.sessReset(); if (lv) D.SESSION.sk.A1 = lv; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.reset();
+          const m = D.get().me; m.rec = 0; m.bl = 0; m.gs = 0; return [0, 1].map(mv => { m.mv = mv; return +D.shotSp(m, m.wp).toFixed(5); }); };
+        o.sp0 = sp0; o.l0 = sp(0); o.l2 = sp(2); o.l3 = sp(3);
+        return o;
+      });
+      const f = x => +x.toFixed(5);
+      t.eq(r.l0, [f(r.sp0), f(r.sp0 + .05)], 'ohne Skill: Streuung im Stehen und mit Laufzuschlag 0,05');
+      t.eq(r.l2, [f(r.sp0 * .8), f((r.sp0 + .05) * .8)], 'Stufe 2: Streuung -20 %, der Laufzuschlag bleibt');
+      t.eq(r.l3, [f(r.sp0 * .7), f(r.sp0 * .7)], 'Stufe 3: Streuung -30 %, im Laufen genauso wie im Stehen');
+    },
+  },
+  {
+    name: 'Zusatz Durchschuss (Durchschlag 3): die Kugel trifft auch den Beamten dahinter mit halbem Schaden, nur einmal, nicht durch Schilde, auch wenn der erste faellt; mit Stufe 2 nicht',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const D = __dbg, T = 32, o = {};
+        const strip = () => { const w = D.world(); for (let ty = w.WY0 + 2; ty < w.WY0 + w.H - 2; ty++) for (let tx = w.WX0 + 9; tx < w.WX0 + w.W - 3; tx++) { const x = tx * T + 16, y = ty * T + 16; let ok = true;
+          for (let d = -240; d <= 70 && ok; d += 12) for (const dy of [-1, 0, 1]) if (D.isSol(Math.floor((x + d) / T), ty + dy)) ok = false; if (ok && D.clear(x - 240, y, x + 70, y)) return { x, y }; } return null; };
+        const run = (lv, first) => { D.sessReset(); if (lv) D.SESSION.sk.A2 = lv; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset(); D.startHeist(false, D.get().me);
+          const sp = strip(); if (!sp) return null; const g = D.get(); g.en.length = 0; const me = g.me, mk = (dx, kind) => { const c = D.mkCop(sp.x + dx, sp.y, kind); c.mode = 'post'; c.post = { x: c.x, y: c.y, a: Math.PI, door: null }; c.rt = 1e9; c.a = Math.PI; return c; };
+          const c1 = first === 'shield' ? mk(-150, 'shield') : mk(-150, false), c2 = mk(-110, false), c3 = mk(-70, false); if (first === 'shield') c1.sh = 120; if (first === 'low') c1.hp = 10; g.en.push(c1, c2, c3);
+          const h = [c1.hp, c2.hp, c3.hp], pos = [c1, c2, c3].map(c => [c.x, c.y]); me.x = sp.x + 400; me.y = sp.y;
+          g.bl.push({ id: 9700, x: sp.x - 215, y: sp.y, vx: 720, vy: 0, l: .8, o: 1, own: 0, d: 34, ov: false });
+          for (let i = 0; i < 12; i++) { me.hp = 1e9; [c1, c2, c3].forEach((c, k) => { c.x = pos[k][0]; c.y = pos[k][1]; }); D.update(1 / 30); }
+          return { d: [h[0] - c1.hp, h[1] - c2.hp, h[2] - c3.hp].map(x => +x.toFixed(1)), dead1: c1.hp <= 0, sh: first === 'shield' ? 120 - c1.sh : 0 }; };
+        o.l2 = run(2); o.l3 = run(3); o.low = run(3, 'low'); o.shield = run(3, 'shield');
+        return o; })()`);
+      t.ok(r.l2 && r.l3, 'freier Streifen gefunden');
+      t.eq(r.l2.d, [34, 0, 0], 'Stufe 2: nur der erste Beamte wird getroffen');
+      t.eq(r.l3.d, [34, 17, 0], 'Stufe 3: der erste voll, der zweite mit halbem Schaden, der dritte nichts (nur einmal durch)');
+      t.eq([r.low.dead1, r.low.d[1]], [true, 17], 'faellt der erste, fliegt die Kugel trotzdem weiter und trifft den zweiten mit halbem Schaden');
+      t.eq([r.shield.sh > 0, r.shield.d[1], r.shield.d[2]], [true, 0, 0], 'ein Schild haelt die Kugel auf, nichts geht durch');
+    },
+  },
+  {
+    name: 'Zusatz Materialsammler (Baumeister 3): jedes Moebelstueck gibt 2 statt 1 Material (1 Platz in der Tasche je Stueck), begrenzt durch Tasche und Hoechstmenge; mit Stufe 2 bleibt es bei 1',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, o = {}, take = (lv, pre) => { D.sessReset(); if (lv) D.SESSION.sk.V1 = lv; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset(); D.startHeist(false, D.get().me);
+          const g = D.get(), me = g.me, it = g.its.find(i => i.t === 'mat' && i.tx !== undefined); me.mat = 0; me.units = 0; if (pre) pre(me); const u0 = me.units, m0 = me.mat; it.act(me); return [me.mat - m0, +(me.units - u0).toFixed(2), it.done, me.bag]; };
+        o.l2 = take(2); o.l3 = take(3); o.bag = take(3, m => { m.units = m.bag - .5; }); o.cap = take(3, m => { m.mat = 3; m.units = 1.5; }); o.full = take(3, m => { m.units = m.bag; });
+        return o;
+      });
+      t.eq(r.l2.slice(0, 3), [1, .5, true], 'Stufe 2: ein Material, ein halber Platz');
+      t.eq(r.l3.slice(0, 3), [2, 1, true], 'Stufe 3: zwei Material fuer ein Stueck Moebel (ein Platz)');
+      t.eq(r.bag.slice(0, 3), [1, .5, true], 'bei fast voller Tasche nur das, was noch passt');
+      t.eq(r.cap.slice(0, 3), [1, .5, true], 'die Hoechstmenge (4) gilt weiter: bei 3 Material nur eins dazu');
+      t.eq([r.full[0], r.full[2]], [0, false], 'volle Tasche: nichts, das Moebelstueck bleibt');
     },
   },
   {
