@@ -6,11 +6,27 @@ const KEY = (cv, k) => `${cv}.dispatchEvent(new KeyboardEvent('keydown', { key: 
 
 module.exports = [
   {
+    name: 'PeerJS-Anbindung (wrap): Ein Fehler der Verbindung (message-too-big) schließt sie nicht, solange sie offen ist, ein Fehler an einer geschlossenen Verbindung und das Ereignis close melden den Abbruch, Fehler stehen im Log',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, o = {}, TRp = D.peerTransport(), mk = () => { const h = {}, c = { open: true, on(n, f) { h[n] = f; }, send() { }, close() { } }; c.h = h; return c; };
+        let c = mk(), w = TRp.wrap(c), closed = 0, got = []; w.onclose = () => closed++; w.onmsg = m => got.push(m);
+        c.h.data({ t: 'a' }); c.h.error({ type: 'message-too-big' }); o.nachFehler = [closed, got.length]; c.open = false; c.h.error({ type: 'webrtc' }); o.geschlossenFehler = closed; c.h.close(); o.close = closed;
+        o.log = D.flog().dump().ereignisse.filter(e => e[2] === 'netz' && e[3][0] === 'peerjs-fehler').map(e => e[3][1]);
+        return o;
+      });
+      t.eq(r.nachFehler, [0, 1], 'message-too-big bei offener Verbindung: nicht geschlossen, Daten kommen weiter an');
+      t.eq(r.geschlossenFehler, 1, 'Fehler an einer geschlossenen Verbindung meldet den Abbruch');
+      t.eq(r.close, 2, 'das Ereignis close meldet ihn ebenfalls');
+      t.eq(r.log, ['message-too-big', 'webrtc'], 'die Fehler stehen im Log');
+    },
+  },
+  {
     name: 'Flugschreiber Coop: der Client schickt sein Log in Stücken an den Host (auch mehr als ein Stück), der Host setzt es zusammen (gleiche Zahl Ereignisse, Rolle client, Kopf mit beiden Spielern), F9 am Client sendet und speichert, zu große und kaputte Stücke werden verworfen',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
       const r = await t.page.evaluate(`(async () => { const { G, A, B } = ${SETUP}, o = {}; G.run(3);
-        for (let i = 0; i < 2500; i++) B.flog().ev('fuell', 'x'.repeat(40) + i);
+        for (let i = 0; i < 2500; i++) B.flog().ev('fuell', 'Überfall "äöü" \\ ' + '漢字'.repeat(80) + i);
         const own = B.flog().dump({}, true).ereignisse.length; const n = B.flogSend(); G.run(1); o.n = n; const got = A.flogLogs()[1]; o.got = got ? [got.log.rolle, got.log.runden[0].meta.spieler.length, got.log.ereignisse.length - 0 >= own - 5, got.bytes > 40000] : null;
         o.hostEv = A.flog().dump().ereignisse.filter(e => e[2] === 'netz').map(e => e[3][0]).filter(x => /Log/.test(x));
         // F9 am Client: sendet und speichert
@@ -20,8 +36,13 @@ module.exports = [
         const before = Object.keys(A.flogLogs()).length; A.NET.conns[0] && 0;
         const c = A.NET.conns[0]; c.onmsg({ t: 'lg', i: 99, k: 0, n: 1, d: 'x'.repeat(50000) }); c.onmsg({ t: 'lg', i: 98, k: 5, n: 2, d: '{}' }); c.onmsg({ t: 'lg', i: 97, k: 0, n: 1, d: '{kaputt' });
         o.bad = [Object.keys(A.flogLogs()).length === before, A.flog().dump().ereignisse.filter(e => e[2] === 'netz' && e[3][0] === 'Log kaputt').length];
+        o.stat = [G.net.stat.big, G.net.stat.max]; const bn = G.net.stat.big; B.NET.conn.send({ t: 'x', d: 'a'.repeat(17000) }); G.run(1); o.limit = [G.net.stat.big - bn, A.get().players.length]; o.conn = [A.NET.conns.length, B.state().role];
         return o; })()`);
-      t.ok(r.n >= 2, 'das Log braucht mehr als ein Stück: ' + r.n);
+      t.ok(r.n >= 6, 'das Log braucht viele kleine Stücke: ' + r.n);
+      t.eq(r.stat[0], 0, 'keine Nachricht erreichte die PeerJS-Grenze (16.300 Byte, die Test-Leitung wirft größere weg, am 26. Oktober 2026 riss ein Log-Stück von 40.000 Zeichen die Verbindung ab)');
+      t.ok(r.stat[1] < 14000, 'größte Nachricht in Byte, auch mit Umlauten und Anführungszeichen: ' + r.stat[1]);
+      t.eq(r.limit, [1, 2], 'die Test-Leitung wirft eine zu große Nachricht wie PeerJS weg (und zählt sie), das Spiel läuft weiter');
+      t.eq(r.conn, [1, 'client'], 'die Verbindung bleibt offen');
       t.eq(r.got, ['client', 2, true, true], 'beim Host: Rolle client, Kopf mit 2 Spielern, Ereignisse vollständig, über 40.000 Zeichen');
       t.ok(r.hostEv.includes('Log erhalten'), 'der Host nennt den Empfang: ' + JSON.stringify(r.hostEv));
       t.eq([r.f9, r.f9Name], [1, true], 'F9 am Client speichert die eigene Datei');
