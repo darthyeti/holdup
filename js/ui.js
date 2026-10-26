@@ -107,6 +107,7 @@ const t=JOBS.map((j,i)=>({id:'job:'+j.k,x:60+pos[i][0]*(cw+gap),y:84+pos[i][1]*(
 t.push({id:'job:random',x:60+2*(cw+gap),y:84+rh+12,w:cw*2+gap,h:rh,act:'pick',arg:'random',chosen:scenario==='random',job:RANDOM,paint:paintRandom,nochip:true});
 t.push({id:'back',x:60,y:466,w:170,h:44,kind:'g',act:'missionBack',title:'Zurück',chip:'Esc'});
 if(NET.role!=='client')t.push({id:'same',x:246,y:466,w:340,h:44,key:'k',act:'same',title:'Gleiche Karte nochmal: '+(sameMap?'an':'aus'),chosen:sameMap});
+if(kickList().length)t.push({id:'kick',x:360,y:46,w:170,h:32,kind:'g',act:'ui:kick',title:'Mitspieler',tf:'bold 12px monospace'});
 t.push({id:'start',x:620,y:466,w:280,h:44,kind:'p',act:'missionStart',title:from==='lobby'?'Übernehmen':'Auftrag starten',chip:'Enter'});
 return{def:'start',back:'missionBack',t,deco(){const{g}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('AUFTRAG WÄHLEN',60,64);
 g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'Neue Serie',900,58);fhBadge(900,76,'r');
@@ -144,6 +145,7 @@ const t=[];for(let i=0;i<4;i++){const r=NET.roster.find(q=>q.id===i),me=i===NET.
 t.push({id:'job',x:122,y:366,w:350,h:56,key:host?'t':'',act:host?'missionOpen':'',nofocus:!host,title:'Auftrag: '+jobOf(scenario).n,sub:host?'Klick zum Ändern':'Der Host wählt den Auftrag',nochip:!host,icon:jobOf(scenario).i});
 if(host)t.push({id:'link',x:486,y:366,w:352,h:56,key:'l',act:'copyLink',icon:'link',title:'Link kopieren',sub:'Einladung zum Weitergeben'});
 t.push({id:'leave',x:60,y:488,w:200,h:40,kind:'g',act:'lobbyBack',title:host?'Raum schließen':'Verlassen',chip:'Esc'});
+if(kickList().length)t.push({id:'kick',x:60,y:438,w:200,h:40,kind:'g',act:'ui:kick',title:'Mitspieler'});
 t.push({id:'start',x:620,y:484,w:280,h:44,kind:host?'p':'g',act:host?'lobbyStart':'',nofocus:!host,title:host?'Starten ('+NET.roster.length+(NET.roster.length===1?' Spieler)':' Spieler)'):'Der Host startet ...',chip:host?'Enter':'',nochip:!host});
 return{def:host?'start':'leave',back:'lobbyBack',t,deco(){const{g}=X;g.textAlign='center';g.font='13px monospace';g.fillStyle=TX;g.fillText(host?'Dein Raum':'Du bist im Raum',480,188);g.font='bold 44px monospace';g.fillStyle=A;g.fillText(NET.code,480,232);
 if(host){g.font='11px monospace';g.fillStyle=MU;g.fillText(roomLink(),480,252)}g.font='13px monospace';g.fillStyle=Y;g.fillText(NET.msg||'',480,452);fhBadge(480,474,'c')}}}
@@ -158,6 +160,7 @@ cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+
 t.push({id:'skills',x:404,y:36,w:196,h:30,tf:'bold 13px monospace',key:'k',act:'ui:skills',kind:SESSION.pts>0?'p':'n',title:SESSION.pts>0?'Fähigkeiten ('+SESSION.pts+')':'Fähigkeiten',nochip:false});
 /* Optionen im Shop unten zwischen Zum Titel und Weiter (Ton, Bild, Log, mit #debug die Testwerkzeuge), damit man dafuer den Shop nicht verlassen muss */
 t.push({id:'opt',x:274,y:466,w:164,h:44,key:'o',act:'ui:options',kind:'g',title:'Optionen',chip:'O'});
+if(kickList().length)t.push({id:'kick',x:448,y:466,w:164,h:44,kind:'g',act:'ui:kick',title:'Mitspieler'});
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);fhBadge(160,62,'l');
@@ -181,19 +184,20 @@ if(it.t){for(let q=0;q<3;q++){g.fillStyle=q<lv?(own?G:A):'rgba(255,255,255,.18)'
  const zu=w!=null&&mx?'  Zustand '+Math.round(Math.max(0,w)/mx*100)+' %':'',base=lv?'Stufe '+lv+zu:'',full=lv?base+(ok?'':st==='zu teuer'?'  zu teuer':'  ('+st+')'):(ok?'nicht gekauft':st);
  g.fillText(lv&&g.measureText(full).width>t.w-68?base:full,t.x+58,t.y+t.h-11)}
 else g.fillText(it.c?'Vorrat '+cnt+' / '+CFG.shop[it.k+'Max']+(ok?'':'  ('+st+')'):it.r?(st==='heil'?'alles heil':st==='zu teuer'?'Kosten '+fmt(price)+'  (zu teuer)':'Weste und Helm'):st,t.x+10,t.y+t.h-11)}
-function sPause(){const{NET}=X;
+function sPause(){const{NET}=X,kl=kickList().length>0,dy=kl?60:0;
 return{def:'resume',back:'resume',t:[
 {id:'resume',x:330,y:158,w:300,h:50,kind:'p',key:'p',act:'resume',title:'Weiter',chip:'P'},
 {id:'help',x:330,y:218,w:300,h:50,key:'?',act:'ui:help',icon:'help',title:'So wird gespielt'},
-{id:'opt',x:330,y:278,w:300,h:50,key:'o',act:'ui:options',icon:'opt',title:'Optionen'},
-{id:'leave',x:330,y:338,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'}],
+{id:'opt',x:330,y:278,w:300,h:50,key:'o',act:'ui:options',icon:'opt',title:'Optionen'}].concat(kl?[{id:'kick',x:330,y:338,w:300,h:50,act:'ui:kick',title:'Mitspieler entfernen'}]:[],[
+{id:'leave',x:330,y:338+dy,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'}]),
 deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=Y;g.font='bold 34px monospace';g.fillText('PAUSE',480,122);
-g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424);fhBadge(480,446,'c')}}}
+g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424+dy);fhBadge(480,446+dy,'c')}}}
 /* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
 function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft,aw=ended.aw||[],pg=aw.length?ended.pg|0:0,last=!aw.length||pg===1;
 const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
 {id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen',tf:'bold 13px monospace'}];
 if(pg===1)t.push({id:'endPrev',x:250,y:468,w:190,h:58,nofocus:true,act:'endPrev',chip:'←',title:'Übersicht',tf:'bold 13px monospace'});
+if(kickList().length)t.push({id:'kick',x:40,y:420,w:190,h:40,nofocus:true,act:'ui:kick',title:'Mitspieler',tf:'bold 13px monospace'});
 return{t,back:'endBack',deco:aw.length||ended.fh?()=>{if(ended.fh&&pg!==1)pageFh(ended.fh);if(aw.length)pageAw(aw,pg)}:null}}
 function medal(cx,cy,c){const{g}=X;g.fillStyle=c;g.beginPath();g.arc(cx,cy,19,0,6.283);g.fill();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=2;g.stroke();
 g.fillStyle='rgba(10,12,18,.72)';g.beginPath();for(let k=0;k<10;k++){const r=k%2?4.5:10,an=-1.5708+k*.62832;g.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}g.closePath();g.fill()}
@@ -300,8 +304,15 @@ const nd=X.skNeed(f),can=X.skCanSell(SESSION.sk,f);g.font='11px monospace';
 const hint=n.soon?['Dieser Gegenstand folgt in einem späteren Schritt und ist noch nicht kaufbar.',MU]:bl?['Verbaut: Du hast '+S[bl].n+' gewählt (ENTWEDER-ODER). Nimm dort die Punkte zurück.',RD]:!X.skOk(SESSION.sk,f)?['Gesperrt: '+S[nd].n+' muss auf Stufe '+S.max+' stehen.',RD]:r>=S.max?[can?'Rückschritt oder Zurücknehmen: eine Stufe zurück.':'',MU]:SESSION.pts>0?['Enter oder Klick: eine Stufe für einen Punkt.'+(can?' Rückschritt: eine Stufe zurück.':''),MU]:['Kein Skillpunkt offen: Punkte gibt es für gewonnene Aufträge.'+(can?' Rückschritt: eine Stufe zurück.':''),MU];
 g.fillStyle=hint[1];g.fillText(fit(hint[0],W,g.font),rx,ly+64)}}}
 function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
-return{def:'no',back:'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'}],
+return{def:'no',back:m.no||'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:m.no||'ui:close',title:'Zurück',chip:'Esc'}],
 deco(){const{g}=X;panelFrame(px,py,pw,ph,m.title||'Sicher?');g.textAlign='left';g.font='13px monospace';g.fillStyle=TX;wrap(m.msg||'',pw-40,'13px monospace',3).forEach((l,i)=>g.fillText(l,px+20,py+66+i*20))}}}
+/* Mitspieler entfernen (P6, B7): nur der Host, nur Mitspieler mit lebender Verbindung. Eine Kachel "Mitspieler" in Lobby, Pause, Shop, Auftragswahl und Ergebnis oeffnet die Liste, ein Klick fragt zurueck, Ja ruft die Aktion kick (uiAct) mit der Kennung. */
+function kickList(){const{NET}=X;return NET.role==='host'?NET.roster.filter(r=>r.id!==0&&NET.conns.some(c=>c.pid===r.id)):[]}
+function mKick(){const{pn}=X,list=kickList(),px=240,pw=480,ph=Math.max(1,list.length)*54+112,py=Math.round((544-ph)/2),st={l:'in der Lobby',s:'im Shop',m:'in der Auftragswahl',e:'beim Ergebnis',p:'im Spiel'};
+return{def:list.length?'kk:'+list[0].id:'no',back:'ui:close',t:list.map((r,i)=>({id:'kk:'+r.id,x:px+20,y:py+52+i*54,w:pw-40,h:46,act:'ui:kickAsk',arg:r.id,title:pn(r.id),sub:st[r.at]||'',nochip:true})).concat([{id:'no',x:px+pw-200,y:py+ph-58,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'}]),
+deco(){const{g}=X;panelFrame(px,py,pw,ph,'MITSPIELER ENTFERNEN');if(!list.length){g.textAlign='left';g.font='13px monospace';g.fillStyle=TX;g.fillText('Niemand sonst im Raum.',px+20,py+78)}}}}
+/* Coop beginnt immer eine neue Serie (P6, B6): hat der Spieler einen Stand, fragt der Coop-Hub vor Raum erstellen und Raum beitreten zurueck, das Zuruecksetzen selbst macht der Kern (Host: Raum steht, Client: Willkommen). */
+function hasStand(){const S=X.SESSION;return (S.round|0)>0||(S.wallet|0)>0||(S.pts|0)>0||(S.heat|0)>0||Object.keys(S.own||{}).length>0||Object.keys(S.sk||{}).length>0}
 function openModal(m){m.ret=focus;stack.push(m);modal=m;focus=null}
 function closeModal(){const m=stack.pop();modal=stack[stack.length-1]||null;if(m)focus=m.ret}
 function closeAll(){const m=stack[0];stack=[];modal=null;if(m)focus=m.ret}
@@ -310,7 +321,7 @@ function closeAll(){const m=stack[0];stack=[];modal=null;if(m)focus=m.ret}
 function base(){const{scr,paused,ended,NET}=X;
 if(scr==='title')return sTitle();if(scr==='mission')return sMission();if(scr==='coop')return sCoop();if(scr==='join')return sJoin();if(scr==='lobby')return sLobby();if(scr==='shop')return sShop();
 if(scr==='play'){if(ended)return sEnded();if(paused)return sPause()}return null}
-function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='dbg')return mDebug();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);return null}
+function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='dbg')return mDebug();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);if(m.k==='kick')return mKick();return null}
 function cur(){const b=base();if(!b){stack=[];modal=null;sig='';return null}
 const sg=X.scr+'|'+(X.paused?1:0)+'|'+(X.ended?1:0);if(sg!==sig){sig=sg;stack=[];modal=null;focus=null;hov=null}
 const c=modal?modalSpec(modal):b;
@@ -322,9 +333,12 @@ function tileAt(x,y){const c=cur();if(!c)return null;for(let i=c.t.length-1;i>=0
 function setSlider(t,x){X.volAdj(t.slider,Math.max(0,Math.min(1,(x-(t.x+130))/(t.w-200))),true)}
 function activate(t){if(!t||!t.act)return;if(t.lock){SND.ev('deny');return}const a=t.act;
 if(a==='ui:close'){closeModal();return}
-if(a==='ui:options'||a==='ui:help'||a==='ui:skills'||a==='ui:dbg'){openModal({k:a.slice(3)});return}
+if(a==='ui:options'||a==='ui:help'||a==='ui:skills'||a==='ui:dbg'||a==='ui:kick'){openModal({k:a.slice(3)});return}
+if(a==='ui:kickAsk'){closeModal();openModal({k:'confirm',title:'MITSPIELER ENTFERNEN',msg:X.pn(t.arg)+' wird aus dem Raum entfernt und sieht den Titel. Wirklich entfernen?',yesLabel:'Ja, entfernen',yes:'kick',arg:t.arg,no:'ui:kickBack'});return}
+if(a==='ui:kickBack'){closeModal();openModal({k:'kick'});return}
+if((a==='host'||a==='join')&&hasStand()){openModal({k:'confirm',title:'NEUE SERIE IM COOP',msg:'Coop beginnt immer eine neue Serie. Dein Stand (Konto, Ausrüstung, Skills, Fahndung) geht verloren. Wirklich weiter?',yesLabel:'Ja, neue Serie',yes:a});return}
 if(a==='ui:confirm'){const solo=X.NET.role==='solo',host=X.NET.role==='host';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:host?{title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und alle Mitspieler werden getrennt.',yesLabel:'Ja, Raum schließen',yes:'leave'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}
-if(a==='ui:yes'){const y=modal.yes;closeAll();X.act(y);return}
+if(a==='ui:yes'){const y=modal.yes,v=modal.arg;closeAll();X.act(y,v);return}
 /* Raum schliessen (Host mit verbundenen Mitspielern): Lobby, Shop und Ergebnis fragen zurueck, denn ein geschlossener Raum trennt alle (Esc aus Gewohnheit, siehe docs/coop-und-netz.md). Ohne Mitspieler, solo und fuer Clients geht es direkt. */
 if((a==='lobbyBack'||a==='shopBack'||a==='endBack')&&X.NET.role==='host'&&X.NET.conns.length>0){const n=X.NET.conns.length;openModal({k:'confirm',title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und '+n+(n===1?' Mitspieler wird':' Mitspieler werden')+' getrennt. Wirklich schließen?',yesLabel:'Ja, Raum schließen',yes:a});return}
 X.act(a,t.arg);if(a==='pick')focus='start'}

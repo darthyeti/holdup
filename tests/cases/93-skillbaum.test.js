@@ -148,8 +148,8 @@ module.exports = [
       await t.loadInpage('coop.js');
       const r = await t.page.evaluate(() => {
         const rev = sk => {
-          __dbg.sessReset(); Object.assign(__dbg.SESSION.sk, sk);
-          const G = CT.mkGame('bank', 321, 2), A = G.A; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
+          __dbg.sessReset();
+          const G = CT.mkGame('bank', 321, 2, null, null, null, null, insts => { Object.assign(__dbg.SESSION.sk, sk); insts.slice(1).forEach(d => d.sendKit()); }), A = G.A; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
           A.get().players[0].x = A.get().players[1].x + 20; A.get().players[0].y = A.get().players[1].y;
           G.A.get().players[0].hp = 1e9; const p1 = A.get().players[1]; p1.dead = true; p1.dn = 25; p1.hp = 0;
           A.keys.e = true; for (let i = 0; i < 60; i++) { const q0 = A.get().players[0]; q0.hp = 1e9; q0.x = p1.x - 20; q0.y = p1.y; p1.dn = 25; step(G.insts, G.net, 1 / 60); } A.keys.e = false;

@@ -91,8 +91,8 @@ module.exports = [
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
       const r = await t.page.evaluate(() => {
         const net = LoopNet(60, 20), insts = [], A = mkInst(net, 'a'), o = {}; insts.push(A);
-        A.setScenario('bank'); A.setSeedMode('random'); A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6; A.SESSION.quiet = 2;
-        A.hostRoom(); for (let i = 0; i < 10; i++) step(insts, net, 1 / 60);
+        A.setScenario('bank'); A.setSeedMode('random'); A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
+        A.hostRoom(); for (let i = 0; i < 10; i++) step(insts, net, 1 / 60); A.SESSION.quiet = 2;   // nach dem Raumaufbau (ein neuer Raum setzt zurueck)
         const C = mkInst(net, 'c1'); insts.push(C); C.CFG.policeAt = 1e6; C.CFG.policeForced = 1e6; C.joinRoom(A.NET.code); for (let i = 0; i < 120; i++) step(insts, net, 1 / 60);
         o.lobby = C.SESSION.quiet | 0;                                    // aus der Raumliste (ros)
         A.startCoop(); const run = s => { for (let i = 0; i < Math.round(s * 60); i++) step(insts, net, 1 / 60); }; run(3);

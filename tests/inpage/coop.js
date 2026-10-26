@@ -1,7 +1,7 @@
 // Seitenskript fuer Coop-Tests: baut Host und Clients ueber die Test-Leitung (tools/loopnet.js muss geladen sein).
 (function () {
-  // mkGame(sc, seed, n, lat, jit, goal, turn): Host A plus n-1 Clients, Raum gebaut, Spiel gestartet, 3 s Spielzeit vorgespult. turn legt die Strasse auf allen Instanzen auf eine Seite (dbg.setTurn, zum Beispiel 'E+')
-  function mkGame(sc, seed, n, lat, jit, goal, turn) {
+  // mkGame(sc, seed, n, lat, jit, goal, turn, pre): Host A plus n-1 Clients, Raum gebaut, Spiel gestartet, 3 s Spielzeit vorgespult. turn legt die Strasse auf allen Instanzen auf eine Seite (dbg.setTurn, zum Beispiel 'E+')
+  function mkGame(sc, seed, n, lat, jit, goal, turn, pre) {
     const net = LoopNet(lat == null ? 60 : lat, jit == null ? 20 : jit), insts = [];
     const A = mkInst(net, 'a'); insts.push(A);
     A.setScenario(sc); A.setSeedMode(seed); if (turn) A.setTurn(turn);
@@ -11,6 +11,7 @@
       C.joinRoom(A.NET.code); for (let i = 0; i < 120; i++) step(insts, net, 1 / 60);
     }
     if (goal) for (const d of insts) d.setGoal(goal);
+    if (pre) { pre(insts); for (let i = 0; i < 60; i++) step(insts, net, 1 / 60); }   // pre: Stand setzen, nachdem alle im Raum sind (ein neuer Raum setzt SESSION zurueck, sie gilt hier fuer alle Instanzen)
     A.startCoop();
     const run = (sec) => { for (let i = 0; i < Math.round(sec * 60); i++) step(insts, net, 1 / 60); };
     run(3);

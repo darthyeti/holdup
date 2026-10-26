@@ -44,7 +44,7 @@ module.exports = [
         o.ergebnis = [has(A, /^Anna-Lena$/), has(A, /sieht Ergebnis/), has(A, /^bereit 0\\/3$/)];
         // Vergleich mit und ohne Leiste: die Leiste darf nichts treffen (andere Texte, Kacheln), alles im Bild
         const diff = (d, tag) => { const w = OV.boxes(d), saved = d.NET.roster; d.NET.roster = [saved[0]]; const wo = OV.boxes(d); d.NET.roster = saved;
-          const key = b => b.s + '|' + Math.round(b.x0) + '|' + Math.round(b.y0), seen = new Set(wo.texts.map(key)), strip = w.texts.filter(b => !seen.has(key(b))), rest = w.texts.filter(b => seen.has(key(b))), bad = [];
+          const key = b => b.s + '|' + Math.round(b.x0) + '|' + Math.round(b.y0), seen = new Set(wo.texts.map(key)), kk = w.tiles.find(q => q.id === 'kick'), inKick = b => kk && b.x0 >= kk.x0 - 1 && b.x1 <= kk.x1 + 1 && b.y0 >= kk.y0 - 1 && b.y1 <= kk.y1 + 1, strip = w.texts.filter(b => !seen.has(key(b)) && !inKick(b)), rest = w.texts.filter(b => seen.has(key(b))), bad = [];
           if (!strip.length) bad.push('keine Leiste gezeichnet');
           const hit = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
           for (const a of strip) { if (a.x0 < 0 || a.x1 > 960 || a.y0 < 0 || a.y1 > 40) bad.push('ausserhalb: ' + a.s); for (const b of rest) if (hit(a, b)) bad.push(a.s + ' trifft ' + b.s); for (const q of w.tiles) if (hit(a, q)) bad.push(a.s + ' trifft Kachel ' + q.id); }

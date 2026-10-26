@@ -19,7 +19,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt) |
 | P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | S1 bis S3 mit Befund | gebaut (26. Oktober 2026), wartet auf Tills Spieltest (Till ergänzt weitere Punkte) |
 | P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
-| P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | Plan steht, wartet auf Tills Go (zusammen mit P4 bauen) |
+| P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -232,6 +232,16 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 
 **Risiken:** Mittel. Der Plan berührt Netz und Menüs (`hostRoom`, `joinRoom`, `hostConn`, `clientMsg`, `js/ui.js` mit fünf Bildschirmen, `VER`, `UI_API`) und liegt damit nahe an paralleler Arbeit in `index.html` (Fluchtwagen-Treffpunkt, Spur 2): erst nach deren Commit bauen oder auf einer eigenen Branch. Entfernen mitten in der Runde nutzt den bestehenden Abbruchweg (`gone`, `checkEnd`), er ist mit dem Test 112 abzusichern, besonders wenn der letzte aktive Mitspieler entfernt wird oder die Liste danach Lücken in den Kennungen hat (heute bei Abbrüchen im Shop schon möglich). Das Zurücksetzen beim Betreten ändert den Ausgangszustand vieler Coop-Tests (siehe Schritt 6).
 
+**Bau** (26. Oktober 2026, Go von Till), Abweichungen vom Plan:
+- `UI_API` bleibt: Die Aktion `kick` geht über `uiAct` (der Kontext von `mkUI` bekommt nichts Neues), `VER` 43 wegen der Nachricht `kick` und des geänderten `hi` (Grundkit).
+- Kacheln: Lobby und Ergebnis `Mitspieler` unten links über `Raum schließen` (im Ergebnis wie dessen Kacheln nur mit der Maus, `nofocus`, sonst würde Enter die Kachel statt `Weiter` auslösen), Pause-Menü `Mitspieler entfernen` zwischen Optionen und `Raum schließen` (diese rückt nach unten, Serienzeile und Fahndungs-Badge mit), Shop in der unteren Reihe zwischen Optionen und `Weiter`, Auftragswahl in der Kopfzeile neben dem Titel (`Gleiche Karte nochmal` hätte unten sonst ihr `: aus` verloren). Die untere Mitte von Lobby und Ergebnis ist belegt (Fahndungs-Badge, Zeile `Konto`, Seitenhinweis), zwei erste Plätze kollidierten damit.
+- Die Rückfrage ersetzt die Liste (`Zurück` führt in die Liste zurück, `ui:kickBack`), sonst hätten sich beide Fenster überlagert.
+- Die Liste zeigt nur Mitspieler mit lebender Verbindung (nicht die `gone` der Liste).
+- Test-Befund: `SESSION` ist eine Modulvariable je Seite, in der Test-Leitung teilen sich alle Instanzen eine. Test 113 füllt sie deshalb nach dem Host-Reset neu, damit der Client-Reset allein sichtbar wird. Im echten Spiel hat jeder Spieler eine eigene Seite.
+- Angepasste Tests: `79-auszeichnungen` (die Kachel `kick` gehört beim Host zur Liste), `84-team-leiste` (die Kachel `Mitspieler` verschwindet mit den Mitspielern, ihr Text zählt nicht zur Leiste), `93-skillbaum` und `99-wachsamkeit` (Stand erst nach dem Beitritt setzen: `CT.mkGame` bekam den Parameter `pre`, `sendKit` steht im Debug-Hook).
+- Tests `112-mitspieler-entfernen` (drei Tests, rund 3 s) und `113-neuer-raum-neue-serie` (drei Tests, rund 2 s) waren vorher rot (keine Kachel, Stand blieb) und sind jetzt grün. Bild-Prüfung von Lobby, Liste, Rückfrage, Pause und Ergebnis ohne Überlappung. Nicht gebaut: Anzeige der Serienrunde je Spieler und die Kachel `Neue Serie für alle` (entfallen mit Tills Entscheidung).
+
 **Änderungsprotokoll**
 - v1 (26. Oktober 2026): Plan zu B6 und B7, noch ohne Go, zwei Entscheidungen offen.
 - v1.1 (26. Oktober 2026): Entscheidungen von Till eingetragen. B6 wird einfacher (Rücksetzen beim Betreten, keine Kachel "Neue Serie für alle", keine Serienrunde in der Liste), B7 bekommt fünf Bildschirme.
+- Bau (26. Oktober 2026): Go von Till, gebaut mit den Abweichungen oben, Status gebaut.

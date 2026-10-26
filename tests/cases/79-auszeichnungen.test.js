@@ -147,9 +147,9 @@ module.exports = [
       t.eq(T('ERSTER RAUS') && T('ERSTER RAUS')[1], 'Orange', 'Orange war zuerst draussen');
       t.eq(T('LETZTER AM WAGEN') && T('LETZTER AM WAGEN')[1], 'Blau', 'Blau war zuletzt draussen');
       t.eq(T('ERSTER RAUS')[4], '#ff9a3c', 'Medaille in der Spielerfarbe');
-      t.eq(r.tiles1, [0, 'endNext,endBack'], 'Seite 1: zwei Kacheln');
+      t.eq(r.tiles1, [0, 'endNext,endBack,kick'], 'Seite 1: zwei Kacheln und beim Host die Kachel Mitspieler');
       t.eq(r.pgEnter, 1, 'Enter blaettert zur zweiten Seite'); t.eq(r.scr1, 'play', 'noch nicht im Shop');
-      t.eq(r.tiles2, 'endNext,endBack,endPrev', 'Seite 2 hat die Kachel Uebersicht');
+      t.eq(r.tiles2, 'endNext,endBack,endPrev,kick', 'Seite 2 hat die Kachel Uebersicht');
       t.eq(r.differs, true, 'Seite 2 sieht anders aus');
       t.eq([r.left, r.right], [0, 1], 'Pfeil links und rechts');
       t.eq([r.prevClick, r.nextClick], [0, 1], 'Kachel Uebersicht und Kachel Auszeichnungen');
