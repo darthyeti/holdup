@@ -1,4 +1,4 @@
-// Vielfalt der Karten je Szenario (Plan Mehr Abwechslung, docs/offen-und-spieltest.md): mapcheck.variety zaehlt ueber viele Seeds, wie viele verschiedene Huellen, Gebaeudegroessen, Fluchtvarianten, Beute-Anordnungen, Hallen und Raster es gibt.
+// Vielfalt der Karten je Szenario (Plan Mehr Abwechslung, docs/archiv-gebaute-plaene.md): mapcheck.variety zaehlt ueber viele Seeds, wie viele verschiedene Huellen, Gebaeudegroessen, Fluchtvarianten, Beute-Anordnungen, Hallen und Raster es gibt.
 // Der Schnappschuss haelt den Stand fest. Wird ein Szenario generiert (Stufe 1 bis 3 des Plans), steigen die Zahlen, dann den Schnappschuss mit npm run test:update bewusst erneuern. Ziel: mindestens 50 verschiedene Huellen in 300 Seeds je Szenario (die Bank hat 299).
 const SC = ['bank', 'jewel', 'gas', 'museum', 'casino', 'truck'];
 

@@ -1,4 +1,4 @@
-// Tankstelle als Generator (Plan Mehr Abwechslung, Sprint 6, docs/offen-und-spieltest.md): Die Huelle kommt aus Parametern (genGas, CFG.gasGen), die Klassik-Parameter ergeben mit jeder der vier Hallen exakt die Karte von vorher.
+// Tankstelle als Generator (Plan Mehr Abwechslung, Sprint 6, docs/archiv-gebaute-plaene.md): Die Huelle kommt aus Parametern (genGas, CFG.gasGen), die Klassik-Parameter ergeben mit jeder der vier Hallen exakt die Karte von vorher.
 // Weitere Tests: Verteilung und Vielfalt, die Bauregeln aus docs/szenarien.md relativ zur Huelle, abgeleitete Posten, Coop, Bot. Der erste Test friert die Basiskarten der Hand-Hallen ein (Schnappschuss, vor dem Umbau aufgenommen): Raster und alle LAY-Felder je Seed (Hash) und die Pixel der statischen und der Objektebene. Er laeuft mit CFG.gasGen.on 0, dem Schalter, der den Generator abschaltet.
 const { coopGame } = require('../lib');
 const HALLS = ['Klassik', 'Insel', 'Wandregale', 'Gänge'];

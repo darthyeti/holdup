@@ -1,4 +1,4 @@
-// E-Auswahl (Plan in docs/offen-und-spieltest.md, Bedienung): Welches Objekt bekommt E, wenn mehrere in Reichweite sind, und wie wechselt Q.
+// E-Auswahl (docs/spielsystem.md, E-Auswahl): Welches Objekt bekommt E, wenn mehrere in Reichweite sind, und wie wechselt Q.
 // Gemessen wird mit pickIt/cands (dbg), Zustand wird direkt gesetzt. Der Coop-Test am Ende prueft den Weg Client -> Host ueber die Test-Leitung.
 const SC = ['bank', 'jewel', 'gas', 'museum', 'casino'];
 const STATES = ['frisch', 'Kameras entdeckt', 'Teilbeute', 'Teilbeute, Tasche voll'];

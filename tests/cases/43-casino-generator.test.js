@@ -1,4 +1,4 @@
-// Casino als Generator (Sprint 9 des Plans Mehr Abwechslung, docs/offen-und-spieltest.md): Die Huelle kommt aus Parametern (genCasino, CFG.casinoGen): Zusatzbreite dx 0 bis 4 (Gebaeude x0..39+dx, Cage, Tresorraum,
+// Casino als Generator (Sprint 9 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Die Huelle kommt aus Parametern (genCasino, CFG.casinoGen): Zusatzbreite dx 0 bis 4 (Gebaeude x0..39+dx, Cage, Tresorraum,
 // Ostwand und Hof wandern, der Sicherheitsraum waechst), Zusatztiefe dy 0 bis 2 (Gebaeude y0..23+dy, die ganze Strasse rueckt nach Sueden), Versatz des Haupteingangs vx -2 bis 2 (Klassik x19..21). Die Klassik-Huelle
 // (0, 0, 0) ist mit jeder der vier Hallen Zeichen fuer Zeichen die Karte von vorher (Selbsttest 43-casino-basis mit CFG.casinoGen.on 0). Die vier Hallen (CS_FLOORS) sind Funktionen eines Massobjekts.
 // Die Enge-Pruefung im Test ist eine eigene Fassung (Kachelraster), sie benutzt validateMap nicht: In der Halle (x1..38+dx ab Zeile 10, dazu x12..38+dx in den Zeilen 7 bis 9) darf es keinen Gang der Breite 1 und der

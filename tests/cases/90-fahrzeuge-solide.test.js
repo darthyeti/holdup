@@ -1,4 +1,4 @@
-// Fahrzeuge solide und kugelfangend (Oktober 2026, Plan in docs/offen-und-spieltest.md): Geparkte Streifenwagen, Wracks und der haltende Fluchtwagen stempeln ihren Fussabdruck als v ins Raster
+// Fahrzeuge solide und kugelfangend (Oktober 2026, Plan in docs/archiv-gebaute-plaene.md): Geparkte Streifenwagen, Wracks und der haltende Fluchtwagen stempeln ihren Fussabdruck als v ins Raster
 // (stampCar, vanSync, wie der Panzerwagen mit tkStamp): niemand laeuft hindurch, Kugeln beider Seiten enden am Wagen, der Schaden geht an den Wagen, ein Wrack faengt Kugeln ohne Schaden,
 // wer beim Parken im Fussabdruck steht, wird ausgeworfen, reset raeumt auf, Host und Client haben dasselbe Raster. Die Wege von jeder Aussentuer zur Zustiegszone bleiben offen (Messung des Plans als Pruefung).
 async function setup(t) {

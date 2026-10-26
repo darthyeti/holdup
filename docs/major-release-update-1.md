@@ -1,6 +1,6 @@
 # Major Release Update 1
 
-Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Till hat am 25. Oktober 2026 im Gespräch mehrere Pläne beschlossen und sie unter dem Namen "Major Release Update 1" (kurz MRU 1) zusammengefasst. Diese Datei ist der Überbau: Schritte, Reihenfolge, Test-Stopps und der neue Plan zum Fluchtwagen. Die Einzelheiten der anderen Pläne stehen dort, wo sie entstanden sind, und werden hier nicht wiederholt. Gebaut wird erst auf Tills Go, Schritt für Schritt, Commit nur auf Zuruf.
+Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Till hat am 25. Oktober 2026 mehrere Pläne beschlossen und sie unter dem Namen "Major Release Update 1" (kurz MRU 1) zusammengefasst. Diese Datei ist der Überbau: Schritte, Stand, Reihenfolge und der Plan zum Fluchtwagen (Spur 2, noch nicht gebaut). Die Einzelheiten der anderen Pläne stehen dort, wo sie entstanden sind, und werden hier nicht wiederholt. Stand 26. Oktober 2026: Spur 1 ist bis auf B6 und C2 gebaut. Test-Stopps gibt es nicht mehr (Till, 26. Oktober 2026): Es wird weitergebaut, Till testet nebenher und meldet sich, wenn etwas nicht funktioniert. Commit nur auf Zuruf.
 
 ## Ziel
 
@@ -11,53 +11,43 @@ Das Update vertieft das Spiel in drei Richtungen:
 
 Das gemeinsame Ziel (Till): Der Spieler soll zwischendurch seinen Stil ändern müssen, es soll weder zu schwer noch zu leicht werden.
 
-## Voraussetzungen (nicht Teil des Updates)
+## Voraussetzungen
 
-- Sprint 9, Casino als Generator (läuft in der Cloud, bald fertig). Der Fluchtwagen-Teil beginnt erst danach, weil er alle Generatoren berührt.
-- Paket P3, Lage-Tags im HUD (docs/bugfix-plaene.md, Plan steht, wartet auf Go). Die Wachsamkeit der Läden erzwingt Tags, die Bank zeigt heute schon bei mehr als zwei Zeilen nicht alle an.
-- Tills Spieltests: Fahndung Schritt 2, Geiseln, der heutige Skillbaum (nur die Balance-Fragen warten auf den Umbau), die Coop-Punkte (docs/offen-und-spieltest.md). Die Regel aus `CLAUDE.md` gilt: Neues erst, wenn das Letzte getestet ist, außer Till sagt, dass es weitergehen soll.
+Alle erfüllt: Sprint 9 (Casino als Generator) und Paket P3 (Lage-Tags im HUD) sind gebaut, Tills Spieltests der Vorstufen (Fahndung Schritt 2, Geiseln, A1 bis A3, Coop auf den neuen Karten) sind abgenommen.
 
 ## Schritte
 
-Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräche: `MRU 1 A1` und so weiter.
+Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräche: `MRU 1 A1` und so weiter. Stand: gebaut (Einzelheiten in der Themendatei, Skillbaum und Gegenstände in docs/spielsystem.md), ungespielt oder offen.
 
-| Schritt | Inhalt | Plan und Einzelheiten | Größe | Hängt ab von |
+| Schritt | Inhalt | Plan und Einzelheiten | Größe | Stand |
 |---|---|---|---|---|
-| A1 | Blendgranate des Shops streichen (die der Polizei bleibt), Taste 3 frei | docs/ideen-und-planung.md, Zusätze im selben Update | klein | |
-| A2 | Ablenker macht Angestellte blind (`decT` 11, `decHold` 10, Zeichen über dem Kopf) | dort | klein bis mittel | |
-| A3 | Geisel als Kugelfang: Polizeikugeln treffen Geiseln, Beamte schießen nicht durch sie | dort | mittel | |
-| B1 | Skillbaum, Layout und Struktur: drei Zeilen, Entweder-oder, Aufleuchten, Punkte zurücknehmen, Techniker, Zäh, Fahrer und Verhandler in Stufe 3 der Pfade | dort, Skillbaum-Umbau | mittel | A1 (Taste 3) |
-| B2 | Sprengfalle: Barrikaden-Mine und Claymore (treffen auch Mitspieler) | dort | mittel | B1 |
-| B3 | C4 für Tresore und die Sprengladung des Geldtransporters | dort, Gegenstände | mittel bis groß | B1 |
-| B4 | Besondere Waffen: Präzisionsgewehr und Granatwerfer | dort | mittel bis groß | B1 |
-| B5 | Notfallkoffer | dort | klein bis mittel | B1 |
-| B6 | Balance des Skillbaums messen und anpassen | dort | mittel | Tills Spieltest |
-| C1 | Wachsamkeit der Läden, Stufe 1 (Zähler serienweit über alle fünf Szenarien mit Phase 1, Wachsames Personal erzwungen, Badge, Netz) | docs/ideen-und-planung.md, Karriere-Serie | mittel | P3 |
-| C2 | Wachsamkeit, Stufe 2 (Sicherheitsdienst), nur falls Stufe 1 nicht reicht | dort | klein, aber das Layout hängt am Zähler | C1 |
-| D0 | Messung: Wie viel Platz hat jede Karte in jeder Lage für einen zweiten und einen entfernten Treffpunkt | unten | klein | Sprint 9 |
-| D1 | Gemeinsamer Treffpunkt-Mechanismus mit zweitem Treffpunkt am Gebäude, Bank als erster Kunde | unten | groß | D0 |
-| D2 | Treffpunkt abseits | unten | groß | D1 |
-| D3 | Ausweichpunkt als Ereignis | unten | mittel | D1, besser D2 |
+| A1 | Blendgranate des Shops streichen (die der Polizei bleibt), Taste 3 frei | docs/ideen-und-planung.md, Zusätze im selben Update | klein | gebaut, abgenommen |
+| A2 | Ablenker macht Angestellte blind (`decT` 11, `decHold` 10, Zeichen über dem Kopf) | dort | klein bis mittel | gebaut, abgenommen |
+| A3 | Geisel als Kugelfang: Polizeikugeln treffen Geiseln, Beamte schießen nicht durch sie | dort | mittel | gebaut, abgenommen |
+| B1 | Skillbaum, Layout und Struktur: drei Zeilen, Entweder-oder, Aufleuchten, Punkte zurücknehmen, Techniker, Zäh, Fahrer und Verhandler in Stufe 3 der Pfade, Zusätze Läufer, Durchschuss, Sammler | dort, Skillbaum-Umbau | mittel | gebaut |
+| B2 | Sprengfalle: Barrikaden-Mine und Claymore (treffen auch Mitspieler) | dort | mittel | gebaut |
+| B3 | C4 für Tresore und die Sprengladung des Geldtransporters | dort, Gegenstände | mittel bis groß | gebaut |
+| B4 | Besondere Waffen: Präzisionsgewehr und Granatwerfer (Shift schaltet um) | dort | mittel bis groß | gebaut |
+| B5 | Notfallkoffer (Taste C) | dort | klein bis mittel | gebaut |
+| B6 | Balance des Skillbaums messen und anpassen | dort | mittel | offen, nach Tills Rückmeldung |
+| C1 | Wachsamkeit der Läden, Stufe 1 (Zähler serienweit, Wachsames Personal erzwungen, Badge, Netz), dazu Lautlos-Bonus mit Abflachung und Skillpunkte lautlos 1, Überfall 2 | docs/ideen-und-planung.md, Karriere-Serie | mittel | gebaut |
+| C2 | Wachsamkeit, Stufe 2 (Sicherheitsdienst), nur falls Stufe 1 nicht reicht | dort | klein, aber das Layout hängt am Zähler | offen, bei Bedarf |
+| D0 | Messung: Wie viel Platz hat jede Karte in jeder Lage für einen zweiten und einen entfernten Treffpunkt | unten | klein | offen, als Nächstes |
+| D1 | Gemeinsamer Treffpunkt-Mechanismus mit zweitem Treffpunkt am Gebäude, Bank als erster Kunde | unten | groß | offen |
+| D2 | Treffpunkt abseits | unten | groß | offen |
+| D3 | Ausweichpunkt als Ereignis | unten | mittel | offen |
 
-## Reihenfolge und Test-Stopps
+## Reihenfolge
 
 Zwei Spuren, die einander kaum berühren:
-- Spur 1, Spielsystem: P3, A1, A2, A3, B1, C1, B2, B3, B4, B5, dann B6 und C2 nach den Tests.
-- Spur 2, Karte und Flucht: D0, D1, D2, D3, beginnt nach Sprint 9.
+- Spur 1, Spielsystem: gebaut bis auf B6 (nach Tills Rückmeldung zum Baum) und C2 (bei Bedarf).
+- Spur 2, Karte und Flucht: D0, D1, D2, D3, die Voraussetzung (Sprint 9) steht.
 
-Test-Stopps für Till (er spielt, bevor die nächste Gruppe beginnt, außer er sagt Weiter):
-1. Nach A1 bis A3 (Shop ohne Blendgranate, Ablenker, Geiseln gegen die Polizei).
-2. Nach B1 (der neue Baum ohne Gegenstände).
-3. Nach C1 (fünf lautlose Aufträge hintereinander, ob die Läden warnen).
-4. Nach D1 (zweiter Treffpunkt in allen Szenarien, Solo und Coop).
-5. Nach D2 und D3 (Treffpunkt abseits, Umleitung).
-6. Nach B2 bis B5 je Gegenstand einzeln, B3 zusammen mit dem Transporter.
-
-Entschieden (Till, 25. Oktober 2026): eine Spur nach der anderen, nicht parallel, und Spur 1 zuerst (P3, A1 bis A3, B1, C1, dann B2 bis B5), Spur 2 beginnt nach Sprint 9 und nachdem Spur 1 gemergt ist. Damit entfallen Kollisionen in `index.html` und bei `VER` zwischen den Spuren, ein Schritt wird gemergt, bevor der nächste beginnt.
+Entschieden (Till, 25. Oktober 2026): eine Spur nach der anderen, nicht parallel, ein Schritt wird gemergt, bevor der nächste beginnt. Damit entfallen Kollisionen in `index.html` und bei `VER` zwischen den Spuren.
 
 ## Fluchtwagen: Treffpunkt abseits und Ausweichpunkt (neuer Plan, Till, 25. Oktober 2026)
 
-Anlass (Till): Es spielt sich etwas eintönig, dass der Wagen immer einfach an das Gebäude heranfährt. Gewünscht: ein alternativer Treffpunkt abseits, und der Ausweichpunkt als Ereignis. Gebaut wird nach dem letzten Generator (Sprint 9), global für alle Szenarien. Das ist die Stufe 2 des alten Plans "Treffpunkt des Fluchtwagens" in docs/offen-und-spieltest.md, jetzt anders zugeschnitten (dort steht nur noch der Verweis).
+Anlass (Till): Es spielt sich etwas eintönig, dass der Wagen immer einfach an das Gebäude heranfährt. Gewünscht: ein alternativer Treffpunkt abseits, und der Ausweichpunkt als Ereignis. Gebaut wird global für alle Szenarien. Das ist die Stufe 2 des alten Plans "Treffpunkt des Fluchtwagens" (Stufe 1, die Bank mit zwei Treffpunkten, ist gebaut, Entwurf in docs/archiv-gebaute-plaene.md).
 
 Ist-Zustand: Der Treffpunkt ist der Haltepunkt des Fluchtwagens im Hof neben dem Gebäude (`LANE.van`), die Fluchtzone liegt an einem Ende der Straßenachse (`LANE.exit`, Fluchtseite), die Fluchttür ist fest je Karte. Nur die Bank würfelt seit Sprint 5 zwischen Ost und West (`tpf` in `genLayout`), die übrigen Karten haben einen Treffpunkt, dessen Seite die Spiegelung wählt. Die Polizei besetzt ihre Posten in der Reihenfolge Front, Treffpunkt-Seite, andere Seite, Nord, die Anker folgen der Fluchttür (`fillDerived`, `autoPosts`). Der Wagen fährt immer parallel zur Straßenachse, eine echte Seitenstraße quer dazu würde `laneOf` erweitern.
 
@@ -72,14 +62,13 @@ Ist-Zustand: Der Treffpunkt ist der Haltepunkt des Fluchtwagens im Hof neben dem
 
 - Test zuerst (rot), dann Code, `npm test`, bei Karten und Generatoren der Langlauf (`npm run test:long`) und der Alt-Neu-Vergleich (`tests/altneu.js`), die Gegenprobe über eine Kopie ohne den Umbau.
 - `VER` erhöhen, wenn derselbe Seed eine andere Karte baut oder das Netzformat sich ändert, `UI_API` bei Änderungen am Kontext von `mkUI`. Schnappschüsse nur bewusst erneuern und im Commit sagen.
-- Doku in der Themendatei, Spieltest-Fragen für Till in docs/offen-und-spieltest.md, ein Schritt ein Commit auf Zuruf (Cloud: auf einer Branch `claude/...`, Till mergt).
+- Doku in der Themendatei, kurze Spieltest-Hinweise für Till in docs/offen-und-spieltest.md, ein Schritt ein Commit auf Zuruf (Cloud: auf einer Branch `claude/...`, Till mergt).
 - Neue Dinge mit Zufall nur über `mulberry32` aus eigenem Strom, nie `Math.random`, und kein neues Feld ohne Eintrag in `MAP_FIELDS`.
 
 ## Risiken
 
-- Fremdarbeiten in `index.html` (Pakete, Cloud-Sitzungen) und bei `VER`, die parallel zu einem Schritt laufen. Die Spuren selbst laufen nacheinander (Till, 25. Oktober 2026).
-- Die Balance verschiebt sich mehrfach gleichzeitig: Skillbaum (Stufe 3 der Pfade schon ab 6 Punkten), Geiseln (stärker), Ablenker (Schleichen leichter), Wachsamkeit (Schleichen schwerer). Der Bot misst nur den Überfall, Phase 1 messen `tools/stealth.js` und der Spieltest. Deshalb die Test-Stopps.
-- Das Entfernen der Blendgranate ändert Kit, Shop-Katalog und mehrere Tests.
+- Fremdarbeiten in `index.html` (Pakete, Cloud-Sitzungen) und bei `VER`, die parallel zu einem Schritt laufen. Die Spuren selbst laufen nacheinander.
+- Die Balance hat sich mehrfach gleichzeitig verschoben: Skillbaum (Stufe 3 der Pfade schon ab 6 Punkten), Geiseln (stärker), Ablenker (Schleichen leichter), Wachsamkeit (Schleichen schwerer). Der Bot misst nur den Überfall, Phase 1 messen `tools/stealth.js` und Tills Spiel.
 - Die Welt ist für einen Treffpunkt abseits eng (D0 klärt, ob die Generatoren größere Welten brauchen).
 - Das Ereignis wechselt den Treffpunkt mitten im Überfall, das ist das heikelste Stück Spielgefühl und Netz (Host und Client müssen denselben Punkt zur selben Zeit kennen).
 
@@ -91,7 +80,6 @@ Entschieden am 25. Oktober 2026: Die Spuren laufen nacheinander. Der Mindestabst
 
 ## Änderungsprotokoll
 
-- v1 (25. Oktober 2026): Überbau aus Tills Plänen vom selben Tag (Skillbaum-Umbau, Zusätze, Wachsamkeit der Läden) und dem neuen Plan zum Fluchtwagen (D0 bis D3), Schritte, Reihenfolge, Test-Stopps.
-- v1.1 (25. Oktober 2026): Tills Antworten eingearbeitet (Spuren nacheinander, Mindestabstand 10, Umleitung situativ mit Wechsel auch nach dem Wegfahren), Zähler der Wachsamkeit serienweit über alle fünf Szenarien.
-- v1.2 (25. Oktober 2026): Reihenfolge entschieden, Spur 1 zuerst, Spur 2 danach.
-- Bau (25. Oktober 2026, Go von Till: "mit Major Release beginnen"): P3 gebaut (Commit `b22ca26`), A1 gebaut (Blendgranate des Shops gestrichen, `VER` 34), A2 gebaut (Ablenker macht Angestellte blind, `decT` 11, `decHold` 10, Zeichen über dem Kopf, Test `96-ablenker-blind`, kein neues `VER`), A3 gebaut (Geisel als Kugelfang: `hostBlock`, `hostHit`, `CFG.hostage.line`, Test `97-geisel-kugelfang`, kein neues `VER`), danach Test-Stopp 1 (Till hat A1 bis A3 gespielt und am 25. Oktober 2026 abgenommen). B1 gebaut (Skillbaum: Layout in drei Zeilen, Entweder-oder, Gegenstände als Platzhalter `soon`, Zäh, Verhandler und Fahrer in Stufe 3 der Pfade, Techniker, Rücknahme bis zum Verlassen des Shops, Aufleuchten der Kette, `VER` 35, `UI_API` 7, Test `98-skillbaum-umbau`), danach Test-Stopp 2. Nachtrag auf Tills Wunsch (er hatte B1 angespielt): jeder Pfad hat jetzt einen Zusatz mit Stufe 3, neu sind Läufer (Ruhige Hand), Durchschuss (Durchschlag) und Sammler (Baumeister), kein neues `VER`. C1 gebaut (Wachsamkeit der Läden, Stufe 1: Zähler `SESSION.quiet`, erzwungener Tag `wachsam` als gewarnt ohne Aufschlag ab 2 lautlosen Siegen in Folge, Badge, Netz `q`, `VER` 36, `UI_API` 8, Test `99-wachsamkeit`), danach Test-Stopp 3. B3 gebaut (C4 mit E am Tresor und am Laderaum, laut, Beute verbrennt, die Stufen sparen Verlust statt mehr Stück, `CFG.c4`, `c4Blast`, `lo` im Netz, `VER` 38, Test `99-c4`, Till hatte Go: "weiter mit B3, dem C4"). B2 gebaut (Sprengfalle: Barrikaden-Mine und Claymore mit Taste 3, `CFG.trap`, `traps`, `trapStep`, `blastAt` mit `pdmg`, Netz `tr`, `VER` 37, Test `99-sprengfalle`, Till hatte Go: "weiter mit B2, die Sprengfalle"). B4 und B5 gebaut (Till: "schau dir B4 und B5 als nächstes an und setze diese um"): B4 Besondere Waffen (Präzisionsgewehr `A3` und Granatwerfer `A4`, zuerst auf Taste 6 mit Halten und Loslassen, auf Tills Wunsch noch am selben Tag umgebaut: Shift schaltet ein und aus, Linksklick oder Leertaste schießt, die Pistole schweigt solange, `spwOn`, `reqSpw`, kein Netzfeld, `CFG.spw`, `fireSpw`, `spwMul`, `shellBoom`, Kugeln mit `pr`, Granaten `shell`, Test `99-spezialwaffen`), B5 Notfallkoffer (`U3` auf Taste C (zuerst 7), ein abgestellter Koffer heilt 10 s lang, `CFG.aid`, `aidDown`, `aidStep`, Netz `kf`, Test `99-notfallkoffer`), `VER` 39. Beim Bau zwei Fehler aus B2 behoben: Der Schlüssel `tr` stand im Schnappschuss doppelt (Fallen und Zustand des Transporters, im Coop gingen die Transporter-Werte verloren, die Fallen heißen jetzt `tp`) und `blastAt` machte Wagen bei Explosionen ohne `hp` (Fallen) zu `NaN`. Die Wirkungszeile `w` der Gegenstände im Fenster Fähigkeiten und die Anleitung (`1 / 2 / C`, `3 / 4 / 5 halten`, Shift `schleichen, Waffe wechseln`) kamen mit. Die Tests `93`, `98`, `99-c4` und `99-sprengfalle` kennen keine Platzhalter mehr. Danach Test-Stopp 6 (je Gegenstand einzeln). Am selben Tag Tills Idee zur Wachsamkeit (C1) gebaut: Der Lautlos-Bonus flacht nach 2 lautlosen Siegen in Folge ab (35 und 20 % statt 50 %, `CFG.alert.fade`), lautlos gibt 1 Skillpunkt und der Überfall 2 (`CFG.skill.pts.loud`, der Transporter ohne Zuschlag), Test `99-punkte-bonus`, kein neues `VER`. Dazu die Testwerkzeuge (Optionen mit `#debug`, Test `99-testwerkzeuge`).
+- v1 bis v1.2 (25. Oktober 2026): Überbau aus Tills Plänen (Skillbaum-Umbau, Zusätze, Wachsamkeit der Läden) und dem Plan zum Fluchtwagen (D0 bis D3), Tills Antworten (Spuren nacheinander, Mindestabstand 10, Umleitung situativ mit Wechsel auch nach dem Wegfahren, Zähler serienweit), Reihenfolge Spur 1 zuerst.
+- Bau (25. und 26. Oktober 2026): P3, A1 bis A3 (von Till abgenommen), B1 bis B5 und C1 gebaut. Kennzahlen: `VER` 34 (A1), 35 und `UI_API` 7 (B1), 36 und `UI_API` 8 (C1), 37 (B2), 38 (B3), 39 (B4 und B5), 40 (Flugschreiber); Tests `96-ablenker-blind`, `97-geisel-kugelfang`, `98-skillbaum-umbau`, `99-wachsamkeit`, `99-sprengfalle`, `99-c4`, `99-spezialwaffen`, `99-notfallkoffer`, `99-punkte-bonus`, `99-testwerkzeuge`. Entscheidungen beim Bau: C4 kostet Beute und Polizeizeit statt mehr Stück je Stufe (es gibt nur einen Tresor je Auftrag), die Spezialwaffe liegt auf Shift statt Taste 6, der Notfallkoffer auf Taste C statt 7, der Lautlos-Bonus flacht nach zwei lautlosen Siegen ab (35 und 20 %, `CFG.alert.fade`), lautlos gibt 1 Skillpunkt und der Überfall 2. Beim Bau behoben: Der Schlüssel `tr` stand im Schnappschuss doppelt (Fallen heißen jetzt `tp`) und `blastAt` machte Wagen bei Explosionen ohne `hp` zu `NaN`. Danach (26. Oktober 2026): Die Mine liegt immer auf der Seite der Barrikade gegenüber dem Spieler.
+- 26. Oktober 2026: Die Test-Stopps entfallen auf Tills Wunsch (er testet nebenher), die Stand-Spalte ersetzt sie.

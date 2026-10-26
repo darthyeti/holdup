@@ -1,4 +1,4 @@
-// Treffpunkt des Fluchtwagens auf der Bank (Plan Mehr Abwechslung, Sprint 5, docs/offen-und-spieltest.md, Treffpunkt des Fluchtwagens, Stufe 1):
+// Treffpunkt des Fluchtwagens auf der Bank (Plan Mehr Abwechslung, Sprint 5, docs/archiv-gebaute-plaene.md, Treffpunkt des Fluchtwagens, Stufe 1):
 // genLayout wuerfelt je Spielseed zwischen zwei Treffpunkten (CFG.map.tpW): E ist der Lieferanteneingang am Ostho (wie bisher), W die Seitentuer mit eigenem Hof (6 plus CFG.map.tpX Kacheln breit) und Fahrweg.
 // Die Anker der Polizei stehen am gewaehlten Treffpunkt (E drei, W CFG.map.anW), die Spiegelung (flip) dreht beides auf die andere Seite. Phase 1 nennt den Weg (Tag "Fluchtweg: Seitentuer").
 const { coopGame } = require('../lib');

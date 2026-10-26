@@ -1,4 +1,4 @@
-// Casino, Selbsttest vor dem Umbau (Sprint 9 des Plans Mehr Abwechslung, docs/offen-und-spieltest.md): Raster und alle LAY-Felder der vier Hallen (Hash ueber 200 Seeds je Halle) und die Pixel beider
+// Casino, Selbsttest vor dem Umbau (Sprint 9 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Raster und alle LAY-Felder der vier Hallen (Hash ueber 200 Seeds je Halle) und die Pixel beider
 // Ebenen (zwei Seeds je Halle) werden eingefroren, solange das Casino noch von Hand gebaut ist (aufgenommen am 25. Oktober 2026 auf dem Stand vor Sprint 9). Mit dem Generator (CFG.casinoGen) muss die
 // Klassik-Huelle mit jeder Halle Zeichen fuer Zeichen diese Karte ergeben: Der Test schaltet den Generator ab, sobald es ihn gibt (CFG.casinoGen.on 0), Vorbild ist 39-juwelier-basis.
 // Der Hash-Teil (Raster und Felder) ist auf jeder Maschine gleich und eingecheckt, die Pixel haengen an der Maschine (Schrift, Gradienten) und liegen nur lokal (golden-local, wird beim ersten Lauf angelegt).

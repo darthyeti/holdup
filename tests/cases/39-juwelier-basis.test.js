@@ -1,4 +1,4 @@
-// Juwelier, Selbsttest vor dem Umbau (Sprint 7 des Plans Mehr Abwechslung, docs/offen-und-spieltest.md): Raster und alle LAY-Felder der fuenf Hallen (Hash ueber 200 Seeds je Halle) und die Pixel beider
+// Juwelier, Selbsttest vor dem Umbau (Sprint 7 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Raster und alle LAY-Felder der fuenf Hallen (Hash ueber 200 Seeds je Halle) und die Pixel beider
 // Ebenen (zwei Seeds je Halle) werden eingefroren, solange der Juwelier noch von Hand gebaut ist (aufgenommen am 24. Oktober 2026 auf dem Stand vor Sprint 7). Mit dem Generator (CFG.jewGen) muss die
 // Klassik-Huelle mit jeder Halle Zeichen fuer Zeichen diese Karte ergeben: Der Test schaltet den Generator ab, sobald es ihn gibt (CFG.jewGen.on 0), Vorbild ist gas-basis in 37-tankstelle-generator.
 // Der Hash-Teil (Raster und Felder) ist auf jeder Maschine gleich und eingecheckt, die Pixel haengen an der Maschine (Schrift, Gradienten) und liegen nur lokal (golden-local, wird beim ersten Lauf angelegt).

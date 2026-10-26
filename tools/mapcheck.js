@@ -59,7 +59,7 @@ function autocmp(sc,seed,o){o=o||{};let lay;if(o.light){lay=lay0(sc,seed,undefin
  return{sc,seed,flip:!!lay.flip,hall:lay.hall||null,hand:H.length,auto:P.length,bySide:{hand:by(H),auto:by(P)},hit:H.length-um.length,hit3:H.length-um3.length,handMiss:str(um),autoExtra:str(ex),
   doors:{hand:str(H.filter(p=>p.door)),auto:str(P.filter(p=>p.door))},anchors:{hand:str(H.filter(p=>p.anchor)),auto:str(P.filter(p=>p.anchor))},
   slots:{hand:lay.slots||R.slots,auto:A.slots,shiftW:sh(0),shiftE:sh(1)},order:{hand:H.slice(0,8).map(p=>p.k).join(''),auto:P.slice(0,8).map(p=>p.k).join('')}}}
-// Vielfalt je Szenario ueber viele Seeds (Plan Mehr Abwechslung, docs/offen-und-spieltest.md): wie viele verschiedene Huellen (Gebaeudebox, Strasse, Ausgang, Fluchtwagen, Wagenplaetze, Posten, Hintertueren, Tresortuer),
+// Vielfalt je Szenario ueber viele Seeds (Plan Mehr Abwechslung, docs/archiv-gebaute-plaene.md): wie viele verschiedene Huellen (Gebaeudebox, Strasse, Ausgang, Fluchtwagen, Wagenplaetze, Posten, Hintertueren, Tresortuer),
 // Gebaeudegroessen, Fluchtvarianten, Beute-Anordnungen, Hallen und Raster (gebaut werden nur die ersten rn Seeds, das Raster kostet am meisten). Aufruf: mapcheck.variety('gas',300,1,13,40)
 function variety(sc,n,from,step,rn){n=n||300;from=from||1;step=step||13;rn=rn==null?40:rn;D.setScenario(sc);D.setSeedMode('random');D.setLage([]);
  const S=JSON.stringify,shell=new Set(),size=new Set(),esc=new Set(),loot=new Set(),halls={},grids=new Set();

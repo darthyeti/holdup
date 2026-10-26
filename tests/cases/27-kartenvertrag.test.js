@@ -13,7 +13,7 @@ const HALLS = {
   casino: ['Klassik', 'Promenade', 'Reihen', 'Staffel'],
 };
 // Bekannte Abweichungen: Karte -> Regel -> Begruendung. Gilt fuer alle Seeds und Grundrisse der Karte.
-// Bekannte, von einem Menschen akzeptierte Abweichungen je Karte (Regel: Begruendung). Seit dem 22. Oktober 2026 leer: Zaun und Props auf der Strasse raeumt clearLane in layoutFor, classicLayout hat wie genLayout nur eine Hintertuer, die Museums-Hintertuer liegt frei. Neue Eintraege nur mit Begruendung, Ziel bleibt leer (Plan Mehr Abwechslung, docs/offen-und-spieltest.md).
+// Bekannte, von einem Menschen akzeptierte Abweichungen je Karte (Regel: Begruendung). Seit dem 22. Oktober 2026 leer: Zaun und Props auf der Strasse raeumt clearLane in layoutFor, classicLayout hat wie genLayout nur eine Hintertuer, die Museums-Hintertuer liegt frei. Neue Eintraege nur mit Begruendung, Ziel bleibt leer (Plan Mehr Abwechslung, docs/archiv-gebaute-plaene.md).
 const KNOWN = { bank: {}, jewel: {}, gas: {}, museum: {}, casino: {} };
 const KNOWN_CLASSIC = {};
 

@@ -1,4 +1,4 @@
-// Parkende Autos der Karten (Tills Wunsch vom 23. Oktober 2026, Plan in docs/offen-und-spieltest.md): Die vier Autos je Karte (ausser dem Transporter) sind keine Malerei mehr, sondern zivile Wagen
+// Parkende Autos der Karten (Tills Wunsch vom 23. Oktober 2026, Plan in docs/archiv-gebaute-plaene.md): Die vier Autos je Karte (ausser dem Transporter) sind keine Malerei mehr, sondern zivile Wagen
 // in pcs (civ): solide und kugelfangend wie die Streifenwagen, Spielerkugeln machen Schaden, bei 0 HP explodieren sie wie ein Streifenwagen (Radius, Schaden, Kettenreaktion) und bleiben als Wrack.
 // Zivile Autos und alle Wracks lassen sich abbauen (E halten, Material, auch bei vollem Fach, damit man sich freigraben kann), ein heiler Streifenwagen nicht. Der Client sieht dieselben Wagen (VER 28).
 async function setup(t) {

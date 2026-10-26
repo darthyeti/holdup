@@ -1,4 +1,4 @@
-// Gedrehte Karten vorbereiten (Plan Mehr Abwechslung, Sprint 3, docs/offen-und-spieltest.md): Bevor layoutFor die handgebauten Karten aus dem Seed dreht (Sprint 4), muss bewiesen sein, dass jede Lage in allen Spielwegen funktioniert.
+// Gedrehte Karten vorbereiten (Plan Mehr Abwechslung, Sprint 3, docs/archiv-gebaute-plaene.md): Bevor layoutFor die handgebauten Karten aus dem Seed dreht (Sprint 4), muss bewiesen sein, dass jede Lage in allen Spielwegen funktioniert.
 // Der Schalter dbg.setTurn legt jede Gebaeude-Karte auf eine der acht Lagen (auch fuer Coop-Clients), so laufen Coop, Bot und Aufbau ueber den normalen Weg (layoutFor, buildWorld, reset).
 // Hier die schnelle Fassung fuer npm test (je Szenario alle acht Lagen, die Hallen reihum), den grossen Lauf mit allen Hallen und vielen Seeds gibt es mit npm run test:long (tests/long/).
 const { coopGame } = require('../lib');

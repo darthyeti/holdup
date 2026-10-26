@@ -1,6 +1,6 @@
 # Bugfix-Pläne
 
-Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete mit versioniertem Plan. Gebaut wird erst auf Tills ausdrückliches Go, nie nebenbei. Commit nur auf Zuruf.
+Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete mit versioniertem Plan. Pakete mit Plan sind für größere oder riskante Fehler, gebaut wird erst auf Tills ausdrückliches Go, nie nebenbei. Kleine Fehler, die Till meldet (zum Beispiel ein überlagerter Text im HUD oder die Platzregel der Mine am 26. Oktober 2026), werden direkt behoben und mit Test und Doku in der Themendatei festgehalten, ohne Paket. Commit nur auf Zuruf.
 
 ## Regeln
 
@@ -16,7 +16,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 |---|---|---|---|
 | P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | abgenommen (24. Oktober 2026, Till hat gespielt: passt) |
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
-| P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | gebaut (25. Oktober 2026, erster Schritt von Major Release Update 1), wartet auf Tills Spieltest |
+| P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt) |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -123,4 +123,5 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 
 **Änderungsprotokoll**
 - v1 (25. Oktober 2026): Plan zu B3, Entscheidung Till (Vorschläge 1 und 3).
-- Bau (25. Oktober 2026): gebaut mit den Abweichungen oben, Status gebaut, Spieltest steht aus (v1.1).
+- Bau (25. Oktober 2026): gebaut mit den Abweichungen oben, Status gebaut.
+- Abnahme (25. Oktober 2026): Till hat gespielt, Status abgenommen.

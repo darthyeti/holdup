@@ -1,4 +1,4 @@
-// Juwelier als Generator (Sprint 7 des Plans Mehr Abwechslung, docs/offen-und-spieltest.md): Die Huelle kommt aus Parametern (genJewel, CFG.jewGen): Hallenbreite hw 11 bis 17 (Klassik 13, Halle x1..hw), Gebaeudetiefe hd 12 bis 13
+// Juwelier als Generator (Sprint 7 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Die Huelle kommt aus Parametern (genJewel, CFG.jewGen): Hallenbreite hw 11 bis 17 (Klassik 13, Halle x1..hw), Gebaeudetiefe hd 12 bis 13
 // (Klassik 12, die Strasse bleibt fest), Versatz der Vordertuer vx 0 bis 2 (nach links). Die Klassik-Huelle (13, 12, 0) ist mit jeder der fuenf Hallen Zeichen fuer Zeichen die Karte von vorher (Selbsttest
 // 39-juwelier-basis mit CFG.jewGen.on 0). Die fuenf Hallen (JW_HALLS) sind Funktionen von hw, hd und der Tuer; jede hat minHw und minHd, jewLayout wirft Huellen weg, die darunter liegen.
 // Die Breitenpruefung im Test ist eine eigene Fassung (Kachelraster, isSol), sie benutzt validateMap nicht: Ein 2x2-Block muss von der Vordertuer (unterste Zeile, ueberlappt die Tuerkacheln) bis vor das Tresentor

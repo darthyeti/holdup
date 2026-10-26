@@ -1,0 +1,21 @@
+# Assets, Werkzeuge und Dateien
+
+Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Hier stehen die Einzelheiten zu Sprites, Werkzeugen und Testordnern, die in `CLAUDE.md` (Abschnitt Dateien) nur in einer Zeile vorkommen.
+
+## Sprites und Assets
+
+- `assets/chars.png` (1152x1920): Figuren, Zellen 128px, gezeichnet mit 64px. Spalten 0-5 Laufen, 6 Idle, 7 tot, 8 geduckt. Zeilen: 0 Polizei, 1 Räuber bewaffnet (Maske), 2 Wachmann, 3 Zivilist A, 4 Zivilist B, 5 Kassierer, 6 Manager, 7 Räuber unbewaffnet (Phase 1), 8 SWAT (ab Welle 3), 9 bis 11 Räuber bewaffnet blau/grün/lila (Spieler 2 bis 4), 12 bis 14 Räuber unbewaffnet blau/grün/lila. Orange ist Spieler 1 (Zeilen 1 und 7). Figuren blicken nach +x und werden zur Laufzeit rotiert.
+- `assets/chars_flash.png`: Trefferblinken, gleiches Layout.
+- `assets/props.png` (64px Zellen): 0 Holzkiste, 1 Militärkiste, 2-4 Fässer, 5 Munition, 6 Medkit.
+- `assets/props2.png` (64px Zellen): 0 Geldtasche, 1 Geldbündel, 2 Kasse, 3 Kamera (zeigt +x), 4 Notiz, 5 Schreibtisch mit Monitor, 6 Tastenfeld, 7 Pflanze, 8 Bank, 9 Schreibtisch mit Papier, 10 Geldautomat.
+- `assets/cars.png` (256x128 pro Zeile): 0 Fluchtwagen, 1 Polizeiauto, 2 rotes Auto, 3 blaues Auto, 4 Panzerwagen (wird 192x96 gezeichnet, Fahrerhaus rechts), alle nach +x. Die Panzerwagen-Zeile wurde wie die SWAT-Zeile nur angespleißt (Pillow-Abweichung), `gen_sprites.py` erzeugt sie in `truck()`.
+- `gen_sprites.py`: erzeugt die Sprites (PIL, numpy), Aufruf `python3 gen_sprites.py <Zielordner>`. Platzhalter-Grafik, selbst gezeichnet, jederzeit austauschbar. Neugenerieren weicht in `chars.png` minimal (bis 12/255) von den eingecheckten Dateien ab (Pillow-Version), deshalb wurde die SWAT-Zeile nur angespleißt statt alles zu überschreiben.
+- `assets/peerjs.min.js`: PeerJS 1.5.4 (MIT), unverändert von unpkg.com, 92.865 Bytes, SHA-256 `ad5d8870d1e389914f9cba8d35be313c4327c69ee0a221e482e9bf7621136fe5`. Setzt `window.Peer`. Fehlt die Datei, bleibt Solo voll spielbar, nur Coop meldet den Fehler. Verbindungsvermittler ist der öffentliche Gratisdienst `0.peerjs.com`, STUN von Google, die Spieldaten laufen direkt zwischen den Browsern.
+
+## Werkzeuge, Menüs und Tests
+
+- `tools/bot.js`: Balance-Bot (nur Solo). `tools/loopnet.js`: Test-Leitung im Speicher für Coop-Tests mit mehreren Instanzen in einer Seite (wirft wie PeerJS JSON-Nachrichten ab 16.300 Byte weg und zählt sie in `net.stat`). Beide siehe Entwicklung und Tests. `tools/mapcheck.js`: Kartenprüfung (Erreichbarkeit, Posten, Wagenplätze, Beute-Summe, ASCII-Ausgabe, dazu `validate`, `vsweep`, `autocmp` für den Karten-Vertrag, alle mit Option `turn` für eine gedrehte Straße), siehe docs/tests-und-messwerte.md. `tools/stealth.js`: Schleichmessung für die Wache im Juwelier (Fenster ohne Sicht, Erfolg eines Laufs), siehe docs/tests-und-messwerte.md.
+- `js/ui.js`: Menüs als Kacheln (Hauptmenü, Auftragswahl, Coop-Hub, Raumcode, Lobby, Shop, Pause, Optionen, Anleitung, Ergebnis), Zeichnen und Bedienung (Fokus, Tastatur, Maus), klassische Skriptdatei vor dem Spielkern, `mkUI(X)` mit Kontextobjekt, siehe docs/spielsystem.md. Der Hook zählt Änderungen in `js/` wie `index.html`.
+- `tests/`: automatische Tests (Node und `playwright-core`, startet das lokale Chromium, voller Lauf rund 7 Minuten: `cd tests && npm install && npm test`, `npm run test:fast` lässt die langen Karten-Durchläufe aus (`slow: true`), `npm run test:par` verteilt auf mehrere Browser). Siehe docs/tests-und-messwerte.md. Schneller Lauf bei jeder Änderung, voller Lauf bei Änderungen an Karten und Generatoren und vor dem Merge. `tests/render.js` und `tests/sheet.js` zeichnen Karten (eine Lage oder alle acht) als PNG zum Ansehen (`node render.js casino Reihen`, `node sheet.js jewel Klassik Ring`), `npm run test:long` ist der Langlauf für gedrehte Karten (`tests/long/`), `tests/altneu.js` beweist einen Umbau ohne Verhaltensänderung (alter Stand per `git archive`, `node altneu.js /tmp/holdup-alt`, rund 30 s).
+- `tools/hooks/pre-commit`: Versionierung, siehe Entwicklung und Tests (Einrichten einmal je Klon: `git config core.hooksPath tools/hooks`).
+- `.claude/settings.json`, `.claude/hooks/session-start.sh`: Einrichtung für Cloud-Sitzungen, siehe Cloud-Sitzungen.

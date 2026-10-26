@@ -1,4 +1,4 @@
-// Museum als Generator (Sprint 8 des Plans Mehr Abwechslung, docs/offen-und-spieltest.md): Die Huelle kommt aus Parametern (genMuseum, CFG.museumGen): Breite der Westgalerie ww 7 bis 12 (Klassik 9, Galerie x1..ww),
+// Museum als Generator (Sprint 8 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Die Huelle kommt aus Parametern (genMuseum, CFG.museumGen): Breite der Westgalerie ww 7 bis 12 (Klassik 9, Galerie x1..ww),
 // Zusatzbreite der Ostgalerie ew 9 bis 11 (Klassik 9), Zusatztiefe dy 0 bis 1 (Gebaeude y0..17+dy, die Strasse bleibt fest), Versatz der Haupttuer im Atrium vx -1 bis 1 (Klassik x13 und 14). Die Klassik-Huelle
 // (9, 9, 0, 0) ist mit jeder der vier Hallen Zeichen fuer Zeichen die Karte von vorher (Selbsttest 42-museum-basis mit CFG.museumGen.on 0). Die vier Hallen (MU_HALLS) sind Funktionen eines Massobjekts, jede hat
 // minWw und minEw, museumLayout wirft Huellen weg, die darunter liegen.

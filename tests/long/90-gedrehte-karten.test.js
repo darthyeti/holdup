@@ -1,5 +1,5 @@
 // Langlauf fuer die gedrehten Karten (Plan Mehr Abwechslung, Sprint 3): npm run test:long, mehrere Minuten, gehoert nicht zu npm test.
-// Abnahme der Leitlinie in docs/offen-und-spieltest.md fuer Stufe 1 (Drehen und Spiegeln der handgebauten Karten): Korrektheit ueber viele Seeds in jeder der acht Lagen mit jeder Halle.
+// Abnahme der Leitlinie in docs/archiv-gebaute-plaene.md fuer Stufe 1 (Drehen und Spiegeln der handgebauten Karten): Korrektheit ueber viele Seeds in jeder der acht Lagen mit jeder Halle.
 //   1 validateMap ohne Fehler (1000 Seeds je Szenario und Lage, ohne Aufbau), jede Halle in jeder Lage, Determinismus
 //   2 voller Aufbau und mapcheck.check (Erreichbarkeit, Wagenplaetze, Fluchtzone) fuer 100 Seeds je Szenario und Lage
 //   3 Bot mit fruehem Rufen (Loesbarkeit: keine Haenger, hoechstens 3 fruehe Verluste, in jeder Halle und Lage mindestens ein Sieg, weite Mindestquoten je Lage)
