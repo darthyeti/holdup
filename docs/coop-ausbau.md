@@ -244,7 +244,7 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 | Schritt | Stand |
 |---|---|
 | F1 Funkspruch | gebaut am 26. Oktober 2026 (`VER` 44, Test `114-funkspruch`, Optionen-Kachel Funk, Stimme als Schalter), Einzelheiten in docs/coop-und-netz.md, Funkspruch |
-| F2 Markierung | offen (der Host schickt den Punkt schon mit, es fehlen Ring und Randpfeil zum Punkt) |
+| F2 Markierung | gebaut am 26. Oktober 2026 (kein neues Netzformat, Test `115-markierung`, Einzelheiten in docs/coop-und-netz.md, Funkspruch) |
 | F3 Textchat | offen |
 | W0 feste NPC-Ausgangslage | offen |
 | Z1 bis Z4 Zuschauer | offen |
@@ -255,3 +255,4 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 - v1 (26. Oktober 2026): Plan aus Tills drei Wünschen, drei Messungen (Schnappschussgröße, Streuung gleicher Seeds, Bildkosten), Werkzeug `tools/messung-netz.js`. Noch nichts gebaut.
 - v1.1 (26. Oktober 2026): Till nimmt alle zehn Empfehlungen an, Bau beginnt mit F1.
 - v1.2 (26. Oktober 2026): F1 gebaut (Funkspruch). Abweichung vom Plan: Die Ziffern 5 bis 9 werden bei offenem Menü verschluckt (der Plan sagte nur, dass 1 bis 4 senden), damit kein Gadget aus Versehen feuert. Die Optionen-Kachel braucht in den Optionen eine dritte Verdichtung (Abstand 4, Kacheln 36 und 46 hoch), sonst läuft das Fenster mit den Testwerkzeugen aus dem Bild. Die Anleitung rückt eine Zeile enger (20 statt 22 Pixel je Zeile).
+- v1.3 (26. Oktober 2026): F2 gebaut (Markierung). Der Randpfeil liegt auf der Linie von der Bildmitte zum Ziel, nicht in der Ecke (bei einem Ziel schräg oben rechts also am oberen Rand).
