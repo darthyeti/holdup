@@ -123,6 +123,7 @@ module.exports = [
     name: 'Casino-Generator: Bauregeln relativ zur Huelle in 400 generierten Karten (validateMap ohne Fehler und unbekannte Warnungen, Gebaeudekasten, Haupteingang, Osttuer, Fluchtweg, Beute, Tresor, Cage, Geldautomaten, Posten und Wagenplaetze abgeleitet)',
     timeout: 180000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // geprueft wird die Karte ohne Treffpunkt abseits (109)
       await t.loadInpage('turn.js');
       const r = await t.page.evaluate(() => {
         const D = __dbg, bad = []; let n = 0, slotsMin = 99;

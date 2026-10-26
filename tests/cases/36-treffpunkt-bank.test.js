@@ -11,6 +11,7 @@ module.exports = [
     name: 'Treffpunkt: je Spielseed fest gewuerfelt (halb Ost, halb West), deterministisch, ohne Rueckfall auf die Klassik, Ost-Karten unabhaengig vom Westausgang',
     timeout: 120000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // der Treffpunkt abseits (109) ist hier aus: geprueft wird der Treffpunkt der Karte an der Fluchttuer
       await t.loadInpage('turn.js');
       const r = await t.page.evaluate(() => {
         const D = __dbg, bad = [], cnt = { E: 0, W: 0 }, tries = []; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
@@ -38,6 +39,7 @@ module.exports = [
     name: 'Treffpunkt: Geometrie in allen vier Varianten (Tuer, Zone, Wagen, Anker, Tag, Fahrweg): validateMap ohne Fehler und Warnungen, Fluchttuer an der Seite des Treffpunkts, Anker am Treffpunkt',
     timeout: 120000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // der Treffpunkt abseits (109) ist hier aus: geprueft wird der Treffpunkt der Karte an der Fluchttuer
       const r = await t.page.evaluate(({ SEEDS }) => {
         const D = __dbg, T = 32, bad = [], seeds = eval(SEEDS)(40), stat = {};
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
@@ -73,6 +75,7 @@ module.exports = [
     name: 'Treffpunkt: im Spiel steht die Polizei mit den Ankern am gewaehlten Treffpunkt (Ost und West), nicht am anderen Ausgang',
     timeout: 120000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // der Treffpunkt abseits (109) ist hier aus: geprueft wird der Treffpunkt der Karte an der Fluchttuer
       const r = await t.page.evaluate(({ SEEDS }) => {
         const D = __dbg, T = 32, out = {}; const seeds = eval(SEEDS)(3);
         for (const [k, list] of Object.entries(seeds)) {
@@ -97,6 +100,7 @@ module.exports = [
     name: 'Treffpunkt: Coop zu zweit auf Karten aller vier Varianten (Host und Client bauen gleich, Fluchtwagen kommt am richtigen Hof an, Sieg)',
     timeout: 240000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // der Treffpunkt abseits (109) ist hier aus: geprueft wird der Treffpunkt der Karte an der Fluchttuer
       const seeds = await t.page.evaluate(`(${SEEDS})(1)`);
       const res = []; for (const k of ['E', 'Ef', 'W', 'Wf']) res.push(await coopGame(t.env, 'bank', seeds[k][0]));
       t.note(res.map(r => r.tag).join(', '));
@@ -109,6 +113,7 @@ module.exports = [
     open: { det: true },
     timeout: 280000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // der Treffpunkt abseits (109) ist hier aus: geprueft wird der Treffpunkt der Karte an der Fluchttuer
       await t.loadTool('bot.js');
       const r = await t.page.evaluate(({ SEEDS }) => {
         const D = __dbg, seeds = eval(SEEDS)(20), out = {}; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);

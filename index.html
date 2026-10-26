@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=163"></script>
+<script src="js/ui.js?v=164"></script>
 <script>
-const BUILD={n:163,d:'2026-10-26'};//BUILD
+const BUILD={n:164,d:'2026-10-26'};//BUILD
 const UI_API=8;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -240,6 +240,7 @@ cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:
 shield:{from:3,every:8,hp:110,dmg:8,rate:.55,spd:50,acc:.11,arc:1.05,pool:120,follow:.85,cover:80},
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6,n:5},
 map:{a:[10,15],b:[20,23],bs:[24,28],c:[12,16],tries:40,back:'vault',gate:2,tpW:.5,tpX:4,anW:2,bw:[14,25],bws:[14,25]},
+meet:{on:1,p:.5,scs:['bank','jewel','gas','museum','casino'],minD:10,pveMin:8,pveMax:28,extra:8,anchors:2,drive:2,per:{museum:{extra:10},jewel:{anchors:1}}},
 turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:.5},
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,camsFew:2,two:48}},
 jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],tries:30,crowd:{few:93,camsFew:5,two:96}},
@@ -538,7 +539,7 @@ lay.posts=lay.posts.map(p=>{const t=tile(p.x,p.y),o=Object.assign({},p,{x:t[0],y
 const MA=sw?My:Mx,af=sw?fy:fx,cp=c=>{const p=pxp(0,c);return sw?p[0]:p[1]},sl=R0.slots.map(l=>l.map(u=>af?MA-1-u:u)),vn=R0.van,ex=R0.exit,c0=cp(ex.span[0]),c1=cp(ex.span[1]);
 lay.road={side:sideOf.S,pos:cp(R0.pos),slots:af?[sl[1],sl[0]]:sl,
  van:{pos:cp(vn.pos),from:af?MA*T-vn.from-128:vn.from,stop:af?MA*T-vn.stop-128:vn.stop,dir:af?-vn.dir:vn.dir},
- exit:{line:af?MA*T-ex.line:ex.line,span:[Math.min(c0,c1),Math.max(c0,c1)],dir:af?-ex.dir:ex.dir,tx:af?MA-1-ex.tx:ex.tx,goal:tile(ex.tx,Math.round(vn.pos/T))}};
+ exit:Object.assign({line:af?MA*T-ex.line:ex.line,span:[Math.min(c0,c1),Math.max(c0,c1)],dir:af?-ex.dir:ex.dir,tx:af?MA-1-ex.tx:ex.tx,goal:ex.goal?tile(ex.goal[0],ex.goal[1]):tile(ex.tx,Math.round(vn.pos/T))},ex.door?(()=>{const d0=cp(ex.door.span[0]),d1=cp(ex.door.span[1]);return{door:{line:af?MA*T-ex.door.line:ex.door.line,span:[Math.min(d0,d1),Math.max(d0,d1)]}}})():{})};
 delete lay.laneY;delete lay.slots;delete lay.exit;delete lay.van;delete lay.spots;delete lay.lockCells;delete lay.wins;delete lay.snp;
 lay.title={cx:Math.round(bc[0]-VW/2),ax:90,cy:Math.round(bc[1]-VH/2),ay:70};lay.flip=!sw&&fx;lay.turned=side+(mirror?'+':'');return lay}
 function genLayout(seed,po,tpf){const r=mulberry32(seed|0),q=po||genParams(r),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),rnd=po?()=>1:r;
@@ -605,7 +606,7 @@ const lay={seed,decor:decorOf(DCG),q:Object.assign({},q,{sw:swp?1:0},tp==='W'?{t
 mat:(x,y)=>{if(x>=0&&x<=bx1&&y>=0&&y<=by1){if(x===cx+1&&(y===2||y===3))return'k';if(x>=cx+2&&x<=mx1&&y>=1&&y<=bd-1)return'm';if(x>=ex0&&x<=ex1&&y>=oy0&&y<=oy1)return'w';if(x>=ex0&&x<=ex1&&(swp?(y>=sy0&&y<=sy1):y>=ly0))return'k';if(y<=bd&&x<=cx)return'k';return't'}
 if(y>=by1+8)return'l';if(y===by1+7)return's';if(y>=by1+3)return'a';if(y>=by1+1)return's';if(x>bx1)return'a';if(x<0)return tp==='W'&&y>=wy-1&&y<=wy+2?'a':'l';return'y'},
 paintFloor(s){s.fillStyle='rgba(60,45,30,.55)';s.fillRect(fd*T-4,(by1-1)*T+2,2*T+8,T-4);
-s.strokeStyle='rgba(255,255,255,.7)';s.lineWidth=2;for(const yy of tp==='W'?[wy,wy+1]:[ey,ey+1]){s.strokeRect(tp==='W'?-4*T+4:(bx1+1)*T+4,yy*T+4,4*T-8,T-8)}
+if(!lay.meet){s.strokeStyle='rgba(255,255,255,.7)';s.lineWidth=2;for(const yy of tp==='W'?[wy,wy+1]:[ey,ey+1]){s.strokeRect(tp==='W'?-4*T+4:(bx1+1)*T+4,yy*T+4,4*T-8,T-8)}}
 s.fillStyle='rgba(224,182,40,.8)';s.fillRect(1*T+4,ly0*T+6,(cx-1)*T,2);
 s.fillStyle='rgba(235,235,225,.5)';for(let i=0;i<4;i++)s.fillRect(0*T+10+i*30,(by1+2)*T+2,12,2)},
 paintTop(s){decorPaint(s,lay.decor);
@@ -1013,7 +1014,59 @@ slots:{W:[24,19,14,9,4,-1],E:[30,35,40,45]}}:{q:{dx,dy,vx}}),laneY:(29+dy)*T,tit
 // Karten-Vertrag: Auf den Zellen der Strasse (Fahrstrecke des Fluchtwagens samt Rand bis zum Weltrand, Wagenplaetze) steht nichts Festes, das nur Dekor ist. Zaun wird zum Tor, Einzelkacheln-Props (Pflanze, Fass, Kiste) verschwinden. Laeuft nach dem Bau und nach der Pruefung und macht nur Kacheln frei, deshalb kann es keine Erreichbarkeit zerstoeren. Autos (v) und Waende bleiben stehen, die meldet validateMap weiter.
 function clearLane(lay){if(lay.truck)return lay;const ln=laneOf(lay),cs=[].concat(ln.van.swept,ln.van.rest);ln.slots.forEach(s=>s.cells.forEach(c=>cs.push(c)));for(const c of cs){if(OOB(c[0],c[1]))continue;const ch=cell(c[0],c[1]);if(ch==='f'||ch==='p'||ch==='q'||ch==='k')setc(c[0],c[1],'o')}return lay}
 // Letzter Schritt jeder Karte: fehlende Listen ableiten, dann die Strasse freiraeumen (die abgeleiteten Wagenplaetze duerfen Zaun und Einzelkachel-Props kreuzen)
-function finishLay(lay){return clearLane(fillDerived(lay))}
+function finishLay(lay){return clearLane(placeMeet(fillDerived(lay)))}
+/* Treffpunkt abseits (MRU 1 D1, docs/major-release-update-1.md, D0 Ergebnis): Der Fluchtwagen haelt nicht mehr immer an der Fluchttuer, sondern im Hof der Fluchtseite auf einer anderen Zeile, mindestens CFG.meet.minD Schritte von der Tuer.
+   Gemeinsamer Mechanismus fuer alle Karten (CFG.meet.scs nennt die Szenarien, seit D2 alle fuenf Gebaeude-Karten, CFG.meet.per Werte je Szenario): meetCands liefert aus dem fertigen Raster alle Plaetze (Wagen 4 x 2 und Zone 4 x 4 auf Kacheln, die ein Generator freiraeumen kann: Boden, Zaun, Pflanze, Fass, Kiste, nicht im Gebaeude, nicht auf den Wagenplaetzen der Polizei,
+   dazu die Zeile bis zum Weltrand), placeMeet wuerfelt aus dem Seed (eigener Strom, nichts anderes verbraucht Zufall), ob der Auftrag einen bekommt (CFG.meet.p) und welchen, setzt exit und van (die Fluchttuer bleibt als exit.door erhalten), leitet die Posten neu ab (hoechstens CFG.meet.anchors Anker am neuen Halt) und nennt den Platz
+   in Phase 1 (Tag und Markierung am Boden). Gerechnet wird in der ungedrehten Lage (Strasse im Sueden), turnLayout nimmt exit.door mit. Die Regeln stehen im Messwerkzeug tools/treffpunkt.js (Test 109 vergleicht die Zahl der Plaetze). */
+function meetKit(lay){const ex=lay.exit,B=lay.bld,ln=laneOf(lay),S0=WX0,SN=W,C0=WY0,CN=H,hiEnd=S0+SN-1,hiC=ex.dir>0,inB=(x,y)=>x>=B.x0&&x<=B.x1&&y>=B.y0&&y<=B.y1;
+if(!lay.spots)findSpots(lay);
+const hd=[];for(let i=0;i<SN;i++)hd.push(new Uint8Array(CN));
+for(let x=S0;x<S0+SN;x++)for(let y=C0;y<C0+CN;y++)hd[x-S0][y-C0]=(inB(x,y)||!'ofpqk'.includes(cell(x,y)))?1:0;
+for(const sl of ln.slots)for(const q of sl.cells)if(!OOB(q[0],q[1]))hd[q[0]-S0][q[1]-C0]=1;
+const P=[];for(let i=0;i<=SN;i++)P.push(new Int32Array(CN+1));
+for(let i=0;i<SN;i++)for(let j=0;j<CN;j++)P[i+1][j+1]=P[i][j+1]+P[i+1][j]-P[i][j]+hd[i][j];
+const cnt=(s0,s1,c0,c1)=>{if(s1<s0||c1<c0)return 0;if(s0<S0||s1>=S0+SN||c0<C0||c1>=C0+CN)return 1e9;const a=s0-S0,b=s1-S0+1,c=c0-C0,d=c1-C0+1;return P[b][d]-P[a][d]-P[b][c]+P[a][c]};
+const walk=(x,y)=>{if(OOB(x,y))return false;const k=cell(x,y);if(inB(x,y))return k==='L'||!isSol(x,y);return k==='o'};
+const bfs=(x0,y0)=>{const dm=new Int16Array(SN*CN).fill(-1),q=[[x0,y0]];dm[(x0-S0)*CN+(y0-C0)]=0;for(let h=0;h<q.length;h++){const a=q[h][0],b=q[h][1],d=dm[(a-S0)*CN+(b-C0)];for(const v of D4){const x=a+v[0],y=b+v[1];if(OOB(x,y))continue;const k=(x-S0)*CN+(y-C0);if(dm[k]>=0||!walk(x,y))continue;dm[k]=d+1;q.push([x,y])}}return dm};
+const dist=(dm,x,y)=>{const g=(a,b)=>OOB(a,b)?-1:dm[(a-S0)*CN+(b-C0)],d=g(x,y);if(d>=0)return d;let m=1e9;for(const v of D4){const e=g(x+v[0],y+v[1]);if(e>=0&&e+1<m)m=e+1}return m<1e9?m:-1};
+const sp=lay.spots.find(q=>q.ex),goal=ln.exit.goal,door=sp?[sp.cells[0][0]-sp.iv[0],sp.cells[0][1]-sp.iv[1]]:goal,v=lay.vault,st=v&&v.door?vaultStand(lay):null;
+const dmD=bfs(door[0],door[1]),dmV=st?bfs(st[0],st[1]):null;
+const list=[];list.e0=dmV?dist(dmV,goal[0],goal[1]):null;list.d0=dist(dmD,goal[0],goal[1]);
+for(let t=S0;t<=S0+SN-4;t++){if(hiC?t<=B.x1:t+3>=B.x0)continue;
+ for(let r=C0+1;r<=C0+CN-3;r++){if(cnt(t,t+3,r-1,r+2))continue;if(hiC?(t+4>hiEnd||cnt(t+4,hiEnd,r,r+1)):(t-1<S0||cnt(S0,t-1,r,r+1)))continue;
+  const gx=hiC?t:t+3,g1=dist(dmD,gx,r-1),g2=dist(dmD,gx,r+2),d=g1<0?g2:g2<0?g1:Math.min(g1,g2);if(d<0)continue;const gy=g2>=0&&(g1<0||g2<=g1)?r+2:r-1;list.push({t,r,d,e:dmV?dist(dmV,gx,gy):-1})}}
+/* Genau: clearLane macht aus Zaun und Props auf der Fahrstrecke (Zeilen r und r+1 vom Halt bis zum Weltrand) Tore, placeMeet raeumt Props der Zone weg, auch Fussgaenger gehen hindurch; der haltende Wagen (4 x 2 Kacheln) ist dagegen fest. Die Wege dazu rechnet exact fuer einen Platz nach.
+   Das Ziel liegt in der freien Zonenzeile r-1 oder r+2 (die naehere), nicht im Wagen: exit.goal. */
+const exact=(t,r)=>{const cs=[];for(let x=hiC?t:S0;x<=(hiC?hiEnd:t+3);x++)for(const y of[r,r+1])cs.push([x,y,cell(x,y)]);for(let x=t;x<=t+3;x++)for(const y of[r-1,r+2])cs.push([x,y,cell(x,y)]);
+ for(const c of cs)if('fpqk'.includes(c[2]))setc(c[0],c[1],'o');
+ for(let x=t;x<=t+3;x++)for(const y of[r,r+1])setc(x,y,'v');
+ const a=bfs(door[0],door[1]),b=st?bfs(st[0],st[1]):null,gx=hiC?t:t+3,g1=dist(a,gx,r-1),g2=dist(a,gx,r+2),gy=g2>=0&&(g1<0||g2<=g1)?r+2:r-1,res={d:gy===r+2?g2:g1,e:b?dist(b,gx,gy):-1,gy};
+ for(const c of cs)setc(c[0],c[1],c[2]);return res};
+return{list,exact,e0:list.e0,d0:list.d0}}
+function meetCands(lay){return meetKit(lay).list}
+const meetOf=sc=>Object.assign({},CFG.meet,(CFG.meet.per||{})[sc]);
+function placeMeet(lay){const sc=scOf(lay),M=meetOf(sc);if(!M.on||!(M.p>0)||lay.truck||lay.road||lay.meet||typeof lay.seed!=='number'||(sc==='bank'&&!lay.tries)||!M.scs.includes(sc))return lay;
+let h=0;for(let i=0;i<sc.length;i++)h=Math.imul(h^sc.charCodeAt(i),16777619);
+const r=mulberry32(Math.imul(lay.seed|0,2246822519)^0x4d454554^h);if(r()>=M.p)return lay;
+const ex=lay.exit,hiC=ex.dir>0,S0=WX0,hiEnd=S0+W-1,K=meetKit(lay),e0=K.e0,lim=e0==null?0:Math.min(M.pveMax,e0+M.extra);
+// Reihenfolge aus dem Seed mischen, der erste Platz mit genauem Abstand und Weg im Fenster gewinnt (gleichverteilt unter den gueltigen)
+// Stil: Die Fahrstrecke darf einen Zaun nur kreuzen (ein Tor), nicht ihm entlang laufen, und in der Zone steht kein Zaun (Pflanzen, Faesser und Kisten raeumt das Setzen weg)
+const style=c=>{for(let x=c.t;x<=c.t+3;x++)for(const y of[c.r-1,c.r+2])if(cell(x,y)==='f')return false;
+ for(let x=hiC?c.t:S0;x<=(hiC?hiEnd:c.t+3);x++)for(const y of[c.r,c.r+1])if(cell(x,y)==='f'&&(cell(x-1,y)==='f'||cell(x+1,y)==='f'))return false;return true};
+const cs=K.list.filter(c=>(hiC?c.t<=hiEnd-4-M.drive:c.t>=S0+1+M.drive)&&style(c));
+for(let i=cs.length-1;i>0;i--){const j=Math.floor(r()*(i+1)),q=cs[i];cs[i]=cs[j];cs[j]=q}
+let pick=null;for(const c of cs){const x=K.exact(c.t,c.r);if(x.d>=M.minD&&(e0==null||(x.e>=M.pveMin&&x.e<=lim))){pick=Object.assign({},c,x);break}}
+if(!pick)return lay;
+const t=pick.t,rr=pick.r,from=hiC?Math.min(t+6,hiEnd-4):Math.max(t-6,S0+1);
+for(let x=t;x<=t+3;x++)for(const y of[rr-1,rr+2])if('pqk'.includes(cell(x,y)))setc(x,y,'o');
+lay.exit={x:(hiC?t:t+4)*T,y0:(rr-1)*T,y1:(rr+3)*T,dir:ex.dir,tx:hiC?t:t+3,goal:[hiC?t:t+3,pick.gy],door:{x:ex.x,y0:ex.y0,y1:ex.y1}};
+lay.van={y:(rr+1)*T,x0:from*T,stop:t*T,dir:hiC?-1:1};
+lay.meet={t,r:rr,d:pick.d,e:pick.e,e0};
+delete lay.spots;delete lay.lockCells;delete lay.posts;fillDerived(lay);
+(lay.mission.tags=lay.mission.tags||[]).push('Treffpunkt abseits');
+const pf=lay.paintFloor;lay.paintFloor=s=>{pf(s);s.strokeStyle='rgba(255,255,255,.7)';s.lineWidth=2;for(const yy of[rr,rr+1])s.strokeRect(t*T+4,yy*T+4,4*T-8,T-8)};
+return lay}
 /* Lage der Strasse aus dem Seed (Plan Mehr Abwechslung, Stufe 1): Die handgebauten Karten (CFG.turn.scs) bekommen ihre Strasse auf eine Seite (CFG.turn.sides) und mit Wahrscheinlichkeit CFG.turn.mirror laengs gespiegelt, gewuerfelt aus einem eigenen Strom (Seed und Szenario), der die Kartenerzeugung nicht beruehrt.
    Host und Clients kennen Seed und Szenario und bauen so dieselbe Karte, das Netz uebertraegt nichts Neues. CFG.turn.on 0 schaltet ab. turnForce ist nur fuer Tests (dbg.setTurn): 'N', 'E', 'W' oder 'S' (mit + dahinter laengs gespiegelt) erzwingt die Lage fuer jede Gebaeude-Karte, null laesst den Seed entscheiden. */
 function turnFor(seed,sc){const T=CFG.turn;if(!T.on||!T.scs.includes(sc))return'S';let h=0;for(let i=0;i<sc.length;i++)h=Math.imul(h^sc.charCodeAt(i),16777619);const r=mulberry32(Math.imul(seed|0,2654435761)^h);r();const side=T.sides[Math.floor(r()*T.sides.length)];return side+(r()<T.mirror?'+':'')}
@@ -1076,7 +1129,7 @@ const MAP_FIELDS=[
 ['vit','E','reset (Vitrinen, Juwelier)'],['goods','E','reset (Beute-Stuecke)'],['cage','E','reset (Cage, Casino)'],['pumps','E','reset, Zeichnen (Zapfsaeulen, Tankstelle)'],['lasers','E','hostStep, Zeichnen (Museum)'],
 ['bn','E','reset (Tresorbeute abweichend)'],['polAt','E','startHeist'],['wb','E','spawnWave'],['stl','E','finish (Lautlos-Bonus)'],['gAll','E','hostStep (Wachen sehen ueberall, Museum)'],['cone','E','Zeichnen (Sichtkegel der Wache)'],
 ['hall','E','Anzeige, Tests (Name des Grundrisses)'],['jewel','E','Kennzeichen Juwelier'],['gas','E','Kennzeichen Tankstelle'],['museum','E','Kennzeichen Museum'],['casino','E','Kennzeichen Casino'],
-['road','E','Freie Strasse: ersetzt laneY, slots, exit und van (laneOf)'],['turned','E','Anzeige, Tests (turnLayout: Seite der Strasse)'],['q','E','Bank-Zufallskarte, generierte Tankstelle, Juwelier, Museum und Casino: Parameter (Bank: Tausch Buero und Sicherheitsraum, Treffpunkt tp, Tests; Tankstelle: sw, sd, er, np, ps; Juwelier: hw, hd, vx; Museum: ww, ew, dy, vx; Casino: dx, dy, vx)'],['tries','E','layoutFor (Zahl der Versuche der Zufallskarte)'],['truck','E','Kennzeichen Strassenkarte Transporter'],['parked','E','Zeichnen, Material (geparkte Autos am Transporter)'],['decor','E','Zeichnen, Wagen (parkende Autos aller Karten ausser dem Transporter: Mitte, Basis-Kachel, Zeile, Schattenform)'],['decorReal','A','Wagen (deriveDecor: die Autos, die als zivile Wagen ins Spiel kommen)'],
+['road','E','Freie Strasse: ersetzt laneY, slots, exit und van (laneOf)'],['meet','E','Treffpunkt abseits (MRU 1 D1): placeMeet hat Wagen und Zone von der Fluchttuer weg gelegt {t, r, d, e, e0}; Markierung in Phase 1, Tests, validateMap (Regel treffpunkt)'],['turned','E','Anzeige, Tests (turnLayout: Seite der Strasse)'],['q','E','Bank-Zufallskarte, generierte Tankstelle, Juwelier, Museum und Casino: Parameter (Bank: Tausch Buero und Sicherheitsraum, Treffpunkt tp, Tests; Tankstelle: sw, sd, er, np, ps; Juwelier: hw, hd, vx; Museum: ww, ew, dy, vx; Casino: dx, dy, vx)'],['tries','E','layoutFor (Zahl der Versuche der Zufallskarte)'],['truck','E','Kennzeichen Strassenkarte Transporter'],['parked','E','Zeichnen, Material (geparkte Autos am Transporter)'],['decor','E','Zeichnen, Wagen (parkende Autos aller Karten ausser dem Transporter: Mitte, Basis-Kachel, Zeile, Schattenform)'],['decorReal','A','Wagen (deriveDecor: die Autos, die als zivile Wagen ins Spiel kommen)'],
 ['spots','A','Eingaenge (findSpots), Barrikaden, startHeist'],['lockCells','A','reset, Netz'],['wins','A','Fenster (deriveWins), Netz'],['snp','A','Scharfschuetzen (deriveWins)']];
 // Tresortuer: senkrechtes Paar (Standard, door = obere Kachel) oder waagerechtes (o 'h', door = linke Kachel). dir = Richtung vom Gang zum Tresorraum, bei 'v' in x, bei 'h' in y. Mitte: Ort des Items.
 const vaultMid=v=>v.o==='h'?[(v.door[0]+1)*T,v.door[1]*T+16]:[v.door[0]*T+16,(v.door[1]+1)*T];
@@ -1094,8 +1147,8 @@ const ROAD_SIDES={S:{axis:'x',n:[0,-1],opp:'N'},N:{axis:'x',n:[0,1],opp:'S'},E:{
 // Blickwinkel eines Beamten, der von der Strassenseite zum Gebaeude schaut (wie `a` der Posten der jeweiligen Seite)
 const ROAD_FACE={S:-1.57,N:1.57,E:3.14,W:0};
 function roadOf(lay){if(lay.road)return lay.road;const ex=lay.exit,vn=lay.van;
-return{side:'S',pos:lay.laneY,slots:[lay.slots.W,lay.slots.E],van:{pos:vn.y,from:vn.x0,stop:vn.stop,dir:vn.dir},exit:{line:ex.x,span:[ex.y0,ex.y1],dir:ex.dir,tx:ex.tx}}}
-function laneOf(lay){const R=roadOf(lay),sd=ROAD_SIDES[R.side],xa=sd.axis==='x',tl=v=>Math.floor(v/T),vn=R.van,ex=R.exit,B=lay.bld;
+return{side:'S',pos:lay.laneY,slots:[lay.slots.W,lay.slots.E],van:{pos:vn.y,from:vn.x0,stop:vn.stop,dir:vn.dir},exit:Object.assign({line:ex.x,span:[ex.y0,ex.y1],dir:ex.dir,tx:ex.tx},ex.goal?{goal:ex.goal}:{},ex.door?{door:{line:ex.door.x,span:[ex.door.y0,ex.door.y1]}}:{})}}
+function laneOf(lay){const R=roadOf(lay),sd=ROAD_SIDES[R.side],xa=sd.axis==='x',tl=v=>Math.floor(v/T),vn=R.van,ex=R.exit,dr=ex.door||ex,B=lay.bld;
 const L={axis:sd.axis,A:xa?'x':'y',C:xa?'y':'x',n:sd.n,side:R.side,opp:sd.opp,pos:R.pos,row:tl(R.pos),u:xa?[1,0]:[0,1],ends:xa?['W','E']:['N','S'],face:ROAD_FACE[R.side],
  lo:(xa?WX0:WY0)*T,hi:(xa?WX0+W:WY0+H)*T,ang:xa?[0,Math.PI]:[Math.PI/2,-Math.PI/2],
  // Mitte der Strassenmarkierung (px quer zur Achse): vier Kacheln hinter der Aussenwand des Gebaeudes (Bank)
@@ -1113,7 +1166,7 @@ L.van={dir:vn.dir,from:vn.from,stop:vn.stop,pos:vn.pos,swept:L.box(v0,v1,vn.pos,
 L.exit={dir:ex.dir,line:ex.line,span:ex.span,tx:ex.tx,side:xa?(ex.dir>0?'E':'W'):(ex.dir>0?'S':'N'),name:xa?(ex.dir>0?'Osten':'Westen'):(ex.dir>0?'Süden':'Norden'),
  cells:L.box(Math.min(ex.tx,ex.tx+ex.dir*3)*T,(Math.max(ex.tx,ex.tx+ex.dir*3)+1)*T,(ex.span[0]+ex.span[1])/2,(ex.span[1]-ex.span[0])/2),
  has:(x,y)=>{const q=L.st(x,y);return(q[0]-ex.line)*ex.dir>0&&q[1]>ex.span[0]&&q[1]<ex.span[1]},
- near:(x,y)=>{const q=L.st(x,y);return Math.abs(q[0]-ex.line)<2*T&&q[1]>ex.span[0]-T&&q[1]<ex.span[1]+T},
+ near:(x,y)=>{const q=L.st(x,y);return Math.abs(q[0]-dr.line)<2*T&&q[1]>dr.span[0]-T&&q[1]<dr.span[1]+T},
  goal:ex.goal||L.pt(ex.tx,Math.round(vn.pos/T))};return L}
 // Pruefung einer Karte. Das Raster muss zur Karte passen: direkt nach layoutFor(seed) oder buildWorld(lay) aufrufen. Ergebnis {cls, ok, err, warn, info, skipped}: err sind harte Regeln ({r: Regel, m: Meldung}), warn Kennzahlen und Hinweise.
 // Klasse Gebaeude: alle Regeln. Klasse Strasse (Transporter): nur Welt, Start, Fluchtzone, Fluchtwagen-Weg, Wagenplaetze und Posten, der Rest setzt ein Gebaeude mit Eingaengen, Beute und Personal voraus.
@@ -1162,6 +1215,7 @@ if(lay.sw&&!near(lay.sw.x,lay.sw.y,44))E('feld-weg','Hauptschalter nicht erreich
 stand=v&&v.door?vaultStand(lay):null;if(stand&&!hs(RL,stand[0],stand[1]))E('feld-weg','Tresor-Standkachel nicht erreichbar: '+stand)}
 // Fluchtzone, Fluchtwagen-Weg, Wagenplaetze (Kacheln ausserhalb der Welt zaehlen nicht: der Wagen faehrt von draussen an)
 const zc=ln.exit.cells,zr=zc.filter(c=>hs(RL,c[0],c[1])).length;rep.info.zone=[zr,zc.length];if(!zr)E('fluchtzone','Fluchtzone nicht erreichbar: '+zc.length+' Kacheln hinter der Fluchtlinie, keine begehbar');
+if(lay.meet&&!street){if(!lay.spots.some(s=>s.ex))E('treffpunkt','Treffpunkt abseits, aber keine Fluchttuer erkannt (exit.door)');else if(lay.meet.d<meetOf(scOf(lay)).minD)Wn('treffpunkt-nah','Treffpunkt abseits nur '+lay.meet.d+' Schritte von der Fluchttuer (Richtwert '+meetOf(scOf(lay)).minD+')')}
 const blk=cs=>cs.filter(c=>!OOB(c[0],c[1])&&isSol(c[0],c[1])).slice(0,3).map(c=>c+':'+cell(c[0],c[1]));
 let b=blk(ln.van.swept);if(b.length)E('fluchtweg','Fluchtwagen-Weg blockiert (Fahrstrecke): '+b.join(' '));b=blk(ln.van.rest);if(b.length)E('fluchtweg-rand','Fluchtwagen-Weg bis zum Weltrand blockiert: '+b.join(' '));
 rep.info.slots=ln.slots.length;for(const s of ln.slots){b=blk(s.cells);if(b.length)E('wagenplatz','Wagenplatz '+s.end+(s.i+1)+' (Kachel '+s.u+') blockiert: '+b.join(' '));if(isSol(s.curb[0],s.curb[1]))E('aussteigen','Aussteigepunkt von Wagenplatz '+s.end+(s.i+1)+' steht in Festem: '+s.curb)}
@@ -1211,7 +1265,7 @@ const safe=(p,sd)=>{if(!p)return null;for(let k=0;k<=6;k++){const q=[p[0]+nrm[sd
 const pick=(x,y,hor,sd)=>{for(const k of[0,1,-1,2,-2]){const px=hor?x+k:x,py=hor?y:y+k;if(free(px,py))return safe([px,py],sd)}return null};
 for(const sp of lay.spots)if(sp.side&&sp.lk&&!sp.ex){const c0=sp.cells[0],p=[c0[0]-sp.iv[0],c0[1]-sp.iv[1]];if(free(p[0],p[1]))add(sp.side,{x:p[0],y:p[1],a:ang[sp.side],k:sp.side,door:[c0[0],c0[1]]})}
 // Anker an der Fluchtseite: kleine Gebaeude an den Enden der Zone und zwei Kacheln darueber, grosse (Tiefe ueber CFG.val.anchorBase, zum Beispiel das Casino) mit Abstand g um die Zone
-const dep=hz(xs)?B.x1-B.x0+1:B.y1-B.y0+1,g=Math.max(0,Math.round((dep-V.anchorBase)/V.anchorDiv)),r0=tl(ex.span[0]),r1=tl(ex.span[1])-1,ax=ex.tx+ex.dir*V.off.E;for(const [y0,dn] of[[r0-g,-1],[r1+g,1],[r0-2-2*g,-1]])for(let k=0;k<=6;k++){const y=y0+dn*k,p=xa?pick(ax,y,false,xs):pick(y,ax,true,xs);if(p&&add(xs,{x:p[0],y:p[1],a:ang[xs],k:xs,anchor:true}))break}
+const dep=hz(xs)?B.x1-B.x0+1:B.y1-B.y0+1,g=Math.max(0,Math.round((dep-V.anchorBase)/V.anchorDiv)),r0=tl(ex.span[0]),r1=tl(ex.span[1])-1,ax=ex.tx+ex.dir*V.off.E;let nan=0;for(const [y0,dn] of[[r0-g,-1],[r1+g,1],[r0-2-2*g,-1]])for(let k=0;k<=6;k++){const y=y0+dn*k,p=xa?pick(ax,y,false,xs):pick(y,ax,true,xs),an=!lay.meet||nan<meetOf(scOf(lay)).anchors;if(p&&add(xs,Object.assign({x:p[0],y:p[1],a:ang[xs],k:xs},an?{anchor:true}:{}))){if(an)nan++;break}}
 // Seitenwand: um eine offene Tuer im Dreierabstand (Tuer, davor, dahinter), sonst gleichmaessig
 const wall=sd=>{const h=hz(sd),a0=h?B.x0:B.y0,a1=h?B.x1:B.y1,r=role(sd),line=edge(sd,V.off[r]),od=lay.spots.find(q=>q.side===sd&&!q.lk&&!q.ex),ts=[];
  if(od){const d=od.cells[0][h?0:1];ts.push(d,d-V.postGap,d+V.postGap)}else{const n=Math.max(2,Math.round((a1-a0)/V.postStep[r]));for(let i=0;i<n;i++)ts.push(Math.round(a0+(a1-a0)*(i+.5)/n))}
@@ -1984,7 +2038,7 @@ if(selIt>=0&&!inReach(itsAll()[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=41,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=42,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());
@@ -2582,7 +2636,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1;if(spwOn&&!paused&&!ended)reqSpw()});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}

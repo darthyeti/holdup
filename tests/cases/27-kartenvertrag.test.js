@@ -148,6 +148,7 @@ module.exports = [
     name: 'Kartenvertrag: die Regeln schlagen an (Negativproben auf dem Juwelier)',
     timeout: 120000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // geprueft wird die Karte ohne Treffpunkt abseits (109)
       await t.loadTool('mapcheck.js');
       const r = await t.page.evaluate(() => {
         const D = __dbg, out = {};
@@ -230,6 +231,7 @@ module.exports = [
     name: 'Kartenvertrag: autoPosts (Posten und Wagenplaetze aus der Geometrie) im Vergleich zur Handliste, nichts wird ersetzt',
     timeout: 180000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // beim Treffpunkt abseits (109) sind die Posten abgeleitet, hier zaehlt die Handliste
       await t.loadTool('mapcheck.js');
       const r = await t.page.evaluate(() => {
         const out = {}, runs = { bank: [5000, 5037, 5074, 5111], jewel: [1], gas: [1], museum: [1], casino: [1] };

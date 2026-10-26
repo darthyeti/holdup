@@ -4,7 +4,7 @@
 // Beide Staende spielen mit festem Zufallsstrom (Math.random) dieselben Laeufe und schreiben Zustandsauszuege, die Zeichen fuer Zeichen gleich sein muessen:
 //  1. Spielablauf je Karte (Bank klassisch und Zufallskarten, Juwelier, Tankstelle, Museum, Casino, Transporter): Alarm, Polizeianfahrt, Aussteigen, Fluchtwagen, Flucht,
 //     alle 15 Schritte Wagen (Platz, Zustand, Position, Winkel), Beamte (Position, Modus), Fluchtwagen, Beute.
-//     Beide Staende spielen die Basiskarte (dbg.setTurn('S'), seit Sprint 5 dazu CFG.map.tpW 0: Treffpunkt der Bank immer Ost, seit Sprint 6 CFG.gasGen.on 0: Tankstelle nur die vier Hand-Hallen, seit Sprint 7 CFG.jewGen.on 0: Juwelier nur die fuenf Hand-Hallen, seit Sprint 8 CFG.museumGen.on 0: Museum nur die vier Hand-Hallen, seit Sprint 9 CFG.casinoGen.on 0: Casino nur die vier Hand-Hallen): Seit Sprint 4 des Plans Mehr Abwechslung dreht layoutFor die handgebauten Karten aus dem Seed, der Vergleich beweist, dass die Basis und Bank und Transporter unveraendert sind.
+//     Beide Staende spielen die Basiskarte (dbg.setTurn('S'), seit Sprint 5 dazu CFG.map.tpW 0: Treffpunkt der Bank immer Ost, seit MRU 1 D1 CFG.meet.on 0: kein Treffpunkt abseits, seit Sprint 6 CFG.gasGen.on 0: Tankstelle nur die vier Hand-Hallen, seit Sprint 7 CFG.jewGen.on 0: Juwelier nur die fuenf Hand-Hallen, seit Sprint 8 CFG.museumGen.on 0: Museum nur die vier Hand-Hallen, seit Sprint 9 CFG.casinoGen.on 0: Casino nur die vier Hand-Hallen): Seit Sprint 4 des Plans Mehr Abwechslung dreht layoutFor die handgebauten Karten aus dem Seed, der Vergleich beweist, dass die Basis und Bank und Transporter unveraendert sind.
 //  2. Balance-Bot (tools/bot.js des jeweiligen Stands) mit mehreren Optionen (frueh rufen, warten, Barrikaden, Extras, die neuen Karten): Ergebnis, Zeit, Rest-HP, Beute, Wellen, Abschuesse je Lauf.
 // Ausgabe IDENTISCH oder die erste abweichende Zeile. Ein Lauf dauert rund 30 Sekunden, mit `schnell` rund 10 (geprueft: eine einzige Pixelverschiebung beim Aussteigen der Beamten wird erkannt).
 // Das Ende-Objekt wird ohne aw, pg und fh verglichen (Auszeichnungen und Fahndungs-Tafel, Oktober 2026: neue Felder, kein Spielablauf).
@@ -47,7 +47,7 @@ async function spielen(root) {
     const page = await lib.openGame(env);
     const res = await page.evaluate(new Function('args', 'const [sc,seed]=args;' + SEEDED + `
       const D = __dbg, lines = [], r1 = v => Math.round(v * 1000) / 1000;
-      D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildSeed(seed); D.startHeist(true);
+      D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.meet) D.CFG.meet.on = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildSeed(seed); D.startHeist(true);
       const L = D.LAY();
       for (let i = 0; i < 30 * 170; i++) {
         const G = D.get(), me = G.me;
@@ -68,7 +68,7 @@ async function spielen(root) {
     const page = await lib.openGame(env);
     await page.addScriptTag({ content: botSrc });
     const res = await page.evaluate(new Function('args', 'const [sc,seed,o,n]=args;' + SEEDED + `
-      const D = __dbg; D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildSeed(seed);
+      const D = __dbg; D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.meet) D.CFG.meet.on = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildSeed(seed);
       const rs = []; for (let i = 0; i < n; i++) { const r = bot.run(Object.assign({}, o)); rs.push(r.res + '@' + r.t + ' hp' + r.minHp + ' loot' + r.loot + ' w' + r.waves + ' k' + r.kills); }
       return rs;`), [sc, seed, o, n]);
     out.push('### Bot ' + sc + ' ' + seed + ' ' + JSON.stringify(o) + (page.errors.length ? ' FEHLER ' + page.errors.join(' | ') : ''), ...res);

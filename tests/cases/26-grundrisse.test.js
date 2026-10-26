@@ -28,6 +28,7 @@ module.exports = [
     slow: true,
     timeout: 240000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // geprueft werden die Hallen selbst, ohne Treffpunkt abseits (109)
       const r = await t.page.evaluate(VAR => {
         const D = __dbg, out = {};
         for (const sc of Object.keys(VAR)) {
@@ -59,6 +60,7 @@ module.exports = [
     slow: true,
     timeout: 240000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // geprueft werden die Hallen selbst, ohne Treffpunkt abseits (109)
       const hashes = await t.page.evaluate(SC => {
         const D = __dbg, h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(16); };
         const out = {};

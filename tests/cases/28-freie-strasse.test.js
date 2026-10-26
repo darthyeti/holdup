@@ -121,6 +121,7 @@ module.exports = [
     name: 'Freie Strasse: autoPosts folgt der Strasse (Wagenplaetze gleich, Posten bis auf einen), auch laengs gespiegelt',
     timeout: 120000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // geprueft wird die Karte ohne Treffpunkt abseits (109)
       const r = await t.page.evaluate(() => {
         const D = __dbg, bad = [], sum = [];
         const mk = (sc, s) => { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); return D.layoutBase(s); };

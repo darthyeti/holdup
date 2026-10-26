@@ -39,7 +39,7 @@ module.exports = [
           if (!at()) bad.push('Fluchtwagen kam nicht an'); else {
             const mouth = new Set(L.spots.flatMap(sp => sp.cells.map(c => (c[0] - sp.iv[0]) + ',' + (c[1] - sp.iv[1])))), vc = LN.box(LN.van.stop, LN.van.stop + 128, LN.van.pos, 32).filter(c => !mouth.has(c[0] + ',' + c[1])); if (vc.some(c => D.world().cell(c[0], c[1]) === 'o')) bad.push('Kachel unter dem Fluchtwagen nicht gestempelt'); if (vc.length < 4) bad.push('Fussabdruck des Fluchtwagens zu klein: ' + vc.length);
             const d2 = doors(); if (d2.length) bad.push('ohne Weg zur Zone (Wagen und Fluchtwagen): ' + d2.join(','));
-            const z2 = zone(); if (z2 < z0 * .75) bad.push('Zone mit Fluchtwagen ' + z2 + ' von ' + z0);
+            const z2 = zone(), zb = L.meet ? z0 - 8 : z0; if (z2 < zb * .75) bad.push('Zone mit Fluchtwagen ' + z2 + ' von ' + z0 + (L.meet ? ' (abzueglich der 8 Kacheln des Wagens, Treffpunkt abseits)' : ''));
           }
           D.reset(); if (D.world().M.join('\\n') !== M0) bad.push('reset raeumt die gestempelten Kacheln nicht auf');
           out.push({ sc, turn, cars: cars.length, bad });

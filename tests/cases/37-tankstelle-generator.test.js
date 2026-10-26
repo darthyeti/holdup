@@ -8,6 +8,7 @@ module.exports = [
     name: 'Tankstelle: ohne Generator (CFG.gasGen.on 0) sind Raster, Felder und Pixel jeder Hand-Halle gleich dem Stand vor dem Umbau (Schnappschuss)',
     timeout: 120000,
     async run(t) {
+      await t.page.evaluate(() => { __dbg.CFG.meet.p = 0; });   // geprueft wird die Karte ohne Treffpunkt abseits (109)
       await t.loadInpage('turn.js');
       const r = await t.page.evaluate(({ HALLS }) => {
         const D = __dbg, out = { hash: {}, px: {}, n: {} }, acc = {}, first = {};

@@ -1,0 +1,1174 @@
+{
+ "tabelle": {
+  "bank": {
+   "Klassik": {
+    "n": 1,
+    "welt": "44x28",
+    "hofFlucht": [
+     11,
+     11,
+     11
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     22,
+     22,
+     22
+    ],
+    "d1D": [
+     8,
+     8,
+     8
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      19,
+      19,
+      19
+     ]
+    },
+    "B": {
+     "wallPct": 100,
+     "wallVE": 18
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 100,
+     "wallVE": 13
+    },
+    "pve10": {
+     "minE": 19,
+     "meanE": 28
+    },
+    "pve12": {
+     "minE": 21,
+     "meanE": 27
+    },
+    "pve14": {
+     "minE": 23,
+     "meanE": 26
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Ost": {
+    "n": 19,
+    "welt": "47x28",
+    "hofFlucht": [
+     9,
+     9,
+     12
+    ],
+    "hofGegen": [
+     5,
+     10,
+     12
+    ],
+    "pveJetzt": [
+     17,
+     20,
+     25
+    ],
+    "d1D": [
+     6,
+     6,
+     9
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      15,
+      17,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 100,
+     "wallVE": 19
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 100,
+     "wallVE": 12
+    },
+    "pve10": {
+     "minE": 19,
+     "meanE": 26
+    },
+    "pve12": {
+     "minE": 20,
+     "meanE": 26
+    },
+    "pve14": {
+     "minE": 22,
+     "meanE": 27
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "West": {
+    "n": 21,
+    "welt": "47x28",
+    "hofFlucht": [
+     9,
+     10,
+     12
+    ],
+    "hofGegen": [
+     5,
+     5,
+     12
+    ],
+    "pveJetzt": [
+     16,
+     22,
+     27
+    ],
+    "d1D": [
+     6,
+     7,
+     9
+    ],
+    "A2D": {
+     "pct": 95,
+     "dMax": [
+      0,
+      17,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 100,
+     "wallVE": 19
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 100,
+     "wallVE": 14
+    },
+    "pve10": {
+     "minE": 21,
+     "meanE": 27
+    },
+    "pve12": {
+     "minE": 22,
+     "meanE": 28
+    },
+    "pve14": {
+     "minE": 24,
+     "meanE": 29
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   }
+  },
+  "jewel": {
+   "Gänge": {
+    "n": 9,
+    "welt": "46x30",
+    "hofFlucht": [
+     13,
+     13,
+     13
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     13,
+     13,
+     13
+    ],
+    "d1D": [
+     10,
+     10,
+     10
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      18,
+      18
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 33,
+     "wallVE": 24
+    },
+    "pve10": {
+     "minE": 14,
+     "meanE": 21
+    },
+    "pve12": {
+     "minE": 16,
+     "meanE": 23
+    },
+    "pve14": {
+     "minE": 18,
+     "meanE": 22
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Klassik": {
+    "n": 4,
+    "welt": "44x30",
+    "hofFlucht": [
+     13,
+     13,
+     13
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     13,
+     13,
+     13
+    ],
+    "d1D": [
+     10,
+     10,
+     10
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      18,
+      18
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 75,
+     "wallVE": 24
+    },
+    "pve10": {
+     "minE": 14,
+     "meanE": 21
+    },
+    "pve12": {
+     "minE": 16,
+     "meanE": 23
+    },
+    "pve14": {
+     "minE": 18,
+     "meanE": 22
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Reihen": {
+    "n": 13,
+    "welt": "45x30",
+    "hofFlucht": [
+     13,
+     13,
+     13
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     13,
+     13,
+     13
+    ],
+    "d1D": [
+     10,
+     10,
+     10
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      18,
+      18
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 54,
+     "wallVE": 24
+    },
+    "pve10": {
+     "minE": 14,
+     "meanE": 21
+    },
+    "pve12": {
+     "minE": 16,
+     "meanE": 23
+    },
+    "pve14": {
+     "minE": 18,
+     "meanE": 22
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Ring": {
+    "n": 6,
+    "welt": "46x30",
+    "hofFlucht": [
+     13,
+     13,
+     13
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     13,
+     13,
+     13
+    ],
+    "d1D": [
+     10,
+     10,
+     10
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      18,
+      18
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 50,
+     "wallVE": 24
+    },
+    "pve10": {
+     "minE": 14,
+     "meanE": 21
+    },
+    "pve12": {
+     "minE": 16,
+     "meanE": 23
+    },
+    "pve14": {
+     "minE": 18,
+     "meanE": 22
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Salon": {
+    "n": 8,
+    "welt": "46x30",
+    "hofFlucht": [
+     13,
+     13,
+     13
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     13,
+     13,
+     13
+    ],
+    "d1D": [
+     10,
+     10,
+     10
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      18,
+      18
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 63,
+     "wallVE": 24
+    },
+    "pve10": {
+     "minE": 14,
+     "meanE": 21
+    },
+    "pve12": {
+     "minE": 16,
+     "meanE": 23
+    },
+    "pve14": {
+     "minE": 18,
+     "meanE": 22
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   }
+  },
+  "gas": {
+   "Gänge": {
+    "n": 8,
+    "welt": "44x30",
+    "hofFlucht": [
+     18,
+     21,
+     21
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     20,
+     22,
+     23
+    ],
+    "d1D": [
+     15,
+     18,
+     18
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      21,
+      22
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "pve10": {
+     "minE": 17,
+     "meanE": 28
+    },
+    "pve12": {
+     "minE": 19,
+     "meanE": 29
+    },
+    "pve14": {
+     "minE": 21,
+     "meanE": 32
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Insel": {
+    "n": 11,
+    "welt": "44x30",
+    "hofFlucht": [
+     18,
+     21,
+     22
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     18,
+     19,
+     23
+    ],
+    "d1D": [
+     15,
+     18,
+     19
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      18,
+      20,
+      22
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 100,
+     "wallVE": 26
+    },
+    "pve10": {
+     "minE": 18,
+     "meanE": 26
+    },
+    "pve12": {
+     "minE": 20,
+     "meanE": 28
+    },
+    "pve14": {
+     "minE": 22,
+     "meanE": 30
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Klassik": {
+    "n": 10,
+    "welt": "44x30",
+    "hofFlucht": [
+     17,
+     19,
+     23
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     18,
+     23,
+     25
+    ],
+    "d1D": [
+     14,
+     16,
+     20
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      16,
+      18,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 100,
+     "wallVE": 25
+    },
+    "pve10": {
+     "minE": 20,
+     "meanE": 30
+    },
+    "pve12": {
+     "minE": 22,
+     "meanE": 32
+    },
+    "pve14": {
+     "minE": 24,
+     "meanE": 34
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Wandregale": {
+    "n": 11,
+    "welt": "44x30",
+    "hofFlucht": [
+     17,
+     19,
+     20
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     20,
+     22,
+     24
+    ],
+    "d1D": [
+     14,
+     16,
+     17
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      17,
+      19,
+      20
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 8
+    },
+    "V": {
+     "wallPct": 18,
+     "wallVE": 20
+    },
+    "pve10": {
+     "minE": 19,
+     "meanE": 29
+    },
+    "pve12": {
+     "minE": 21,
+     "meanE": 30
+    },
+    "pve14": {
+     "minE": 23,
+     "meanE": 33
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   }
+  },
+  "museum": {
+   "Kabinette": {
+    "n": 8,
+    "welt": "47x34",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     14,
+     14,
+     16
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      13,
+      15,
+      15
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 22
+    },
+    "V": {
+     "wallPct": 63,
+     "wallVE": 23
+    },
+    "pve10": {
+     "minE": 23,
+     "meanE": 23
+    },
+    "pve12": {
+     "minE": 25,
+     "meanE": 25
+    },
+    "pve14": {
+     "minE": 27,
+     "meanE": 27
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Klassik": {
+    "n": 11,
+    "welt": "45x34",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     14,
+     14,
+     16
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      13,
+      15,
+      15
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 22
+    },
+    "V": {
+     "wallPct": 73,
+     "wallVE": 23
+    },
+    "pve10": {
+     "minE": 23,
+     "meanE": 23
+    },
+    "pve12": {
+     "minE": 25,
+     "meanE": 25
+    },
+    "pve14": {
+     "minE": 27,
+     "meanE": 27
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Ring": {
+    "n": 10,
+    "welt": "45x34",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     14,
+     15,
+     16
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      13,
+      14,
+      15
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 22
+    },
+    "V": {
+     "wallPct": 40,
+     "wallVE": 23
+    },
+    "pve10": {
+     "minE": 24,
+     "meanE": 24
+    },
+    "pve12": {
+     "minE": 26,
+     "meanE": 26
+    },
+    "pve14": {
+     "minE": 28,
+     "meanE": 28
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Säulenhalle": {
+    "n": 11,
+    "welt": "46x34",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     14,
+     15,
+     16
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      13,
+      14,
+      15
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 22
+    },
+    "V": {
+     "wallPct": 64,
+     "wallVE": 24
+    },
+    "pve10": {
+     "minE": 24,
+     "meanE": 24
+    },
+    "pve12": {
+     "minE": 26,
+     "meanE": 26
+    },
+    "pve14": {
+     "minE": 28,
+     "meanE": 28
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   }
+  },
+  "casino": {
+   "Klassik": {
+    "n": 9,
+    "welt": "59x40",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     20,
+     20,
+     20
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      23,
+      23,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 9
+    },
+    "V": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "pve10": {
+     "minE": 25,
+     "meanE": 28
+    },
+    "pve12": {
+     "minE": 23,
+     "meanE": 29
+    },
+    "pve14": {
+     "minE": 21,
+     "meanE": 28
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Promenade": {
+    "n": 12,
+    "welt": "57x41",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     20,
+     20,
+     20
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      23,
+      23,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 9
+    },
+    "V": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "pve10": {
+     "minE": 25,
+     "meanE": 28
+    },
+    "pve12": {
+     "minE": 23,
+     "meanE": 29
+    },
+    "pve14": {
+     "minE": 21,
+     "meanE": 28
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Reihen": {
+    "n": 12,
+    "welt": "59x41",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     20,
+     20,
+     20
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      23,
+      23,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 9
+    },
+    "V": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "pve10": {
+     "minE": 25,
+     "meanE": 28
+    },
+    "pve12": {
+     "minE": 23,
+     "meanE": 29
+    },
+    "pve14": {
+     "minE": 21,
+     "meanE": 28
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Staffel": {
+    "n": 7,
+    "welt": "58x41",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     20,
+     20,
+     20
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      23,
+      23,
+      23
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 9
+    },
+    "V": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "pve10": {
+     "minE": 25,
+     "meanE": 28
+    },
+    "pve12": {
+     "minE": 23,
+     "meanE": 29
+    },
+    "pve14": {
+     "minE": 21,
+     "meanE": 28
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   }
+  }
+ }
+}

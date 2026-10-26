@@ -5,7 +5,7 @@
    "seeds": 200,
    "huelle": 200,
    "groessen": 35,
-   "flucht": 85,
+   "flucht": 130,
    "beute": 13,
    "hallen": 0,
    "hallenVerteilung": {},
@@ -15,9 +15,9 @@
   "jewel": {
    "sc": "jewel",
    "seeds": 200,
-   "huelle": 150,
+   "huelle": 186,
    "groessen": 28,
-   "flucht": 52,
+   "flucht": 127,
    "beute": 67,
    "hallen": 5,
    "hallenVerteilung": {
@@ -33,9 +33,9 @@
   "gas": {
    "sc": "gas",
    "seeds": 200,
-   "huelle": 175,
+   "huelle": 195,
    "groessen": 38,
-   "flucht": 111,
+   "flucht": 171,
    "beute": 131,
    "hallen": 4,
    "hallenVerteilung": {
@@ -50,9 +50,9 @@
   "museum": {
    "sc": "museum",
    "seeds": 200,
-   "huelle": 165,
+   "huelle": 187,
    "groessen": 32,
-   "flucht": 54,
+   "flucht": 133,
    "beute": 176,
    "hallen": 4,
    "hallenVerteilung": {
@@ -67,9 +67,9 @@
   "casino": {
    "sc": "casino",
    "seeds": 200,
-   "huelle": 170,
+   "huelle": 194,
    "groessen": 30,
-   "flucht": 91,
+   "flucht": 165,
    "beute": 161,
    "hallen": 4,
    "hallenVerteilung": {

@@ -68,7 +68,7 @@ module.exports = [
               if (!p) bad.push(tag + ' Hintertuer ' + c0 + ' ohne Aufbruch-Posten'); else if (Math.abs(p.x - c0[0]) + Math.abs(p.y - c0[1]) !== 1) bad.push(tag + ' Aufbruch-Posten nicht direkt vor der Tuer ' + c0);
             }
             // 4 Anker und Wagenplaetze
-            const an = L.posts.filter(p => p.anchor); if (an.length < 3) bad.push(tag + ' nur ' + an.length + ' Anker');
+            const an = L.posts.filter(p => p.anchor), wantAn = L.meet ? Object.assign({}, D.CFG.meet, (D.CFG.meet.per || {})[sc]).anchors : 3; if (an.length < wantAn) bad.push(tag + ' nur ' + an.length + ' Anker statt ' + wantAn);
             const ends = {}; for (const s of ln.slots) ends[s.end] = (ends[s.end] || 0) + 1;
             if (ln.slots.length < 6 || Object.values(ends).some(v => v < 3)) bad.push(tag + ' Wagenplaetze ' + JSON.stringify(ends));
             // 5 Gefahrenradius um Zapfsaeulen
