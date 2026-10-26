@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=166"></script>
+<script src="js/ui.js?v=167"></script>
 <script>
-const BUILD={n:166,d:'2026-10-26'};//BUILD
+const BUILD={n:167,d:'2026-10-26'};//BUILD
 const UI_API=8;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -1980,14 +1980,16 @@ flowT-=dt;if(flowT<=0){flow();flowT=.2}
 for(const c of pcs)carStep(c,dt);for(const f of fps)footStep(f,dt);fps=fps.filter(f=>f.crew.length);
 barStep(dt);trapStep(dt);aidStep(dt);grStep(dt);
 for(const e of en){e.h-=dt;if(e.kind==='sniper'){if(e.walk){snipeWalk(e,dt);e.aimA=0;continue}snipeStep(e,dt);e.aimA=e.aim>0?[e.aim/CFG.snp.aim,e.lx,e.ly,e.tg]:0;continue}if(e.crew&&!e.sur&&crewSur(e)){e.sur=true;e.mode='sur';e.cp=0;e.mvg=false;say('Eine Wache ergibt sich!');snd('found')}if(e.sur){e.react=0;e.mvg=false;e.fl=0;continue}
-let tg=null,td=1e9;
-for(const o of act){const dd=Math.hypot(o.x-e.x,o.y-e.y);if(dd<460&&dd<td&&los(e.x,e.y,o.x,o.y)&&clear(e.x,e.y,o.x,o.y)&&!smoked(e.x,e.y,o.x,o.y)&&!hostBlock(e.x,e.y,o.x,o.y)&&!hostShield(o)){tg=o;td=dd}}
+let tg=null,td=1e9,ts=null,tsd=1e9;
+/* Geiselschild (P5): Ein Geschuetzter bleibt Ziel fuer Bewegung und Zielen (Haltabstand, Kreisen), nur geschossen wird nicht. Ein freier Spieler im Blick geht vor. */
+for(const o of act){const dd=Math.hypot(o.x-e.x,o.y-e.y);if(dd<460&&(dd<td||dd<tsd)&&los(e.x,e.y,o.x,o.y)&&clear(e.x,e.y,o.x,o.y)&&!smoked(e.x,e.y,o.x,o.y)&&!hostBlock(e.x,e.y,o.x,o.y)){if(hostShield(o)){if(dd<tsd){ts=o;tsd=dd}}else if(dd<td){tg=o;td=dd}}}
+const shd=!tg&&!!ts;if(shd){tg=ts;td=tsd}
 let tx=0,ty=0,sp=e.spd;
 e.dt-=dt;if(e.dt<=0){e.dir*=-1;e.dt=1+Math.random()*1.5}
-if(e.mode==='run'&&(e.hp<e.mhp||e.sx||(tg&&td<CFG.pol.reactD))){e.mode='push';e.post=null;e.path=[]}
+if(e.mode==='run'&&(e.hp<e.mhp||e.sx||(tg&&!shd&&td<CFG.pol.reactD))){e.mode='push';e.post=null;e.path=[]}
 else if(e.mode==='post'&&(((e.hp<e.mhp||e.sx)&&!e.crew)||tH>=e.rt+holdX-(e.hx||0))){const d=e.post.door;if(e.hp>=e.mhp&&!e.sx&&d&&cell(d[0],d[1])==='L'){e.mode='breach';e.bt=CFG.pol.breachT}else{e.mode='push';e.post=null}}
 else if(e.mode==='breach'){const d=e.post.door;if(e.hp<e.mhp||e.sx||cell(d[0],d[1])!=='L'){e.mode='push';e.post=null}else if((e.bt-=dt)<=0){setc(d[0],d[1],'l');snd('ev','crash');flowT=0;say('Die Polizei bricht die Hintertür auf!');e.mode='push';e.post=null}}
-if(tg&&e.mode!=='run'){const dxp=tg.x-e.x,dyp=tg.y-e.y,dd=td||1;e.react+=dt;e.a=alerp(e.a,Math.atan2(dyp,dxp),.25);if(e.mode==='post'||e.mode==='breach'){tx=-dyp/dd*e.dir*.5;ty=dxp/dd*e.dir*.5}else if(e.mode==='plant'){tx=0;ty=0}else if(dd>150){tx=dxp/dd;ty=dyp/dd}else{tx=-dyp/dd*e.dir;ty=dxp/dd*e.dir}sp*=.72;
+if(tg&&e.mode!=='run'){const dxp=tg.x-e.x,dyp=tg.y-e.y,dd=td||1;if(shd)e.react=0;else e.react+=dt;e.a=alerp(e.a,Math.atan2(dyp,dxp),.25);if(e.mode==='post'||e.mode==='breach'){tx=-dyp/dd*e.dir*.5;ty=dxp/dd*e.dir*.5}else if(e.mode==='plant'){tx=0;ty=0}else if(dd>150){tx=dxp/dd;ty=dyp/dd}else{tx=-dyp/dd*e.dir;ty=dxp/dd*e.dir}sp*=.72;
 if(e.react>CFG.pol.react){e.cool-=dt;if(e.cool<=0){e.cool=e.rate*(.8+Math.random()*.5);const a=e.a+(Math.random()-.5)*e.acc;bl.push({id:++bid,x:e.x+Math.cos(e.a)*(e.muz+2),y:e.y+Math.sin(e.a)*(e.muz+2),vx:Math.cos(a)*420,vy:Math.sin(a)*420,l:1,o:0,dmg:e.dmg});e.fl=.05;evt('es',[e.id,e.x,e.y,e.kind])}}}
 else if(e.mode==='run'){e.react=0;const q=e.path[0];if(!q)e.mode='post';else{const dx=q[0]-e.x,dy=q[1]-e.y,dd=Math.hypot(dx,dy);if(dd<4)e.path.shift();else{tx=dx/dd;ty=dy/dd;sp=e.spd*CFG.pol.run;e.a=alerp(e.a,Math.atan2(ty,tx),.2)}}}
 else if(e.mode==='plant'){e.react=0;if(e.tb)e.a=alerp(e.a,Math.atan2(e.tb.y-e.y,e.tb.x-e.x),.15)}

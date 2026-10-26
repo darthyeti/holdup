@@ -18,7 +18,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
 | P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt) |
 | P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | S1 bis S3 mit Befund | gebaut (26. Oktober 2026), wartet auf Tills Spieltest (Till ergänzt weitere Punkte) |
-| P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | Plan steht, wartet auf Tills Go |
+| P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
 | P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | Plan steht, wartet auf Tills Go (zusammen mit P4 bauen) |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
@@ -186,8 +186,14 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 
 **Risiken:** Klein bis mittel. Die Änderung sitzt in der zentralen Beamten-Schleife (vier Stellen, alle Beamtenarten außer Scharfschützen). Die Polizei-Tests decken sie ab, sie ändert aber die Zielwahl, die auch ohne Geisel jeden Beamten betrifft (nur die Bedingung `hostShield` wird verschoben, ohne Geisel liefert sie immer falsch). `index.html` wird zurzeit parallel geändert (Fluchtwagen-Treffpunkt, Spur 2): erst nach deren Commit bauen oder auf einer eigenen Branch.
 
+**Bau** (26. Oktober 2026, Go von Till), Abweichungen vom Plan:
+- Zwei Ziele statt einem: Die Zielwahl merkt sich den nächsten freien (ungeschützten) und den nächsten geschützten Spieler (`tg`, `ts`). Nur wenn kein freier im Blick ist, wird der geschützte zum Ziel (`shd`). Ohne diese Regel hätte ein geschützter Spieler nahe am Beamten einen freien, weiter entfernten Mitspieler verdeckt (der Beamte hätte nicht mehr auf ihn geschossen).
+- Mit `shd` bleibt `e.react` bei 0 (kein Schuss, keine angesammelte Reaktionszeit), der Wechsel von `run` auf `push` gilt nur für freie Ziele. `hostBlock` bleibt in der Zielwahl, `hostShield` nur noch zur Einordnung. Kein `CFG`-Wert, kein Netzformat.
+- Test `111-geiselschild-abstand` (drei Tests, rund 1 s): Der erste war vorher rot (Abstand 197, 154, 111, 68, 24, 2, 1 ... Pixel) und ist jetzt grün. Die anderen beiden halten fest, was gleich bleibt (Reaktionszeit nach Ablauf des Schilds, freier Mitspieler, `run` bleibt `run`). Die Tests 105, 97, 92 und die Polizei-Tests laufen grün. Der Bot nimmt keine Geiseln und ist nicht betroffen. Eine Bild-Prüfung steht aus.
+
 **Änderungsprotokoll**
 - v1 (26. Oktober 2026): Plan zu B5, noch ohne Go.
+- Bau (26. Oktober 2026): Go von Till, gebaut mit den Abweichungen oben, Status gebaut.
 
 ## P6 Coop: Serienstand im neuen Raum und Mitspieler entfernen
 
