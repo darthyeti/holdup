@@ -278,7 +278,7 @@ g.strokeStyle=hot?tr.c:open?tr.c:'rgba(255,255,255,.14)';g.globalAlpha=hot?1:ope
 link(tr.k+'0',tr.k+'1',true);link(tr.k+'0',tr.k+'2',true);link(tr.k+'1',tr.k+'3',false);link(tr.k+'2',tr.k+'4',false);
 const a=by(tr.k+'1'),b=by(tr.k+'2');g.textAlign='center';g.font='bold 9px monospace';g.fillStyle=MU;g.fillText('ODER',a.x+a.w/2,a.y+a.h+pg/2+3);g.textAlign='left'});
 /* rechte Spalte: Punkteregel */
-g.fillStyle=MU;g.font='11px monospace';wrap('Punkte: '+S.pts.win+' je gewonnenem Auftrag, +'+S.pts.goal+' Nebenziel, +'+S.pts.quiet+' lautlos. Die Serie endet bei Niederlage, dann sind Punkte und Baum weg. Zurücknehmen geht bis zum Verlassen des Shops.',156,'11px monospace',9).forEach((l,i)=>g.fillText(l,744,y0+22+i*14));
+g.fillStyle=MU;g.font='11px monospace';wrap('Punkte: '+S.pts.win+' je gewonnenem Auftrag, +'+S.pts.goal+' Nebenziel, +'+S.pts.loud+' im Überfall (lautlos gibt mehr Geld). Die Serie endet bei Niederlage, dann sind Punkte und Baum weg. Zurücknehmen geht bis zum Verlassen des Shops.',156,'11px monospace',9).forEach((l,i)=>g.fillText(l,744,y0+22+i*14));
 /* Beschreibung des angewaehlten Knotens (Fokus oder zuletzt angewaehlt) */
 const n=S[f],r=SESSION.sk[f]|0,tr=S.trees.find(q=>q.k===f[0]),bl=X.skBlock(SESSION.sk,f),W=650,ly=448;g.textAlign='left';
 g.font='bold 13px monospace';g.fillStyle=tr.c;g.fillText(fit(n.n+(n.soon?'  (noch nicht gebaut)':r>=S.max?'  (Stufe '+r+', voll)':'  (Stufe '+r+' von '+S.max+')'),W,g.font),rx,ly);

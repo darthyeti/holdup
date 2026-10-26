@@ -49,18 +49,18 @@ module.exports = [
     },
   },
   {
-    name: 'Skillbaum: Punkte nach einem gewonnenen Auftrag (1, dazu Nebenziel und lautlos je 1), Niederlage beendet die Serie und leert Punkte und Baum, das Kit traegt die Stufen (curKit, sanKit klemmt)',
+    name: 'Skillbaum: Punkte nach einem gewonnenen Auftrag (1, im Ueberfall +1, dazu Nebenziel +1, lautlos gibt keinen Zusatz mehr, siehe 99-punkte-bonus), Niederlage beendet die Serie und leert Punkte und Baum, das Kit traegt die Stufen (curKit, sanKit klemmt)',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = ${SETUP}, { D } = S({}, { phase1: true }), o = {};
         const end = (win, sp, soft) => { D.endLocal({ win, soft: !!soft, sp, score: 1000, n: 1, lines: [], fh: null, title: 't', extra: '', hi: false }); return D.SESSION.pts; };
         D.sessReset(); o.win = end(true, { goal: false, quiet: false });
         o.goal = end(true, { goal: true, quiet: false }) - o.win; o.quiet = end(true, { goal: true, quiet: true }) - o.win - o.goal;
-        o.line = D.get().ended.lines.some(l => /^Skillpunkte: \\+3/.test(l)); o.soft = end(false, null, true) - (o.win + o.goal + o.quiet);
+        o.line = D.get().ended.lines.some(l => /^Skillpunkte: \\+2/.test(l)); o.soft = end(false, null, true) - (o.win + o.goal + o.quiet);
         D.SESSION.sk.A0 = 2; D.SESSION.sk.U3 = 1; o.kit = D.curKit().sk;
         o.san = D.sanKit({ sk: { A0: 9, Z9: 3, V2: -2, U1: 2, U2: 'x' } }).sk;
         end(false, null, false); o.after = [D.SESSION.pts, Object.keys(D.SESSION.sk).length];
         return o; })()`);
-      t.eq([r.win, r.goal, r.quiet], [1, 2, 3], 'Sieg 1 Punkt, mit Nebenziel 2, mit Nebenziel und lautlos 3');
+      t.eq([r.win, r.goal, r.quiet], [2, 3, 2], 'lauter Sieg 2 Punkte (Sieg 1, Ueberfall 1), mit Nebenziel 3, lautlos mit Nebenziel 2');
       t.ok(r.line, 'das Ergebnis nennt die Skillpunkte');
       t.eq(r.soft, 0, 'ein gescheiterter Auftrag, der die Serie weiterlaufen laesst (soft), gibt keine Punkte');
       t.eq(r.kit, { A0: 2, U3: 1 }, 'das Kit traegt die Stufen');
