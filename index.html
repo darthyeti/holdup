@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=164"></script>
+<script src="js/ui.js?v=166"></script>
 <script>
-const BUILD={n:164,d:'2026-10-26'};//BUILD
+const BUILD={n:166,d:'2026-10-26'};//BUILD
 const UI_API=8;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -222,7 +222,7 @@ jamT:40,medHp:40,jamMax:3,medMax:3,smMax:3,dcMax:3,adMax:1,btMax:2,btMat:4,adHp:
 {k:'vest',n:'Weste',t:1,p:12000,d:l=>'Panzerung '+CFG.shop.tier.vest[l-1]+', nutzt sich ab'},
 {k:'helm',n:'Helm',t:1,p:8000,d:l=>Math.round((1-CFG.shop.tier.helm[l-1])*100)+' % weniger Schaden, hält '+CFG.shop.helmHits[l-1]+' Treffer'},
 {k:'pack',n:'Rucksack',t:1,p:10000,d:l=>'Tasche +'+CFG.shop.tier.pack[l-1]+' Plätze'},
-{k:'drill',n:'Bohrer',t:1,p:14000,d:l=>'Tresor aufbohren in '+Math.round(22*CFG.shop.tier.drill[l-1])+' s statt 22 s'},
+{k:'drill',n:'Bohrer',t:1,p:14000,d:l=>'Tresor, Fahrzeugtüren aufbohren in '+Math.round(22*CFG.shop.tier.drill[l-1])+' s statt 22 s'},
 {k:'pick',n:'Dietrich',t:1,p:6000,d:l=>'Türen und Automaten '+Math.round((1-CFG.shop.tier.pick[l-1])*100)+' % schneller, leises Aufschneiden '+Math.round((1-CFG.shop.tier.pick[l-1])*CFG.shop.silent*100)+' %'},
 {k:'radio',n:'Funkgerät',t:1,p:9000,d:l=>'Fluchtwagen nach G in '+CFG.shop.tier.radio[l-1]+' s'},
 {k:'jam',n:'Störsender',p:6000,c:1,d:()=>'Taste 1: Kameras '+CFG.shop.jamT+' s aus'},
@@ -299,9 +299,9 @@ CFG.alert={on:1,at:2,cap:9,tag:'wachsam',nopay:['loot','stl'],fade:[1,1,.7,.4]};
 /* Sprengfalle (MRU 1 B2, Skillbaum V3 Barrikaden-Mine und V4 Claymore, Taste 3): reach = wie weit vom Spieler sie gelegt wird, dmg = Schaden gegen Beamte (Mitte, am Rand 40 %), pdmg = gegen Spieler (Mitspieler und Besitzer, wie jede Explosion), r = Explosionsradius, trig = Ausloesezone (nur Gegner loesen aus), arm = Sekunden bis scharf, near = die Mine liegt hoechstens so weit von einer stehenden Barrikade. */
 /* C4 (MRU 1 B3, Skillbaum U4): t = Sekunden zum Anbringen, loss = Anteil der Beute am Ziel (Tresorbuendel oder Saecke des Transporters), der verbrennt (mindestens ein Stueck, die Stufen sparen davon: Skill save), pol = so viele Sekunden kommt die Polizei frueher (im Erkunden loest C4 stattdessen den erzwungenen Alarm aus), rk = Vorrang in der E-Auswahl (nur wenn man C4 braucht, sonst bleibt das leise Oeffnen vorn). */
 CFG.c4={t:1.6,loss:.4,pol:12,rk:25};
-CFG.trap={reach:110,mine:{near:80,reach:150,trig:56,r:84,dmg:110,pdmg:30,arm:1.5,scorch:30},claw:{trig:70,r:100,dmg:130,pdmg:35,arm:2.5,scorch:34}};
+CFG.trap={reach:110,mine:{near:80,reach:150,trig:56,r:84,dmg:138,pdmg:30,arm:1.5,scorch:30},claw:{trig:70,r:100,dmg:163,pdmg:35,arm:2.5,scorch:34}};
 /* Besondere Waffen (MRU 1 B4, Skillbaum A3 Praezisionsgewehr und A4 Granatwerfer, Shift schaltet sie ein und aus, Linksklick oder Leertaste schiesst, nur im Ueberfall, die Stueckzahl je Auftrag steht im Knoten, cnt). rifle: dmg = Schaden je Treffer, elite = Faktor gegen SWAT und Scharfschuetzen, shield = Faktor, wenn die Kugel einen Schild von vorn trifft (sie wird nicht abgefangen, sondern geht durch), spd und l = Tempo und Lebensdauer der Kugel (Reichweite spd mal l), cool = Sekunden bis zum naechsten Schuss. launch: die Granate fliegt gerade zum Zielpunkt (maxD, spd), fuse = Sekunden nach der Landung, near = sie platzt schon im Flug, sobald ein Gegner naeher als sein Radius plus near ist, Sprengwerte wie bei den Fallen (r Radius, dmg gegen Beamte, am Rand 40 %, pdmg gegen Spieler). */
-CFG.spw={rifle:{dmg:100,elite:1.5,shield:.6,spd:1200,l:.9,cool:1.3},launch:{maxD:460,spd:520,cool:1.6,fuse:.05,near:6,r:84,dmg:110,pdmg:30,scorch:30}};
+CFG.spw={rifle:{dmg:100,elite:1.5,shield:.6,spd:1200,l:.9,cool:1.3},launch:{maxD:460,spd:520,cool:1.6,fuse:.05,near:6,r:84,dmg:138,pdmg:30,scorch:30}};
 /* Notfallkoffer (MRU 1 B5, Skillbaum U3 hinter Sanitaeter, Taste C): wird 22 Pixel vor dem Spieler abgestellt und heilt alle Lebenden im Radius r (auch den Besitzer) t Sekunden lang mit hps (Skill) HP je Sekunde, nie ueber 100. near = Mindestabstand zum naechsten Koffer. */
 CFG.aid={r:90,t:10,near:40};
 /* Neue Auftragsarten (Tankstelle, Museum, Casino): pol = Sekunden bis zur ersten Polizei (statt CFG.policeAt), wb = Zuschlag auf die Wellengroesse, stl = Lautlos-Bonus (statt CFG.stealthBonus), bn = Tresorinhalt (n Buendel-Gegenwerte, v Wert, u Taschenplaetze, t Zeit je Gegenwert). rank = ab welcher Serienrunde der Zufall die Karte auswuerfelt (die Wahl mit T gilt immer). goods = Beute-Stuecke: u Taschenplaetze, v Wert, t1 Zeit in Phase 1 (leise, 0 = nur im Ueberfall), t2 Zeit im Ueberfall. Alles erste Schaetzungen, nichts gemessen. */
@@ -1912,7 +1912,7 @@ const base=phase===1?(c.sn?50:85):(c.sn?65:120),spd=base*(1-CFG.slow*pl.units)*(
 const x0=pl.x,y0=pl.y;mv(pl,vx*spd*dt,vy*spd*dt);pl.st.dist+=Math.hypot(pl.x-x0,pl.y-y0);pl.mv=mm?(c.sn?.3:1):0;pl.mvg=mm;if(mm)pl.w+=dt*spd/9;
 if(pl.armed&&c.aim)pl.a=c.a;else if(mm)pl.a=alerp(pl.a,Math.atan2(vy,vx),.3)}
 function stepSnd(o,c){if(o.mvg){const sc=Math.floor(o.w/Math.PI);if(sc!==o.sc){o.sc=sc;SND.step(!!c.sn,o.units)}}}
-const toolT=(o,it)=>{const k=o.kit||BASEKIT,sh=CFG.shop;if((it.t==='vault'&&!code)||it.t==='cargo')return k.drill?sh.tier.drill[k.drill-1]:1;const sn=typeof it.sn==='function'?it.sn(o):it.sn,pf=(k.pick?sh.tier.pick[k.pick-1]:1)*(1-skv(k,'U2','pick'));if(sn==='pry')return pf;if(sn==='tick'&&it.t==='good')return 1-(1-pf)*sh.silent;return 1};
+const toolT=(o,it)=>{const k=o.kit||BASEKIT,sh=CFG.shop;if((it.t==='vault'&&!code)||it.t==='cargo')return k.drill?sh.tier.drill[k.drill-1]:1;const sn=typeof it.sn==='function'?it.sn(o):it.sn,pf=(k.pick?sh.tier.pick[k.pick-1]:1)*(1-skv(k,'U2','pick'));if(sn==='pry')return pf;if(sn==='tick'&&(it.t==='good'||it.t==='vit'))return 1-(1-pf)*sh.silent;return 1};
 /* E-Auswahl: Kandidaten sind alle Objekte in Reichweite (ok und Abstand unter r), die Vorgabe ist das mit dem kleinsten Rang (bei Gleichstand das zuerst angelegte), Q waehlt von Hand ein anderes (selIt, im Netz als w in der Eingabe). Rang = Abstand, dazu: Barrikade im Baumodus -CFG.bar.pref, im Abbaumodus die Haelfte; der Riegel von innen in Phase 1 gewinnt unter CFG.lock.near (sonst verdraengen ihn Kamera, Hauptschalter und Monitore, die Bank-Kamera haengt 32 px vor der Hintertuer); ein Beute- oder Materialstueck, das nicht in die Tasche passt (fit), rangiert hinten und bleibt nur als Rueckmeldung "Tasche ist voll". */
 const fits=(o,u)=>o.units+u<=o.bag+.01,inReach=(it,pl)=>!!it&&it.ok(pl)&&Math.hypot(it.x-pl.x,it.y-pl.y)<it.r;
 const lootNear=pl=>its.some(i=>LOOT_T.includes(i.t)&&i.ok(pl)&&Math.hypot(i.x-pl.x,i.y-pl.y)<i.r);

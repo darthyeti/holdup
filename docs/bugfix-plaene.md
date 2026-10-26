@@ -17,8 +17,9 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | abgenommen (24. Oktober 2026, Till hat gespielt: passt) |
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
 | P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt) |
-| P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | noch kein Plan | gesammelt (S1 entschieden, Till ergänzt weitere) |
+| P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | S1 bis S3 mit Befund | gebaut (26. Oktober 2026), wartet auf Tills Spieltest (Till ergänzt weitere Punkte) |
 | P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | Plan steht, wartet auf Tills Go |
+| P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | Plan steht, wartet auf Tills Go (zusammen mit P4 bauen) |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -130,7 +131,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 
 ## P4 Balancing-Patch 1 (Sammlung)
 
-Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt eine Nummer (S1, S2, ...) mit Datum, Tills Wortlaut und dem Befund aus Code oder Messung. Einen Plan gibt es erst, wenn Till die Sammlung für voll erklärt, gebaut wird erst auf sein Go. Die Werte stehen alle in `CFG`.
+Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt eine Nummer (S1, S2, ...) mit Datum, Tills Wortlaut und dem Befund aus Code oder Messung. Die Punkte stehen mit Befund und Änderung so genau da, dass sie ohne weiteren Plan gebaut werden können, Till ergänzt weitere. Gebaut wird erst auf sein Go (S1 bis S3 zusammen mit P6). Die Werte stehen alle in `CFG`.
 
 **Punkte**
 - S1 (26. Oktober 2026, Till): "Bohrer verbessert auch das Öffnen des Geldtransporters."
@@ -138,10 +139,27 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
   - Was nicht wirkt: Der Schlüssel (`ckey`, 1,8 s, `CFG.truck.keyT`) und C4 (`c4t`) nehmen weder Bohrer noch Dietrich (Faktor 1). Der Dietrich greift nur bei Beute-Stücken mit Aufbrechen und Türen.
   - Vermutung, warum es nicht auffällt: Der Shop-Text des Bohrers nennt nur den Tresor ("Tresor aufbohren in X s statt 22 s"), der Hinweis am Laderaum zeigt keine Zeit, und beim Transporter ist die Zeit bis zur Polizei kurz (`CFG.truck.policeAt` 26 s, ungemessen, wie sie zur Bohrzeit von 22 s steht).
   - Entscheidung (Till, 26. Oktober 2026): Nur der Shop-Text ändert sich, das Verhalten bleibt. Der Text des Bohrers nennt neben dem Tresor auch die Fahrzeugtüren (der Laderaum des Geldtransporters), etwa "Tresor, Fahrzeugtüren aufbohren in X s statt 22 s" (50 Zeichen, mit dem Zusatz "jetzt:" rund 110 von rund 116 Zeichen Platz in der Zeile, beim Bau prüfen). Ein eigener Test für die Bohrzeit am Laderaum entfällt ausdrücklich.
+- S2 (26. Oktober 2026, Till): "Claymore und Mine sowie den Granatwerfer mit rund 25 % mehr Schaden einstellen" (im Bau-Durchgang mit P6).
+  - Befund (aus `CFG` und `blastAt` gelesen, Radien gerechnet): `CFG.trap.mine.dmg` 110, `CFG.trap.claw.dmg` 130, `CFG.spw.launch.dmg` 110. Der Schaden fällt mit dem Abstand: `dmg * (1 - d / r * 0,6)`, im Mittelpunkt voll, am Rand 40 %. Gegner-HP: Polizist und Wache 100, SWAT 200, Schild-Beamter 110 (dazu sein Schild).
+  - Wirkung von plus 25 %: Der Radius, in dem ein Polizist (100 HP) sofort fällt, wächst bei Mine und Werfer (r 84) von 12,7 auf 38 Pixel und bei der Claymore (r 100) von 38,5 auf 64 Pixel. Ein SWAT (200 HP) fällt auch dann nicht auf einen Schlag. Zivilisten und Zapfsäulen (halber Schaden als Kettenreaktion) bekommen denselben Zuschlag.
+  - Plan: `mine.dmg` 138, `claw.dmg` 163, `launch.dmg` 138 (plus 25,5 %, 25,4 %, 25,5 %). Nur `dmg` (Gegner, Zivilisten, Zapfsäulen). `pdmg` (Schaden an Spielern: 30, 35, 30) bleibt, sonst träfe Eigenbeschuss härter. Die Tests `99-sprengfalle` und `99-spezialwaffen` werden beim Bau auf feste Zahlen geprüft.
+- S3 (26. Oktober 2026, Till): "Das Aufschneiden der Vitrinen muss mit Upgrade noch etwas spürbar schneller gehen" (im Bau-Durchgang mit P6).
+  - Befund (gemessen am 26. Oktober 2026 im echten Spiel, E gehalten, Dietrich-Stufe 0 bis 3, Juwelier Seed 654 und zwei Beute-Stücke zum Vergleich): Das leise Aufschneiden der Vitrine dauert auf **allen vier Stufen 6,0 s**. Der Dietrich wirkt dort gar nicht, obwohl der Shop-Text "leises Aufschneiden X %" und der Techniker-Knoten "Dietrich +X %, auch beim leisen Aufschneiden" es versprechen. Einschlagen im Überfall wirkt (1,2 s, 0,87 s, 0,67 s, 0,50 s). Leise Beute-Stücke wirken: Museum-Gemälde 5,0 s, 3,97 s, 3,43 s, 2,93 s, Tankstelle-Zigaretten 3,5 s, 2,77 s, 2,40 s, 2,03 s.
+  - Ursache: `toolT` wendet die leise Formel (`1 - (1 - Dietrich) * CFG.shop.silent`) nur auf `it.t==='good'` an. Die Vitrine hat `it.t==='vit'` und fällt auf Faktor 1.
+  - Plan: Die Bedingung gilt auch für `vit`. Danach dauert das Aufschneiden 6,0 s, 4,74 s, 4,11 s, 3,48 s (Stufe 0 bis 3, minus 21, 31 und 42 %), mit Techniker 3 noch 2,98 s. Der Test `110-balancing-patch1` hält den Faktor und die gehaltene Zeit je Stufe fest.
+  - Entscheidung nach dem Spieltest, nicht jetzt: Soll es noch schneller sein, ist `CFG.shop.silent` (heute 0,7) der Regler. Mit 0,85 dauert das Aufschneiden auf Stufe 3 2,94 s (Museum-Gemälde 2,45 s), mit 1,0 2,40 s. Der Wert gilt für alle leisen Stücke, nicht nur für Vitrinen. Meine Empfehlung: erst den Fehler beheben und spielen, denn heute wirkt der Dietrich dort gar nicht, und plus 42 % ist schon ein großer Sprung.
+
+**Bau** (26. Oktober 2026, Go von Till für P4, P5 und P6 nacheinander als drei Commits), wie geplant:
+- S1: Der Shop-Text des Bohrers heißt "Tresor, Fahrzeugtüren aufbohren in X s statt 22 s" (kein eigener Test, wie entschieden).
+- S2: `CFG.trap.mine.dmg` 138, `CFG.trap.claw.dmg` 163, `CFG.spw.launch.dmg` 138, `pdmg` unverändert.
+- S3: `toolT` wendet die leise Formel auch auf `vit` an.
+- Test `110-balancing-patch1` (zwei Tests, rund 2 s) war vorher rot (Faktor [1,1,1,1] statt [1, .79, .685, .58], Schaden [110, 130, 110]) und ist jetzt grün. Die verwandten Tests (Sprengfalle, Spezialwaffen, C4, Shop, Skillbaum, Wurfgeräte, Leises Aufschneiden) laufen grün (45 bestanden), der schnelle Gesamtlauf steht beim Abschluss von P6.
 
 **Änderungsprotokoll**
 - Sammlung eröffnet (26. Oktober 2026), S1 mit Befund eingetragen.
 - S1 entschieden (26. Oktober 2026): nur Shop-Text, kein Test.
+- S2 und S3 eingetragen (26. Oktober 2026), Till: mit P6 zusammen bauen.
+- Bau (26. Oktober 2026): Go von Till, S1 bis S3 gebaut, Status gebaut.
 
 ## P5 Geiselschild: Beamter klebt am Spieler
 
@@ -157,7 +175,7 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 - Nicht betroffen: Scharfschützen (`snipeStep` hat eine eigene Prüfung), der Kugelfang der Geisel (`hostBlock`, die Schusslinie ist nur blockiert, solange die Geisel dazwischen steht).
 
 **Plan v1** (26. Oktober 2026)
-1. Test zuerst (rot): `110-geiselschild-abstand` (Nummer beim Bau die nächste freie). (a) Spieler mit Geisel steht still, ein verletzter Beamter (HP 32, `push`) startet 200 Pixel entfernt: nach 3 s bleibt der Abstand bei jeder Messung über 80 Pixel, kein Schuss in 15 s, der Beamte zielt aber auf den Spieler. (b) Gegenprobe ohne Geisel: Abstand 60 bis 160 Pixel, der Beamte schießt (das Verhalten bleibt, wie es ist). (c) Schild verbraucht (`D.setShield(cap)`): der Beamte schießt, und nach Ablauf des Schilds mitten im Lauf erst nach der Reaktionszeit (`CFG.pol.react` .45 s), nicht im ersten Bild. (d) Ein Beamter im Modus `run`, der den geschützten Spieler sieht, wechselt weiter nicht auf `push` (wie heute). Die Gegenprobe über eine Kopie ohne den Fix muss rot werden.
+1. Test zuerst (rot): `111-geiselschild-abstand` (Nummer beim Bau die nächste freie). (a) Spieler mit Geisel steht still, ein verletzter Beamter (HP 32, `push`) startet 200 Pixel entfernt: nach 3 s bleibt der Abstand bei jeder Messung über 80 Pixel, kein Schuss in 15 s, der Beamte zielt aber auf den Spieler. (b) Gegenprobe ohne Geisel: Abstand 60 bis 160 Pixel, der Beamte schießt (das Verhalten bleibt, wie es ist). (c) Schild verbraucht (`D.setShield(cap)`): der Beamte schießt, und nach Ablauf des Schilds mitten im Lauf erst nach der Reaktionszeit (`CFG.pol.react` .45 s), nicht im ersten Bild. (d) Ein Beamter im Modus `run`, der den geschützten Spieler sieht, wechselt weiter nicht auf `push` (wie heute). Die Gegenprobe über eine Kopie ohne den Fix muss rot werden.
 2. Fix (vier Stellen in der Beamten-Schleife von `hostStep`): (i) Die Zielwahl für Bewegung und Zielen lässt `!hostShield(o)` weg, der geschützte Spieler ist wieder ein Ziel. (ii) Mit geschütztem Ziel zählt `e.react` nicht hoch, sondern bleibt 0, und das Schießen ist gesperrt. (iii) Der Wechsel von `run` auf `push` (`tg&&td<CFG.pol.reactD`) gilt nur für ungeschützte Ziele, damit sich dort nichts ändert. (iv) `hostBlock` bleibt in der Zielwahl wie heute. Ein Beamter geht also wie sonst auf etwa 100 bis 150 Pixel heran und kreist, schießt aber nicht. Die Scharfschützen-Regel ändert sich nicht. Kein neuer Wert in `CFG`, kein Netzformat (der Host rechnet, kein `VER`).
 3. Prüfung: Test 105 (Geiselschild), 97 (Kugelfang), 92 (Geiseln), die Polizei-Tests (`82-polizei-anfahrt` und die Barrikaden-Tests), der schnelle Lauf, danach der volle Lauf und der Bot. Bild-Prüfung: Spieler mit Geisel, Beamter kreist im Abstand.
 4. Doku: Absatz Geiseln und Geiselschild in docs/spielsystem.md (Beamte halten Abstand und zielen, schießen nicht), Test in docs/tests-und-messwerte.md.
@@ -170,3 +188,44 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 
 **Änderungsprotokoll**
 - v1 (26. Oktober 2026): Plan zu B5, noch ohne Go.
+
+## P6 Coop: Serienstand im neuen Raum und Mitspieler entfernen
+
+**Bugs**
+- B6 (26. Oktober 2026, Till, Flugschreiber-Log `holdup-log-b163-host-Till-20261026-172329.json`): Als Host habe ich die Serie neu gestartet, aber meine Skills, mein Geld, meine Ausrüstung und das Fahndungslevel behalten. Meine Clients hatten keine Skills und keine Ausrüstung mehr.
+- B7 (26. Oktober 2026, Till): Wir hatten einen inaktiven Spieler, ich brauche als Host die Möglichkeit, Mitspieler zu kicken.
+
+**Befund B6** (aus dem Host-Log und den Client-Logs gelesen, 26. Oktober 2026):
+- Der Vorfall ist der Wechsel von Runde 6 auf Runde 7. Der Host hat bei 1788 s den Raum verlassen (`ui leave`, "Du hast das Spiel verlassen."), danach `coop`, `host`, `copyLink`, die Clients sind bei 1817 s und 1827 s neu verbunden (`netz verbunden`), `lobbyStart` bei 1866 s. In Runde 6 hatten Till (SMG, Weste 2, 3 Skills), zcixoT (Gewehr, Weste 2, 3 Skills) und Bluppy (Gewehr, Weste 2, 2 Skills) Ausrüstung.
+- Runde 7 (Host-Log): Till `smg`, Weste 2, 3 Skills, Serie Runde 4, Fahndung 45, Konto 11.935. Beide Clients: `pistol`, Weste 0, 0 Skills. Der Host hat also seinen Stand aus Runde 6 behalten.
+- Die Client-Logs beginnen genau in diesem Moment: Ihre Seite wurde beim Beitritt neu geladen (Seitenzeit 0 bei 1817 s Host-Zeit, "verbunden mit dem Host" nach 1 s). Ihre erste Runde ist Runde 7 des Hosts, Serie Runde 0, Konto 0, aber Fahndung 45 und lautlos 2, weil der Serienwert Fahndung vom Host kommt und bei jedem Rundenstart an alle geht (`rst`, `h`).
+- Ursache: Der Serienstand (`SESSION`: Konto, Ausrüstung, Skills, Fahndung) lebt nur im Speicher der jeweiligen Seite, es gibt keine Speicherung. `leaveGame` und `hostRoom` setzen ihn nicht zurück (nur Serienende und die Kachel "Neue Serie" im Titel tun das, `sessReset`, Titel nur für die eigene Seite). Jeder bringt sein Kit selbst mit (`hi`, `kit`, `rdy`, `buildKits` nimmt `c.kit`). Wer den Raum verlässt und neu eröffnet, behält als Host alles, Mitspieler mit frischer Seite haben nichts, und die Fahndung gilt für alle. Eine gemeinsame "Neue Serie" für die Gruppe gibt es nicht, und die Lobby zeigt nicht, mit welchem Stand jeder kommt.
+- Mögliche Verbindung zu B7 (der Anlass des Neueröffnens steht nicht im Log, Till bestätigt): Spieler 2 ("Grün", in allen Runden bis 6 ohne Ausrüstung und Skills) ist ab Runde 7 nicht mehr dabei, es sind drei Spieler. Es gab keinen Weg, jemanden zu entfernen.
+
+**Befund B7** (aus dem Code gelesen):
+- Es gibt keine Nachricht und keine Kachel zum Entfernen. Verlässt ein Client das Spiel (`c.onclose` in `hostConn`), entfernt der Host ihn in Lobby und Shop aus der Liste, im Spiel steht er auf `gone` ("hat das Spiel verlassen", `checkEnd` prüft). Dieser Weg lässt sich für das Entfernen wiederverwenden.
+- Ein inaktiver Mitspieler blockiert den Start nicht: Im Shop genügt ein zweiter Druck ("trotzdem los"). Er bleibt aber im Team (mehr Spieler heißt größere Wellen, `CFG.perPlayer`, kein Beitrag).
+- Ein Sperren gegen Wiederkommen lohnt nicht: Jeder Beitritt erzeugt eine neue zufällige Peer-Kennung (`new Peer()`), und nach dem Start ist der Raum zu ("Das Spiel läuft schon"). Wiederkommen ist nur in der Lobby möglich.
+
+**Entscheidungen (Till, 26. Oktober 2026)**
+- B6: Ein neuer Raum ist immer eine neue Serie, für alle. Keine Solo-Serie wird in den Coop übernommen.
+- B7: Der Host muss jederzeit entfernen können (Lobby, Pause im Spiel, Shop, Auftragswahl, Ergebnis).
+
+**Plan v1.1** (26. Oktober 2026)
+1. Tests zuerst (rot), mit der Test-Leitung `loopnet.js` (Host und zwei Clients): `112-mitspieler-entfernen` (Entfernen in der Lobby: Liste schrumpft, der Client landet im Titel mit der Meldung; im Shop; in der Auftragswahl; auf dem Ergebnisbild; mitten in der Runde: Spieler `gone`, Meldung "wurde entfernt", die Runde läuft weiter und endet, auch wenn der letzte Mitspieler geht; ein Client kann nicht entfernen, die Nachricht wird ignoriert; der Host kann sich nicht selbst entfernen) und `113-neuer-raum-neue-serie` (Host mit Konto, Ausrüstung, Skills und Fahndung eröffnet einen Raum: alles zurückgesetzt; Client mit Stand tritt bei: zurückgesetzt, aber erst nach der Willkommens-Nachricht; scheitert der Beitritt (falscher Code), bleibt der Stand erhalten; die Fahndung des Hosts ist 0; Start gibt allen das Grundkit). Dazu Layout-Prüfung der neuen Kacheln mit `overlap.js`.
+2. B6 (Kern, zwei Stellen): Der Host ruft `sessReset()`, sobald sein Raum steht (`onOpen` von `TR.host`), ein Client, sobald der Host ihn willkommen heißt (Nachricht `wel` in `clientMsg`, und sein Kit geht danach neu an den Host, `sendKit`). Beim Beitritt schickt `hi` bis dahin das Grundkit. So wird ein fehlgeschlagener Beitritt oder Raumaufbau nicht bestraft. Keine neue Nachricht, kein Listenformat, keine Kachel "Neue Serie für alle" und keine Anzeige der Serienrunde mehr (entfällt gegenüber v1).
+3. B6 Sicherheitsfrage: Hat der Spieler einen Stand (Runde über 0, Konto, Ausrüstung oder Skills), fragt der Coop-Hub vor "Raum eröffnen" und "Beitreten" mit einem Bestätigungsfenster: "Coop beginnt immer eine neue Serie. Dein Stand (Konto, Ausrüstung, Skills, Fahndung) geht verloren." (Text wie die Kachel "Neue Serie" im Titel, `ui:confirm`). Ohne Stand keine Frage.
+4. B7 Netz (Host rechnet): `kickPlayer(id)` nur am Host und nur für `id` ungleich 0: setzt `c.kicked`, schickt `{t:'kick'}` und schließt die Verbindung nach 250 ms. `c.onclose` meldet bei `c.kicked` "<Name> wurde entfernt" statt "hat das Spiel verlassen", sonst läuft der bisherige Weg (Lobby und Shop: aus der Liste, im Spiel: `gone` mit `checkEnd`). Der Client stellt `kick` mit `leaveGame('Der Host hat dich aus dem Raum entfernt.')` dar. Flugschreiber-Ereignis `netz ['entfernt', id]`. `VER` steigt um eins (neue Nachricht).
+5. B7 Bedienung (`js/ui.js`): Ein Bildschirm `kick` "Mitspieler entfernen" mit einer Kachel je Mitspieler (Name und Ort `at`, die Farbe des Spielers) und Zurück. Eine Kachel "Mitspieler" nur für den Host mit mindestens einem Mitspieler öffnet ihn in fünf Bildschirmen: Lobby, Pause-Menü (im Spiel jederzeit, auch wenn der Host tot oder am Boden ist, solange das Menü offen geht), Shop, Auftragswahl, Ergebnis. Die genaue Lage der Kachel pro Bildschirm wird beim Bau geprüft. Vor dem Entfernen fragt ein Bestätigungsfenster ("<Name> aus dem Raum entfernen?"). Der Kontext von `mkUI` bekommt `kickPlayer`, `UI_API` steigt.
+6. Prüfung: Tests 112 und 113, die Coop-Tests (40, 85, 87, 90, 99-wachsamkeit), die Menü-Tests (70, 80), schneller Lauf, danach voller Lauf. Tests, die vor `hostRoom` oder `joinRoom` Stand setzen, setzen ihn danach (die Test-Leitung ruft beides auf). Bild-Prüfung der fünf Bildschirme mit Kachel und des neuen Bildschirms. Die Gegenprobe über eine Kopie ohne Fix muss rot werden.
+7. Doku: docs/coop-und-netz.md (`kick`, Rücksetzen beim Betreten, `VER`), docs/spielsystem.md (Coop beginnt immer eine neue Serie), docs/tests-und-messwerte.md (neue Tests).
+
+**Nicht im Plan** (auf Wunsch): den Solo-Stand beim Betreten sichern und beim Verlassen des Coop wieder herstellen (statt zu verwerfen). Heute geht ein Coop-Stand beim Verlassen in den Solo-Titel mit, das bleibt wie es ist.
+
+**Spielverhalten danach:** Wer einen Raum eröffnet oder betritt, beginnt mit leerem Konto, Grundkit und Fahndung 0 (mit Rückfrage, falls er einen Stand hat). Der Host entfernt einen Mitspieler jederzeit mit zwei Klicks und Bestätigung. Der Entfernte sieht den Titel mit einer Meldung. Zurück in die Lobby kommt er nur dort, solange der Raum offen ist (nach dem Start ist der Raum zu).
+
+**Risiken:** Mittel. Der Plan berührt Netz und Menüs (`hostRoom`, `joinRoom`, `hostConn`, `clientMsg`, `js/ui.js` mit fünf Bildschirmen, `VER`, `UI_API`) und liegt damit nahe an paralleler Arbeit in `index.html` (Fluchtwagen-Treffpunkt, Spur 2): erst nach deren Commit bauen oder auf einer eigenen Branch. Entfernen mitten in der Runde nutzt den bestehenden Abbruchweg (`gone`, `checkEnd`), er ist mit dem Test 112 abzusichern, besonders wenn der letzte aktive Mitspieler entfernt wird oder die Liste danach Lücken in den Kennungen hat (heute bei Abbrüchen im Shop schon möglich). Das Zurücksetzen beim Betreten ändert den Ausgangszustand vieler Coop-Tests (siehe Schritt 6).
+
+**Änderungsprotokoll**
+- v1 (26. Oktober 2026): Plan zu B6 und B7, noch ohne Go, zwei Entscheidungen offen.
+- v1.1 (26. Oktober 2026): Entscheidungen von Till eingetragen. B6 wird einfacher (Rücksetzen beim Betreten, keine Kachel "Neue Serie für alle", keine Serienrunde in der Liste), B7 bekommt fünf Bildschirme.
