@@ -1,6 +1,6 @@
 # Coop-Ausbau: Funk und Chat, Zuschauer, Wettkampf
 
-Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Plan v1 vom 26. Oktober 2026 (über Nacht ausgearbeitet aus Tills drei Wünschen), **noch nichts gebaut**. Gebaut wird auf Tills Go, die Schritte sind so geschnitten, dass jeder für sich Nutzen bringt und einen Commit mit Tests ergibt.
+Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Plan v1 vom 26. Oktober 2026 (über Nacht ausgearbeitet aus Tills drei Wünschen). **Till hat am 26. Oktober 2026 alle Empfehlungen des Plans angenommen** ("das passt für mich, wie du es vorschlägst"): Die zehn Entscheidungen unten gelten wie empfohlen, die Reihenfolge ist F1, F2, F3, W0, Z, W. Die Schritte sind so geschnitten, dass jeder für sich Nutzen bringt und einen Commit mit Tests ergibt. **Stand der Schritte:** siehe Tabelle Stand am Ende des Dokuments.
 
 Tills Wünsche (26. Oktober 2026, vor dem Feierabend):
 1. Eine Chatfunktion für den Coop und vielleicht eine Funkfunktion: die zwei bis drei wichtigsten Befehle zur Koordination per Taste absetzen ("Lasst uns leise vorgehen", "Ich brauche Hilfe"), für alle Mitspieler sichtbar und hörbar.
@@ -226,7 +226,7 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 - **Zuschauer ohne Obergrenze oder ohne Verzögerung im Wettkampf.** Ohne Obergrenze zahlt der Host-Upload, ohne Verzögerung kann ein Zuschauer per Telefon mitspielen.
 - **Bitgleiche Wiederholung (Replay) als Ziel.** Würde jeden Zufall im Spiel (rund 15 Stellen) pro Entität schlüsseln und jede künftige Änderung daran binden. Der Messwert (1 bis 2 Prozent Streuung im Kampf) rechtfertigt das nicht.
 
-## Entscheidungen (Till), jeweils mit Empfehlung
+## Entscheidungen (Till, 26. Oktober 2026: alle wie empfohlen angenommen)
 
 1. **Taste für den Funkspruch:** X mit Ziffern 1 bis 4 (Empfehlung) oder ein Rad mit der Maus (kollidiert mit dem Zielen).
 2. **Stimme beim Funkspruch:** Standard "Ton" ohne Stimme, Stimme als Schalter (Empfehlung) oder Stimme als Standard.
@@ -239,6 +239,19 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 9. **Reihenfolge:** F1, F2, F3, W0, Z, W (Empfehlung). Sollen Zuschauer vor dem Chat kommen?
 10. **Serien-Code zuerst?** Empfehlung: nicht nötig, der Wettkampf bekommt eine Auftragsliste, der Serien-Code kann sie später ersetzen.
 
+## Stand der Schritte
+
+| Schritt | Stand |
+|---|---|
+| F1 Funkspruch | gebaut am 26. Oktober 2026 (`VER` 44, Test `114-funkspruch`, Optionen-Kachel Funk, Stimme als Schalter), Einzelheiten in docs/coop-und-netz.md, Funkspruch |
+| F2 Markierung | offen (der Host schickt den Punkt schon mit, es fehlen Ring und Randpfeil zum Punkt) |
+| F3 Textchat | offen |
+| W0 feste NPC-Ausgangslage | offen |
+| Z1 bis Z4 Zuschauer | offen |
+| W1 bis W3 Wettkampf | offen |
+
 ## Änderungsprotokoll
 
 - v1 (26. Oktober 2026): Plan aus Tills drei Wünschen, drei Messungen (Schnappschussgröße, Streuung gleicher Seeds, Bildkosten), Werkzeug `tools/messung-netz.js`. Noch nichts gebaut.
+- v1.1 (26. Oktober 2026): Till nimmt alle zehn Empfehlungen an, Bau beginnt mit F1.
+- v1.2 (26. Oktober 2026): F1 gebaut (Funkspruch). Abweichung vom Plan: Die Ziffern 5 bis 9 werden bei offenem Menü verschluckt (der Plan sagte nur, dass 1 bis 4 senden), damit kein Gadget aus Versehen feuert. Die Optionen-Kachel braucht in den Optionen eine dritte Verdichtung (Abstand 4, Kacheln 36 und 46 hoch), sonst läuft das Fenster mit den Testwerkzeugen aus dem Bild. Die Anleitung rückt eine Zeile enger (20 statt 22 Pixel je Zeile).
