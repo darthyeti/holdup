@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=156"></script>
+<script src="js/ui.js?v=159"></script>
 <script>
-const BUILD={n:156,d:'2026-10-26'};//BUILD
+const BUILD={n:159,d:'2026-10-26'};//BUILD
 const UI_API=8;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -2356,7 +2356,8 @@ startGame()}
 function pasteClip(){const f=t=>{t=String(t||'').toUpperCase();const m=/RAUM=([A-Z0-9]{4})/.exec(t)||/\b([A-Z0-9]{4})\b/.exec(t);if(m){joinText=m[1].split('').filter(c=>CODECH.includes(c)).join('').slice(0,4);NET.msg=joinText.length===4?'':'Kein gültiger Code in der Zwischenablage.'}else NET.msg='Kein Code in der Zwischenablage.'};
 try{navigator.clipboard.readText().then(f,()=>{NET.msg='Einfügen nicht erlaubt. Strg oder Cmd+V benutzen.'})}catch(e){NET.msg='Einfügen nicht möglich. Strg oder Cmd+V benutzen.'}}
 function uiAct(a,v){LOG.ev('ui',v===undefined||typeof v==='object'?a:[a,v]);switch(a){
-case'solo':openMission('title');break;
+/* Titel: Eine laufende Serie (Auftrag 2 und weiter) geht zuerst in den Shop, der Treffpunkt zwischen den Auftraegen, dann zur Auftragswahl. Der erste Auftrag hat keinen Shop-Besuch davor. */
+case'solo':if(NET.role==='solo'&&SESSION.round>0)openShop();else openMission('title');break;
 case'skill':skillBuy(v);break;
 case'skillsell':skillSell(v);break;
 case'missionOpen':openMission('lobby');break;
@@ -2385,6 +2386,7 @@ case'view':VIEW.cycle();break;case'mlock':MLOCK.toggle();break;
 case'full':VIEW.toggleFull();break;
 case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
 case'unlock':unlockAll=!unlockAll;break;case'flogSave':flogSave();break;case'flogMark':flogMark();break;
+case'dbgShop':if(NET.role==='solo')openShop();break;
 case'dbgMoney':SESSION.wallet+=50000;break;case'dbgMoney0':SESSION.wallet=0;break;case'dbgPts':SESSION.pts+=5;break;
 case'dbgResp':{let n=0;for(const id of SKID)n+=SESSION.sk[id]|0;SESSION.pts+=n;SESSION.sk={};SESSION.sk0=null;break}
 case'dbgHeat':SESSION.heat=heatClamp(((heatLv(SESSION.heat)+1)%CFG.fahndung.names.length)*CFG.fahndung.step);break;

@@ -113,7 +113,7 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {};
         // lautlos: Beute auf den Spawn, Phase 1
-        const d = MT.solo(null, 's'); d.SESSION.round = 2; MT.click(d, 'serie'); MT.click(d, 'start'); MT.adv(d, 1);
+        const d = MT.solo(null, 's'); d.SESSION.round = 2; MT.click(d, 'serie'); MT.click(d, 'next'); MT.click(d, 'start'); MT.adv(d, 1);
         d.SESSION.heat = 52; d.get().players[0].units = 1; d.get().players[0].loot = 20000; MT.adv(d, 4);
         const e = d.get().ended; o.quiet = e && e.fh ? { fh: e.fh, heat: d.SESSION.heat, win: e.win } : null;
         // Bot-Ueberfall auf der klassischen Bank: laut
@@ -312,14 +312,14 @@ module.exports = [
         for (const [h, lv] of [[0, 0], [45, 2], [100, 5]]) {
           const d = mk(h), name = NM[lv];
           o['Titel ' + h] = has(seen(d, () => {}), name);
-          o['Auftragswahl ' + h] = has(seen(d, () => { MT.click(d, 'serie'); }), name);
+          o['Auftragswahl ' + h] = has(seen(d, () => { MT.click(d, 'serie'); MT.click(d, 'next'); }), name);
           const d2 = mk(h); o['Shop ' + h] = has(seen(d2, () => { d2.openShop(); }), name);
-          const d3 = mk(h); MT.click(d3, 'serie'); MT.click(d3, 'start'); MT.adv(d3, 1);
+          const d3 = mk(h); MT.click(d3, 'serie'); MT.click(d3, 'next'); MT.click(d3, 'start'); MT.adv(d3, 1);
           o['HUD ' + h] = seen(d3, () => {}).includes('FAHNDUNG');
           o['Pause ' + h] = has(seen(d3, () => { MT.k(d3, 'Escape'); }), name);
-          const d4 = mk(h); d4.setFocus(false); MT.click(d4, 'serie'); MT.click(d4, 'start'); MT.adv(d4, 1); d4.setFocus(false);
+          const d4 = mk(h); d4.setFocus(false); MT.click(d4, 'serie'); MT.click(d4, 'next'); MT.click(d4, 'start'); MT.adv(d4, 1); d4.setFocus(false);
           o['Overlay ' + h] = has(seen(d4, () => {}), name);
-          const d5 = mk(h); MT.click(d5, 'serie'); MT.click(d5, 'start'); MT.adv(d5, 1); d5.get().players[0].units = 1; d5.get().players[0].loot = 20000; MT.adv(d5, 4);
+          const d5 = mk(h); MT.click(d5, 'serie'); MT.click(d5, 'next'); MT.click(d5, 'start'); MT.adv(d5, 1); d5.get().players[0].units = 1; d5.get().players[0].loot = 20000; MT.adv(d5, 4);
           const e = d5.get().ended; o['Ergebnis ' + h] = e && e.fh ? seen(d5, () => {}).includes('FAHNDUNG') : 'kein Ende';
         }
         const net = LoopNet(30, 0), A = mkInst(net, 'a'); A.hostRoom(); for (let i = 0; i < 20; i++) step([A], net, 1 / 60); A.SESSION.heat = 45;

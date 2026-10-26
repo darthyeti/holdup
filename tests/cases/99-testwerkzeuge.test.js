@@ -1,6 +1,6 @@
 // Testwerkzeuge (nur mit #debug, Wunsch von Till am 25. Oktober 2026): Die Optionen haben im Titel zwei halbe Kacheln (Aufträge frei, Testwerkzeuge), in der Pause nur die Werkzeuge. Das Fenster Testwerkzeuge (ui:dbg, mDebug in js/ui.js, Aktionen dbg* in uiAct)
 // stockt das Konto um 50.000 auf oder setzt es auf 0, gibt 5 Skillpunkte, setzt den Baum zurück (alle Punkte kommen zurück), schaltet die Fahndungsstufe reihum (0 bis 5, die Stufe setzt SESSION.heat auf Stufe mal CFG.fahndung.step), verschiebt die
-// Auftragsnummer um 1 (nie unter 0) und zählt die lautlosen Siege in Folge hoch (CFG.alert.cap, danach 0). Die Tests laufen mit #debug, ohne den Hash gäbe es die Kacheln nicht.
+// Auftragsnummer um 1 (nie unter 0), zählt die lautlosen Siege in Folge hoch (CFG.alert.cap, danach 0) und öffnet solo den Shop (dshop, Test 102-menue-ablauf). Die Tests laufen mit #debug, ohne den Hash gäbe es die Kacheln nicht.
 module.exports = [
   {
     name: 'Testwerkzeuge: Die Optionen zeigen im Titel Aufträge frei und Testwerkzeuge nebeneinander, das Fenster hat Geld, Skillpunkte, Baum zurücksetzen, Fahndung, Auftrag und lautlose Siege, Esc schließt',
@@ -17,7 +17,7 @@ module.exports = [
       t.eq(r.opt, ['unlock', 'dbg'], 'Aufträge frei und Testwerkzeuge in den Optionen');
       t.eq(r.side, [true, true], 'nebeneinander');
       t.eq(r.modal, 'dbg', 'Testwerkzeuge öffnet das Fenster');
-      t.eq(r.tiles, ['dmoney', 'dmoney0', 'dpts', 'dresp', 'dheat', 'dround', 'dround2', 'dquiet', 'close'], 'alle Kacheln da');
+      t.eq(r.tiles, ['dmoney', 'dmoney0', 'dpts', 'dresp', 'dheat', 'dround', 'dround2', 'dquiet', 'dshop', 'close'], 'alle Kacheln da (Shop öffnen nur solo)');
       t.ok(r.inside, 'alles liegt im Bild');
       t.eq(r.after, 'options', 'Esc schließt nur das Fenster, die Optionen bleiben');
     },

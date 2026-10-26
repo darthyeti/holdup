@@ -95,7 +95,7 @@ function sTitle(){const{SESSION,fmt,scenario}=X,r=SESSION.round;
 return{def:'serie',t:[
 {id:'serie',x:60,y:176,w:510,h:236,kind:'p',act:'solo',chip:'Enter',paint(t){const{g}=X;icon('play',t.x+60,t.y+70,58,G);g.textAlign='left';g.font='bold 28px monospace';g.fillStyle=G;g.fillText(r>0?'Serie fortsetzen':'Neue Serie',t.x+110,t.y+78);
 g.font='14px monospace';g.fillStyle=TX;const L=r>0?['Auftrag '+(r+1)+'   Konto '+fmt(SESSION.wallet),'Bester Auftrag '+fmt(SESSION.best)]:['Wer einen Auftrag verliert, verliert alles.','Ausrüstung kaufst du im Shop zwischen den Aufträgen.'];L.forEach((l,i)=>g.fillText(l,t.x+24,t.y+140+i*22));fhBadge(t.x+24,t.y+186,'l');
-g.font='13px monospace';g.fillStyle=Y;g.fillText('Nächster Auftrag: '+jobOf(X.scLocked(scenario)?'bank':scenario).n,t.x+24,t.y+206)}},
+g.font='13px monospace';g.fillStyle=Y;g.fillText((r>0?'Erst der Shop, dann: ':'Nächster Auftrag: ')+jobOf(X.scLocked(scenario)?'bank':scenario).n,t.x+24,t.y+206)}},
 {id:'coop',x:590,y:176,w:310,h:72,key:'c',act:'coop',icon:'coop',title:'Coop',sub:'Raum erstellen oder beitreten'},
 {id:'help',x:590,y:258,w:310,h:72,key:'?',act:'ui:help',icon:'help',title:'So wird gespielt',sub:'Steuerung und Symbole'},
 {id:'opt',x:590,y:340,w:310,h:72,key:'o',act:'ui:options',icon:'opt',title:'Optionen',sub:'Ton, Bild, Name, Serie'}],
@@ -156,6 +156,8 @@ items.forEach((it,i)=>{if(!cols.some(c=>c.ix.includes(i)))cols[cols.length-1].ix
 cols.forEach((c,ci)=>c.ix.forEach((i,ri)=>t.push({id:'buy:'+i,x:60+ci*212,y:104+ri*62,w:204,h:56,act:'buy',arg:i,key:items[i].r?'r':items[i].l?'a':SHOPKEYS[i],item:items[i],st:shopState(items[i]),paint:paintItem,nochip:true})));
 /* Kopfzeile: links SHOP und Fahndungs-Badge (bis x 400), rechts Konto und Serienzeile (ab y 70, ab x 590), oben die Team-Leiste (y 6 bis 30): die Kachel passt dazwischen, einzeilig */
 t.push({id:'skills',x:404,y:36,w:196,h:30,tf:'bold 13px monospace',key:'k',act:'ui:skills',kind:SESSION.pts>0?'p':'n',title:SESSION.pts>0?'Fähigkeiten ('+SESSION.pts+')':'Fähigkeiten',nochip:false});
+/* Optionen im Shop unten zwischen Zum Titel und Weiter (Ton, Bild, Log, mit #debug die Testwerkzeuge), damit man dafuer den Shop nicht verlassen muss */
+t.push({id:'opt',x:274,y:466,w:164,h:44,key:'o',act:'ui:options',kind:'g',title:'Optionen',chip:'O'});
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
 t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);fhBadge(160,62,'l');
@@ -166,7 +168,7 @@ const fi=focus&&/^buy:/.test(focus)?items[+focus.slice(4)]:null;
 if(fi){const lv=fi.t?(SESSION.own[fi.k]|0):0,nx=fi.t?Math.min(3,lv+1):0;g.textAlign='left';g.font='bold 12px monospace';g.fillStyle=A;g.fillText(fi.n+(fi.t?(lv>=3?' (Stufe 3, höchste)':' (Stufe '+nx+')'):''),60,428);g.font='12px monospace';g.fillStyle=TX;g.fillText(fit(fi.d(fi.t?nx:0)+(fi.t&&lv>0&&lv<3?'   jetzt: '+fi.d(lv):''),840,'12px monospace'),60,444)}else{g.textAlign='left';g.font='12px monospace';g.fillStyle=MU;g.fillText('Posten wählen (Pfeiltasten oder Maus): hier steht seine Beschreibung.',60,436)}
 g.textAlign='center';g.font='11px monospace';g.fillStyle=SU;g.fillText(fit('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),840,'11px monospace'),480,462);
 /* Hinweis (Nicht alle sind bereit ...): zwei Zeilen in der Luecke zwischen den Kacheln unten (x 260 bis 620), nicht quer ueber die Kachel Weiter */
-if(shopNote.t>0){g.textAlign='center';g.font='12px monospace';g.fillStyle=Y;wrap(shopNote.s,344,g.font,2).forEach((l,i)=>g.fillText(l,440,486+i*15))}g.textAlign='left'}}}
+if(shopNote.t>0){g.textAlign='center';g.font='12px monospace';g.fillStyle=Y;wrap(shopNote.s,172,g.font,4).forEach((l,i)=>g.fillText(l,529,482+i*14))}g.textAlign='left'}}}
 function paintItem(t){const{g,fmt,CFG,SESSION,itemPrice,repCost}=X,it=t.item,st=t.st,ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt'||st==='heil',lv=it.t?(SESSION.own[it.k]|0):0,cnt=it.c?(SESSION.cons[it.k]|0):0,price=it.r?repCost():itemPrice(it);
 g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=A;if(t.key)g.fillText('['+String(t.key).toUpperCase()+']',t.x+10,t.y+20);
 g.font='bold 13px monospace';g.fillStyle=own?G:ok?Y:MU;g.fillText(fit(it.n,t.w-110,g.font),t.x+(t.key?38:10),t.y+20);
@@ -240,6 +242,7 @@ function mDebug(){const{SESSION,CFG,fmt}=X,F=CFG.fahndung,lv=X.heatLv(SESSION.he
 {id:'dheat',act:'dbgHeat',title:'Fahndung: Stufe '+lv+' '+F.names[lv],sub:'Klick: nächste Stufe (0 bis '+(F.names.length-1)+')'},
 {id:'dround',half:0,act:'dbgRound',arg:-1,title:'Auftrag −1',sub:'jetzt Auftrag '+(SESSION.round+1)},{id:'dround2',half:1,act:'dbgRound',arg:1,title:'Auftrag +1',sub:'Rang schaltet Karten frei'},
 {id:'dquiet',act:'dbgQuiet',title:'Lautlose Siege in Folge: '+q,sub:q>=CFG.alert.at?'Läden gewarnt, Klick: +1 (nach '+CFG.alert.cap+' wieder 0)':'Klick: +1 (ab '+CFG.alert.at+' gewarnt)'}];
+if(X.NET.role==='solo')rows.push({id:'dshop',act:'dbgShop',title:'Shop öffnen',sub:'ohne einen Auftrag zu beenden (nur solo)'});
 const gap=8,hs=rows.map(r=>56),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
 let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
 t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
