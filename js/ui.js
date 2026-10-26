@@ -221,11 +221,24 @@ rows.push({id:'view',key:'b',act:'view',half:VIEW.can?0:undefined,title:'Bildgr�
 if(VIEW.can)rows.push({id:'full',key:'v',act:'full',half:1,title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'});
 if(title)rows.push({id:'name',key:'n',act:'name',paint(t){const{g}=X;g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText('Dein Name',t.x+12,t.y+26);g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=myName||nameEdit?TX:'#6c7480';g.fillText((myName||(nameEdit?'':'ohne Namen'))+(nameEdit&&Math.floor(time*2)%2?'|':''),t.x+t.w-52,t.y+26)}});
 if(title)rows.push({id:'series',kind:'x',act:'ui:confirm',arg:{k:'series'},title:'Neue Serie beginnen',sub:'Konto und Ausrüstung gehen verloren.'});
-if(title&&DBG)rows.push({id:'unlock',act:'unlock',title:'Alle Aufträge freischalten: '+(unlockAll?'an':'aus'),sub:'Nur zum Testen, hebt die Rang-Sperren auf.'});
+/* Nur mit #debug: Rang-Sperren aufheben und das Fenster Testwerkzeuge (Geld, Skillpunkte, Stufen), im Titel zwei halbe Kacheln, in der Pause nur die Werkzeuge */
+if(DBG){if(title)rows.push({id:'unlock',half:0,act:'unlock',title:'Aufträge frei: '+(unlockAll?'an':'aus'),sub:'Hebt die Rang-Sperren auf'});
+rows.push({id:'dbg',key:'t',half:title?1:undefined,act:'ui:dbg',title:'Testwerkzeuge',sub:'Geld, Punkte, Stufen'})}
 const gap=8,hs=rows.map(r=>r.sub?56:44),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
 let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
 t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
 return{def:'close',back:'ui:close',t,deco(){const{g}=X;panelFrame(px,y0,pw,h,'OPTIONEN')}}}
+/* Testwerkzeuge (nur mit #debug, aus den Optionen): Konto und Skillpunkte aufstocken, Baum zuruecksetzen, Fahndungsstufe, Auftragsnummer (schaltet Karten per CFG.rank frei) und lautlose Siege in Folge (Wachsamkeit der Laeden) von Hand setzen. Wirkt auf SESSION, die Aktionen stehen in uiAct (index.html). */
+function mDebug(){const{SESSION,CFG,fmt}=X,F=CFG.fahndung,lv=X.heatLv(SESSION.heat),q=SESSION.quiet|0,rows=[
+{id:'dmoney',half:0,act:'dbgMoney',title:'Geld +50.000',sub:'Konto '+fmt(SESSION.wallet)},{id:'dmoney0',half:1,act:'dbgMoney0',title:'Konto auf 0',sub:'für Preis-Tests'},
+{id:'dpts',half:0,act:'dbgPts',title:'Skillpunkte +5',sub:'offen: '+(SESSION.pts|0)},{id:'dresp',half:1,act:'dbgResp',title:'Baum zurücksetzen',sub:'alle Punkte kommen zurück'},
+{id:'dheat',act:'dbgHeat',title:'Fahndung: Stufe '+lv+' '+F.names[lv],sub:'Klick: nächste Stufe (0 bis '+(F.names.length-1)+')'},
+{id:'dround',half:0,act:'dbgRound',arg:-1,title:'Auftrag −1',sub:'jetzt Auftrag '+(SESSION.round+1)},{id:'dround2',half:1,act:'dbgRound',arg:1,title:'Auftrag +1',sub:'Rang schaltet Karten frei'},
+{id:'dquiet',act:'dbgQuiet',title:'Lautlose Siege in Folge: '+q,sub:q>=CFG.alert.at?'Läden gewarnt, Klick: +1 (nach '+CFG.alert.cap+' wieder 0)':'Klick: +1 (ab '+CFG.alert.at+' gewarnt)'}];
+const gap=8,hs=rows.map(r=>56),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
+let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
+t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
+return{def:'close',back:'ui:close',t,deco(){panelFrame(px,y0,pw,h,'TESTWERKZEUGE (#debug)')}}}
 function paintSlider(t){const{g}=X,i=t.slider,v=SND.vol(i?'sfx':'mus');g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText(t.title,t.x+12,t.y+27);const bx=t.x+130,bw=t.w-200;
 g.fillStyle='rgba(0,0,0,.65)';g.fillRect(bx,t.y+19,bw,8);g.fillStyle=focus===t.id?A:'#b07a00';g.fillRect(bx,t.y+19,bw*v,8);g.fillStyle='#f4f1e6';g.fillRect(bx+bw*v-2,t.y+16,4,14);
 g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(Math.round(v*100)+'%',t.x+t.w-12,t.y+27)}
@@ -289,7 +302,7 @@ function closeAll(){const m=stack[0];stack=[];modal=null;if(m)focus=m.ret}
 function base(){const{scr,paused,ended,NET}=X;
 if(scr==='title')return sTitle();if(scr==='mission')return sMission();if(scr==='coop')return sCoop();if(scr==='join')return sJoin();if(scr==='lobby')return sLobby();if(scr==='shop')return sShop();
 if(scr==='play'){if(ended)return sEnded();if(paused)return sPause()}return null}
-function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);return null}
+function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='dbg')return mDebug();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);return null}
 function cur(){const b=base();if(!b){stack=[];modal=null;sig='';return null}
 const sg=X.scr+'|'+(X.paused?1:0)+'|'+(X.ended?1:0);if(sg!==sig){sig=sg;stack=[];modal=null;focus=null;hov=null}
 const c=modal?modalSpec(modal):b;
@@ -301,7 +314,7 @@ function tileAt(x,y){const c=cur();if(!c)return null;for(let i=c.t.length-1;i>=0
 function setSlider(t,x){X.volAdj(t.slider,Math.max(0,Math.min(1,(x-(t.x+130))/(t.w-200))),true)}
 function activate(t){if(!t||!t.act)return;if(t.lock){SND.ev('deny');return}const a=t.act;
 if(a==='ui:close'){closeModal();return}
-if(a==='ui:options'||a==='ui:help'||a==='ui:skills'){openModal({k:a.slice(3)});return}
+if(a==='ui:options'||a==='ui:help'||a==='ui:skills'||a==='ui:dbg'){openModal({k:a.slice(3)});return}
 if(a==='ui:confirm'){const solo=X.NET.role==='solo',host=X.NET.role==='host';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:host?{title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und alle Mitspieler werden getrennt.',yesLabel:'Ja, Raum schließen',yes:'leave'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}
 if(a==='ui:yes'){const y=modal.yes;closeAll();X.act(y);return}
 /* Raum schliessen (Host mit verbundenen Mitspielern): Lobby, Shop und Ergebnis fragen zurueck, denn ein geschlossener Raum trennt alle (Esc aus Gewohnheit, siehe docs/coop-und-netz.md). Ohne Mitspieler, solo und fuer Clients geht es direkt. */

@@ -235,6 +235,8 @@ Wachsamkeit der Läden (Teil von Major Release Update 1, Schritte C1 und C2 in d
 
 Struktur (docs/ideen-und-planung.md): Doku aufteilen und Tests festhalten sind erledigt, das Auslagern von Code ist begonnen (`js/ui.js`), als Nächstes `SND`, `peerTransport` und die Generatoren.
 
+Flackernder Test (25. Oktober 2026): Der lokale Pixeltest `Casino: Raster und Felder` (Schnappschuss `casino-basis-px`, Datei `golden-local/`) ist auf dieser Maschine mal grün, mal rot, im Mittel bei etwa einem von zwei Läufen, immer dieselbe Zeile (`Staffel#4`, erste Ebene weicht ab). Er flackert auch auf dem Stand vor B4 und B5 (Commit `0e29f2b`, zwei von sechs Läufen rot), hat also nichts mit dem Skillbaum zu tun. Vermutung: etwas im Zeichnen der statischen Ebene dieser Hülle ist nicht deterministisch (`Math.random` oder ein Ladezustand), Ursache noch nicht gesucht. Wer den Fehler sieht, startet den Test einfach noch einmal.
+
 Werkzeug und Tests: Die Tests decken Transporter-Ablauf, Phase-1-Verdacht, Ton und die Optik im Spiel nicht ab (nur Menüs sind pixelgesichert). Der Pre-commit-Hook wirkt nur mit lokalem `core.hooksPath`. Der Browser cacht `assets/cars.png` stark.
 
 ## Stellschrauben
