@@ -17,6 +17,8 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P1 | Tankstelle: zu enge Verkaufsräume | v1.1 (24. Oktober 2026) | abgenommen (24. Oktober 2026, Till hat gespielt: passt) |
 | P2 | Runde endet sofort mit Brettersatz im Kit | v1.1 (24. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt: funktioniert) |
 | P3 | HUD: Lage-Tags fallen weg, wenn es zu viele sind | v1.1 (25. Oktober 2026) | abgenommen (25. Oktober 2026, Till hat gespielt) |
+| P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | noch kein Plan | gesammelt (S1 entschieden, Till ergänzt weitere) |
+| P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | Plan steht, wartet auf Tills Go |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -125,3 +127,46 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 - v1 (25. Oktober 2026): Plan zu B3, Entscheidung Till (Vorschläge 1 und 3).
 - Bau (25. Oktober 2026): gebaut mit den Abweichungen oben, Status gebaut.
 - Abnahme (25. Oktober 2026): Till hat gespielt, Status abgenommen.
+
+## P4 Balancing-Patch 1 (Sammlung)
+
+Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt eine Nummer (S1, S2, ...) mit Datum, Tills Wortlaut und dem Befund aus Code oder Messung. Einen Plan gibt es erst, wenn Till die Sammlung für voll erklärt, gebaut wird erst auf sein Go. Die Werte stehen alle in `CFG`.
+
+**Punkte**
+- S1 (26. Oktober 2026, Till): "Bohrer verbessert auch das Öffnen des Geldtransporters."
+  - Befund (gemessen am 26. Oktober 2026 mit einem Wegwerf-Skript im echten Spiel: Spieler am Laderaum bzw. am Tresor der Bank, E gehalten, Bohrer-Stufe 0 bis 3): Das tut er schon. `toolT` ([index.html](index.html), Zeile mit `const toolT`) gibt für `cargo` denselben Faktor zurück wie für den Tresor ohne Code (`CFG.shop.tier.drill` .64, .5, .4), und der Halte-Schritt rechnet `dt / dur / toolT`. Aufbohrzeit Laderaum und Bank-Tresor: Stufe 0 22,0 s, Stufe 1 14,1 s, Stufe 2 11,0 s, Stufe 3 8,8 s.
+  - Was nicht wirkt: Der Schlüssel (`ckey`, 1,8 s, `CFG.truck.keyT`) und C4 (`c4t`) nehmen weder Bohrer noch Dietrich (Faktor 1). Der Dietrich greift nur bei Beute-Stücken mit Aufbrechen und Türen.
+  - Vermutung, warum es nicht auffällt: Der Shop-Text des Bohrers nennt nur den Tresor ("Tresor aufbohren in X s statt 22 s"), der Hinweis am Laderaum zeigt keine Zeit, und beim Transporter ist die Zeit bis zur Polizei kurz (`CFG.truck.policeAt` 26 s, ungemessen, wie sie zur Bohrzeit von 22 s steht).
+  - Entscheidung (Till, 26. Oktober 2026): Nur der Shop-Text ändert sich, das Verhalten bleibt. Der Text des Bohrers nennt neben dem Tresor auch die Fahrzeugtüren (der Laderaum des Geldtransporters), etwa "Tresor, Fahrzeugtüren aufbohren in X s statt 22 s" (50 Zeichen, mit dem Zusatz "jetzt:" rund 110 von rund 116 Zeichen Platz in der Zeile, beim Bau prüfen). Ein eigener Test für die Bohrzeit am Laderaum entfällt ausdrücklich.
+
+**Änderungsprotokoll**
+- Sammlung eröffnet (26. Oktober 2026), S1 mit Befund eingetragen.
+- S1 entschieden (26. Oktober 2026): nur Shop-Text, kein Test.
+
+## P5 Geiselschild: Beamter klebt am Spieler
+
+**Bugs**
+- B5 (26. Oktober 2026, Till, Flugschreiber-Log `holdup-log-b163-solo-Till-20261026-151854.json`, Runde 15, Tankstelle Seed 633635, drei Marker): Ein Polizist "klebt" am Spieler, der eine Geisel hat.
+
+**Befund** (aus dem Log gelesen und am 26. Oktober 2026 im echten Spiel nachgestellt):
+- Im Log hängt ein Polizist der Welle 1 mit 32 von 100 HP ab etwa 15 s vor dem Marker an der Position des Spielers (Abstand 0 bis 17 Pixel, beim Marker 1 Pixel, er folgt jeder Bewegung). Die drei anderen Beamten stehen an ihren Posten. Der Spieler hat die Geisel (Geiselschild, `CFG.hostage.shield` 80 Pixel).
+- Ursache: Die Zielwahl der Beamten (Schleife `for(const e of en)` in `hostStep`) nimmt Spieler im Geiselschild (`hostShield(o)`) ganz aus der Zielwahl. Der Beamte hat dann kein Ziel (`tg` leer). Den Haltabstand (über 150 Pixel zugehen, darunter seitlich kreisen) und das Zielen gibt es aber nur mit Ziel. Ohne Ziel folgt ein Beamter im Angriffsmodus (`push`) dem Weg-Feld (`flowDir`) bis in die Kachel des Spielers und bleibt dort stehen.
+- Warum gerade dieser Beamte: Mit 32 von 100 HP war er verletzt und hat seinen Posten verlassen (`e.hp<e.mhp` schaltet auf `push`). Gesunde Beamte bleiben auf dem Posten, bis ihre Wartezeit abläuft (Geisel: höchstens `CFG.hostage.cap` Sekunden), und würden danach genauso kleben.
+- Nachgestellt (Tankstelle Seed 633635, Spieler steht still, ein Beamter mit 32 HP im Angriffsmodus, Start 217 Pixel entfernt, 25 s): mit Geisel Abstand 217, 73, dann ab der dritten Sekunde dauerhaft 1 Pixel, kein Schuss. Gegenprobe ohne Geisel: Abstand bleibt bei 90 bis 100 Pixel, der Beamte kreist und schießt (der Spieler verliert rund 300 HP).
+- Folge: Das Schild ist ein Zeitbudget (`shX`, höchstens `holdCap` Sekunden, 30 plus Skill). Ist es aufgebraucht, schießt der Beamte aus einem Pixel Abstand. Bis dahin steht er als Figur im Spieler.
+- Nicht betroffen: Scharfschützen (`snipeStep` hat eine eigene Prüfung), der Kugelfang der Geisel (`hostBlock`, die Schusslinie ist nur blockiert, solange die Geisel dazwischen steht).
+
+**Plan v1** (26. Oktober 2026)
+1. Test zuerst (rot): `110-geiselschild-abstand` (Nummer beim Bau die nächste freie). (a) Spieler mit Geisel steht still, ein verletzter Beamter (HP 32, `push`) startet 200 Pixel entfernt: nach 3 s bleibt der Abstand bei jeder Messung über 80 Pixel, kein Schuss in 15 s, der Beamte zielt aber auf den Spieler. (b) Gegenprobe ohne Geisel: Abstand 60 bis 160 Pixel, der Beamte schießt (das Verhalten bleibt, wie es ist). (c) Schild verbraucht (`D.setShield(cap)`): der Beamte schießt, und nach Ablauf des Schilds mitten im Lauf erst nach der Reaktionszeit (`CFG.pol.react` .45 s), nicht im ersten Bild. (d) Ein Beamter im Modus `run`, der den geschützten Spieler sieht, wechselt weiter nicht auf `push` (wie heute). Die Gegenprobe über eine Kopie ohne den Fix muss rot werden.
+2. Fix (vier Stellen in der Beamten-Schleife von `hostStep`): (i) Die Zielwahl für Bewegung und Zielen lässt `!hostShield(o)` weg, der geschützte Spieler ist wieder ein Ziel. (ii) Mit geschütztem Ziel zählt `e.react` nicht hoch, sondern bleibt 0, und das Schießen ist gesperrt. (iii) Der Wechsel von `run` auf `push` (`tg&&td<CFG.pol.reactD`) gilt nur für ungeschützte Ziele, damit sich dort nichts ändert. (iv) `hostBlock` bleibt in der Zielwahl wie heute. Ein Beamter geht also wie sonst auf etwa 100 bis 150 Pixel heran und kreist, schießt aber nicht. Die Scharfschützen-Regel ändert sich nicht. Kein neuer Wert in `CFG`, kein Netzformat (der Host rechnet, kein `VER`).
+3. Prüfung: Test 105 (Geiselschild), 97 (Kugelfang), 92 (Geiseln), die Polizei-Tests (`82-polizei-anfahrt` und die Barrikaden-Tests), der schnelle Lauf, danach der volle Lauf und der Bot. Bild-Prüfung: Spieler mit Geisel, Beamter kreist im Abstand.
+4. Doku: Absatz Geiseln und Geiselschild in docs/spielsystem.md (Beamte halten Abstand und zielen, schießen nicht), Test in docs/tests-und-messwerte.md.
+
+**Alternative** (verworfen, 26. Oktober 2026): Nur im Weg-Feld-Zweig einen Haltabstand einbauen (Beamte ohne Ziel bleiben bei etwa 110 Pixel stehen). Das wäre eine einzige Stelle, ergäbe aber stehende statt kreisende Beamte und einen neuen Wert in `CFG`. Der Plan oben bringt das Verhalten ohne Schild mit und braucht keinen neuen Wert.
+
+**Spielverhalten danach:** Beamte stehen oder kreisen nahe am Spieler mit Geisel und zielen, ohne zu schießen. Sobald das Schild ausläuft, schießen sie nach der normalen Reaktionszeit. Beamte auf ihren Posten, die einen geschützten Spieler sehen, drehen sich zu ihm und weichen seitlich aus (wie bei einem ungeschützten Spieler), statt wie heute stur auf dem Posten zu stehen.
+
+**Risiken:** Klein bis mittel. Die Änderung sitzt in der zentralen Beamten-Schleife (vier Stellen, alle Beamtenarten außer Scharfschützen). Die Polizei-Tests decken sie ab, sie ändert aber die Zielwahl, die auch ohne Geisel jeden Beamten betrifft (nur die Bedingung `hostShield` wird verschoben, ohne Geisel liefert sie immer falsch). `index.html` wird zurzeit parallel geändert (Fluchtwagen-Treffpunkt, Spur 2): erst nach deren Commit bauen oder auf einer eigenen Branch.
+
+**Änderungsprotokoll**
+- v1 (26. Oktober 2026): Plan zu B5, noch ohne Go.
