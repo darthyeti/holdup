@@ -19,7 +19,7 @@ const JOBS=[
 {k:'museum',n:'Museum',i:'museum',be:3,ri:2,s:'Nacht, Laser, Lichtkegel',d:['Im Lichtkegel einer Wache fällst du sofort auf, Laser lösen bei Berührung Alarm aus (Schalter: 50 s aus).','Gemälde, Statue, Relikte, Depot. Lautlos mit Beute raus: 100 % Bonus. Schwere Stücke machen langsam.']},
 {k:'casino',n:'Casino',i:'casino',be:3,ri:3,s:'Chips und Cage',d:['Viele Wachen und Kameras. Chips zählen nur halb, wenn du sie nicht am Cage tauschst (dauert).','Chips, Automaten, VIP-Fächer, Tresor. Erst kämpft der Hausdienst, dann die Polizei.']}],
 RANDOM={k:'random',n:'Zufall',i:'dice',s:'Würfelt unter allem, was dein Rang freischaltet',d:['Jeder Auftrag wird neu gewürfelt, unter allem, was dein Rang freischaltet.','Bank, Juwelier, Transporter und Tankstelle von Anfang an, Museum ab Auftrag 3, Casino ab Auftrag 5.']};
-const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen, Waffe wechseln'],['E halten','Interaktion, Geisel nehmen'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2 / C','Störsender, Medkit, Koffer'],['3 / 4 / 5 halten','Falle, Rauch, Ablenker'],['Esc, P','Pause'],['M','Ton an/aus']];
+const CTRL=[['WASD / Pfeile','laufen'],['Shift','schleichen, Waffe wechseln'],['E halten','Interaktion, Geisel nehmen'],['Q','anderes Ziel wählen'],['F','Überfall starten'],['F halten','an Barrikade lehnen'],['Maus / Leertaste','zielen, schießen'],['R','nachladen'],['G','Fluchtwagen rufen'],['1 / 2 / C','Störsender, Medkit, Koffer'],['3 / 4 / 5 halten','Falle, Rauch, Ablenker'],['Esc, P','Pause'],['M / F8 / F9','Ton, Markierung, Log speichern']];
 const FLOW=['1  Erkunden: Kameras, Wachroute, Code, Beute','2  Lautlos mit Beute raus: Bonus auf die Beute','3  Oder F: Überfall. Eingänge verbarrikadieren,','   die Polizei kommt in Wellen. G ruft den Fluchtwagen.','Nicht herumstehen: Angestellte merken es.','Je länger du bleibst, desto härter die Polizei.','Nebenziel: ein optionales Ziel je Auftrag (Zeile ZIEL),','Erfolg gibt Bonus auf die Beute.','Beute in der Tasche fällt Wachen nur langsam auf,','Stehlen im Blick von Kameras sofort. Bei 100 %','läuft ein Countdown: raus aus dem Blick.'],
 FLOW_FH_OFF=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie, für die ganze Serie. Noch ohne Wirkung.'],FLOW_FH_ON=['Fahndung (Stufe 0 bis 5): laut steigt sie, leise','sinkt sie. Hoch: Polizei früher und härter.'];
 const SHOPGRP=[['WAFFEN UND SCHUTZ',['smg','rifle','vest','helm','rep']],['WERKZEUG',['pack','drill','pick','radio','mask']],['VERBRAUCH UND RECHT',['jam','med','ad','bt','law']],['WURFGERÄTE',['sm','dc']]];
@@ -221,10 +221,15 @@ rows.push({id:'view',key:'b',act:'view',half:VIEW.can?0:undefined,title:'Bildgr�
 if(VIEW.can)rows.push({id:'full',key:'v',act:'full',half:1,title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'});
 if(title)rows.push({id:'name',key:'n',act:'name',paint(t){const{g}=X;g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText('Dein Name',t.x+12,t.y+26);g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=myName||nameEdit?TX:'#6c7480';g.fillText((myName||(nameEdit?'':'ohne Namen'))+(nameEdit&&Math.floor(time*2)%2?'|':''),t.x+t.w-52,t.y+26)}});
 if(title)rows.push({id:'series',kind:'x',act:'ui:confirm',arg:{k:'series'},title:'Neue Serie beginnen',sub:'Konto und Ausrüstung gehen verloren.'});
+/* Flugschreiber (Session-Log, F9 und F8): Log speichern und Markieren nebeneinander */
+rows.push({id:'flog',key:'l',half:0,act:'flogSave',title:'Log speichern',nochip:false},{id:'fmark',half:1,act:'flogMark',title:'Markieren (F8)'});
 /* Nur mit #debug: Rang-Sperren aufheben und das Fenster Testwerkzeuge (Geld, Skillpunkte, Stufen), im Titel zwei halbe Kacheln, in der Pause nur die Werkzeuge */
 if(DBG){if(title)rows.push({id:'unlock',half:0,act:'unlock',title:'Aufträge frei: '+(unlockAll?'an':'aus'),sub:'Hebt die Rang-Sperren auf'});
 rows.push({id:'dbg',key:'t',half:title?1:undefined,act:'ui:dbg',title:'Testwerkzeuge',sub:'Geld, Punkte, Stufen'})}
-const gap=8,hs=rows.map(r=>r.sub?56:44),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
+let gap=8,hs=rows.map(r=>r.sub?56:44);const hOf=()=>70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56;
+/* Mit #debug kommen zwei Zeilen dazu: dann passen die Kacheln enger (Abstand 6, Zeilen 40 und 50 hoch), damit das Fenster im Bild bleibt */
+if(hOf()>534){gap=6;hs=rows.map(r=>r.sub?50:40)}
+const h=hOf(),y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
 let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
 t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
 return{def:'close',back:'ui:close',t,deco(){const{g}=X;panelFrame(px,y0,pw,h,'OPTIONEN')}}}
