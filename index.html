@@ -2026,7 +2026,7 @@ else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m
 else if(m.t==='rst'){if(scr==='play'||scr==='shop'){if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong'){NET.ping=performance.now()-m.n;LOG.ping(NET.ping)}
 else if(m.t==='lgq')flogSend()}
-function leaveGame(msg){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
+function leaveGame(msg){LOG.ev('netz',['verlassen',String(msg||'').slice(0,60)]);netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
 function beginPlay(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.init();SND.resume();SND.ev('start');cv.focus()}
 function restartRound(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.ev('start')}
 function startNext(){mapSeed=newSeed();if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcastRoster();bcast({t:'rst',k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0})}restartRound()}
@@ -2309,7 +2309,7 @@ g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText
 function endPage(p){if(ended&&ended.aw.length&&ended.pg!==p){ended.pg=p;SND.ev('paper')}}
 function endNext(){if(!ended)return;if(ended.aw.length&&!ended.pg)return endPage(1);if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
 function startGame(){netReset();mapSeed=newSeed();beginPlay()}
-function toTitle(){netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
+function toTitle(){LOG.ev('menue','Titel');netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
 /* Spielername (nur Coop): wird in localStorage 'holdup.name' gemerkt, mit 'hi' an den Host geschickt, der prueft auf Duplikate und verteilt ihn ueber die Spielerliste (NET.roster[].name). pn(id) liefert den Anzeigenamen, ohne Namen die Farbe. */
 const NAME_MAX=12;let myName='',nameEdit=false;
 const cleanName=v=>String(v||'').replace(/[^\p{L}\p{N} _.\-]/gu,'').replace(/\s+/g,' ').trim().slice(0,NAME_MAX);
@@ -2353,7 +2353,7 @@ if(missionFrom==='shop'){if(NET.role==='host'&&NET.roster.some(r=>r.id!==0&&!r.r
 startGame()}
 function pasteClip(){const f=t=>{t=String(t||'').toUpperCase();const m=/RAUM=([A-Z0-9]{4})/.exec(t)||/\b([A-Z0-9]{4})\b/.exec(t);if(m){joinText=m[1].split('').filter(c=>CODECH.includes(c)).join('').slice(0,4);NET.msg=joinText.length===4?'':'Kein gültiger Code in der Zwischenablage.'}else NET.msg='Kein Code in der Zwischenablage.'};
 try{navigator.clipboard.readText().then(f,()=>{NET.msg='Einfügen nicht erlaubt. Strg oder Cmd+V benutzen.'})}catch(e){NET.msg='Einfügen nicht möglich. Strg oder Cmd+V benutzen.'}}
-function uiAct(a,v){switch(a){
+function uiAct(a,v){LOG.ev('ui',v===undefined||typeof v==='object'?a:[a,v]);switch(a){
 case'solo':openMission('title');break;
 case'skill':skillBuy(v);break;
 case'skillsell':skillSell(v);break;

@@ -67,7 +67,7 @@ module.exports = [
           const d = MT.solo(null, 's'), key = (k) => MT.k(d, k); d.sessReset(); d.setName('Tilli'); const L = d.flog();
           key('F9'); o.f9 = got.length; const j = await (await fetch(got[0].href)).json(); o.json = [j.fmt, j.spiel, j.gespeichert.length > 10]; o.name = got[0].name;
           key('F8'); o.f8 = L.dump().markierungen.length;
-          key('o'); o.tiles = d.ui().tiles().map(q => q.id).filter(id => id === 'flog' || id === 'fmark'); MT.click(d, 'fmark'); o.kachelMark = L.dump().markierungen.length; MT.click(d, 'flog'); o.kachel = got.length;
+          key('o'); o.tiles = d.ui().tiles().map(q => q.id).filter(id => id === 'flog' || id === 'fmark'); MT.click(d, 'fmark'); o.ui = L.dump().ereignisse.filter(e => e[2] === 'ui').map(e => e[3]); o.kachelMark = L.dump().markierungen.length; MT.click(d, 'flog'); o.kachel = got.length;
           const pos = d.ui().tiles().filter(q => q.id === 'flog' || q.id === 'fmark'); o.nebeneinander = pos[0].y === pos[1].y && pos[0].x < pos[1].x; o.inside = d.ui().tiles().every(q => q.x >= 0 && q.y >= 0 && q.x + q.w <= 960 && q.y + q.h <= 544);
           d.startGame(); d.setFocus(true); MT.adv(d, 1); key('Escape'); key('F9'); o.pause = got.length;
         } finally { HTMLAnchorElement.prototype.click = oc; }
@@ -78,6 +78,7 @@ module.exports = [
       t.ok(/^holdup-log-b\d+-solo-Tilli-\d{8}-\d{6}\.json$/.test(r.name), 'Dateiname: ' + r.name);
       t.eq(r.f8, 1, 'F8 setzt eine Markierung');
       t.eq(r.tiles, ['flog', 'fmark'], 'beide Kacheln in den Optionen');
+      t.ok(r.ui.includes('flogMark'), 'jede Menü-Aktion steht als Ereignis ui im Log (wer was gedrückt hat): ' + JSON.stringify(r.ui));
       t.eq([r.kachelMark, r.kachel], [2, 2], 'die Kacheln markieren und speichern');
       t.ok(r.nebeneinander && r.inside, 'nebeneinander, alles im Bild');
       t.eq(r.pause, 3, 'F9 geht auch in der Pause');
@@ -94,7 +95,7 @@ module.exports = [
         o.rolle = [da.runden[0].meta.rolle, db.runden[0].meta.rolle]; o.sp = [da.runden[0].meta.spieler.length, db.runden[0].meta.spieler.length]; o.ids = [da.runden[0].meta.id, db.runden[0].meta.id];
         o.sn = rowsB.reduce((s, z) => s + z[col(db, 'sn')], 0); o.gap = Math.max(...rowsB.map(z => z[col(db, 'gapMax')])); o.ping = Math.max(...rowsB.map(z => z[col(db, 'ping')]));
         o.netzA = da.ereignisse.filter(e => e[2] === 'netz').map(e => JSON.stringify(e[3])); o.netzB = db.ereignisse.filter(e => e[2] === 'netz').map(e => e[3]);
-        o.phaseB = db.ereignisse.filter(e => e[2] === 'phase').map(e => e[3]); o.zeilenA = da.messzeilen.zeilen.length;
+        o.phaseB = db.ereignisse.filter(e => e[2] === 'phase').map(e => e[3]); o.zeilenA = da.messzeilen.zeilen.length; B.leaveGame('Test-Ende'); o.leave = B.flog().dump().ereignisse.filter(e => e[2] === 'netz' && e[3][0] === 'verlassen').map(e => e[3][1]); G.run(1); o.hostSieht = A.flog().dump().ereignisse.filter(e => e[2] === 'netz' && e[3][0] === 'getrennt').length;
         return o;
       });
       t.eq(r.rolle, ['host', 'client'], 'Rollen im Kopf');
@@ -107,6 +108,8 @@ module.exports = [
       t.ok(r.netzB.includes('verbunden mit dem Host'), 'der Client nennt die Verbindung zum Host: ' + JSON.stringify(r.netzB));
       t.ok(r.phaseB.includes(2), 'der Client sieht den Überfall (Phase 2) aus dem Schnappschuss');
       t.ok(r.zeilenA >= 4, 'der Host hat Messzeilen: ' + r.zeilenA);
+      t.eq(r.leave, ['Test-Ende'], 'wer die Partie selbst verlässt (leaveGame), steht als verlassen im eigenen Log');
+      t.eq(r.hostSieht, 1, 'der Host sieht danach die getrennte Verbindung');
     },
   },
 ];
