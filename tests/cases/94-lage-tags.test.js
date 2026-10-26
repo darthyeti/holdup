@@ -15,7 +15,7 @@ module.exports = [
     name: 'Lage-Tags: Bank Seed 798 (sieben Tags, fuenf Zeilen noetig) zeigt vier Zeilen mit "+3 weitere", keine Zeile ist laenger als 28 Zeichen, der Kasten waechst mit (152 + 14 je weitere Zeile); ein Seed mit vier Zeilen zeigt alles',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const D = __dbg, read = ${READ}; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(798);
-        const tags = D.LAY().mission.tags.slice(), o = read(D), out = { tags, phase: D.get().phase, cfg: D.CFG.hud, lines: o.lines, h: o.h };
+        const tags = D.LAY().mission.tags.slice(), o = read(D), out = { tags, phase: D.get().phase, cfg: { lageLines: D.CFG.hud.lageLines, lageW: D.CFG.hud.lageW }, lines: o.lines, h: o.h };
         // ein Bank-Seed, dessen Tags genau vier Zeilen fuellen (alle zu sehen, kein Hinweis)
         for (let s = 1; s < 3000; s++) { if (D.layoutFor(s).mission.tags.length < 5) continue; D.buildSeed(s); const q = read(D), tg = D.LAY().mission.tags.slice(); if (q.lines.length === 4 && !/weitere/.test(q.lines.join(' ')) && tg.every(g => q.lines.join(', ').includes(g))) { out.vier = { seed: s, lines: q.lines, h: q.h }; break; } }
         return out; })()`);

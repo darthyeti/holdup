@@ -113,7 +113,7 @@ module.exports = [
       t.eq(r.sw, [45, 0, true], 'Deckung 3 bringt Zaeh: einmal mit 45 % Leben wieder auf, danach verbraucht');
       t.ok(r.sw2, 'der zweite Treffer wirkt wieder (kein zweites Aufstehen)');
       t.eq([r.sk.jam - r.base.jam, r.sk.dc - r.base.dc], [2, 3], 'Werkzeug 3: zwei Stoersender und drei Ablenker mehr');
-      t.ok(Math.abs(r.pick[0] / r.pick[1] - 1.3) < .01, 'Techniker 3: Dietrich (Aufbrechen) 30 % schneller: ' + JSON.stringify(r.pick));
+      t.ok(Math.abs(r.pick[0] / r.pick[1] - .7) < .01, 'Techniker 3: Dietrich (Aufbrechen) 30 % schneller (Faktor auf die Dauer .7, vorher falsch herum 1.3): ' + JSON.stringify(r.pick));
       t.eq(r.van, [32, 40], 'Techniker 3 bringt Fahrer: der Wagen kommt 8 s frueher (32 statt 40 s)');
       t.eq(r.cap, [46, 30], 'Sanitaeter 3 bringt Verhandler: Geisel-Aufschub +16 s');
       t.eq(r.heat, [2], 'Sanitaeter 3 bringt Verhandler: die Geiselnahme kostet 50 % weniger Fahndung (4 wird 2)');

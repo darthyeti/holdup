@@ -54,7 +54,7 @@ module.exports = [
         var1('davor', -40, 0);             // mittig auf der Linie
         var1('knapp', -100, 14);           // 14 Pixel neben der Linie, innerhalb Koerper plus Zusatzradius (8 + 10)
         var1('seitlich', -100, 36);        // 36 Pixel neben der Linie: frei
-        var1('dahinter', 40, 0);           // hinter dem Spieler (jenseits des Ziels)
+        var1('dahinter', 100, 0);          // hinter dem Spieler (jenseits des Ziels), ausserhalb des Geiselschilds (CFG.hostage.shield 80), naeher schuetzt das Schild, siehe 105-geiselschild
         var1('hinterIhm', -240, 0);        // hinter dem Beamten
         out.V = V; out.line = D.CFG.hostage.line; return out; })()`);
       t.eq(r.line, 10, 'CFG.hostage.line 10');
