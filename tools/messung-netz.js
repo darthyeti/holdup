@@ -26,7 +26,8 @@ const SNAP = (sc, seed) => `(async () => {
 const GLEICH = (sc, seed) => `(async () => {
   const G = CT.mkGame(${JSON.stringify(sc)}, ${seed}, 2, 40, 0), A = G.A, out = {}, g0 = A.get();
   out.map = A.LAY().seed; out.its = g0.its.map(it => [it.t, Math.round(it.x), Math.round(it.y)].join(':')).join('|');
-  out.npc = g0.npcs.map(q => Math.round(q.x) + ',' + Math.round(q.y)).join(';');
+  A.reset(); const nsig = () => A.get().npcs.map(q => Math.round(q.x) + ',' + Math.round(q.y)).join(';');
+  out.npc = nsig(); A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6; G.run(20); out.npc20 = nsig();
   A.CFG.policeAt = 3; A.CFG.policeForced = 3; for (const o of A.get().players) o.hp = 2000;
   G.clients[0].cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }));
   const hp = () => A.get().players.reduce((a, o) => a + Math.max(0, o.hp) + Math.max(0, o.ar), 0), h0 = hp();
@@ -66,7 +67,7 @@ async function inPage(env, fn) {
       const sc = rest[0] || 'bank', seed = +rest[1] || 321, n = +rest[2] || 6, res = [];
       for (let i = 0; i < n; i++) res.push(await inPage(env, GLEICH(sc, seed)));
       const same = k => res.every(r => r[k] === res[0][k]), d = res.map(r => r.dmg30), m = d.reduce((a, b) => a + b, 0) / n, sd = Math.sqrt(d.reduce((a, b) => a + (b - m) * (b - m), 0) / n);
-      console.log(`Gleicher Seed, ${n} Laeufe: Karte gleich ${same('map')}, Beute-Stuecke gleich ${same('its')}, NPC-Ausgangslage gleich ${same('npc')}`);
+      console.log(`Gleicher Seed, ${n} Laeufe: Karte gleich ${same('map')}, Beute-Stuecke gleich ${same('its')}, NPC-Ausgangslage gleich ${same('npc')}, NPCs nach 20 s Erkunden gleich ${same('npc20')}`);
       console.log(`  Schaden in 30 s bei gleichem Verhalten: ${d.join(' ')} | Mittel ${m.toFixed(0)}, Streuung ${sd.toFixed(0)} (${(100 * sd / m).toFixed(1)} %)`);
     } else if (mode === 'draw') {
       for (const sc of rest.length ? rest : ['bank', 'casino', 'truck']) console.log(sc, JSON.stringify(await inPage(env, DRAW(sc))));

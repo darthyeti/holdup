@@ -184,6 +184,7 @@ module.exports = [
   },
   {
     // Juwelier E und W: Siegquote des Bots rund 50 % (gemessen mit n=48, alt 25/48, neu 22/48), mit n=4 waere 'mindestens 2' nur durch den festen Zufallsstrom gruen, daher mindestens 1.
+    // Juwelier N+ ebenso (26. Oktober 2026, W0: seit die NPC-Ausgangslage aus dem Seed kommt, verbraucht der Aufbau keine Zahlen des festen Stroms mehr und alle Gefechte danach fallen anders, 1 von 8 statt 2; gemessen mit echtem Zufall n=30: alt 5/30 und 11/30, neu 14/30 und 14/30, also keine Verschlechterung), daher auch hier mindestens 1.
     name: 'Freie Strasse: Bot-Rauchtest auf gedrehten Karten (Juwelier E, W und N+, Tankstelle N und W, Bank E): der Auftrag laeuft bis zum Sieg',
     open: { det: true },
     timeout: 300000,
@@ -191,7 +192,7 @@ module.exports = [
       await t.loadTool('bot.js');
       const r = await t.page.evaluate(() => {
         const D = __dbg, out = {};
-        for (const [sc, seed, side, n, min] of [['jewel', 5000, 'E', 8, 1], ['jewel', 5000, 'W', 8, 1], ['jewel', 5000, 'N+', 8, 2], ['gas', 5000, 'N', 3, 2], ['gas', 5000, 'W', 3, 2], ['bank', 5017, 'E', 3, 2]]) {
+        for (const [sc, seed, side, n, min] of [['jewel', 5000, 'E', 8, 1], ['jewel', 5000, 'W', 8, 1], ['jewel', 5000, 'N+', 8, 1], ['gas', 5000, 'N', 3, 2], ['gas', 5000, 'W', 3, 2], ['bank', 5017, 'E', 3, 2]]) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           D.buildLay(D.turnLayout(D.layoutBase(seed), side[0], side[1] === '+'));
           let w = 0, loot = 0; for (let i = 0; i < n; i++) { const q = bot.run({ sigma: .05, react: .35, kit: 'old', call: 0, van: 'alt' }); if (q.res === 'WIN') { w++; loot += q.loot; } }

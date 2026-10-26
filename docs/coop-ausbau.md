@@ -246,7 +246,7 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 | F1 Funkspruch | gebaut am 26. Oktober 2026 (`VER` 44, Test `114-funkspruch`, Optionen-Kachel Funk, Stimme als Schalter), Einzelheiten in docs/coop-und-netz.md, Funkspruch |
 | F2 Markierung | gebaut am 26. Oktober 2026 (kein neues Netzformat, Test `115-markierung`, Einzelheiten in docs/coop-und-netz.md, Funkspruch) |
 | F3 Textchat | gebaut am 26. Oktober 2026 (`VER` 45, Test `116-chat`, Optionen-Kachel Chat, Einzelheiten in docs/coop-und-netz.md, Textchat) |
-| W0 feste NPC-Ausgangslage | offen |
+| W0 feste NPC-Ausgangslage | gebaut am 26. Oktober 2026 (`VER` 46, Test `117-npc-seed`, Einzelheiten in docs/karte-und-layout.md) |
 | Z1 bis Z4 Zuschauer | offen |
 | W1 bis W3 Wettkampf | offen |
 
@@ -257,3 +257,4 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 - v1.2 (26. Oktober 2026): F1 gebaut (Funkspruch). Abweichung vom Plan: Die Ziffern 5 bis 9 werden bei offenem Menü verschluckt (der Plan sagte nur, dass 1 bis 4 senden), damit kein Gadget aus Versehen feuert. Die Optionen-Kachel braucht in den Optionen eine dritte Verdichtung (Abstand 4, Kacheln 36 und 46 hoch), sonst läuft das Fenster mit den Testwerkzeugen aus dem Bild. Die Anleitung rückt eine Zeile enger (20 statt 22 Pixel je Zeile).
 - v1.3 (26. Oktober 2026): F2 gebaut (Markierung). Der Randpfeil liegt auf der Linie von der Bildmitte zum Ziel, nicht in der Ecke (bei einem Ziel schräg oben rechts also am oberen Rand).
 - v1.4 (26. Oktober 2026): F3 gebaut (Textchat). Abweichungen vom Plan: (1) Die Zeitsperre läuft auf einer eigenen Uhr, weil die Spielzeit des Hosts beim Ergebnis stillsteht (der Test fand es). (2) Statt eines festen Chatfeldes in jedem Menü gibt es kurzlebige Zeilen am Rand, die in den dichten Menüs kurz über Kacheln liegen: Ein freier Platz ohne Überdeckung existiert in Shop, Auftragswahl und Ergebnis nicht. (3) Die Option Chat steht als halbe Kachel neben Funk, die Anleitung und der Spielbildschirm brauchten dafür engere Zeilen (19 Pixel).
+- v1.5 (26. Oktober 2026): W0 gebaut (feste NPC-Ausgangslage). Erweitert gegenüber dem Plan: Auch die Wege sind seed-fest (Wartezeiten und Ziele je NPC aus einem eigenen Strom `n.rr`), denn die Patrouille einer Wache entscheidet im Schleichen mehr als ihr Startpunkt. Nach dem Bau misst `tools/messung-netz.js gleich` Ausgangslage und NPCs nach 20 s Erkunden als gleich (davor verschieden). Die Standardwartezeit in `mk` war ein toter Zufallsaufruf (alle NPCs überschreiben sie).
