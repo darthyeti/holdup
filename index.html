@@ -29,10 +29,10 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=172"></script>
+<script src="js/ui.js?v=173"></script>
 <script>
-const BUILD={n:172,d:'2026-10-26'};//BUILD
-const UI_API=9;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
+const BUILD={n:173,d:'2026-10-26'};//BUILD
+const UI_API=10;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
    Vollbild gilt fuer die ganze Seite (nicht fuers Canvas: object-fit dehnt es dort, dann stimmt das Zielen nicht mehr). Alles ist CSS ueber html[data-view] und html[data-fs],
@@ -125,6 +125,8 @@ function step(sneak,u){if(!ac)return;const t=T0();nz(t,.05,{t:'lowpass',f:380+Ma
 function alert(){if(!ac||!rl('al',450))return;const t=T0();tn(t,.14,{f:880,f2:1320,w:'triangle',g:.22});tn(t+.1,.14,{f:1320,w:'triangle',g:.18})}
 function found(){if(!ac)return;const t=T0();tn(t,.28,{f:1175,g:.12});tn(t+.09,.32,{f:1568,g:.1})}
 function radio(){if(!ac)return;const t=T0();tn(t,.07,{f:1500,w:'square',g:.07});tn(t+.13,.07,{f:1500,w:'square',g:.07});nz(t+.22,.25,{f:1800,q:.4,g:.12,a:.01})}
+/* Chatzeile von einem Mitspieler: zwei leise Klicktoene. */
+function chat(){if(!ac||!rl('chat',120))return;const t=T0();tn(t,.05,{f:1250,w:'triangle',g:.05});tn(t+.06,.06,{f:1700,w:'triangle',g:.04})}
 /* Funkspruch (Coop): Tonart help (drei dringende Piepser), quiet (ein weicher), ping (kurzer Anstieg), sonst das Funk-Knacken. soft: leiser fuer den Sender. */
 function rad(kind,soft){if(!ac||!rl('rad',150))return;const t=T0(),m=soft?.45:1;
 if(kind==='help'){for(let i=0;i<3;i++)tn(t+i*.1,.07,{f:1900,w:'square',g:.08*m});nz(t+.32,.18,{f:1800,q:.4,g:.1*m,a:.01})}
@@ -206,7 +208,7 @@ function applyVol(){if(!ac)return;const t=ac.currentTime;if(sfx)sfx.gain.setTarg
 function setVol(k,v){if(k!=='mus'&&k!=='sfx')return;vol[k]=Math.round(cl(v)*20)/20;applyVol();try{localStorage.setItem('holdup.vol',JSON.stringify(vol))}catch(e){}}
 function toggleMute(){muted=!muted;try{localStorage.setItem('holdup.mute',muted?'1':'0')}catch(e){}if(mg)mg.gain.setTargetAtTime(muted?0:1.3,T0(),.05);return muted}
 return{init,resume,pause,frame,toggleMute,isMuted:()=>muted,vol:k=>vol[k],setVol,blip,skid,_gains:()=>({sfx:sfx&&sfx.gain.value,mus:mus&&mus.gain.value}),on:()=>!!ac,listen:(x,y)=>{lx=x;ly=y},
-shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,rad,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
+shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,rad,chat,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
 /* Sitzungsfortschritt: nur im Speicher, ueberlebt Auftraege, nicht den Neustart. Niederlage setzt alles zurueck (Serie). */
 const SESSION={wallet:0,own:{},cons:{},wear:{vest:null,helm:null},round:0,earned:0,best:0,heat:0,law:false,pts:0,sk:{},sk0:null,quiet:0};
 function sessReset(){SESSION.wallet=0;SESSION.own={};SESSION.cons={};SESSION.wear={vest:null,helm:null};SESSION.round=0;SESSION.earned=0;SESSION.best=0;SESSION.heat=0;SESSION.law=false;SESSION.pts=0;SESSION.sk={};SESSION.sk0=null;SESSION.quiet=0}
@@ -252,6 +254,7 @@ gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,ca
 jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],tries:30,crowd:{few:93,camsFew:5,two:96}},
 hud:{lageLines:4,lageW:28,feedW:440},
 funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
+chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
 museumGen:{on:1,classic:.1,ww:[7,12],ew:[9,11],dy:[0,1],vx:[-1,1],tries:30},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,32],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
@@ -1382,13 +1385,15 @@ const FUNK=[{t:'Ich brauche Hilfe!',snd:'help'},{t:'Lasst uns leise vorgehen!',s
 const FUNK_MODES=['ton','stimme','stumm'];
 function funkLoad(){try{const v=localStorage.getItem('holdup.funk');return FUNK_MODES.includes(v)?v:'ton'}catch(e){return'ton'}}
 let funkT=0,funkMk=[],pings=[],funkLast=null,funkMode=funkLoad();
+function chatLoad(){try{return localStorage.getItem('holdup.chat')!=='0'}catch(e){return true}}
+let chatOpen=false,chatBuf='',chat=[],chatShow=chatLoad(),chatClk=0;/* chatClk: eigene Uhr des Chats, laeuft in tick immer (die Spielzeit steht beim Ergebnis still, der Host brauchte sonst nie wieder Zeit fuer die Zeitsperre) */
 const IDLE={dt:0,vx:0,vy:0,sn:0,e:0,fire:0,rl:0,aim:0,ln:0,a:0,w:-1};
 let selIt=-1; // Handwahl der E-Auswahl (Q): Index in its, -1 = Vorgabe
 const live=o=>!o.dead&&!o.out&&!o.gone,actv=()=>players.filter(live),plRow=o=>o.armed?PC[o.id].a:PC[o.id].u;
 /* Zaehler je Spieler fuer die Auszeichnungen im Coop-Ergebnis (zaehlt nur der Host, siehe awards()) */
 const mkSt=()=>({t:0,idle:0,dist:0,work:0,acts:0,k:0,civ:0,cap:0,sh:0,ht:0,dry:0,tk:0,dn:0,rev:0,sec:0,out:0,outT:0,gad:0,bar:0,boom:0,alarm:0});
 const r1=v=>Math.round(v*10)/10,r2=v=>Math.round(v*100)/100;
-const NET={role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0},LOG=mkFlog(()=>time);
+const NET={role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0},LOG=mkFlog(()=>time);
 const WPN_ORDER=['rifle','smg','pistol'],BASEKIT={w:'pistol',vest:0,helm:0,pack:0,drill:0,pick:0,radio:0,mask:0,jam:0,med:0,sm:0,dc:0,ad:0,bt:0,vh:null,hh:null,sk:{}};
 let kits=[];
 /* Ausruestung: Stufen 0 bis 3 (SESSION.own, Werte in CFG.shop.tier), Verschleiss (vh = Weste jetzt, hh = Helmtreffer uebrig, null = voll), Verbrauchsgueter als Zaehler (jam, med, sm Rauch, dc Ablenker, ad Adrenalin, bt Brettersaetze; die Blendgranate fl ist seit MRU 1 A1 gestrichen) */
@@ -1440,6 +1445,30 @@ function cycleFunk(){setFunkMode(FUNK_MODES[(FUNK_MODES.indexOf(funkMode)+1)%FUN
 function funkKey(k){if(NET.role==='solo'||players.length<2)return false;
 if(funkT>0){if(k==='x'||k==='Escape'){funkT=0;return true}if(/^[1-9]$/.test(k)){if(+k<=4){funkT=0;reqRad(+k-1)}return true}return false}
 if(k==='x'&&!ended&&canRad(me)){funkT=CFG.funk.menuT;return true}return false}
+/* Textchat (Coop, docs/coop-ausbau.md F3): Positivliste, Host prueft und setzt den Absender, bcast an alle (auch in den Menues), Kanal 0 = Team (1 ist fuer die Tribuene reserviert). Im Flugschreiber nur Absender und Laenge. */
+const CHAT_RE=/[^\p{L}\p{N} .,:;!?'"()+\-\/%&@#_]/gu,CHAT_KEY=/^[\p{L}\p{N} .,:;!?'"()+\-\/%&@#_]$/u;
+const cleanChat=s=>String(s).replace(CHAT_RE,'').replace(/ +/g,' ').trim().slice(0,CFG.chat.max).trimEnd();
+const chatOk=()=>NET.role!=='solo'&&NET.roster.length>1;
+function chatAdd(id,s,c){chat.push({id,s,c,tm:chatClk});if(chat.length>CFG.chat.hist)chat.shift();LOG.ev('chat',[id,s.length]);if(funkMode!=='stumm'&&!(me&&id===me.id))SND.chat()}
+function chatHost(id,s,ch){if(NET.role!=='host'||ch!==0||typeof s!=='string'||!NET.roster.some(r=>r.id===id))return false;const t=cleanChat(s);if(!t)return false;
+const L=(NET.chatT[id]=(NET.chatT[id]||[]).filter(x=>chatClk-x<20)),C=CFG.chat;if((L.length&&chatClk-L[L.length-1]<C.gap)||L.length>=C.burst)return false;L.push(chatClk);
+bcast({t:'ch',id,s:t,c:0});chatAdd(id,t,0);return true}
+function chatSend(){const s=cleanChat(chatBuf);chatOpen=false;chatBuf='';if(!s)return;if(NET.role==='client'){NET.conn&&NET.conn.send({t:'ch',s,c:0})}else if(!chatHost(0,s,0))SND.ev('deny')}
+function chatKey(e){if(e.key==='Enter')chatSend();else if(e.key==='Escape'){chatOpen=false;chatBuf=''}else if(e.key==='Backspace')chatBuf=chatBuf.slice(0,-1);else if(chatBuf.length<CFG.chat.max&&!e.ctrlKey&&!e.metaKey&&CHAT_KEY.test(e.key))chatBuf+=e.key}
+/* Oeffnen: im Spiel Enter, in Lobby, Shop, Auftragswahl, Pause und Ergebnis die Taste C (Enter loest dort Kacheln aus). Nur im Coop mit Mitspielern, nicht in einem Fenster. */
+function chatTry(k,e){if(e.repeat||e.ctrlKey||e.metaKey||!chatOk()||UI.modal())return false;
+if(scr==='play'&&!paused&&!ended){if(k==='Enter'){chatOpen=true;chatBuf='';clearKeys();aimG=0;spwOn=false;mouse.down=0;return true}return false}
+if(k==='c'&&(scr==='lobby'||scr==='shop'||scr==='mission'||(scr==='play'&&(paused||ended)))){chatOpen=true;chatBuf='';return true}return false}
+function toggleChat(){chatShow=!chatShow;try{localStorage.setItem('holdup.chat',chatShow?'1':'0')}catch(e){}}
+function wrapTxt(t,w){const out=[];let cu='';for(const wd of t.split(' ')){let word=wd;const tx=cu?cu+' '+word:word;if(g.measureText(tx).width<=w){cu=tx;continue}
+if(cu){out.push(cu);cu=''}while(g.measureText(word).width>w){let n=word.length;while(n>1&&g.measureText(word.slice(0,n)).width>w)n--;out.push(word.slice(0,n));word=word.slice(n)}cu=word}
+if(cu)out.push(cu);return out}
+/* Chat zeichnen (Bildschirm): kurzlebige Zeilen in Senderfarbe links unten (im Spiel rechts vom Vorratsstreifen, in den Menues am Rand), bei offener Eingabe die letzten acht Zeilen und die Eingabezeile unten in der Mitte. */
+function drawChat(){if(!chatShow&&!chatOpen)return;const C=CFG.chat,play=scr==='play'&&!paused&&!ended,x0=play?112:10,wm=play?250:330,bot=chatOpen?VH-80:play?VH-52:VH-8;g.save();S0();g.textAlign='left';g.font='12px monospace';
+if(chatShow){const src=chatOpen?chat.slice(-8):chat.filter(l=>chatClk-l.tm<C.lineT),rows=[];for(const l of src){const c=(PC[l.id]||{}).c||'#fff';wrapTxt(pn(l.id)+': '+l.s,wm-12).forEach(s=>rows.push({s,c}))}
+const vis=rows.slice(-(chatOpen?8:C.lines));vis.forEach((r,i)=>{const y=bot-(vis.length-i)*20,w=Math.ceil(g.measureText(r.s).width)+12;plate(x0,y,w,18);g.fillStyle=r.c;g.fillText(r.s,x0+6,y+13)})}
+if(chatOpen){const w=520,x=Math.round(VW/2-w/2),y=VH-72;plate(x,y,w,26);g.fillStyle='#ffb000';g.fillText('Chat',x+8,y+17);g.fillStyle='#e6eaf0';g.fillText(chatBuf+(Math.floor(chatClk*2)%2?'|':''),x+50,y+17);g.textAlign='right';g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('Enter senden, Esc abbrechen',x+w-8,y+17)}
+g.restore()}
 function fxApply(n,a){
 if(n==='say'){feed.unshift({t:6,s:a[0]});if(feed.length>5)feed.pop();LOG.ev('say',a[0])}
 else if(n==='ban'){banner={s:a[0],t:a[1]||2.4};LOG.ev('ban',a[0])}
@@ -2073,7 +2102,7 @@ if(selIt>=0&&!inReach(itsAll()[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=44,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=45,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());
@@ -2089,7 +2118,7 @@ peer.on('error',e=>h.onError(e&&e.type||String(e)));
 return{close:()=>{try{peer.destroy()}catch(e){}}}}}}
 const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m)};
 const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario,h:SESSION.heat,q:SESSION.quiet|0,l:SESSION.law?1:0});
-function netReset(){atLast='';const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0});nPl=1;
+function netReset(){atLast='';chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0});nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
 function hostRoom(tries){netReset();hostTicker(true);const code=newCode();NET.role='host';NET.code=code;NET.msg='Raum wird erstellt ...';NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';
@@ -2113,6 +2142,7 @@ else if(m.t==='f'){if(scr==='play')startHeist(false,o)}
 else if(m.t==='g'){if(scr==='play')callVan()}else if(m.t==='h'){if(scr==='play'&&phase===2)relHost(o)}
 else if(m.t==='u'){if(scr==='play')useGadget(o,m.n|0,+m.x,+m.y)}
 else if(m.t==='rad')radHost(o,m.c,m.x,m.y)
+else if(m.t==='ch')chatHost(c.pid,m.s,m.c)
 else if(m.t==='kit'){c.kit=sanKit(m.k)}
 else if(m.t==='law'){const ok=SESSION.heat>0&&!SESSION.law,p=ok?lawHire():0;c.send({t:'lawr',ok:ok?1:0,p});if(ok)bcastRoster()}
 else if(m.t==='at'){const r=NET.roster.find(q=>q.id===c.pid);if(r&&'lsmep'.includes(String(m.v))&&String(m.v).length===1){r.at=m.v;bcastRoster()}} else if(m.t==='rdy'){c.kit=sanKit(m.k);const r=NET.roster.find(q=>q.id===c.pid);if(r){r.rdy=m.v?1:0;bcastRoster()}}
@@ -2126,6 +2156,7 @@ setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.
 function clientMsg(m){
 if(m.t==='wel'){NET.myId=m.id;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
 else if(m.t==='kick'){LOG.ev('netz','entfernt');leaveGame('Der Host hat dich aus dem Raum entfernt.')}
+else if(m.t==='ch'){const t=typeof m.s==='string'?cleanChat(m.s):'';if(t&&m.c===0&&PC[m.id|0])chatAdd(m.id|0,t,0)}
 else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);if(m.l!=null)SESSION.law=!!m.l}
 else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='go'){nPl=m.n;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
@@ -2352,7 +2383,7 @@ for(const q of pings){const e=edgePt(q.x,q.y,14);if(!e)continue;g.save();g.globa
 if(!(funkT>0))return;const set=FUNK.slice(phase===2?4:0,phase===2?8:4),x=VW-258,y=250,w=248,h=30+set.length*20;plate(x,y,w,h);g.textAlign='left';g.font='bold 11px monospace';g.fillStyle='#ffb000';g.fillText('Funk',x+10,y+17);g.textAlign='right';g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('X oder Esc: zu',x+w-10,y+17);g.textAlign='left';
 set.forEach((d,i)=>{g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText((i+1)+'  '+d.t,x+10,y+38+i*20)});g.fillStyle='#ffb000';g.fillRect(x,y+h-3,w*Math.max(0,funkT)/CFG.funk.menuT,3)}
 function draw(){
-if(scr!=='play'){drawMenu();return}
+if(scr!=='play'){drawMenu();drawChat();return}
 mouse.x=mouse.sx+camX;mouse.y=mouse.sy+camY;
 W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(camX-2,camY-2,VW+4,VH+4);{const sx=(camX-WX0*T)*2,sy=(camY-WY0*T)*2;g.drawImage(st,sx,sy,VW*2,VH*2,camX,camY,VW,VH);g.drawImage(so,sx,sy,VW*2,VH*2,camX,camY,VW,VH);g.drawImage(dcv,sx,sy,VW*2,VH*2,camX,camY,VW,VH)}
 const poly=visPoly();
@@ -2422,7 +2453,7 @@ if(MLOCK.on&&MLOCK.can&&plWant()&&!plHeld()&&focus&&!paused&&!ended){g.textAlign
 if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}fhBadge(480,352,'c');g.textAlign='left'}
 if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';if(ended.pg!==1){g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
 ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=(i===ended.hi?'bold 20px':'15px')+' monospace';g.fillText(l,480,244+i*28)})}
-g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}}
+g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}drawChat()}
 /* Ergebnis: Seite 1 = Beute, Seite 2 = Auszeichnungen (nur Coop, nur wenn es welche gibt). Weiter blaettert erst, danach geht es in den Shop oder die neue Serie. */
 function endPage(p){if(ended&&ended.aw.length&&ended.pg!==p){ended.pg=p;SND.ev('paper')}}
 function endNext(){if(!ended)return;if(ended.aw.length&&!ended.pg)return endPage(1);if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
@@ -2455,7 +2486,7 @@ function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.0
 /* Menues als Kacheln: js/ui.js (mkUI). Der Kontext liest nur (Getter), geschrieben wird hier im Kern ueber uiAct. Neue Namen im Kontext ergaenzen, sobald ui.js sie braucht. */
 const UI=mkUI({act:uiAct,volAdj,get camX(){return camX},get camY(){return camY},get CFG(){return CFG},get curKit(){return curKit},get DBG(){return DBG},get drawLegend(){return drawLegend},
 get ended(){return ended},get errTxt(){return errTxt},get fmt(){return fmt},get g(){return g},get heatLv(){return heatLv},get joinText(){return joinText},get missionFrom(){return missionFrom},
-get myName(){return myName},get funkMode(){return funkMode},get nameEdit(){return nameEdit},get NET(){return NET},get paused(){return paused},get PC(){return PC},get pn(){return pn},
+get myName(){return myName},get funkMode(){return funkMode},get chatShow(){return chatShow},get nameEdit(){return nameEdit},get NET(){return NET},get paused(){return paused},get PC(){return PC},get pn(){return pn},
 get roomLink(){return roomLink},get S0(){return S0},get warned(){return warned},get skOk(){return skOk},get skNeed(){return skNeed},get skBlock(){return skBlock},get skCanSell(){return skCanSell},get sameMap(){return sameMap},get scenario(){return scenario},get scLocked(){return scLocked},get scr(){return scr},
 get SESSION(){return SESSION},get SHOPKEYS(){return SHOPKEYS},get shopNote(){return shopNote},get shopState(){return shopState},get itemPrice(){return itemPrice},get repCost(){return repCost},get so(){return so},get st(){return st},
 get T(){return T},get time(){return time},get titleNote(){return titleNote},get unlockAll(){return unlockAll},get VH(){return VH},get VW(){return VW},
@@ -2499,7 +2530,7 @@ case'shopNext':if(NET.role==='client')shopGo();else openMission('shop');break;
 case'shopBack':if(NET.role==='solo')toTitle();else leaveGame('');break;
 case'resume':paused=false;break;
 case'leave':if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.');break;
-case'mute':SND.toggleMute();break;case'funk':cycleFunk();break;
+case'mute':SND.toggleMute();break;case'funk':cycleFunk();break;case'chat':toggleChat();break;
 case'view':VIEW.cycle();break;case'mlock':MLOCK.toggle();break;
 case'full':VIEW.toggleFull();break;
 case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
@@ -2646,7 +2677,7 @@ let atLast='';
 const curAt=()=>scr==='lobby'?'l':scr==='shop'?'s':scr==='mission'?'m':scr==='play'?(ended?'e':'p'):'';
 function atSync(){if(NET.role==='solo'){atLast='';return}const a=curAt();if(!a||a===atLast)return;
 if(NET.role==='host'){const r=NET.roster.find(q=>q.id===0);if(r){atLast=a;r.at=a;bcastRoster()}}else if(NET.conn){atLast=a;NET.conn.send({t:'at',v:a})}}
-function tick(dt){logStep(dt);flogNet(dt);atSync();if(funkT>0){funkT-=dt;if(scr!=='play'||paused||ended)funkT=0}
+function tick(dt){chatClk+=dt;logStep(dt);flogNet(dt);atSync();if(funkT>0){funkT-=dt;if(scr!=='play'||paused||ended)funkT=0}
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
 if(titleNote){titleNote.t-=dt;if(titleNote.t<=0)titleNote=null}
 volT=Math.max(0,volT-dt);shopNote.t=Math.max(0,shopNote.t-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.some(c=>!c.dead&&!c.civ)?Math.min(...pcs.filter(c=>!c.dead&&!c.civ).map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});
@@ -2662,6 +2693,8 @@ window.addEventListener('pagehide',()=>{try{netReset()}catch(e){}});
 const kn=e=>e.key.length===1?e.key.toLowerCase():e.key;
 cv.addEventListener('keydown',e=>{const k=kn(e);SND.init();SND.resume();
 if(k==='F8'||k==='F9'){e.preventDefault();if(!e.repeat){if(k==='F8')flogMark();else flogSave()}return}
+if(chatOpen){chatKey(e);e.preventDefault();return}
+if(!nameEdit&&chatTry(k,e)){e.preventDefault();return}
 if(nameEdit){if(e.key==='Enter'||e.key==='Escape'||e.key==='Tab'){nameEdit=false;saveName()}else if(e.key==='Backspace')myName=myName.slice(0,-1);else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&myName.length<NAME_MAX&&/[\p{L}\p{N} _.\-]/u.test(e.key))myName+=e.key;e.preventDefault();return}
 if(scr==='join'){if((e.ctrlKey||e.metaKey)&&k==='v')return;if(!e.ctrlKey&&!e.metaKey&&(k==='Backspace'||k.length===1)){if(!e.repeat||k==='Backspace'){if(k==='Backspace')joinText=joinText.slice(0,-1);else if(joinText.length<4){const u=k.toUpperCase();if(CODECH.includes(u))joinText+=u}}e.preventDefault();return}}
 if(UI.key(k,e)){e.preventDefault();plTry();return}
@@ -2687,7 +2720,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1;if(spwOn&&!paused&&!ended)reqSpw()});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}

@@ -157,7 +157,7 @@ module.exports = [
     },
   },
   {
-    name: 'Optionen: Kachel "Funk: Ton / Ton und Stimme / stumm" (Taste X) schaltet reihum und speichert, die Stimme meldet sich beim Umschalten, das Fenster bleibt im Bild und ohne Ueberlappung (Titel, Pause, mit und ohne #debug-Zeilen); die Anleitung nennt X',
+    name: 'Optionen: Kachel "Funk: Ton / Ton+Stimme / stumm" (Taste X) schaltet reihum und speichert, die Stimme meldet sich beim Umschalten, das Fenster bleibt im Bild und ohne Ueberlappung (Titel, Pause, mit und ohne #debug-Zeilen); die Anleitung nennt X',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('menu.js'); await t.loadInpage('overlap.js');
       const r = await t.page.evaluate(() => {
@@ -171,7 +171,7 @@ module.exports = [
         o.unten = box(); o.ov = OV.check(d, { modal: true });
         return o; });
       t.eq(r.da, true, 'die Kachel funk steht in den Optionen');
-      t.eq(r.titel, ['Funk: Ton', 'Funk: Ton und Stimme', 'Funk: stumm', 'Funk: Ton'], 'Klick, Klick, Taste X: reihum');
+      t.eq(r.titel, ['Funk: Ton', 'Funk: Ton+Stimme', 'Funk: stumm', 'Funk: Ton'], 'Klick, Klick, Taste X: reihum');
       t.eq([r.modus1, r.modus2, r.modus3, r.gespeichert], ['stimme', 'stumm', 'ton', 'ton'], 'Modus und localStorage');
       t.eq(r.gesprochen, 1, 'beim Umschalten auf Stimme spricht die Sprachausgabe einmal');
       t.ok(r.unten[1] <= 544, 'alle Kacheln im Bild: ' + JSON.stringify(r.unten));
