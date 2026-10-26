@@ -58,6 +58,12 @@ module.exports = [
         const bi = sc.g.its.find(i => i.t === 'bar'); sc.me.mat = 5; bi.act(sc.me); const bar = bi.b; o.built = bar.lv;
         let free = null; const c = bar.cells[0]; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!free && !D.isSol(c[0] + dx, c[1] + dy)) free = { x: (c[0] + dx) * T + 16, y: (c[1] + dy) * T + 16 };
         sc.me.x = free.x; sc.me.y = free.y; D.useGadget(sc.me, 3, free.x, free.y); const m = D.traps()[0]; o.mine = m ? [m.k, m.bi === bar.i] : null; o.mineLeft = sc.me.trap;
+        // Gegenseite: die Mine liegt immer auf der anderen Seite der Barrikade als der Spieler, von beiden Seiten gelegt
+        const cc = { x: c[0] * T + 16, y: c[1] * T + 16 }, opp = { x: 2 * cc.x - free.x, y: 2 * cc.y - free.y }; o.oppFree = !D.isSol(Math.floor(opp.x / T), Math.floor(opp.y / T));
+        o.opp1 = m ? Math.round(Math.hypot(m.x - opp.x, m.y - opp.y)) : null;
+        sc.me.trap = 1; sc.me.x = opp.x; sc.me.y = opp.y; D.useGadget(sc.me, 3, opp.x, opp.y); const m2 = D.traps()[1]; o.opp2 = m2 ? Math.round(Math.hypot(m2.x - free.x, m2.y - free.y)) : null;
+        // Aim jenseits der Barrikade genuegt (die Linie durch die feste Barrikade verwirft sie nicht mehr)
+        D.traps().length = 0; sc.me.trap = 1; sc.me.x = free.x; sc.me.y = free.y; D.useGadget(sc.me, 3, opp.x, opp.y); const m3 = D.traps()[0]; o.aimOver = m3 ? Math.round(Math.hypot(m3.x - opp.x, m3.y - opp.y)) : null;
         return o; })()`);
       t.eq(r.p1, [0, 2, true], 'Erkunden: nichts gelegt, Vorrat bleibt, Hinweis im Bild');
       t.eq(r.a, ['claw', 0, 0, 0, 0], 'Ueberfall: die Claymore liegt am Zielpunkt (60 Pixel weit), noch nicht scharf, Besitzer 0');
@@ -69,6 +75,8 @@ module.exports = [
       t.eq(r.none, [0, true], 'ohne Knoten tut Taste 3 nichts, auch keine neue Meldung');
       t.eq(r.mineNo, [0, 1], 'die Mine ohne Barrikade in der Naehe wird abgelehnt');
       t.eq([r.built, r.mine, r.mineLeft], [1, ['mine', true], 0], 'mit stehender Barrikade liegt sie dort (an diese Barrikade gebunden)');
+      t.ok(r.oppFree, 'die Kachel gegenueber der Barrikade ist frei (Voraussetzung der Pruefung)');
+      t.eq([r.opp1, r.opp2, r.aimOver], [0, 0, 0], 'die Mine liegt auf der Kachel gegenueber dem Spieler, von beiden Seiten (' + [r.opp1, r.opp2, r.aimOver].join(' / ') + ' Pixel Abweichung), auch wenn der Zielpunkt jenseits der Barrikade liegt');
     },
   },
   {
@@ -102,7 +110,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}, T = 32, C = D.CFG.trap.mine;
         const setup = () => { const sc = H.scene({ V3: 3 }); const bi = sc.g.its.find(i => i.t === 'bar'); sc.me.mat = 5; bi.act(sc.me); const bar = bi.b; let free = null; const c = bar.cells[0];
           for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!free && !D.isSol(c[0] + dx, c[1] + dy)) free = { x: (c[0] + dx) * T + 16, y: (c[1] + dy) * T + 16 };
-          sc.me.x = free.x; sc.me.y = free.y; D.useGadget(sc.me, 3, free.x, free.y); sc.bar = bar; sc.spot = free; sc.mine = D.traps()[0]; sc.me.x = free.x + 200; sc.me.y = free.y; return sc; };
+          sc.me.x = free.x; sc.me.y = free.y; D.useGadget(sc.me, 3, free.x, free.y); sc.bar = bar; sc.mine = D.traps()[0]; sc.spot = { x: sc.mine.x, y: sc.mine.y }; sc.me.x = free.x + 200; sc.me.y = free.y; return sc; };
         let sc = setup(); o.placed = [D.traps().length, sc.mine && sc.mine.k, sc.me.trap]; const hp0 = sc.bar.hp, far = [[sc.me, sc.me.x, sc.me.y]];
         // Beamter in der Zone
         const c1 = H.cop(sc, sc.spot.x + 30, sc.spot.y); const h = c1.hp; H.run(sc, 1.2, far.concat([[c1, c1.x, c1.y]]), true); o.arming = [D.traps().length, c1.hp === h];
