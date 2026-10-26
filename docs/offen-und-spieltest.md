@@ -24,6 +24,7 @@ Stand (26. Oktober 2026): `VER` 42, `UI_API` 8, die Build-Nummer steht in `index
 
 ## Offene Entscheidungen (Till)
 
+- **Coop-Ausbau** (Funkspruch, Chat, Zuschauer, Wettkampf, Plan v1 vom 26. Oktober 2026): zehn Entscheidungen mit Empfehlung in docs/coop-ausbau.md, Abschnitt Entscheidungen (zum Beispiel Taste X für den Funk, Zuschauer standardmäßig an mit höchstens 6, Länge des Duells, ob ein gemieteter Relay nötig wird).
 - Soll die Geisel beim Einsteigen in den Fluchtwagen etwas bewirken? Heute wird sie beim Verlassen des Gebäudes bedeutungslos, folgt aber weiter und wird frei, wenn der Besitzer geht.
 - Ist B (der Ausweichpunkt des Fluchtwagens) schon in Phase 1 sichtbar? Empfehlung: ja (docs/major-release-update-1.md).
 - Fahndungslevel: SWAT-Vorsprung ab Stufe 5 (heute aus, kostet allein 11 Punkte Siegquote) und eine milde Grundsteigerung nach Auftragsnummer für Serien ohne Fahndung (`CFG.series.at`).
@@ -33,8 +34,8 @@ Stand (26. Oktober 2026): `VER` 42, `UI_API` 8, die Build-Nummer steht in `index
 Coop (in sinnvoller Reihenfolge):
 
 1. Echter Test über das Internet: Latenz, Spielgefühl, ob die Verbindung durch Heim-Router geht (bisher gespielt, aber Latenz und Router nicht festgehalten). Die Direktverbindung scheitert bei strengen NATs, dann braucht es einen TURN-Server oder ein WebSocket-Relay (zum Beispiel Cloudflare Workers). Der PeerJS-Vermittler `0.peerjs.com` ist ein öffentlicher Gratisdienst ohne Zusage. Seit dem Flugschreiber liefert jede Partie Messwerte (Ping, Zeitsprünge, Abgleich Host und Client).
-2. Zuschauer-Wechsel per Taste (nicht gebaut, Namen schon). Hinweis in der Lobby, wenn die Seite per Link (`#raum=XXXX`) geöffnet wurde und der Raum nicht existiert (zeigt aktuell die Fehlermeldung im Menü).
-3. Coop-Balance: Wellengröße je Spielerzahl (`CFG.perPlayer`) und Zeiten sind Schätzungen, ein Coop-Bot fehlt (`tools/bot.js` spielt nur Solo). Funk-Ping, Rollenlogik und Missionen (Kundschafter gegen Fahrer und Absicherer) und mehr Karten sind Ideen.
+2. Zuschauer-Wechsel per Taste (nicht gebaut, Namen schon, Plan Z2 in docs/coop-ausbau.md). Hinweis in der Lobby, wenn die Seite per Link (`#raum=XXXX`) geöffnet wurde und der Raum nicht existiert (zeigt aktuell die Fehlermeldung im Menü).
+3. Coop-Balance: Wellengröße je Spielerzahl (`CFG.perPlayer`) und Zeiten sind Schätzungen, ein Coop-Bot fehlt (`tools/bot.js` spielt nur Solo). Funk-Ping (Plan F1 und F2 in docs/coop-ausbau.md), Rollenlogik und Missionen (Kundschafter gegen Fahrer und Absicherer) und mehr Karten sind Ideen.
 4. Reconnect nach Verbindungsabbruch und Hostwechsel (heute beendet der Host-Abbruch das Spiel für alle).
 5. Eigenen Schuss ohne Verzögerung abrechnen (Lag-Kompensation), heute trifft der Host mit seiner Sicht.
 
