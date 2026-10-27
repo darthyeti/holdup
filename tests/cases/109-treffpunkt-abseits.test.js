@@ -166,7 +166,7 @@ module.exports = [
     timeout: 240000,
     async run(t) {
       const r = await t.page.evaluate(SC => {
-        const D = __dbg, T = 32, bad = [], res = {}; D.setLage([]); D.CFG.meet.p = 1; D.CFG.vanLock = 0; D.CFG.van.r = 0;   // r 0: Beamte am Wagen machen den Fahrer nicht nervoes (die Anker stehen bewusst dort), geprueft wird hier nur der Ort
+        const D = __dbg, T = 32, bad = [], res = {}; D.setLage([]); D.CFG.meet.p = 1; D.CFG.vanLock = 0; D.CFG.van.r = 0; D.CFG.alt.on = 0;   // alt 0: ohne Ausweichpunkt (MRU 1 D3, Test 125), hier gilt nur der Treffpunkt A. r 0: Beamte am Wagen machen den Fahrer nicht nervoes (die Anker stehen bewusst dort), geprueft wird hier nur der Ort
         for (const sc of SC) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           let seed = null; for (let s = 1; s < 800 && seed == null; s++) if (D.layoutBase(s).meet) seed = s;

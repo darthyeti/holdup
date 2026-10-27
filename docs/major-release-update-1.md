@@ -35,13 +35,13 @@ Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräc
 | D0 | Messung: Wie viel Platz hat jede Karte in jeder Lage für einen zweiten und einen entfernten Treffpunkt | unten, Ergebnis im Abschnitt D0 Ergebnis | klein | gebaut (Messung), Entscheidung für D1 bis D3 bei Till |
 | D1 | Gemeinsamer Treffpunkt-Mechanismus (Treffpunkt abseits im Hof der Fluchtseite, nach D0 statt eines zweiten Treffpunkts am Gebäude), Bank als erster Kunde | unten, Ergebnis im Abschnitt D1 gebaut | groß | gebaut (ungespielt) |
 | D2 | Treffpunkt abseits für die übrigen Karten (Juwelier, Tankstelle, Museum, Casino über `CFG.meet.scs`), Werte je Szenario | unten, Abschnitt D2 gebaut | mittel | gebaut (ungespielt) |
-| D3 | Ausweichpunkt als Ereignis | unten | mittel | offen |
+| D3 | Ausweichpunkt als Ereignis (B nicht vorher sichtbar, Till 27. Oktober 2026) | unten, Abschnitt D3 gebaut | mittel | gebaut (ungespielt) |
 
 ## Reihenfolge
 
 Zwei Spuren, die einander kaum berühren:
 - Spur 1, Spielsystem: gebaut bis auf B6 (nach Tills Rückmeldung zum Baum) und C2 (bei Bedarf).
-- Spur 2, Karte und Flucht: D0 gemessen und entschieden (Treffpunkt abseits im Hof der Fluchtseite auf einer anderen Zeile, Till, 26. Oktober 2026), D1 gebaut (Mechanismus, Bank), D2 gebaut (alle fünf Gebäude-Karten), dann D3 (Ausweichpunkt als Ereignis), die Voraussetzung (Sprint 9) steht.
+- Spur 2, Karte und Flucht: D0 gemessen und entschieden (Treffpunkt abseits im Hof der Fluchtseite auf einer anderen Zeile, Till, 26. Oktober 2026), D1 gebaut (Mechanismus, Bank), D2 gebaut (alle fünf Gebäude-Karten), D3 gebaut (Ausweichpunkt als Ereignis, 27. Oktober 2026), damit ist Spur 2 fertig, offen bleiben die Werte nach Tills Spieltest.
 
 Entschieden (Till, 25. Oktober 2026): eine Spur nach der anderen, nicht parallel, ein Schritt wird gemergt, bevor der nächste beginnt. Damit entfallen Kollisionen in `index.html` und bei `VER` zwischen den Spuren.
 
@@ -134,7 +134,28 @@ Alle Hallen aller Szenarien finden Plätze (die Bank wegen ihrer engen Höfe und
 
 **Geändert an bestehenden Tests.** Die Tests, die eine Karte ohne Treffpunkt abseits prüfen (Hand-Hallen unverändert: `39-juwelier-basis`, `42-museum-basis`, `43-casino-basis`, `37-tankstelle-generator` ohne Generator; Bauregeln der Hüllen: `39-juwelier-generator`, `42-museum-generator`, `43-casino-generator` mit festen Fluchtzonen; `27-kartenvertrag` Negativproben, `28-freie-strasse` autoPosts gegen Handliste), laufen mit `CFG.meet.p` 0. Schnappschüsse bewusst erneuert: `layout-hash`, `sweep-*` (Spannen von Posten und Weg Tresor zu Ausgang, `validateMap` ohne neue Fehler oder Warnungen), `vielfalt` (Fluchtvarianten je Szenario ungefähr verdoppelt), `turn-hash`. `109-treffpunkt-abseits` läuft jetzt für alle fünf Szenarien.
 
-**Für D3 offen.** Der Ausweichpunkt als Ereignis (zweiter Platz im selben Hof, Wechsel situativ) braucht den Treffpunkt-Index im Schnappschuss und `VER`. Alle Karten haben jetzt einen Treffpunkt abseits oder an der Tür, der zweite Platz kommt aus derselben Kandidatenliste (`meetKit`).
+**Für D3 offen (inzwischen gebaut, siehe D3).** Der Ausweichpunkt als Ereignis (zweiter Platz im selben Hof, Wechsel situativ) braucht den Treffpunkt-Index im Schnappschuss und `VER`. Alle Karten haben jetzt einen Treffpunkt abseits oder an der Tür, der zweite Platz kommt aus derselben Kandidatenliste (`meetKit`).
+
+## D3 gebaut: Ausweichpunkt als Ereignis (27. Oktober 2026, `VER` 51)
+
+Entscheidung (Till, 27. Oktober 2026): B ist **nicht** vorher sichtbar, er ist eine Überraschung. Es gibt keine Markierung, keinen Tag, keine Zeile im Briefing und nichts in der Karte (Raster, Felder, Tags und statische Ebene sind mit und ohne B Zeichen für Zeichen gleich, ein Test prüft es). Der Spieler erfährt von B erst, wenn der Fahrer ausweicht.
+
+**Auswahl** (`altOf`, aufgerufen in `buildWorld`, Ergebnis in `ALT`, nicht in `LAY`): Mit Wahrscheinlichkeit `CFG.alt.p` (.4) und nur für die Szenarien in `CFG.alt.scs` (alle fünf Gebäude-Karten, nicht der Transporter und nicht die Klassik-Bank) gibt es ein B, gewürfelt aus Seed und Szenario in einem eigenen Strom (`mulberry32`, nichts anderes verbraucht Zufall). Gerechnet wird **in der Lage der Straße** über `laneOf` (längs und quer zur Achse, `L.pt`), nicht in der ungedrehten Lage, B ist deshalb in allen vier Lagen und gespiegelt dieselbe Entscheidung (gleich oft vorhanden, getestet). B liegt auf freiem Boden (`o`, nichts wird freigeräumt, das Raster bleibt unberührt): Zone 4 x 4 und Fahrstrecke bis zum Halt (4 x 2), nicht auf Zone, Fahrstrecke und Wagenplätzen von A, die Fahrstrecke mindestens `drive` (2) Kacheln. Wege (dieselbe Wegsuche wie `placeMeet`): Fußweg von A (Ziel von A) nach B `dMin` bis `dMax` (10 bis 26) Schritte, Weg Tresor zu B höchstens `eMax` (34) und höchstens der Weg Tresor zu A plus `extra` (10). Der erste Platz in der gemischten Reihenfolge, der alles erfüllt, gewinnt. Aufgebaut wird B als zweite Lane (`laneOf` mit B als Straße, `ALT.lane`), `ALT.a` hält die von A. `deriveDecor` lässt B frei (keine parkenden Autos auf B). An B stehen keine Polizei-Anker.
+
+**Verfügbarkeit** (Seeds 37 bis 1480, vier Lagen, `p` 1, `extra` 10): Bank rund 55 bis 62 %, Juwelier und Tankstelle 100 %, Museum 85 bis 100 %, Casino 80 bis 100 %, je nachdem ob der Treffpunkt A an der Tür oder abseits liegt (mit `extra` 6 gab es bei Juwelier, Museum und Casino mit A an der Tür fast keins, deshalb 10). Mit `p` .4 haben rund ein Viertel bis die Hälfte der Aufträge ein B, ein Ausweichen kommt in einem kleineren Teil davon vor.
+
+**Wechsel** (`vanStep`, `altSwap`, nur Host und Solo): `setAlt` tauscht `LANE.van` und `LANE.exit` (alle Leser gehen über `LANE`: Zeiger, Fluchtzone, Einsteigen, Wagen-Block, Zielkachel), `vanAlt` (0 A, 1 B) sagt welcher gilt. Die Regeln (alle Zahlen in `CFG.alt`):
+1. **Beim Eintreffen** (`tH >= vanAt`): Stehen mindestens `hold` (3) Beamte näher als `CFG.van.r` am Halt von A und ist B frei, fährt der Wagen gleich an B ein ("Fluchtwagen ist da, aber die Polizei hält den Treffpunkt. Der Fahrer weicht aus: weiter im Norden, ..."). Weniger Beamte reichen nicht (Messung unten).
+2. **Nervös geworden und weggefahren** (Modus 2, abseits): Nach `wait` (3) Sekunden, wenn Beamte den Halt noch halten und der andere Platz frei ist, kommt der Fahrer dort zurück (Modus 3), statt nach `CFG.van.back` (8) an den alten Platz. Ist der alte Platz inzwischen frei, wartet er wie bisher und kehrt nach `back` dorthin zurück.
+3. **Frei** heißt: kein Beamter (Polizei, nicht Wachen, nicht tot oder ergeben) näher als `CFG.van.r` mal `CFG.alt.free` (1,3) am Halt des anderen Platzes. Ist auch der andere besetzt, wartet er abseits wie heute.
+4. Der Wechsel geht in beide Richtungen (A nach B und zurück), höchstens `max` (2) Mal je Auftrag. Solange der Wagen ruhig wartet, wechselt er nie. `reset` beginnt wieder an A.
+Meldung als großes Banner und im Feed mit der Himmelsrichtung von B gegenüber A, Ereignis `fahrer` im Flugschreiber. Am neuen Halt erscheinen die zwei umrandeten Stellplätze (gezeichnet im Spiel, nicht in der statischen Ebene), der Wagen fährt von `from` ein, der grüne Pfeil und die Fluchtlinie folgen.
+
+**Netz** (`VER` 51): `g` im Schnappschuss hat als letztes Feld (Index 29) `vanAlt`, der Client tauscht beim Empfang mit `setAlt`. Host, Clients und Zuschauer bauen dasselbe B aus dem Seed, übertragen wird nur der Index (getestet mit Host, zwei Clients und einem später einsteigenden Zuschauer).
+
+**Bot und Balance** (Messung vom 27. Oktober 2026, `tools/bot.js` folgt jetzt dem Ziel der aktuellen Lane). Die Standard-Rauchtests (`van` alt, der Fahrer wird nie nervös) bleiben unberührt, dort kommt kein Ausweichen vor. Zum Bewerten spielt der Bot mit früh rufen und normalem Fahrer (kit old, `call` 0, `sigma` .05, 40 Seeds ab 6100, `p` 1 damit jede Karte mit B zählt, `hold` 3, `extra` 10, Treffpunkt abseits wie im Spiel): Siege ohne B und mit B (in Klammern Karten mit B und Zahl der Wechsel): **Bank** 36 und 27 (28 Karten, 16 Wechsel), **Tankstelle** 29 und 28 (40, 8), **Museum** 11 und 12 (35, 8), **Juwelier** 0 und 0, **Casino** 3 und 2 (33, 0). Mit `hold` 1 (schon ein Beamter beim Eintreffen genügt) fiel die Bank auf rund 8 von 20, deshalb 3. Nur der nervöse Weg ohne die Regel beim Eintreffen (`hold` 99) ergibt auf der Bank 29, auf der Tankstelle 25. Der Bot rennt ohne Taktik durch den Hof, seine Verluste sind "Gefasst" bei 91 bis 100 s auf dem Weg zu B, Spieler und Mitspieler im Coop können das anders erleben. Mit dem Standard `p` .4 hätten nur rund 40 % der Aufträge überhaupt ein B, der Verlust des Bots auf der Bank (von 90 auf 68 % bei `p` 1) schrumpft rechnerisch auf rund 9 Punkte, auf den anderen Karten kaum. Die Bank ist damit die Karte, auf der B am meisten kostet, `p` oder `hold` lassen sich dort bei Bedarf senken. Stellschrauben: `p` (wie oft es B gibt), `hold`, `wait`, `free`, `max`, `dMin`, `dMax`, `extra`.
+
+**Tests**: `125-ausweichpunkt` (sechs Tests, rund 55 s, Einzelheiten in docs/tests-und-messwerte.md). **Für später offen**: ein festes Ereignis "Straße gesperrt" aus dem Seed (nicht Teil des Updates), die Wahl des Treffpunkts beim Rufen (G).
 
 ## Gemeinsame Regeln für alle Schritte
 
@@ -154,7 +175,7 @@ Alle Hallen aller Szenarien finden Plätze (die Bank wegen ihrer engen Höfe und
 
 Entschieden am 25. Oktober 2026: Die Spuren laufen nacheinander. Der Mindestabstand des entfernten Treffpunkts bleibt erstmal bei 10 Kacheln. Die Umleitung kommt situativ (Polizei hält den Treffpunkt), und der Wechsel darf auch erfolgen, wenn der Fahrer nervös geworden ist und wegfährt. Spur 1 kommt zuerst, Spur 2 danach. Noch offen:
 
-1. Ist B (der Ausweichpunkt) schon in Phase 1 sichtbar oder zeigt er sich erst beim Wechsel? Empfehlung: schon in Phase 1, damit man es planen kann.
+1. (Entschieden am 27. Oktober 2026: B ist nicht vorher sichtbar, es ist eine Überraschung.)
 2. (Entschieden am 26. Oktober 2026: Treffpunkt abseits im Hof der Fluchtseite auf einer anderen Zeile.)
 
 ## Änderungsprotokoll
@@ -165,3 +186,4 @@ Entschieden am 25. Oktober 2026: Die Spuren laufen nacheinander. Der Mindestabst
 - 26. Oktober 2026: D0 gemessen (`tools/treffpunkt.js`, Test `108-treffpunkt-messung`), Ergebnis und Empfehlung im Abschnitt D0 Ergebnis. Till entscheidet: Treffpunkt abseits im Hof der Fluchtseite auf einer anderen Zeile.
 - 26. Oktober 2026: D1 gebaut (`placeMeet`, `CFG.meet`, `VER` 42, Test `109-treffpunkt-abseits`), Bank als erster Kunde.
 - 26. Oktober 2026: D2 gebaut (alle fünf Gebäude-Szenarien in `CFG.meet.scs`, Werte je Szenario in `CFG.meet.per`).
+- 27. Oktober 2026: D3 gebaut (`altOf`, `ALT`, `setAlt`, `altSwap`, `CFG.alt`, `VER` 51, Test `125-ausweichpunkt`). B ist nicht vorher sichtbar (Till). Dazu `tools/bot.js`: das Ziel folgt der aktuellen Lane.

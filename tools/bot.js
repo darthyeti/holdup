@@ -15,7 +15,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
  Object.assign(D.CFG.van,VAN0,o.van==='alt'?{bt:0,bu:0,r:0}:o.van&&typeof o.van==='object'?o.van:{});D.CFG.vanLock=o.lock!=null?o.lock:LOCK0;
  D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;D.SESSION.heat=o.heat||0;Object.assign(D.SESSION.sk,o.skills||{});
  if(o.lage!==undefined)D.setLage(o.lage);if(o.turn!==undefined)D.setTurn(o.turn);if(o.seed!=null){if(o.lage!==undefined||o.turn!==undefined)D.buildLay(D.layoutFor(o.seed));else D.buildSeed(o.seed)}
- D.reset();const L=D.LAY(),LN=D.LANE(),exitT=LN.exit.goal,waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
+ D.reset();const L=D.LAY(),LN=D.LANE(),waitT=o.wait==='vault'?L.vault.bundles[L.vault.bundles.length-1]:o.wait;D.startHeist(false);k.a=k.d=k.w=k.s=k[' ']=k.e=0;
  const R={res:null,t:0,loot:0,hp:100,minHp:100,waves:0,kills:0,milestones:{},trace:[]};let lastTr=-99;
  let seen=new Map(),jit=0,jt=0,calledAt=null;
  const mark=(n)=>{if(R.milestones[n]==null)R.milestones[n]=+S().tH.toFixed(1)};
@@ -58,7 +58,7 @@ function run(o){o=Object.assign({sigma:.09,react:.35,call:null,extras:false,maxT
    else{ // Warteposition / Flucht
     const xb=bars.find(b=>b.n==='Fluchttür');
     if(xb&&xb.lv>0&&(s.vanArr||calledAt!=null)){const c0=xb.cells[0];if(steer(c0[0]+xb.iv[0],c0[1]+xb.iv[1]))k.e=1}
-    else if(vanReady||(o.call!=null&&calledAt!=null&&s.vanArr))steer(exitT[0],exitT[1]);else steer(waitT[0],waitT[1]);
+    else if(vanReady||(o.call!=null&&calledAt!=null&&s.vanArr))steer(LN.exit.goal[0],LN.exit.goal[1]);else steer(waitT[0],waitT[1]);
     if(o.call!=null&&calledAt==null&&(gi>=goals.length||s.tH>=s.vanAt-5)&&s.tH>=(R.milestones.looted==null?s.tH:R.milestones.looted)+o.call&&s.tH>=D.CFG.vanLock){D.callVan();calledAt=s.tH}
    }
    if(gi>=goals.length||s.tH>=s.vanAt-5)mark('looted')}
