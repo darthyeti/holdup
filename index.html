@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=185"></script>
+<script src="js/ui.js?v=186"></script>
 <script>
-const BUILD={n:185,d:'2026-10-27'};//BUILD
+const BUILD={n:186,d:'2026-10-27'};//BUILD
 const UI_API=11;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -2384,7 +2384,7 @@ LOG.ev('netz',['rolle',tgt]);c.send(Object.assign({t:'wel',ver:VER,b:BUILD.n,cod
 function roleReq(c,v){if(NET.role!=='host'||scr!=='lobby'||c.kicked||NET.ho)return;if(v!=='s'&&v!==1&&v!==2&&v!=='p')return;if(v==='p'&&!c.spec)return;
 const cur=c.spec?0:c.t2?2:1,tgt=v==='s'?0:v==='p'?placeFor():v;
 if(!(v==='p'&&tgt===0)){if(tgt===cur)return;if(roleSet(roleWho(c),v))return}
-c.send({t:'rolr',why:tgt===0&&v!=='p'?(!CFG.spec.on?'Zuschauer sind nicht erlaubt.':'Alle Zuschauerplätze sind belegt.'):tgt===2?(NET.mode==='coop'?'Team 2 gibt es nur im Wettkampf.':'Team 2 ist voll.'):NET.mode==='duel'?'Team 1 ist voll.':'Alle Plätze sind belegt.'})}
+c.send({t:'rolr',why:tgt===0&&v!=='p'?(!CFG.spec.on?'Zuschauer sind nicht erlaubt.':'Alle Zuschauerplätze sind belegt.'):tgt===2?(NET.mode==='coop'?'Team 2 gibt es nur im Wettkampf.':NET.mode===''?'Die weiteren Spieler sind voll.':'Team 2 ist voll.'):NET.mode==='duel'?'Team 1 ist voll.':'Alle Plätze sind belegt.'})}
 /* Reihenfolge in Team 2 (nur Host, Lobby): ein Platz nach oben, der erste Spieler ist der Host von Team 2 */
 function t2Up(tk){if(NET.role!=='host'||scr!=='lobby'||NET.ho)return false;const i=NET.t2.findIndex(q=>q.tk===tk);if(i<1)return false;const q=NET.t2[i-1];NET.t2[i-1]=NET.t2[i];NET.t2[i]=q;bcastRoster();return true}
 /* Mitspieler entfernen (P6, B7): nur der Host, jederzeit. Der Abbruchweg von c.onclose laeuft sofort (Lobby und Shop: aus der Liste, im Spiel: gone mit Meldung), die Verbindung schliesst nach 250 ms, damit kick noch ankommt. */
@@ -2458,7 +2458,7 @@ g.lineWidth=1.5;for(const q of d.other){if(q.d===2)continue;g.globalAlpha=q.d?.4
 g.font='10px monospace';g.fillStyle='#8d95a1';g.textAlign='right';g.fillText('T: Team wechseln',R.x+R.w-8,R.y+R.h-7);g.textAlign='left'}
 function clientMsg0(m){
 if(m.t==='wel'){NET.myId=m.id;NET.spec=m.id===-1;NET.sid=m.id===-1?m.sid|0:0;NET.team=m.id>=0?1:m.id===-2?2:0;NET.tk=m.id===-2?m.tk|0:0;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}
-if(m.rl){NET.msg=NET.spec?'Du schaust jetzt zu.':NET.mode==='duel'?'Du spielst jetzt in Team '+NET.team+'.':'Du spielst jetzt mit.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
+if(m.rl){NET.msg=NET.spec?'Du schaust jetzt zu.':NET.mode==='duel'?'Du spielst jetzt in Team '+NET.team+'.':NET.team===2?'Du bist jetzt bei den weiteren Spielern.':'Du spielst jetzt mit.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
 else if(m.t==='rolr')NET.msg=String(m.why||'').slice(0,60)
 else if(m.t==='t2')t2cMsg(m)
 else if(m.t==='kick'){LOG.ev('netz','entfernt');leaveGame('Der Host hat dich aus dem Raum entfernt.')}

@@ -15,7 +15,7 @@ module.exports = [
         const a = ids(A); o.tilesA = ['mCoop', 'mDuel', 'start', 'leave', 'link', 'specOn'].map(id => a.includes(id)); o.keineA = ['job', 'duel', 'mode', 'role', 'linkz'].map(id => a.includes(id));
         o.startLock = !!MT.tile(A, 'start').lock;
         MT.click(B, 'coop'); MT.click(B, 'join'); MT.type(B, code); MT.click(B, 'go'); run(3);
-        const b = ids(B); o.B = [B.state().scr, B.NET.role, B.NET.mode]; o.tilesB = ['role', 'start', 'leave'].map(id => b.includes(id)); o.keineB = ['mCoop', 'mDuel', 'job', 'specOn'].map(id => b.includes(id));
+        const b = ids(B); o.B = [B.state().scr, B.NET.role, B.NET.mode]; o.tilesB = ['tm1', 'tm2', 'tmS', 'start', 'leave'].map(id => b.includes(id)); o.keineB = ['mCoop', 'mDuel', 'job', 'specOn', 'role'].map(id => b.includes(id));
         o.startB = [MT.tile(B, 'start').title, !!MT.tile(B, 'start').nofocus];
         return o;
       });
@@ -25,7 +25,7 @@ module.exports = [
       t.eq(r.keineA, [false, false, false, false, false], 'ohne Modus gibt es keine Auftrags-, Wettkampf-, Rollen- oder Zuschauer-Link-Kachel');
       t.ok(r.startLock, 'Starten ist ohne Modus gesperrt');
       t.eq(r.B, ['lobby', 'client', ''], 'der Beitretende sieht denselben Raum, auch ohne Modus');
-      t.eq(r.tilesB, [true, true, true], 'ein Mitspieler hat die Rollen-Kachel, den Starthinweis und Verlassen'); t.eq(r.keineB, [false, false, false, false], 'keine Host-Kacheln');
+      t.eq(r.tilesB, [true, true, true, true, true], 'ein Mitspieler hat die drei Wahl-Kacheln (Spieler, Weitere Spieler, Zuschauer), den Starthinweis und Verlassen'); t.eq(r.keineB, [false, false, false, false, false], 'keine Host-Kacheln und noch keine Rollen-Kachel des Coop');
       t.eq(r.startB, ['Der Host wählt den Modus ...', true], 'Mitspieler lesen, dass der Host den Modus waehlt');
     },
   },

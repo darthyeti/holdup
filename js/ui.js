@@ -156,9 +156,9 @@ if(host){
   row1({id:'mode',act:'mode',arg:'',lock:hp?'Start läuft':'',title:'Modus ändern',tf:'bold 12px monospace'},140)}}
 else{
  if(md)row1({id:'job',nofocus:true,nochip:true,icon:duelM?'coop':jb.i,title:duelM?CFG.duel.len+' Aufträge':'Auftrag: '+jb.n,tf:'bold 12px monospace'},duelM?250:430);
- if(duelM){const n1=NET.roster.length,n2=t2n.length,sl=roleLock();
-  row1({id:'tm1',key:'1',act:'role',arg:1,chosen:NET.team===1,lock:NET.team!==1&&n1>=PC.length?'Team 1 voll':hp?'Start läuft':'',title:'Team 1',tf:'bold 12px monospace'},120);
-  row1({id:'tm2',key:'2',act:'role',arg:2,chosen:NET.team===2,lock:NET.team!==2&&n2>=PC.length?'Team 2 voll':hp?'Start läuft':'',title:'Team 2',tf:'bold 12px monospace'},120);
+ if(md!=='coop'){const n1=NET.roster.length,n2=t2n.length,sl=roleLock(),nm1=duelM?'Team 1':'Spieler',nm2=duelM?'Team 2':'Weitere Spieler';
+  row1({id:'tm1',key:'1',act:'role',arg:1,chosen:NET.team===1,lock:NET.team!==1&&n1>=PC.length?nm1+' voll':hp?'Start läuft':'',title:nm1,tf:'bold 12px monospace'},duelM?120:130);
+  row1({id:'tm2',key:'2',act:'role',arg:2,chosen:NET.team===2,lock:NET.team!==2&&n2>=PC.length?nm2+' voll':hp?'Start läuft':'',title:nm2,tf:'bold 12px monospace'},duelM?120:190);
   row1({id:'tmS',key:'z',act:'role',arg:'s',chosen:spec,lock:!spec&&sl?sl:hp?'Start läuft':'',title:'Zuschauer',tf:'bold 12px monospace'},140)}
  else{const lk=roleLock();row1({id:'role',key:'z',act:'role',arg:spec?'p':'s',lock:lk,icon:'enter',title:spec?'Mitspielen':'Zuschauer werden',tf:'bold 12px monospace'},210)}}
 /* Reihe 2: Verlassen, Teilnehmer, ohne Modus beim Host noch Link und Zuschauer-Schalter, rechts Start */
@@ -180,7 +180,7 @@ return{def:host?(md?'start':'mCoop'):'leave',back:'lobbyBack',t,deco(){const{g}=
 /* Spielerzeile: Farbe, Name, rechts die Rolle, in der breiten Spalte bei der eigenen Zeile der Hinweis zum Namen. pl.u = Zeile in Team 2 (Eintrag r mit Name n, der erste ist der Host von Team 2) */
 function paintPlayer(t){const{g,PC,pn,myName,nameEdit,time}=X,{i,r,me,u,wide,host}=t.pl,nm0=u?(r&&r.n):(r&&pn(i));g.textAlign='left';g.fillStyle=r?(u?BL:PC[i].c):'rgba(255,255,255,.18)';g.fillRect(t.x+10,t.y+t.h/2-6,12,12);
 if(r){g.font='bold 14px monospace';g.fillStyle='#e6eaf0';const nm=me&&nameEdit?myName+(Math.floor(time*2)%2?'|':' '):nm0,cw=wide?200:t.w-(me?96:84);g.fillText(fit(nm,cw,g.font),t.x+30,t.y+t.h/2+5);g.font='11px monospace';g.fillStyle=SU;g.textAlign='right';
- g.fillText(me&&wide?(nameEdit?'tippen, Enter':'Klick: Name'):host?(u?'Host 2':'Host'):me?'du':wide?'Mitspieler':'',t.x+t.w-(me?40:12),t.y+t.h/2+4);g.textAlign='left'}
+ g.fillText(me&&wide?(nameEdit?'tippen, Enter':'Klick: Name'):host?(u?(X.NET.mode==='duel'?'Host 2':''):'Host'):me?'du':wide?'Mitspieler':'',t.x+t.w-(me?40:12),t.y+t.h/2+4);g.textAlign='left'}
 else{g.font='12px monospace';g.fillStyle='#6c7480';g.fillText(wide?'wartet auf Spieler ...':'frei',t.x+30,t.y+t.h/2+4)}}
 /* Chat-Fenster der Lobby: die letzten Zeilen des Raum-Kanals (2), unten die Eingabe */
 function paintChatbox(t){const{g,chat,chatOpen,chatBuf,chatClk,chatWho,chatCol}=X;g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('CHAT',t.x+12,t.y+17);
@@ -365,14 +365,14 @@ deco(){const{g}=X;panelFrame(px,py,pw,ph,m.title||'Sicher?');g.textAlign='left';
 function kickList(){const{NET}=X;return NET.role==='host'?NET.roster.filter(r=>r.id!==0&&NET.conns.some(c=>c.pid===r.id)).concat(NET.t2.filter(c=>c.ok).map(c=>({id:'t'+c.tk,t2:1,nm:c.nm})),NET.specs.filter(c=>c.ok).map(c=>({id:'s'+c.sid,spec:1,nm:c.nm}))):[]}
 function kickTitle(){return kickList().some(r=>!r.spec)?'Mitspieler':'Zuschauer'}
 /* Teilnehmer-Liste (Host): je Zeile Name und Ort, in der Lobby dazu die Rolle und Entfernen. Im Wettkampf waehlt die Zeile das Team (Team 1, Team 2, Zuschauer) und schiebt Spieler in Team 2 nach oben (der erste ist der Host von Team 2), sonst gibt es einen Rollenwechsel (Zum Zuschauer oder Zum Spieler). Ausserhalb der Lobby gibt es nur Entfernen. */
-function mKick(){const{pn,PC,CFG,NET}=X,list=kickList(),lob=X.scr==='lobby',duelM=lob&&NET.mode==='duel',px=duelM?160:lob?200:240,pw=duelM?640:lob?560:480,ph=Math.max(1,list.length)*54+112,py=Math.round((544-ph)/2),st={l:'in der Lobby',s:'im Shop',m:'in der Auftragswahl',e:'beim Ergebnis',p:'im Spiel'},
- canS=NET.specs.length<CFG.spec.max&&!!CFG.spec.on,n1=NET.roster.length,n2=NET.t2.length,nmW=duelM?190:lob?220:pw-40-130,kw=duelM?110:130,t=[];
+function mKick(){const{pn,PC,CFG,NET}=X,list=kickList(),lob=X.scr==='lobby',duelM=lob&&NET.mode==='duel',teams=lob&&NET.mode!=='coop',px=duelM?160:teams?100:lob?200:240,pw=duelM?640:teams?760:lob?560:480,ph=Math.max(1,list.length)*54+112,py=Math.round((544-ph)/2),st={l:'in der Lobby',s:'im Shop',m:'in der Auftragswahl',e:'beim Ergebnis',p:'im Spiel'},
+ canS=NET.specs.length<CFG.spec.max&&!!CFG.spec.on,n1=NET.roster.length,n2=NET.t2.length,nmW=teams?190:lob?220:pw-40-130,kw=teams?110:130,t=[];
 list.forEach((r,i)=>{const y=py+52+i*54,nm=r.spec||r.t2?r.nm:pn(r.id),cur=r.spec?0:r.t2?2:1,ti=r.t2?NET.t2.findIndex(q=>'t'+q.tk===r.id):-1;
- t.push({id:'kn:'+r.id,x:px+20,y,w:nmW,h:46,nofocus:true,title:nm,sub:r.spec?'Zuschauer':r.t2?(duelM?(ti===0?'Team 2, Host':'Team 2'):'wartet auf Team 2'):lob?(duelM?'Team 1':'Spieler'):st[r.at]||'',nochip:true});
+ t.push({id:'kn:'+r.id,x:px+20,y,w:nmW,h:46,nofocus:true,title:nm,sub:r.spec?'Zuschauer':r.t2?(duelM?(ti===0?'Team 2, Host':'Team 2'):'Weitere Spieler'):lob?(duelM?'Team 1':'Spieler'):st[r.at]||'',nochip:true});
  let xx=px+20+nmW+6;const bt=(id,w,o)=>{t.push(Object.assign({id:id+':'+r.id,x:xx,y,w,h:46,nochip:true},o));xx+=w+6};
- if(duelM){
-  bt('k1',70,{act:'roleOf',arg:{who:r.id,to:1},chosen:cur===1,lock:cur!==1&&n1>=PC.length?'Team 1 voll':'',nolock:true,title:'Team 1',tf:'bold 11px monospace'});
-  bt('k2',70,{act:'roleOf',arg:{who:r.id,to:2},chosen:cur===2,lock:cur!==2&&n2>=PC.length?'Team 2 voll':'',nolock:true,title:'Team 2',tf:'bold 11px monospace'});
+ if(teams){const nm1=duelM?'Team 1':'Spieler',nm2=duelM?'Team 2':'Weitere Spieler';
+  bt('k1',duelM?70:90,{act:'roleOf',arg:{who:r.id,to:1},chosen:cur===1,lock:cur!==1&&n1>=PC.length?nm1+' voll':'',nolock:true,title:nm1,tf:'bold 11px monospace'});
+  bt('k2',duelM?70:140,{act:'roleOf',arg:{who:r.id,to:2},chosen:cur===2,lock:cur!==2&&n2>=PC.length?nm2+' voll':'',nolock:true,title:nm2,tf:'bold 11px monospace'});
   bt('kS',96,{act:'roleOf',arg:{who:r.id,to:'s'},chosen:cur===0,lock:cur!==0&&!canS?'Zuschauer aus oder voll':'',nolock:true,title:'Zuschauer',tf:'bold 11px monospace'});
   if(ti>0)bt('ku',36,{act:'t2up',arg:+r.id.slice(1),title:'↑',tf:'bold 14px monospace'})}
  else if(lob)bt('kr',150,{act:'roleOf',arg:{who:r.id,to:r.spec?'p':'s'},lock:r.spec?(n1<PC.length||(NET.mode===''&&n2<PC.length)?'':'alle Plätze belegt'):(canS?'':'Zuschauer aus oder voll'),title:r.spec?'Zum Spieler':'Zum Zuschauer',sub:'Rolle wechseln'});

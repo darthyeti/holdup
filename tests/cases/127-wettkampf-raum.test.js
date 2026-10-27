@@ -222,4 +222,49 @@ module.exports = [
       t.eq(r.revanche, ['lobby', 'lobby', 0, 0], 'Revanche auch, wenn B zuerst bereit ist und A danach');
     },
   },
+  {
+    name: 'Raum ohne Modus: jeder waehlt selbst Spieler, Weitere Spieler oder Zuschauer (Kacheln), die Reihenfolge des Beitritts ist nur der Anfang; der Host stellt in der Teilnehmer-Liste jederzeit um, auch fuer Coop spielen, das mit Wartenden gesperrt ist',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { ${HELP}; const o = {}, G = CT.mkLobby(1, 0), A = G.A; A.setName('Anna'); G.run(.2);
+        const ids = d => d.ui().tiles().map(q => q.id), st = () => [A.NET.roster.length, A.NET.t2.length, A.NET.specs.length], chk = (d, tag) => { const x = OV.check(d); if (x.length) o['ue ' + tag] = x; }, pid = nm => A.NET.roster.find(q => q.name === nm).id;
+        const [Bo, Cy, Di] = ['Bo', 'Cy', 'Di'].map(n => R2.add(G, n)), Fi = R2.add(G, 'Fi'), Hu = R2.add(G, 'Hu');
+        { const ctx = A.cv.getContext('2d'), f = ctx.fillText, seen = []; ctx.fillText = function (x) { seen.push(String(x)); return f.apply(this, arguments); }; A.draw(); ctx.fillText = f; o.hostSchild = [seen.filter(x => x === 'Host').length, seen.filter(x => x === 'Host 2').length]; }
+        o.start = [st(), Bo.NET.team, Fi.NET.team, Hu.NET.team]; o.kacheln = [ids(Fi).filter(i => /^tm/.test(i)), ids(Fi).includes('role'), MT.tile(Fi, 'tm2').chosen, MT.tile(Bo, 'tm1').chosen, MT.tile(Fi, 'tm1').lock || ''];
+        chk(Fi, 'Weitere Spieler'); chk(Bo, 'Spieler');
+        MT.click(Bo, 'tm2'); G.run(1); o.bo = [Bo.NET.team, Bo.NET.myId >= 0, st(), Bo.NET.msg, MT.tile(Bo, 'tm2').chosen, A.NET.t2.map(c => c.nm).join()];
+        MT.click(Fi, 'tm1'); G.run(1); o.fi = [Fi.NET.team, Fi.NET.myId > 0, st(), A.NET.roster.map(q => q.name).join()];
+        o.voll = [MT.tile(Hu, 'tm1').lock || '']; Hu.NET.msg = ''; MT.click(Hu, 'tm1'); G.run(.3); o.klickStumm = Hu.NET.msg; Hu.NET.conn.send({ t: 'role', v: 1 }); G.run(.5); o.vollKlick = [Hu.NET.team, Hu.NET.msg];
+        MT.click(Cy, 'tmS'); G.run(1); o.cy = [Cy.NET.spec, st(), MT.tile(Cy, 'tmS').chosen, ids(Cy).filter(i => /^tm/.test(i)).length, A.NET.spNames.join()]; chk(Cy, 'Zuschauer');
+        MT.click(Cy, 'tm1'); G.run(1); o.cyZurueck = [Cy.NET.spec, Cy.NET.team, st(), Cy.NET.msg];
+        MT.click(A, 'kick'); o.modal = ids(A).filter(s => /^k[12S]:/.test(s)).length; { const L = A.ui().tiles(), bad = []; for (const q of L) if (q.x < 0 || q.y < 0 || q.x + q.w > 960 || q.y + q.h > 544) bad.push('ausserhalb ' + q.id); for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) bad.push(a.id + ' ueber ' + b.id); } if (bad.length) o['ue Teilnehmer-Liste'] = bad; }
+        MT.click(A, 'k2:' + pid('Di')); G.run(.5); o.hostDi = [A.NET.roster.length, A.NET.t2.map(c => c.nm).join(), Di.NET.team];
+        MT.click(A, 'k1:t' + A.NET.t2.find(c => c.nm === 'Hu').tk); G.run(.5); o.hostHu = [A.NET.roster.map(q => q.name).join(), A.NET.t2.map(c => c.nm).join(), Hu.NET.team];
+        o.pfeil = ids(A).some(s => /^ku:/.test(s)); MT.k(A, 'Escape');
+        o.coopLock = [MT.tile(A, 'mCoop').lock || '', A.setMode('coop'), A.NET.mode];
+        for (const c of A.NET.t2.slice()) A.roleSet('t' + c.tk, 's'); G.run(.5);
+        o.coopFrei = [MT.tile(A, 'mCoop').lock || '', A.setMode('coop'), A.NET.mode, st()]; G.run(.5); o.coopKacheln = [ids(Bo).includes('role'), ids(Bo).includes('tm2')];
+        { const G2 = CT.mkLobby(1, 0), A2 = G2.A; A2.setName('Anna'); G2.run(.2); const js = ['W1', 'W2', 'W3', 'V1', 'V2', 'V3', 'V4'].map(n => R2.add(G2, n)), W = js[0], V = js[6];
+          o.zweiVoll = [A2.NET.roster.length, A2.NET.t2.length, MT.tile(W, 'tm2').lock || '', MT.tile(V, 'tm2').lock || '', MT.tile(V, 'tm2').chosen]; W.NET.msg = ''; W.NET.conn.send({ t: 'role', v: 2 }); G2.run(.5); o.zweiVollMeldung = [W.NET.team, W.NET.msg];
+          o.hostVoll = [A2.roleSet(1, 2), A2.roleSet('t' + A2.NET.t2[0].tk, 1)];
+          MT.click(A2, 'kick'); o.modalVoll = [MT.tile(A2, 'k2:' + A2.NET.roster[1].id).lock || '', MT.tile(A2, 'k1:t' + A2.NET.t2[0].tk).lock || '']; { const ctx = A2.cv.getContext('2d'), f = ctx.fillText, seen = []; ctx.fillText = function (x) { seen.push(String(x)); return f.apply(this, arguments); }; A2.draw(); ctx.fillText = f; o.modalTexte = [seen.filter(x => x === 'Weitere Spieler').length, seen.filter(x => x === 'Spieler').length]; } MT.k(A2, 'Escape'); }
+        return o; })()`);
+      t.eq(r.hostSchild, [1, 0], 'ohne Modus steht nur beim Host "Host", die Spalte der weiteren Spieler hat noch keinen Host 2');
+      t.eq(r.start, [[4, 2, 0], 1, 2, 2], 'Anfang nach Beitritt: vier Spieler, zwei weitere');
+      t.eq(r.kacheln.slice(0, 2), [['tm1', 'tm2', 'tmS'], false], 'jeder hat die drei Wahl-Kacheln, noch ohne Modus'); t.eq(r.kacheln.slice(2, 4), [true, true], 'die eigene Spalte ist gewaehlt'); t.ok(/Spieler voll/.test(r.kacheln[4]), 'Spieler ist voll, die Kachel sagt es: ' + r.kacheln[4]);
+      t.eq(r.bo.slice(0, 3), [2, false, [3, 3, 0]], 'ein Spieler waehlt Weitere Spieler und verliert seinen Platz'); t.ok(/weiteren Spielern/.test(r.bo[3]), 'Meldung: ' + r.bo[3]); t.eq(r.bo[4], true, 'die Kachel zeigt die Wahl'); t.eq(r.bo[5], 'Fi,Hu,Bo', 'er steht hinten in der Reihenfolge');
+      t.eq(r.fi.slice(0, 3), [1, true, [4, 2, 0]], 'ein weiterer Spieler waehlt Spieler, der frei gewordene Platz ist seiner'); t.ok(/Fi/.test(r.fi[3]), 'mit seinem Namen: ' + r.fi[3]);
+      t.ok(/Spieler voll/.test(r.voll[0]), 'bei vollen Spielerplaetzen ist die Kachel gesperrt'); t.eq(r.klickStumm, '', 'ein Klick auf die gesperrte Kachel tut nichts'); t.eq(r.vollKlick[0], 2, 'eine trotzdem gesendete Wahl aendert nichts'); t.ok(r.vollKlick[1], 'und bekommt eine Meldung: ' + r.vollKlick[1]);
+      t.eq(r.cy.slice(0, 3), [true, [3, 2, 1], true], 'Zuschauer waehlen und die Kachel zeigt es'); t.eq(r.cy[3], 3, 'auch ein Zuschauer hat die drei Wahl-Kacheln'); t.eq(r.cy[4], 'Cy', 'Name');
+      t.eq(r.cyZurueck.slice(0, 3), [false, 1, [4, 2, 0]], 'der Zuschauer wird wieder Spieler');
+      t.eq(r.modal, 15, 'der Host hat in der Teilnehmer-Liste je Teilnehmer (fuenf) die drei Wahl-Kacheln'); t.eq([r.hostDi[0], r.hostDi[2]], [3, 2], 'der Host stellt Di zu den weiteren Spielern'); t.ok(/Di/.test(r.hostDi[1]), 'Di steht in der Liste: ' + r.hostDi[1]);
+      t.eq(r.hostHu[2], 1, 'der Host stellt Hu zu den Spielern'); t.ok(/Hu/.test(r.hostHu[0]) && !/Hu/.test(r.hostHu[1]), 'Hu ist in der Spieler-Spalte');
+      t.ok(r.pfeil, 'der Pfeil nach oben gilt auch ohne Modus (die Reihenfolge wird zu Team 2)');
+      t.ok(r.coopLock[0], 'Coop spielen ist mit Wartenden gesperrt: ' + r.coopLock[0]); t.eq(r.coopLock.slice(1), [false, ''], 'und laesst sich nicht waehlen');
+      t.eq(r.coopFrei[0], '', 'nach dem Umstellen ist Coop spielen frei'); t.eq(r.coopFrei.slice(1, 3), [true, 'coop'], 'und laesst sich waehlen'); t.eq(r.coopKacheln, [true, false], 'im Coop haben Spieler nur die Rollen-Kachel');
+      t.eq(r.zweiVoll.slice(0, 2), [4, 4], 'vier Spieler und vier weitere'); t.eq(r.zweiVoll[2], 'Weitere Spieler voll', 'die Kachel Weitere Spieler ist fuer Spieler gesperrt'); t.eq(r.zweiVoll[3], '', 'fuer einen, der schon dort steht, nicht'); t.eq(r.zweiVoll[4], true, 'und gewaehlt');
+      t.eq(r.zweiVollMeldung, [1, 'Die weiteren Spieler sind voll.'], 'eine Wahl bei vollen weiteren Spielern wird mit Meldung abgelehnt'); t.eq(r.hostVoll, [false, false], 'auch der Host kann dann nichts verschieben (beide Spalten voll)'); t.eq(r.modalVoll, ['Weitere Spieler voll', 'Spieler voll'], 'die Teilnehmer-Liste sperrt volle Spalten'); t.eq(r.modalTexte, [11, 10], 'die Teilnehmer-Liste nennt ohne Modus Spieler und Weitere Spieler (sieben Kacheln je Spalte plus die Ortsangabe der Zeilen)');
+      for (const k of Object.keys(r)) if (/^ue /.test(k)) t.eq(r[k], [], 'Ueberlappung: ' + k);
+    },
+  },
 ];
