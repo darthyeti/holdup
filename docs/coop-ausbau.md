@@ -306,7 +306,7 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 | W2 Wettkampf: Live-Vergleich, Wertung, Ergebnisseite, Shop-Gleichtakt, Ausscheiden, Abschluss, Revanche | gebaut am 27. Oktober 2026 (`VER` 49, Test `123-wettkampf-vergleich`, Einzelheiten in docs/coop-und-netz.md, Wettkampf) |
 | W3 Wettkampf: Zuschauer im Duell (Zweitverbindung, Übersichtskarte, Umschalten, Verzögerung) | gebaut am 27. Oktober 2026 (`VER` 50, Test `124-wettkampf-zuschauer`, Einzelheiten in docs/coop-und-netz.md, Wettkampf) |
 | R1 Raum zuerst: Modus, Rollen, Überlauf, Lobby-Chat | gebaut am 27. Oktober 2026 (`VER` 52, `UI_API` 11, Test `126-raum-zuerst`, Einzelheiten in docs/coop-und-netz.md, Raum zuerst) |
-| R2 Wettkampf-Raum: Teams, Team-Hosts, Übergabe | gebaut am 27. Oktober 2026 (`VER` 53, Test `127-wettkampf-raum`, Einzelheiten in docs/coop-und-netz.md, Wettkampf-Raum) |
+| R2 Wettkampf-Raum: Teams, Team-Hosts, Übergabe | gebaut am 27. Oktober 2026 (`VER` 53, Test `127-wettkampf-raum`, Einzelheiten in docs/coop-und-netz.md, Wettkampf-Raum), von Till am 27. Oktober 2026 zweimal im echten Netz gespielt (Homeoffice und Firmennetzwerk, flüssig) |
 
 ## Änderungsprotokoll
 
