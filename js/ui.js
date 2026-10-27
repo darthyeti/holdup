@@ -169,7 +169,7 @@ t.push({id:'skills',x:404,y:36,w:196,h:30,tf:'bold 13px monospace',key:'k',act:'
 t.push({id:'opt',x:274,y:466,w:164,h:44,key:'o',act:'ui:options',kind:'g',title:'Optionen',chip:'O'});
 if(kickList().length)t.push({id:'kick',x:448,y:466,w:164,h:44,kind:'g',act:'ui:kick',title:kickTitle()});
 t.push({id:'back',x:60,y:466,w:200,h:44,kind:'g',act:'shopBack',title:NET.role==='solo'?'Zum Titel':host?'Raum schließen':'Raum verlassen',chip:'Esc'});
-t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):'Weiter: Auftragswahl'});
+t.push({id:'next',x:620,y:466,w:280,h:44,kind:'p',act:'shopNext',chip:'Enter',title:client?(mine&&mine.rdy?'Doch noch nicht bereit':'Bereit'):NET.du&&NET.du.run?(NET.du.my?'Bereit zurücknehmen':'Bereit: Auftrag '+Math.min(NET.du.mn+1,NET.du.len)+' von '+NET.du.len):'Weiter: Auftragswahl'});
 return{def:'next',back:'shopBack',t,cols,deco(){const{g,curKit,PC,pn,shopNote}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('SHOP',60,64);fhBadge(160,62,'l');
 g.textAlign='right';g.font='bold 22px monospace';g.fillStyle=G;g.fillText('Konto '+fmt(SESSION.wallet),900,58);g.font='12px monospace';g.fillStyle=TX;g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Bester Auftrag '+fmt(SESSION.best),900,80);
 g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;cols.forEach((c,ci)=>g.fillText(c.n,60+ci*212,96));
@@ -178,7 +178,8 @@ const fi=focus&&/^buy:/.test(focus)?items[+focus.slice(4)]:null;
 if(fi){const lv=fi.t?(SESSION.own[fi.k]|0):0,nx=fi.t?Math.min(3,lv+1):0;g.textAlign='left';g.font='bold 12px monospace';g.fillStyle=A;g.fillText(fi.n+(fi.t?(lv>=3?' (Stufe 3, höchste)':' (Stufe '+nx+')'):''),60,428);g.font='12px monospace';g.fillStyle=TX;g.fillText(fit(fi.d(fi.t?nx:0)+(fi.t&&lv>0&&lv<3?'   jetzt: '+fi.d(lv):''),840,'12px monospace'),60,444)}else{g.textAlign='left';g.font='12px monospace';g.fillStyle=MU;g.fillText('Posten wählen (Pfeiltasten oder Maus): hier steht seine Beschreibung.',60,436)}
 g.textAlign='center';g.font='11px monospace';g.fillStyle=SU;g.fillText(fit('Dein Kit: '+nm.join(', ')+(gd.length?'   |   '+gd.join(', '):''),840,'11px monospace'),480,462);
 /* Hinweis (Nicht alle sind bereit ...): zwei Zeilen in der Luecke zwischen den Kacheln unten (x 260 bis 620), nicht quer ueber die Kachel Weiter */
-if(shopNote.t>0){g.textAlign='center';g.font='12px monospace';g.fillStyle=Y;wrap(shopNote.s,172,g.font,4).forEach((l,i)=>g.fillText(l,529,482+i*14))}g.textAlign='left'}}}
+if(shopNote.t>0){g.textAlign='center';g.font='12px monospace';g.fillStyle=Y;wrap(shopNote.s,172,g.font,4).forEach((l,i)=>g.fillText(l,529,482+i*14))}
+const du=NET.du&&NET.du.run?NET.du:null;if(du){const free=du.gone||du.ro||du.rn>=du.len;g.textAlign='center';g.font='12px monospace';g.fillStyle=du.cd>0?Y:free?SU:du.rn<du.mn?TX:du.rdy?G:Y;g.fillText(du.cd>0?'Duell: Start in '+du.cd:free?(du.gone?'Duell: Gegner getrennt':du.ro?'Duell: Gegner ausgeschieden':'Duell: Gegner ist fertig'):du.rn<du.mn?'Duell: Gegner spielt noch':du.rdy?'Duell: Gegner ist bereit':'Duell: Gegner kauft ein',760,530)}g.textAlign='left'}}}
 function paintItem(t){const{g,fmt,CFG,SESSION,itemPrice,repCost}=X,it=t.item,st=t.st,ok=st==='kaufen',own=st==='gekauft'||st==='ersetzt'||st==='heil',lv=it.t?(SESSION.own[it.k]|0):0,cnt=it.c?(SESSION.cons[it.k]|0):0,price=it.r?repCost():itemPrice(it);
 g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=A;if(t.key)g.fillText('['+String(t.key).toUpperCase()+']',t.x+10,t.y+20);
 g.font='bold 13px monospace';g.fillStyle=own?G:ok?Y:MU;g.fillText(fit(it.n,t.w-110,g.font),t.x+(t.key?38:10),t.y+20);
@@ -200,19 +201,23 @@ return{def:'resume',back:'resume',t:[
 deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=Y;g.font='bold 34px monospace';g.fillText('PAUSE',480,122);
 g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424+dy);fhBadge(480,446+dy,'c')}}}
 /* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
-function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft,aw=ended.aw||[],pg=aw.length?ended.pg|0:0,last=!aw.length||pg===1;
-const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&(!win||NET.spec))?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':NET.spec?'Warte auf das Team ...':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
+function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft,aw=ended.aw||[],du=NET.du&&NET.du.run?NET.du:null,pgN=1+(aw.length?1:0)+(du?1:0),pg=Math.min(ended.pg|0,pgN-1),last=pg===pgN-1,host=NET.role==='host',
+kind=i=>i===0?'ov':aw.length&&i===1?'aw':'du',lab=k=>k==='ov'?'Übersicht':k==='aw'?'Auszeichnungen':'Duell',more=!!du&&!du.mo&&du.mn<du.len&&!!win;
+/* letzte Seite im Wettkampf: weiter in den Shop, Revanche (beide Hosts), Zurueck in die Lobby (Gegner weg), sonst warten */
+const duT=!du?'':more?'Weiter: Shop':host?(du.fin?(du.fin==='x'?'Zurück in die Lobby':du.my?'Revanche zurücknehmen':'Revanche'):du.mo?'Ausgeschieden: warte auf Gegner':'Warte auf Gegner ...'):(du.fin?'Der Host entscheidet ...':du.mo?'Ausgeschieden: warte auf Gegner':'Warte auf Gegner ...'),
+duAct=!du?'':(more||(host&&du.fin))?'endNext':'';
+const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:!last?'endNext':NET.spec?'':du?duAct:(NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?lab(kind(pg+1)):NET.spec?'Warte auf das Team ...':du?duT:win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
 {id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':NET.spec?'Zuschauen beenden':'Raum verlassen',tf:'bold 13px monospace'}];
-if(pg===1)t.push({id:'endPrev',x:250,y:468,w:190,h:58,nofocus:true,act:'endPrev',chip:'←',title:'Übersicht',tf:'bold 13px monospace'});
+if(pg>0)t.push({id:'endPrev',x:250,y:468,w:178,h:58,nofocus:true,act:'endPrev',chip:'←',title:lab(kind(pg-1)),tf:'bold 13px monospace'});
 if(kickList().length)t.push({id:'kick',x:40,y:420,w:190,h:40,nofocus:true,act:'ui:kick',title:kickTitle(),tf:'bold 13px monospace'});
-return{t,back:'endBack',deco:aw.length||ended.fh?()=>{if(ended.fh&&pg!==1)pageFh(ended.fh);if(aw.length)pageAw(aw,pg)}:null}}
+return{t,back:'endBack',deco:pgN>1||ended.fh?()=>{if(ended.fh&&pg===0)pageFh(ended.fh);if(pgN>1)pageDots(pgN,pg);if(kind(pg)==='aw')pageAw(aw);else if(kind(pg)==='du')pageDuel(du)}:null}}
 function medal(cx,cy,c){const{g}=X;g.fillStyle=c;g.beginPath();g.arc(cx,cy,19,0,6.283);g.fill();g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=2;g.stroke();
 g.fillStyle='rgba(10,12,18,.72)';g.beginPath();for(let k=0;k<10;k++){const r=k%2?4.5:10,an=-1.5708+k*.62832;g.lineTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r)}g.closePath();g.fill()}
-function pageAw(aw,pg){const{g,VW,VH}=X,cx=pg===1?585:480;g.textAlign='center';
-if(pg===1){g.fillStyle='rgba(6,8,14,.6)';g.fillRect(0,0,VW,VH)}
-for(let i=0;i<2;i++){g.beginPath();g.arc(cx-8+i*16,494,4,0,6.283);if(i===pg){g.fillStyle=A;g.fill()}else{g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=1;g.stroke()}}
-g.font='11px monospace';g.fillStyle=MU;g.fillText('Pfeiltasten blättern',cx,514);
-if(pg!==1)return;
+function pageDots(n,pg){const{g,VW,VH}=X,cx=pg>0?585:480;g.textAlign='center';
+if(pg>0){g.fillStyle='rgba(6,8,14,.6)';g.fillRect(0,0,VW,VH)}
+for(let i=0;i<n;i++){g.beginPath();g.arc(cx-8*(n-1)+i*16,494,4,0,6.283);if(i===pg){g.fillStyle=A;g.fill()}else{g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=1;g.stroke()}}
+g.font='11px monospace';g.fillStyle=MU;g.fillText('Pfeiltasten blättern',cx,514)}
+function pageAw(aw){const{g,VW,VH}=X;g.textAlign='center';
 g.fillStyle=A;g.font='bold 34px monospace';g.fillText('AUSZEICHNUNGEN',480,68);g.fillStyle=TX;g.font='14px monospace';g.fillText('Wer hat was getan?',480,94);
 const y0=110+(4-Math.ceil(aw.length/2))*42,w=430,h=76;
 aw.forEach((a,i)=>{const x=40+(i%2)*450,y=y0+Math.floor(i/2)*84,nw=Math.max(1,a.cl.length),tx=x+68+(nw-1)*20,c0=a.cl[0]||A;
@@ -223,6 +228,17 @@ g.textAlign='right';g.font='bold 12px monospace';g.fillStyle=c0;g.fillText(fit(a
 g.textAlign='left';g.font='bold 17px monospace';g.fillStyle='#f4f1e6';g.fillText(fit(a.n,w-(tx-x)-12,g.font),tx,y+45);
 g.font='11px monospace';g.fillStyle=SU;g.fillText(fit(a.s,w-(tx-x)-12,g.font),tx,y+64)});g.textAlign='left'}
 
+/* Seite Duell (Wettkampf): zwei Spalten (Dein Team, Gegner) mit dem Ergebnis dieses Auftrags und den Summen, Zwischenstand oder Sieger. Die Daten kommen aus NET.du (ros.du), die Seite aktualisiert sich, sobald das Ergebnis des Gegners da ist. */
+function pageDuel(du){const{g,fmt}=X,tmm=t=>{t=Math.max(0,Math.ceil(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};g.textAlign='center';
+g.fillStyle=A;g.font='bold 34px monospace';g.fillText('DUELL',480,68);g.fillStyle=TX;g.font='14px monospace';g.fillText(du.fin?'Abschluss nach '+du.len+(du.len===1?' Auftrag':' Aufträgen'):'Runde '+Math.min(Math.max(du.mn,1),du.len)+' von '+du.len,480,94);
+const cols=[{x:40,nm:'Dein Team',w:du.mw,l:du.ml,t:du.mt,r:du.mr,n:du.mn,o:du.mo},{x:540,nm:du.nm,w:du.rw,l:du.rl,t:du.rt,r:du.rr,n:du.rn,o:du.ro}];
+cols.forEach((c,i)=>{const x=c.x,w=380;g.fillStyle='rgba(8,10,16,.86)';g.fillRect(x,116,w,196);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(x+.5,116.5,w-1,195);
+g.textAlign='left';g.font='bold 16px monospace';g.fillStyle=i?'#8ad0ff':A;g.fillText(fit(c.nm,w-24,g.font),x+14,142);
+g.font='bold 13px monospace';if(c.r){g.fillStyle=c.r.w?G:c.r.s?Y:RD;g.fillText(c.r.w?'Auftrag gewonnen':c.r.s?'Auftrag gescheitert':'Serie beendet, ausgeschieden',x+14,170);g.font='12px monospace';g.fillStyle=TX;g.fillText('Ergebnis '+fmt(c.r.sc)+'   Dauer '+tmm(c.r.du),x+14,190)}
+else{g.fillStyle=MU;g.fillText(i?'Gegner spielt noch ...':'noch kein Ergebnis',x+14,170)}
+g.font='12px monospace';g.fillStyle=SU;g.fillText('Gewonnen: '+c.w+' von '+c.n+(c.o?' (ausgeschieden)':''),x+14,226);g.fillText('Beute gesamt: '+fmt(c.l),x+14,248);g.fillText('Zeit gesamt: '+tmm(c.t),x+14,270)});
+g.textAlign='center';if(du.fin){const win=du.fin==='m'?'SIEGER: Dein Team':du.fin==='r'?'SIEGER: '+du.nm:du.fin==='d'?'UNENTSCHIEDEN':'WETTKAMPF ABGEBROCHEN';g.font='bold 28px monospace';g.fillStyle=du.fin==='m'?G:du.fin==='r'?RD:Y;g.fillText(win,480,368);g.font='12px monospace';g.fillStyle=MU;g.fillText(du.fin==='x'?'Der Gegner hat den Wettkampf verlassen.':'Wertung: gewonnene Aufträge, dann Beute, dann Zeit.',480,396)}
+else{g.font='bold 22px monospace';g.fillStyle=Y;g.fillText('Zwischenstand '+du.mw+' : '+du.rw,480,368);g.font='12px monospace';g.fillStyle=MU;g.fillText('Wertung: gewonnene Aufträge, dann Beute, dann Zeit.',480,396)}g.textAlign='left'}
 /* ---------- Modals: Optionen, Anleitung, Rueckfrage ---------- */
 function mOptions(){const{scr,DBG,unlockAll,myName,nameEdit,time,CFG}=X,title=scr==='title',rows=[];
 rows.push({id:'vmus',slider:0,title:'Musik',paint:paintSlider},{id:'vsfx',slider:1,title:'Effekte',paint:paintSlider});

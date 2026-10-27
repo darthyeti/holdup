@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=179"></script>
+<script src="js/ui.js?v=180"></script>
 <script>
-const BUILD={n:179,d:'2026-10-27'};//BUILD
+const BUILD={n:180,d:'2026-10-27'};//BUILD
 const UI_API=10;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -259,7 +259,7 @@ funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
 chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
 spec:{max:6,on:1,cam:420,fast:900,every:2,maxBuf:65536,msgB:6000,evMax:400,delay:0,qMax:1200},
 net:{max:15800,blKeep:60},
-duel:{len:3,maxLen:5,count:5,hb:1},
+duel:{len:3,maxLen:5,count:5,hb:1,pg:1},
 museumGen:{on:1,classic:.1,ww:[7,12],ew:[9,11],dy:[0,1],vx:[-1,1],tries:30},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,32],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
@@ -1968,7 +1968,7 @@ if(lost>0)lines.push('Beute verloren: '+fmt(lost));
 score=Math.max(0,score);lines.push('Ausgeschaltet: '+kills);if(phase===2)lines.push('Dauer: '+tm(tH));
 const hi=lines.length;lines.push('Ergebnis: '+fmt(score));
 const res={win,title,extra:extra||'',lines,hi,score,n:players.length,soft:!!soft,sp:win?{goal:!!goal&&goalOk(),quiet:phase===1,tr:!!LAY.truck}:null};if(win||soft)res.fh=heatCalc(win);if(players.length>1){const aw=awards();if(aw.length)res.aw=aw}
-if(NET.role==='host')bcast({t:'end',res});endLocal(res)}
+duelRound(res);if(NET.role==='host')bcast({t:'end',res});endLocal(res)}
 /* Nach einem Auftrag bleibt, was uebrig ist: Vorraete, Westenrest und Helmtreffer */
 function keepKit(){for(const q of CONS)SESSION.cons[q]=me[q]|0;if(SESSION.own.vest)SESSION.wear.vest=Math.max(0,Math.round(me.ar));if(SESSION.own.helm)SESSION.wear.helm=Math.max(0,me.hh|0)}
 function endLocal(res){if(NET.spec){LOG.ev('ende',{win:!!res.win,soft:!!res.soft,titel:String(res.title||'').slice(0,60),score:Math.round(res.score||0)});SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines:res.lines.slice(),hi:res.hi,fh:null};return}
@@ -2129,7 +2129,7 @@ if(selIt>=0&&!inReach(itsAll()[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=48,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=49,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},buffered:()=>{try{return (c.dataChannel?c.dataChannel.bufferedAmount|0:0)+(c.bufferSize|0)*CFG.spec.msgB}catch(e){return 0}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());
@@ -2170,11 +2170,20 @@ hostMsg(c,m)}
    und Zuschauer), danach nur noch Nachrichten der Art dl: st (Teamgroesse, Bereit, Name, einmal je Sekunde und bei Aenderung), go (nur vom Leiter: Liste der Auftraege und Countdown), bye. Beide Teams muessen gleich gross und bereit sein, dann
    zaehlen beide Hosts CFG.duel.count Sekunden und starten mit den Auftraegen der Liste (seedFor). NET.du ist die Anzeige fuer alle im Raum (ros.du). ---- */
 const duelName=()=>cleanName(myName)||PC[0].n;
-function duelNew(){return{lead:true,link:null,conn:null,srv:null,rv:null,rdy:0,cd:-1,cs:-1,jobs:[],k:0,n:NET.roster.length,hb:0,len:CFG.duel.len}}
-function duelInfo(){const d=NET.duel;if(!d)return null;const r=d.rv;return{lead:d.lead?1:0,link:d.link?1:0,nm:r?r.nm:'',n:r?r.n:0,rdy:r?r.rdy:0,my:d.rdy,cd:d.cd>0?Math.ceil(d.cd):0,len:d.len,k:d.k}}
+function duelNew(){return{lead:true,link:null,conn:null,srv:null,rv:null,rdy:0,cd:-1,cs:-1,jobs:[],k:0,n:NET.roster.length,hb:0,len:CFG.duel.len,run:0,mine:[],rvr:[],out:0,pg:null,pgT:0,gone:0}}
+/* Wertung (W2): erst die gewonnenen Auftraege, dann die Beute der gewonnenen, dann die kuerzere Zeit der gewonnenen. Ein Team ist fertig, wenn es alle Auftraege gespielt hat oder ausgeschieden ist (Serie beendet). */
+const duelSum=L=>({w:L.filter(x=>x.w).length,l:L.reduce((s,x)=>s+(x.w?x.sc:0),0),t:L.reduce((s,x)=>s+(x.w?x.du:0),0),n:L.length,o:L.some(x=>x.h)?1:0});
+const duelCmp=(a,b)=>a.w!==b.w?(a.w>b.w?'m':'r'):a.l!==b.l?(a.l>b.l?'m':'r'):a.t!==b.t?(a.t<b.t?'m':'r'):'d';
+function duelFin(d){if(!d||!d.run)return'';const m=duelSum(d.mine),r=duelSum(d.rvr);if(!(m.o||m.n>=d.len))return'';if(d.gone)return'x';if(!(r.o||r.n>=d.len))return'';return duelCmp(m,r)}
+const duelMore=d=>!!(d&&d.run&&!d.out&&d.mine.length<d.len);
+const duelFree=d=>!!(d.gone||d.rvr.some(x=>x.h)||d.rvr.length>=d.len);
+function duelInfo(){const d=NET.duel;if(!d)return null;const r=d.rv,m=duelSum(d.mine),q=duelSum(d.rvr),lm=d.mine[d.mine.length-1],pk=x=>x?{w:x.w,s:x.s,h:x.h,sc:x.sc,du:x.du}:null;
+return{lead:d.lead?1:0,link:d.link?1:0,nm:r?r.nm:'',n:r?r.n:0,rdy:r?r.rdy:0,my:d.rdy,cd:d.cd>0?Math.ceil(d.cd):0,len:d.len,k:d.k,run:d.run?1:0,gone:d.gone?1:0,
+mw:m.w,ml:Math.round(m.l),mt:Math.round(m.t),mn:m.n,mo:m.o,rw:q.w,rl:Math.round(q.l),rt:Math.round(q.t),rn:q.n,ro:q.o,mr:pk(lm),rr:lm?pk(d.rvr.find(x=>x.i===lm.i)):null,fin:duelFin(d),pr:d.pg&&d.pg.i===d.k-1?d.pg:null}}
 function duelClose(){const d=NET.duel;if(!d)return;const l=d.link||d.conn;if(l){try{l.send({t:'dl',k:'bye'})}catch(e){}l.onclose=null;try{l.close()}catch(e){}}if(d.srv){try{d.srv.close()}catch(e){}}NET.duel=null;NET.du=null}
 /* Wettkampf beenden (full) oder nur den Gegner verlieren (Leiter bleibt offen, wartet auf einen neuen Gegner). Der Gast ist danach ganz draussen. */
 function duelEnd(msg,full){const d=NET.duel;if(!d)return;const l=d.link||d.conn;d.link=null;d.conn=null;if(l){try{l.send({t:'dl',k:'bye'})}catch(e){}l.onclose=null;setTimeout(()=>{try{l.close()}catch(e){}},250)}
+if(d.run&&!full){d.gone=1;d.rdy=0;d.cd=-1;d.cs=-1;NET.msg=msg||'';LOG.ev('duell',['abgebrochen',String(msg||'').slice(0,40)]);bcastRoster();return}
 if(d.lead&&!full){d.rv=null;d.rdy=0;d.cd=-1;d.cs=-1;d.jobs=[];d.k=0}else{if(d.srv){try{d.srv.close()}catch(e){}}NET.duel=null}
 NET.msg=msg||'';LOG.ev('duell',['ende',String(msg||'').slice(0,40)]);bcastRoster()}
 function duelOpen(){if(NET.role!=='host'||scr!=='lobby'||(NET.duel&&!NET.duel.lead))return false;if(NET.duel)duelEnd('Wettkampf beendet.',true);else{NET.duel=duelNew();NET.msg='Wettkampf offen: Der andere Host tritt mit deinem Raumcode bei.';bcastRoster()}return true}
@@ -2190,22 +2199,47 @@ const sanJobs=j=>Array.isArray(j)?j.slice(0,CFG.duel.maxLen).map(x=>({sd:clamp((
 function duelJobs(){const n=clamp(NET.duel.len|0,1,CFG.duel.maxLen);return Array.from({length:n},(_,i)=>{const pool=SCS.filter(k=>i>=(CFG.rank[k]||0));return{sd:rndSeed(),sc:pool[Math.floor(Math.random()*pool.length)]}})}
 /* Die naechsten Seed und das Szenario: im Wettkampf der Reihe nach aus der Liste, sonst wie immer (newSeed). */
 function seedFor(){const d=NET.duel;if(d&&d.k<d.jobs.length){const j=d.jobs[d.k++];jobSc=j.sc;return j.sd}return newSeed()}
-function duelGo(){const d=NET.duel;d.rdy=0;d.cd=-1;d.cs=-1;NET.msg='';duelSt();startCoop()}
+function duelGo(){const d=NET.duel;d.rdy=0;d.cd=-1;d.cs=-1;d.run=1;d.mine=[];d.rvr=[];d.out=0;d.pg=null;d.pgT=0;d.gone=0;NET.msg='';duelSt();startCoop()}
+/* Fortschritt und Ergebnisse des Gegners (W2): pg einmal je Sekunde im Spiel, res am Ende eines Auftrags, beides bereinigt und begrenzt */
+function duelPg(){const d=NET.duel;if(d&&d.link)d.link.send({t:'dl',k:'pg',i:d.k-1,l:Math.round(secured),w:waveN|0,a:actv().length,n:players.length,tm:Math.round(phase===2?tH:rT),p:phase})}
+function duelRvPg(d,m){d.pg={i:clamp(m.i|0,0,CFG.duel.maxLen),l:clamp(+m.l||0,0,1e8),w:clamp(m.w|0,0,99),a:clamp(m.a|0,0,4),n:clamp(m.n|0,0,4),t:clamp(+m.tm||0,0,36000),p:m.p===2?2:1};bcastRoster()}
+function duelRvRes(d,m){if(!d.run||!Number.isInteger(m.i)||m.i<0||m.i>=CFG.duel.maxLen)return;const r={i:m.i,w:m.w?1:0,s:m.s?1:0,h:m.h?1:0,sc:clamp(+m.sc||0,0,1e7),du:clamp(+m.du||0,0,36000),n:clamp(m.n|0,0,4),kl:clamp(m.kl|0,0,9999),cv:clamp(m.cv|0,0,999)};
+d.rvr=d.rvr.filter(x=>x.i!==r.i);d.rvr.push(r);d.rvr.sort((a,b)=>a.i-b.i);LOG.ev('duell',['gegner res',r.i,r.w,r.sc]);bcastRoster()}
+/* Eigenes Ergebnis eines Auftrags (aus finish, nur Host): merken, dem Gegner schicken, Anzeige an die Mitspieler */
+function duelRound(res){const d=NET.duel;if(!d||!d.run||NET.role!=='host')return;const i=d.k-1;if(i<0||d.mine.some(x=>x.i===i))return;
+const r={i,w:res.win?1:0,s:res.soft?1:0,h:!res.win&&!res.soft?1:0,sc:Math.round(res.score),du:Math.round(rT),n:res.n,kl:kills|0,cv:civKills|0};d.mine.push(r);if(r.h)d.out=1;
+if(d.link)d.link.send({t:'dl',k:'res',i:r.i,w:r.w,s:r.s,h:r.h,sc:r.sc,du:r.du,n:r.n,kl:r.kl,cv:r.cv});LOG.ev('duell',['res',r.i,r.w,r.sc]);bcastRoster()}
+/* Gleichtakt vor dem naechsten Auftrag (Shop): Weiter heisst Bereit, startet der Gegner nicht mehr (ausgeschieden, fertig, getrennt), geht es sofort, sonst zaehlen beide nach dem go des Leiters. Am Ende steht Revanche (beide bereit) oder, bei Abbruch, Zurueck in die Lobby. */
+function duelNext(){const d=NET.duel;if(NET.role!=='host'||!d||!d.run||scr!=='shop'||!duelMore(d))return false;if(d.rdy)d.rdy=0;else{if(NET.roster.some(r=>r.id!==0&&!r.rdy)&&time-shopConf>4){shopConf=time;shopNote={s:'Nicht alle sind bereit. Nochmal: trotzdem weiter.',t:4};return true}d.rdy=1}duelSt();bcastRoster();return true}
+function duelGoNext(){const d=NET.duel;d.rdy=0;d.cd=-1;d.cs=-1;d.pgT=0;NET.msg='';duelSt();startNext()}
+function duelEndNext(){const d=NET.duel;if(!d||!d.run||!duelFin(d))return;if(d.gone){duelRematch();return}d.rdy=d.rdy?0:1;duelSt();bcastRoster()}
+function duelRematch(){const d=NET.duel;if(!d)return;const gone=d.gone;d.run=0;d.k=0;d.jobs=[];d.mine=[];d.rvr=[];d.out=0;d.pg=null;d.rdy=0;d.cd=-1;d.cs=-1;d.gone=0;if(d.rv)d.rv.rdy=0;
+if(gone){if(d.lead){d.rv=null}else{if(d.srv){try{d.srv.close()}catch(e){}}NET.duel=null}}
+scr='lobby';ended=null;paused=false;clearKeys();mouse.down=0;sessReset();NET.roster.forEach(r=>r.rdy=0);NET.msg='';bcast({t:'lb'});if(NET.duel)duelSt();bcastRoster()}
+function duelRunTick(dt){const d=NET.duel;if(d.link){d.hb-=dt;if(d.hb<=0){d.hb=CFG.duel.hb;duelSt()}if(scr==='play'&&!ended){d.pgT-=dt;if(d.pgT<=0){d.pgT=CFG.duel.pg;duelPg()}}}
+if(scr==='shop'&&d.rdy&&duelMore(d)){const free=duelFree(d);
+if(d.cd>=0){if(!free&&!(d.rv&&d.rv.rdy)){d.cd=-1;d.cs=-1;NET.msg='Start abgebrochen.';bcastRoster()}else{d.cd-=dt;const s=Math.ceil(d.cd);if(s!==d.cs){d.cs=s;bcastRoster()}if(d.cd<=0)duelGoNext()}}
+else if(free)duelGoNext();
+else if(d.lead&&d.link&&d.rv&&d.rv.rdy&&d.rvr.some(x=>x.i===d.k-1)){d.cd=CFG.duel.count;d.cs=-1;d.link.send({t:'dl',k:'go',i:d.k,cd:d.cd});bcastRoster()}}
+else if(scr==='shop'&&d.cd>=0){d.cd=-1;d.cs=-1}
+if(scr==='play'&&ended&&d.rdy&&duelFin(d)&&d.rv&&d.rv.rdy)duelRematch()}
 function duelMsg(d,m){if(NET.duel!==d||!m||typeof m!=='object')return;
 if(m.t==='rej'){duelEnd(String(m.why||'Abgewiesen.').slice(0,120));return}
 if(m.t!=='dl')return;
 if(m.k==='ok'&&!d.link&&d.conn){d.link=d.conn;d.rv={nm:cleanName(m.nm)||'Gegner',n:clamp(m.n|0,0,4),rdy:0,code:d.rv.code};d.len=clamp(m.len|0,1,CFG.duel.maxLen);NET.msg='Wettkampf: verbunden.';LOG.ev('duell',['verbunden',d.rv.nm]);duelSt();bcastRoster()}
 else if(!d.link)return;
 else if(m.k==='st')duelRvSt(d,m);
-else if(m.k==='go'){if(d.lead||!duelBoth()||d.cd>=0)return;const J=sanJobs(m.jobs);if(!J.length)return;d.jobs=J;d.cd=clamp(+m.cd||CFG.duel.count,1,15);d.cs=-1;d.k=0;bcastRoster()}
+else if(m.k==='pg')duelRvPg(d,m);
+else if(m.k==='res')duelRvRes(d,m);
+else if(m.k==='go'){if(d.run){if(d.lead||!d.rdy||d.cd>=0||scr!=='shop'||(m.i|0)!==d.k)return;d.cd=clamp(+m.cd||CFG.duel.count,1,15);d.cs=-1;bcastRoster();return}if(d.lead||!duelBoth()||d.cd>=0)return;const J=sanJobs(m.jobs);if(!J.length)return;d.jobs=J;d.cd=clamp(+m.cd||CFG.duel.count,1,15);d.cs=-1;d.k=0;bcastRoster()}
 else if(m.k==='bye')duelEnd('Der Leiter hat den Wettkampf beendet.')}
 function hostRival(c,m){const d=NET.duel;if(!d||!d.lead){rejC(c,'In diesem Raum ist kein Wettkampf offen.');return}if(d.link){rejC(c,'Es ist schon ein Gegner da.');return}if(scr!=='lobby'){rejC(c,'Das Spiel läuft schon.');return}
 c.rival=true;c.ok=true;d.link=c;d.rv={nm:cleanName(m.nm)||'Gegner',n:clamp(m.n|0,0,4),rdy:0,code:String(m.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4)};
 c.onmsg=mm=>rivalMsg(c,mm);c.onclose=()=>{c.ok=false;if(NET.duel&&NET.duel.link===c){NET.duel.link=null;duelEnd('Der Gegner hat den Wettkampf verlassen.')}};
 c.send({t:'dl',k:'ok',nm:duelName(),n:NET.roster.length,len:d.len});LOG.ev('duell',['gegner',d.rv.nm]);NET.msg=d.rv.nm+' ist als Gegner dabei.';bcastRoster()}
-function rivalMsg(c,m){const d=NET.duel;if(!d||d.link!==c||!m||typeof m!=='object'||m.t!=='dl')return;if(m.k==='st')duelRvSt(d,m);else if(m.k==='bye')duelEnd('Der Gegner hat den Wettkampf verlassen.')}
+function rivalMsg(c,m){const d=NET.duel;if(!d||d.link!==c||!m||typeof m!=='object'||m.t!=='dl')return;if(m.k==='st')duelRvSt(d,m);else if(m.k==='pg')duelRvPg(d,m);else if(m.k==='res')duelRvRes(d,m);else if(m.k==='bye')duelEnd('Der Gegner hat den Wettkampf verlassen.')}
 /* Takt des Wettkampfs in der Lobby (Host): Teamgroesse beobachten (Aenderung nimmt Bereit zurueck), Status einmal je Sekunde senden, Countdown zaehlen und abbrechen, wenn die Bedingung wegfaellt, der Leiter schickt go, sobald beide bereit sind. */
-function duelTick(dt){const d=NET.duel;if(!d||NET.role!=='host'||scr!=='lobby')return;
+function duelTick(dt){const d=NET.duel;if(!d||NET.role!=='host')return;if(d.run){duelRunTick(dt);return}if(scr!=='lobby')return;
 if(NET.roster.length!==d.n){d.n=NET.roster.length;d.rdy=0;duelSt();bcastRoster()}
 if(d.link){d.hb-=dt;if(d.hb<=0){d.hb=CFG.duel.hb;duelSt()}}
 if(d.cd>=0){if(!duelBoth()){d.cd=-1;d.cs=-1;d.jobs=[];NET.msg='Start abgebrochen.';bcastRoster()}else{d.cd-=dt;const s=Math.ceil(d.cd);if(s!==d.cs){d.cs=s;bcastRoster()}if(d.cd<=0)duelGo()}}
@@ -2258,6 +2292,7 @@ else if(m.t==='end'){if(scr==='play'&&!ended)endLocal(m.res)}
 else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
 else if(m.t==='rst'){if(scr==='play'||scr==='shop'||NET.spec){if(m.n>0)nPl=m.n|0;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong'){NET.ping=performance.now()-m.n;LOG.ping(NET.ping)}
+else if(m.t==='lb'){scr='lobby';ended=null;paused=false;clearKeys();mouse.down=0;sessReset();if(!NET.spec&&NET.conn)NET.conn.send({t:'kit',k:curKit()})}
 else if(m.t==='lgq')flogSend()}
 function leaveGame(msg){LOG.ev('netz',['verlassen',String(msg||'').slice(0,60)]);netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
 function beginPlay(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.init();SND.resume();SND.ev('start');cv.focus()}
@@ -2556,12 +2591,13 @@ if(focus&&p===me&&live(me)&&me.armed){const sw=spwOn&&spwCan(),gp=sw?5:4+(p.wp.s
 if(!ended)hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('TON AUS (M)',VW-12,VH-52);g.textAlign='left'}
 if(MLOCK.on&&MLOCK.can&&plWant()&&!plHeld()&&focus&&!paused&&!ended){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('KLICKEN: MAUS FANGEN',VW-12,VH-(SND.isMuted()?68:52));g.textAlign='left'}
 if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}fhBadge(480,352,'c');g.textAlign='left'}
-if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';if(ended.pg!==1){g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
+if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';if(ended.pg===0){g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);
 ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=(i===ended.hi?'bold 20px':'15px')+' monospace';g.fillText(l,480,244+i*28)})}
 g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}losAll=false;drawChat()}
 /* Ergebnis: Seite 1 = Beute, Seite 2 = Auszeichnungen (nur Coop, nur wenn es welche gibt). Weiter blaettert erst, danach geht es in den Shop oder die neue Serie. */
-function endPage(p){if(ended&&ended.aw.length&&ended.pg!==p){ended.pg=p;SND.ev('paper')}}
-function endNext(){if(!ended)return;if(ended.aw.length&&!ended.pg)return endPage(1);if(NET.spec)return;if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
+const endPages=()=>1+(ended&&ended.aw.length?1:0)+(NET.du&&NET.du.run?1:0);
+function endPage(p){if(ended&&p>=0&&p<endPages()&&ended.pg!==p){ended.pg=p;SND.ev('paper')}}
+function endNext(){if(!ended)return;if(ended.pg<endPages()-1)return endPage(ended.pg+1);if(NET.spec)return;const du=NET.du&&NET.du.run?NET.du:null;if(du){if(!du.mo&&du.mn<du.len&&(ended.win||ended.soft))openShop();else if(NET.role==='host')duelEndNext();return}if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
 function startGame(){netReset();mapSeed=newSeed();beginPlay()}
 function toTitle(){LOG.ev('menue','Titel');netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
 /* Spielername (nur Coop): wird in localStorage 'holdup.name' gemerkt, mit 'hi' an den Host geschickt, der prueft auf Duplikate und verteilt ihn ueber die Spielerliste (NET.roster[].name). pn(id) liefert den Anzeigenamen, ohne Namen die Farbe. */
@@ -2639,7 +2675,7 @@ case'lobbyStart':if(NET.duel&&NET.duel.link)duelReady();else startCoop();break;
 case'lobbyBack':netReset();scr='coop';break;
 case'kick':kickPlayer(v);break;
 case'buy':shopBuy(v);break;
-case'shopNext':if(NET.role==='client')shopGo();else openMission('shop');break;
+case'shopNext':if(NET.role==='client')shopGo();else if(NET.duel&&NET.duel.run)duelNext();else openMission('shop');break;
 case'shopBack':if(NET.role==='solo')toTitle();else leaveGame('');break;
 case'resume':paused=false;break;
 case'leave':if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.');break;
@@ -2654,7 +2690,7 @@ case'dbgResp':{let n=0;for(const id of SKID)n+=SESSION.sk[id]|0;SESSION.pts+=n;S
 case'dbgHeat':SESSION.heat=heatClamp(((heatLv(SESSION.heat)+1)%CFG.fahndung.names.length)*CFG.fahndung.step);break;
 case'dbgRound':SESSION.round=Math.max(0,SESSION.round+(+v||0));break;
 case'dbgQuiet':SESSION.quiet=(SESSION.quiet|0)>=CFG.alert.cap?0:(SESSION.quiet|0)+1;break;
-case'endNext':endNext();break;case'endPrev':endPage(0);break;
+case'endNext':endNext();break;case'endPrev':endPage(ended.pg-1);break;
 case'endBack':if(NET.role==='solo')toTitle();else leaveGame('');break}}
 function itemPrice(it){return it.l?lawCost():it.t?CFG.shop.price[it.k][Math.min(2,SESSION.own[it.k]|0)]:it.p}
 /* Anwalt (Shop-Posten l, senkt die Fahndung): Preis waechst mit der Stufe, einmal je Shop-Besuch (SESSION.law, endLocal setzt es zurueck). Im Coop zaehlt der Wert des Hosts: Der Client schickt law, der Host bucht (lawHire), antwortet lawr und verteilt h und l per ros. Bezahlt wird vom Konto dessen, der ihn beauftragt, die Wirkung gilt fuer alle. */
@@ -2712,6 +2748,8 @@ function goalHud(y){if(!goal)return;const G=GOALS[goal.k],f=goal.fail,got=goal.k
 plate(10,y,250,22);g.font='bold 11px monospace';g.fillStyle='#8d95a1';g.fillText('ZIEL',20,y+15);g.fillStyle=f?'#ff6a5a':got?'#7ee34a':'#ffd27a';g.fillText(G.n,62,y+15);
 const st=f?'verfehlt':goal.k==='full'?goalDone()+' / '+goalNeed():goal.k==='fast'?tm(phase===2?goalLim()-tH:goalLim()):goal.k==='calm'&&phase===1?'< '+CFG.goal.calm+' %':'läuft';
 g.textAlign='right';g.fillStyle=f?'#ff6a5a':'#c9d4de';g.fillText(st,242,y+15);g.textAlign='left'}
+/* Tafel Gegner (W2): Fortschritt des anderen Teams, die Beute in Farbe nach Fuehrung */
+function drawTafel(y){const d=NET.du,r=d.pr,col=secured>r.l?'#7ee34a':secured<r.l?'#ff6a5a':'#e6eaf0';plate(10,y,206,66);g.textAlign='left';g.font='bold 11px monospace';g.fillStyle='#ffb000';g.fillText('GEGNER '+d.nm,18,y+15);g.font='11px monospace';g.fillStyle=col;g.fillText('Beute '+fmt(r.l),18,y+30);g.fillStyle='#c9d4de';g.fillText('Welle '+r.w,18,y+44);g.fillText('Spieler '+r.a+'/'+r.n,100,y+44);g.fillText('Zeit '+tm(r.t),18,y+58)}
 function hud(){const am='#ffb000',sf=NET.spec&&specFree;
 const lgl=lageLines(),hsg=phase===2&&!LAY.truck?npcs.filter(n=>n.st==='hostage'):[],ph=phase===1?(LAY.truck?108+14*(lgl.length-1):152+14*(lgl.length-1)):(LAY.truck?84:56+(hsg.length?30:0));plate(10,10,250,ph);goalHud(10+ph+4);g.font='bold 13px monospace';g.fillStyle=phase===1?'#7fe8ff':'#ff6a5a';g.fillText(phase===1?(LAY.truck?'VORBEREITUNG':'ERKUNDUNG'):'ÜBERFALL',20,28);fhBadge(250,28,'r',true);
 if(phase===1&&LAY.truck)tkHud(lgl);else if(phase===1){g.font='11px monospace';g.fillStyle='#c9d4de';g.fillText('VERDACHT',20,46);g.fillStyle='#10161f';g.fillRect(90,38,160,9);g.fillStyle=sus>60?'#ff4a3a':'#ffb000';g.fillRect(90,38,160*sus/100,9);if(players.length>1){g.font='9px monospace';g.fillStyle='#8d95a1';g.fillText('Team: Balken x'+(1/susScale()).toFixed(2).replace('.',','),90,56);g.font='11px monospace'}
@@ -2726,8 +2764,9 @@ if(phase===1&&LAY.truck&&tk&&tk.st!=='gone'){plate(VW/2-120,10,240,36);g.textAli
 {g.font='12px monospace';const cpb=phase===2?(!vanCalled&&!vanArr?64:50):phase===1&&LAY.truck&&tk&&tk.st!=='gone'?50:0,mw=CFG.hud.feedW-16;let fy=10;
 feed.forEach(f=>{const ls=[];let cu='';for(const wd of f.s.split(' ')){const tx=cu?cu+' '+wd:wd;if(cu&&g.measureText(tx).width>mw){ls.push(cu);cu=wd}else cu=tx}ls.push(cu);
 for(const l of ls){const w=g.measureText(l).width+16;if(cpb&&VW-10-w<VW/2+124&&fy<cpb)fy=cpb;plate(VW-10-w,fy,w,19);g.fillStyle=f.c||'#fff';g.fillText(l,VW-2-w,fy+14);fy+=22}})}
-if(players.length>1){const y0=(phase===1?172+14*(lageLines().length-1):76+(hsg.length?30:0))+(goal?26:0);plate(10,y0,206,players.length*20+10+(NET.spNames.length?16:0));players.forEach((o,i)=>{const y=y0+20+i*20;g.fillStyle=PC[o.id].c;g.fillRect(18,y-9,8,8);g.font='11px monospace';if(o===me){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(14,y-12,198,18)}g.fillStyle=live(o)?'#e6eaf0':'#8d95a1';g.fillText(pn(o.id)+(o===me&&pn(o.id).length<=6?' (du)':''),32,y);
+const y0=(phase===1?172+14*(lageLines().length-1):76+(hsg.length?30:0))+(goal?26:0);let tY=y0;if(players.length>1){tY=y0+players.length*20+10+(NET.spNames.length?16:0)+6;plate(10,y0,206,players.length*20+10+(NET.spNames.length?16:0));players.forEach((o,i)=>{const y=y0+20+i*20;g.fillStyle=PC[o.id].c;g.fillRect(18,y-9,8,8);g.font='11px monospace';if(o===me){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(14,y-12,198,18)}g.fillStyle=live(o)?'#e6eaf0':'#8d95a1';g.fillText(pn(o.id)+(o===me&&pn(o.id).length<=6?' (du)':''),32,y);
 const stt=o.dead?(o.dn>0?'am Boden '+Math.ceil(o.dn)+' s':'ausgeschaltet'):o.out?'entkommen':o.gone?'weg':null;if(stt){g.fillStyle='#8d95a1';g.fillText(stt,116,y)}else{g.fillStyle='#10161f';g.fillRect(116,y-8,48,6);g.fillStyle=o.hp>30?'#7ee34a':'#ff5040';g.fillRect(116,y-8,48*Math.max(0,o.hp)/100,6);g.fillStyle='#c9d4de';g.fillText(o.units.toFixed(1),172,y)}});if(NET.spNames.length){g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('Zuschauer: '+NET.spNames.length,18,y0+players.length*20+22)}}
+if(NET.du&&NET.du.pr)drawTafel(tY);
 if(NET.spec)specBar();else if(p!==me&&players.length>1){const t=me.dn>0?'Du bist am Boden: noch '+Math.ceil(me.dn)+' s':'Du schaust '+pn(p.id)+' zu';g.font='12px monospace';const w=g.measureText(t).width+24;plate(VW/2-w/2,VH-86,w,26);g.fillStyle=PC[p.id].c;g.textAlign='center';g.fillText(t,VW/2,VH-68);g.textAlign='left'}
 if(NET.role==='client'){g.textAlign='right';g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('Ping '+Math.round(NET.ping)+' ms',VW-12,VH-64);g.textAlign='left'}
 if(!sf){plate(10,VH-44,190,34);g.fillStyle=am;g.font='11px monospace';g.fillText('HP',18,VH-22);g.fillText('ARMOR',100,VH-22);g.font='bold 22px monospace';g.fillStyle=p.hp>30?am:'#ff5040';g.fillText(Math.ceil(p.hp),38,VH-18);g.fillStyle=am;g.fillText(Math.ceil(p.ar),146,VH-18);
@@ -2824,7 +2863,7 @@ if(k==='3'&&me&&(me.trap|0)>0&&trapKind(me)){if(aimOk(3)){aimG=3;spwOn=false}els
 if(k==='Shift')spwToggle();if(k===' '&&spwOn)reqSpw();
 if(k==='c'&&me&&(me.ak|0)>0){aimG=0;reqGadget(7)}
 if(k==='4'||k==='5'){const n=+k,W=THROW[n];if(aimOk(n)){aimG=n;spwOn=false}else{SND.ev('deny');ban(!live(me)||ended?'':phase!==W.ph?(W.ph===2?'Nur im Überfall nützlich':'Nur beim Erkunden nützlich'):'Kein Vorrat: '+W.n,1.4,me.id)}}
-if(ended&&k==='Enter')endNext();if(ended&&(k==='ArrowRight'||k==='ArrowLeft'))endPage(k==='ArrowRight'?1:0)});
+if(ended&&k==='Enter')endNext();if(ended&&(k==='ArrowRight'||k==='ArrowLeft'))endPage(ended.pg+(k==='ArrowRight'?1:-1))});
 cv.addEventListener('keyup',e=>{const k=kn(e);keys[k]=0;if(aimG===3&&k==='3'){aimG=0;if(aimOk(3)&&!paused&&scr==='play'){const[tx,ty]=aimRaw(),sp=trapSpot(me,trapKind(me),tx,ty);if(!sp.ok){SND.ev('deny');ban(sp.why,1.4,me.id)}else reqThrow(3,sp.x,sp.y)}}if(aimG&&(k==='4'||k==='5')&&+k===aimG){const n=aimG;aimG=0;if(aimOk(n)&&!paused&&scr==='play'){const a=aimPoint();if(a.blocked){SND.ev('deny');ban('Wurf blockiert: Weg versperrt',1.4,me.id)}else reqThrow(n,a.x,a.y)}}});
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
 /* Maus fangen (MLOCK): gesperrt ist der Zeiger nur im laufenden Spiel (nicht in Menues, Pause, Ergebnis). Gesperrt rechnet mousemove mit movementX/Y (auf logische Pixel umgerechnet, am Bildrand geklemmt)
@@ -2834,7 +2873,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;if(NET.spec){specClick(mouse.sx,mouse.sy);return}mouse.down=1;if(spwOn&&!paused&&!ended)reqSpw()});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={VER,duelJobs:()=>NET.duel?duelJobs():null,duelOpen,duelJoin,duelReady,duelLeave,seedFor,parseJoin,chatOk,evt,fitSnap,specQ:()=>spQ.length,spec:()=>({t:specT,free:specFree,all:specAll,chips:specChips.map(c=>({id:c.id,x:c.x,y:c.y,w:c.w,h:c.h}))}),specClick,titleNote:()=>titleNote,setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={VER,duelCmp,duelNext,duelJobs:()=>NET.duel?duelJobs():null,duelOpen,duelJoin,duelReady,duelLeave,seedFor,parseJoin,chatOk,evt,fitSnap,specQ:()=>spQ.length,spec:()=>({t:specT,free:specFree,all:specAll,chips:specChips.map(c=>({id:c.id,x:c.x,y:c.y,w:c.w,h:c.h}))}),specClick,titleNote:()=>titleNote,setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})(&zu=1)?$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase(),{spec:!!m[2]})}
