@@ -120,5 +120,18 @@ function live(o){o=Object.assign({k:3,n:1,cut:6,trials:10,sneak:true,idle:60,spr
 function liveSweep(n,from,o){const acc={},cnt={};for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario('jewel');D.setSeedMode('random');D.setLage([]);D.setN(1);D.buildLay(D.layoutFor(sd));RC.clear();
   const g=D.get().npcs.filter(q=>q.k==='grd').length,r=live(o),key=g+'W';cnt[key]=(cnt[key]||0)+1;acc[key]=(acc[key]||0)+r}
  const out={seeds:cnt};for(const key in acc)out[key]=+(acc[key]/cnt[key]).toFixed(2);return out}
-window.stealth={measure,sweep,record,team,teamSweep,rules,rulesSweep,live,liveSweep};
+// Ausschalten (T5, Oktober 2026): Anteil der Zeit, in dem man eine Wache von hinten ausschalten kann, ohne dass eine ANDERE Wache zusieht (Stelle 30 Pixel hinter ihr, Halten CFG.ko.t, Sichtregel wie beim Schleichen, Kameras und Personal nicht beachtet).
+// Die Anfahrt ist unverdaechtig (ohne Beute, ausserhalb der Sperrzone), nur das Halten zaehlt. Ergebnis: win = mittlerer Anteil der Zeit mit Fenster je Wache, wait = mittlere Wartezeit (s) bis zum naechsten Fenster, any = Anteil der Zeit, in dem mindestens eine Wache ein Fenster hat.
+function ko(o){o=Object.assign({secs:150,runs:2,sneak:true},o||{});const K=D.CFG.ko,rm=o.sneak?.65:1,sight=D.lgM('sight'),win=Math.ceil(K.t*HZ),R={guards:0,win:0,wait:0,any:0,n:0};
+ for(let r=0;r<o.runs;r++){const rec=record(o.secs),N=rec.length,G=rec[0]?rec[0].length:0;if(!G)continue;R.guards=G;
+  const good=[];for(let gi=0;gi<G;gi++){const g=new Array(N).fill(false);
+   for(let i=0;i<N;i++){let can=true;for(let k=0;k<win&&can;k++){const s=rec[(i+k)%N];if(s.length!==G){can=false;break}const q=s[gi],sx=q[0]+Math.cos(q[2]+Math.PI)*30,sy=q[1]+Math.sin(q[2]+Math.PI)*30;if(D.isSol(Math.floor(sx/T),Math.floor(sy/T))){can=false;break}
+     for(let j=0;j<G;j++){if(j===gi)continue;const w=s[j];if(D.canSee(w[0],w[1],w[2],w[3],w[4]*rm*sight,sx,sy)){can=false;break}}}g[i]=can}
+   good.push(g);let ok=0;for(let i=0;i<N;i++)if(g[i])ok++;R.win+=ok/N;
+   let nxt=1e9,sum=0;const next=new Array(2*N);for(let i=2*N-1;i>=0;i--){if(g[i%N])nxt=i;next[i]=nxt}for(let i=0;i<N;i++)sum+=next[i]>=1e9?N/HZ:(next[i]-i)/HZ;R.wait+=sum/N}
+  let any=0;for(let i=0;i<N;i++)if(good.some(g=>g[i]))any++;R.any+=any/N;R.n++}
+ if(R.n){R.win=+(R.win/(R.n*R.guards)).toFixed(2);R.wait=+(R.wait/(R.n*R.guards)).toFixed(1);R.any=+(R.any/R.n).toFixed(2)}return R}
+function koSweep(sc,n,from,o){const rows=[];for(let i=0;i<n;i++){const sd=(from||1)+i*3;D.setScenario(sc);D.setSeedMode('random');D.setLage([]);D.buildLay(D.layoutFor(sd));const m=ko(o);m.seed=sd;rows.push(m)}
+ const avg=k=>+(rows.reduce((a,m)=>a+m[k],0)/(rows.length||1)).toFixed(2);return{sc,n:rows.length,win:avg('win'),wait:avg('wait'),any:avg('any'),rows:rows.map(m=>[m.seed,m.guards,m.win,m.wait,m.any])}}
+window.stealth={measure,sweep,record,team,teamSweep,rules,rulesSweep,live,liveSweep,ko,koSweep};
 })();
