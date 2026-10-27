@@ -189,7 +189,7 @@ return{def:'resume',back:'resume',t:[
 {id:'resume',x:330,y:158,w:300,h:50,kind:'p',key:'p',act:'resume',title:'Weiter',chip:'P'},
 {id:'help',x:330,y:218,w:300,h:50,key:'?',act:'ui:help',icon:'help',title:'So wird gespielt'},
 {id:'opt',x:330,y:278,w:300,h:50,key:'o',act:'ui:options',icon:'opt',title:'Optionen'}].concat(kl?[{id:'kick',x:330,y:338,w:300,h:50,act:'ui:kick',title:'Mitspieler entfernen'}]:[],[
-{id:'leave',x:330,y:338+dy,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen'}]),
+{id:'leave',x:330,y:338+dy,w:300,h:50,kind:'x',key:'q',act:'ui:confirm',arg:{k:'leave'},title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':NET.spec?'Zuschauen beenden':'Raum verlassen'}]),
 deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle=Y;g.font='bold 34px monospace';g.fillText('PAUSE',480,122);
 g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424+dy);fhBadge(480,446+dy,'c')}}}
 /* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
