@@ -13,7 +13,7 @@ function pair(){const A={closed:0,onmsg:null,onclose:null},B={closed:0,onmsg:nul
 const snd=(from,to)=>{let last=0;return m=>{if(from.closed)return;const js=JSON.stringify(m),b=new TextEncoder().encode(js).length;stat.n++;if(b>stat.max)stat.max=b;if(b>=16300){stat.big++;return}   // wie PeerJS: JSON-Nachrichten ab 16.300 Byte gehen nicht raus (message-too-big)
 const d=JSON.parse(js);last=Math.max(last,t+dl());put(()=>{if(!to.closed&&to.onmsg)to.onmsg(d)},last-t)}};
 const cls=(from,to)=>()=>{if(from.closed)return;from.closed=1;put(()=>{if(!to.closed){to.closed=1;to.onclose&&to.onclose()}},lat+jit+5)};
-A.send=snd(A,B);B.send=snd(B,A);A.close=cls(A,B);B.close=cls(B,A);return[A,B]}
+A.send=snd(A,B);B.send=snd(B,A);A.buffered=B.buffered=function(){return this.bufAmt|0};A.close=cls(A,B);B.close=cls(B,A);return[A,B]}   // buffered(): Platzhalter fuer den Sendepuffer der Verbindung (Rueckstau-Schutz der Zuschauer), ein Test setzt c.bufAmt (Byte)
 return{
 host(code,h){rooms[code]=h;put(()=>h.onOpen&&h.onOpen(),1);return{close(){delete rooms[code]}}},
 join(code,h){const r=rooms[code];if(!r){put(()=>h.onError('peer-unavailable'),1);return{close(){}}}
