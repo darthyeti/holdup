@@ -44,5 +44,17 @@
   }
   // addSpec(G, name): ein weiterer Zuschauer tritt dem Raum von G.A bei (auch mitten im Spiel), G.run tickt ihn mit
   function addSpec(G, name) { const S = mkInst(G.net, name || 's' + G.insts.length); G.insts.push(S); S.joinRoom(G.A.NET.code, { spec: true }); return S; }
-  window.CT = { mkGame, sig, diff, mkLobby, addSpec };
+  // mkDuel(nA, nB, lat, jit): Wettkampf-Aufbau (Spur W): zwei Raeume mit zwei Hosts in einer Test-Leitung, Team A (Host A plus nA-1 Mitspieler) und Team B (Host B plus nB-1), beide in der Lobby, jedes Team mit eigener Serie (opt.session),
+  // noch ohne Verbindung zwischen den Hosts. pa und pb = die Spieler je Team, run(sec) tickt alle, sA und sB = die Serien. Host A heisst Anna, Host B Bert.
+  const freshSession = () => ({ wallet: 0, own: {}, cons: {}, wear: { vest: null, helm: null }, round: 0, earned: 0, best: 0, heat: 0, law: false, pts: 0, sk: {}, sk0: null, quiet: 0 });
+  function mkDuel(nA, nB, lat, jit) {
+    const net = LoopNet(lat == null ? 40 : lat, jit || 0), insts = [], sA = freshSession(), sB = freshSession(), A = mkInst(net, 'a', sA), B = mkInst(net, 'b', sB); insts.push(A, B);
+    const run = sec => { for (let i = 0; i < Math.round(sec * 60); i++) step(insts, net, 1 / 60); };
+    A.hostRoom(); B.hostRoom(); run(.2); A.setName('Anna'); B.setName('Bert');
+    const pa = [A], pb = [B];
+    for (let k = 1; k < nA; k++) { const C = mkInst(net, 'a' + k, sA); insts.push(C); pa.push(C); C.joinRoom(A.NET.code); run(2); }
+    for (let k = 1; k < nB; k++) { const C = mkInst(net, 'b' + k, sB); insts.push(C); pb.push(C); C.joinRoom(B.NET.code); run(2); }
+    return { net, A, B, pa, pb, insts, run, sA, sB };
+  }
+  window.CT = { mkGame, sig, diff, mkLobby, addSpec, mkDuel };
 })();

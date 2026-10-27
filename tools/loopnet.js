@@ -20,8 +20,8 @@ join(code,h){const r=rooms[code];if(!r){put(()=>h.onError('peer-unavailable'),1)
 const[A,B]=pair();put(()=>{r.onConn(B);h.onOpen(A)},dl());return{close(){A.close()}}},
 advance(dt){t+=dt*1000;q.sort((a,b)=>a.at-b.at);while(q.length&&q[0].at<=t){q.shift().fn()}},
 get pending(){return q.length},stat,get now(){return t},lat:()=>lat,setLat(l,j){lat=l;jit=j||0}}}
-function mkInst(net,name){const cv=document.createElement('canvas');cv.width=1920;cv.height=1088;cv.tabIndex=0;cv.dataset.inst=name;document.body.appendChild(cv);cv.style.display='none';
-const before=window.__dbgs.length;window.__mkInst({cv,noLoop:true,transport:net});const d=window.__dbgs[before];d.name=name;d.cv=cv;d.CFG.vanLock=0;d.setFocus(true);return d}   // Sperrfrist des Funks aus: die Tests rufen den Wagen sofort (32-fluchtwagen setzt sie wieder)
+function mkInst(net,name,sess){const cv=document.createElement('canvas');cv.width=1920;cv.height=1088;cv.tabIndex=0;cv.dataset.inst=name;document.body.appendChild(cv);cv.style.display='none';
+const before=window.__dbgs.length;window.__mkInst({cv,noLoop:true,transport:net,session:sess});const d=window.__dbgs[before];d.name=name;d.cv=cv;d.CFG.vanLock=0;d.setFocus(true);return d}   // Sperrfrist des Funks aus: die Tests rufen den Wagen sofort (32-fluchtwagen setzt sie wieder)
 function step(list,net,dt){for(const d of list)d.tick(dt);net.advance(dt)}
 window.LoopNet=LoopNet;window.mkInst=mkInst;window.step=step;
 })();
