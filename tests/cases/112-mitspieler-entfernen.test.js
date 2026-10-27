@@ -19,7 +19,7 @@ module.exports = [
       await setup(t);
       const r = await t.page.evaluate(`(() => { const o = {}, L = (${LOBBY})(3), [A, B, C] = L.all, ids = d => d.ui().tiles().map(q => q.id);
         o.kachel = [ids(A).includes('kick'), ids(B).includes('kick')]; o.layoutLobby = OV.check(A, {});
-        MT.click(A, 'kick'); o.liste = ids(A).filter(s => /^kk:/.test(s)); o.m1 = A.ui().modal(); o.layout1 = OV.check(A, { modal: true }); o.text1 = OV.drawn(A).filter(s => /ENTFERNEN|Bo|Cyrill/.test(s));
+        MT.click(A, 'kick'); o.liste = ids(A).filter(s => /^kk:/.test(s)); o.m1 = A.ui().modal(); o.layout1 = OV.check(A, { modal: true }); o.text1 = OV.drawn(A).filter(s => /ENTFERNEN|TEILNEHMER|Bo|Cyrill/.test(s));
         MT.click(A, 'kk:1'); o.m2 = A.ui().modal(); o.text2 = OV.drawn(A).filter(s => /entfernt|ENTFERNEN/.test(s)); o.layout2 = OV.check(A, { modal: true });
         MT.click(A, 'no'); o.zurueck = [A.ui().modal(), ids(A).filter(s => /^kk:/.test(s))]; MT.click(A, 'kk:1'); MT.click(A, 'yes'); L.run(1.5);
         o.scr = [A.state().scr, B.state().scr, C.state().scr]; o.roles = [A.state().role, B.state().role, C.state().role];
@@ -28,7 +28,7 @@ module.exports = [
       t.eq(r.kachel, [true, false], 'die Kachel Mitspieler gibt es nur beim Host');
       t.eq(r.layoutLobby, [], 'Lobby mit Kachel ueberlappt nichts');
       t.eq(r.m1, 'kick', 'der Klick oeffnet die Liste'); t.eq(r.liste, ['kk:1', 'kk:2'], 'eine Kachel je Mitspieler');
-      t.eq(r.layout1, [], 'Liste ueberlappt nichts'); t.ok(r.text1.some(s => /ENTFERNEN/.test(s)), 'Titel der Liste: ' + JSON.stringify(r.text1));
+      t.eq(r.layout1, [], 'Liste ueberlappt nichts'); t.ok(r.text1.some(s => /ENTFERNEN|TEILNEHMER/.test(s)), 'Titel der Liste: ' + JSON.stringify(r.text1));
       t.eq(r.m2, 'confirm', 'ein Klick fragt zurueck'); t.ok(r.text2.some(s => /Bo wird aus dem Raum entfernt/.test(s)), 'die Frage nennt den Namen: ' + JSON.stringify(r.text2)); t.eq(r.layout2, [], 'Rueckfrage ueberlappt nichts');
       t.eq(r.zurueck, ['kick', ['kk:1', 'kk:2']], 'Zurueck in der Rueckfrage fuehrt zur Liste');
       t.eq(r.scr, ['lobby', 'title', 'lobby'], 'der Gewaehlte landet auf dem Titel, die anderen bleiben in der Lobby');

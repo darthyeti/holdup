@@ -193,6 +193,54 @@ Tests (zuerst, alles mit der Test-Leitung in einer Seite machbar, denn `LoopNet`
 | W3 | Zuschauer im Duell: Zweitverbindung, Übersichtskarte mit beiden Teams, Umschalten der vollen Ansicht, Verzögerung | mittel bis groß | Z1 bis Z3, W2 |
 | W4 | (Idee) zweite volle Ansicht nebeneinander. Nur falls die Messung auf Tills Rechner zeigt, dass zwei volle Bilder ruckelfrei gehen. | groß | W3 |
 
+## Spur R: Raum zuerst (Menüführung, Rollen, Wettkampf in einem Raum)
+
+Anlass (27. Oktober 2026): Till hat den Wettkampf gespielt, die Menüführung war nicht intuitiv. Die Bestandsaufnahme (Ist-Fluss) fand fünf Stellen: der Wettkampf steht nur als Fenster in der Lobby, die Raumcode-Seite bedient drei Zwecke (Mitspielen, Zuschauen, Wettkampf-Beitritt), Verlassen führt aus der Lobby in den Hub und aus Shop, Pause und Ergebnis zum Titel, die große Kachel unten rechts hat über zehn Namen, und Bereit tut bei ungleich großen Teams still nichts. Till hat sein Zielbild gezeichnet und mit Regeln ergänzt. **Auftrag (Till, 27. Oktober 2026): Plan schreiben und direkt umsetzen.**
+
+### Entwurf (Tills Zielbild)
+
+- **Titel:** Serie starten, Coop, Optionen, Hilfe gleichrangig. Serie starten geht zur Auftragswahl (wie heute, die laufende Serie geht zuerst in den Shop).
+- **Coop-Seite:** nur noch Raum erstellen, Raum beitreten und der Name. Zuschauen ist keine eigene Kachel mehr.
+- **Raum:** Der Raum mit Code entsteht sofort. Der Host wählt darin den Modus: Coop spielen, Coop Wettkampf (ein dritter bleibt offen und wird erst gezeigt, wenn er existiert). Wer über den Code beitritt, ist Teilnehmer, der Modus ist Sache des Hosts. Alle sehen die Teilnehmerliste.
+- **Rollen:** Zuschauer ist eine Rolle im Raum. Jeder kann sich selbst zum Zuschauer machen (und zurück, solange ein Platz frei ist), der Host kann es auch für andere. Wer beitritt, wenn alle Spielerplätze belegt sind, wird Zuschauer. Der Host kann jederzeit Teilnehmer entfernen.
+- **Grenzen:** Raum bis 14 Teilnehmer. Coop-Raum bis 10 (4 Spieler plus 6 Zuschauer), ab 11 Teilnehmern ist Coop spielen grau. Wettkampf-Raum bis 14 (zwei Teams zu je 4 plus 6 Zuschauer), jederzeit startbar, auch mit weniger.
+- **Wettkampf-Raum:** ein Raum mit Team 1, Team 2 und Zuschauern. Jeder ordnet sich selbst zu, der Host kann es ebenfalls. Der Ersteller ist Team 1, Platz 1. Der erste Spieler jedes Teams ist der Session-Host seines Teams, damit laufen wieder zwei Spiele (die Spiel-Schicht und die Duell-Leitung aus W1 bis W3 bleiben).
+- **Chat:** In allen drei Raumarten gibt es ein kleines Chat-Fenster zur Abstimmung.
+
+### Die vier offenen Punkte (Vorschläge, mit "umsetzen" angenommen)
+
+1. **Verschieden große Teams:** Start ab einem Spieler je Team. Bei ungleicher Größe steht in der Lobby ein gelber Hinweis, der Host entscheidet. (Heute, W1, lassen sich ungleiche Teams nicht bereit melden. Das fällt in R2 weg, die Wertung vergleicht dann Beute und Zeit trotz verschiedener Teamgröße, der Hinweis nennt das.)
+2. **Verbindung zu Team-Host 2:** Sie entsteht schon in der Lobby, sobald jemand Team 2 beitritt, die Liste zeigt je Spieler einen Haken, gestartet wird, wenn alle Haken da sind. So scheitert ein strenger Router vor dem Start statt mitten im Spiel.
+3. **Host fällt aus:** Es gibt keinen Host-Wechsel. Fällt Team-Host 2 aus, endet nur das Spiel von Team 2, Team 1 spielt zu Ende. Fällt der Raum-Host aus (er ist zugleich Host von Team 1), spielt Team 2 zu Ende, danach löst sich der Raum auf, eine Revanche entfällt. Vor dem Start schließt der Raum, wenn der Ersteller geht (wie heute).
+4. **Reihenfolge im Team:** Der Raum-Host darf die Reihenfolge ändern, die Lobby zeigt, wer Team-Host ist.
+
+### Annahmen für R
+
+- Rollenwechsel gibt es nur in der Lobby, nicht im laufenden Spiel.
+- Der Host kann den Modus in der Lobby zurücknehmen, solange nicht gestartet wurde. Die Rollen bleiben erhalten.
+- Der Chat in der Lobby ist ein gemeinsamer Raum-Chat für alle, auch Zuschauer (Kanal 2). Im Spiel bleiben Team-Chat (Kanal 0) und Tribüne (Kanal 1).
+- "Verlassen" bleibt, wie es ist (Lobby in den Hub, sonst Titel). Eine Vereinheitlichung ist ein eigener, kleiner Schritt und nicht Teil von R.
+- Zwei Schichten: eine neue **Raum-Schicht** (bis 14 Teilnehmer mit Rolle, Chat, Kick) über der heutigen **Spiel-Schicht** (Roster mit höchstens 4 Spielern, ein Host rechnet). Der Coop-Raum ist Raum plus heutige Lobby, der Wettkampf Raum plus zwei Spiel-Schichten.
+
+### Stufe 1 (R1): Raum zuerst, Coop-Raum
+
+- **Netz:** `NET.mode` ist `''` (Modus offen), `'coop'` oder `'duel'`. Der Host setzt ihn (`setMode`), `ros` trägt ihn als `md`, Clients lesen ihn dort. Kein neuer Nachrichtentyp für den Modus. Neu: `role` (Client an Host: `p` oder `s`), `rol` (Host an Client: neue Rolle, die Antwort ist ein neues `wel`). Der Host verschiebt dabei die Verbindung zwischen `NET.conns` (Spieler, Id, Roster-Eintrag) und `NET.specs` (Zuschauer, `sid`), `wel` setzt `NET.spec` auf den neuen Wert (bisher wurde es nie zurückgesetzt).
+- **Überlauf:** Ist kein Spielerplatz frei, wird ein Beitritt zum Zuschauer (statt "Der Raum ist voll"), solange Zuschauer erlaubt und Plätze frei sind. Die Grenzen bleiben in R1 die heutigen (4 plus 6 gleich 10), die Werte 10 und 14 kommen mit R2, weil erst der Wettkampf-Raum mehr als vier Spieler hat.
+- **Wettkampf in R1:** Der Modus Coop Wettkampf zeigt die heutige Lobby mit dem Fenster Wettkampf (eröffnen oder beitreten). Das ist ein Übergang bis R2, es gibt dort noch zwei Räume mit zwei Codes.
+- **Chat:** Kanal 2 in der Lobby: Spieler und Zuschauer schreiben, der Host prüft (`cleanChat`, Zeitsperre) und sendet an alle. In der Lobby zeigt ein festes Fenster die letzten Zeilen (Taste C schreibt, wie bisher).
+- **Menüs:** Coop-Seite mit zwei Kacheln und Namen. Raum-Bildschirm in drei Zuständen (Modus offen, Coop, Wettkampf). Eine Kachel Rolle (Zuschauer werden oder Mitspielen), die Liste der Teilnehmer mit Rollenwechsel und Entfernen für den Host, nur noch ein Link (Einladungslink). Der Link mit `&zu=1` bleibt gültig (Zuschauer-Rolle beim Beitritt).
+- **Test-Zugang:** `__dbg.setMode`, `__dbg.setRole`. `startCoop` (programmatisch) verlangt keinen Modus, nur die Kachel Starten der Lobby tut es.
+- **Tests:** neuer Test `126-raum-zuerst` (Modus, Rollenwechsel in beide Richtungen, Überlauf, Entfernen, Lobby-Chat, Menüfluss). Anzupassen: 70, 80, 85, 112, 113, 121 (Hub-Kachel Zuschauen, Link-Kacheln).
+
+### Stufe 2 (R2): Wettkampf-Raum (Entwurf, Feinplanung nach R1)
+
+- **Raum-Schicht:** `NET.room` hält die Teilnehmer (Id, Name, Rolle, Team, Haken). Der Raum-Host hält alle Verbindungen der Lobby (bis 13), sie laufen auch für Team 2.
+- **Teams:** Jeder Spieler wählt Team 1, Team 2 oder Zuschauer, der Host ordnet um und ändert die Reihenfolge. Platz 1 ist der Team-Host. Team 1: der Raum-Host. Team 2: ein Spieler, der beim Zuordnen als Erster dort ist.
+- **Verbindungsaufbau in der Lobby:** Der Team-Host von Team 2 öffnet einen eigenen Raumcode im Hintergrund (er bleibt unsichtbar), der Raum-Host schickt den Code an die Spieler von Team 2, jeder verbindet sich und meldet den Haken. Die Verbindung der beiden Team-Hosts untereinander ist die Duell-Leitung aus W1 (Raum-Host als Leiter).
+- **Spiel:** zwei Spiele wie heute (W1 bis W3), Zuschauer verbinden sich wie in W3 mit beiden Hosts, die Übersichtskarte und die Verzögerung bleiben. Ergebnis, Shop-Gleichtakt, Revanche wie W2, mit den Abbruchregeln von Punkt 3.
+- **Grenzen:** Raum 14, Wettkampf 2 mal 4 plus 6 Zuschauer, Coop spielen ab 11 Teilnehmern grau. Gelber Hinweis bei ungleichen Teams (Punkt 1).
+- **Aufwand (Schätzung):** der Umfang von W1 bis W3, weil Verbindungsaufbau, Zuschauer und die Tests 122 bis 124 neu geschnitten werden.
+
 ## Reihenfolge und Abhängigkeiten
 
 1. **F1, F2** (Funk, Markierung): unabhängig, sofort nützlich, der kleinste Hebel für das Zusammenspiel.
@@ -201,6 +249,7 @@ Tests (zuerst, alles mit der Test-Leitung in einer Seite machbar, denn `LoopNet`
 4. **Z1 bis Z4** (Zuschauer): das Fundament für den Wettkampf, trägt gleich die Platzvergabe nach `hi` für die Gegner-Leitung.
 5. **W1, W2, W3** (Wettkampf).
 6. Unabhängig dazwischen möglich: Serien-Code S1 bis S3 (macht aus der Auftragsliste einen teilbaren Code).
+7. **R1, R2** (Spur R, Raum zuerst): nach W3 gebaut, R2 setzt R1 voraus (Rollen, Modus, Raum-Chat).
 
 Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netzformat: F1, F3, Z1, W0, W1, W2 und W3 erhöhen je `VER`. Wegen "kein Test-Stopp" kann alles nacheinander gebaut werden, jeder Schritt mit schnellem Testlauf, Mutanten und kurzem Spieltest-Hinweis in docs/offen-und-spieltest.md.
 
@@ -254,6 +303,8 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 | W1 Wettkampf: Leitung, Bereit, Gleichtakt, Duell-Lobby | gebaut am 27. Oktober 2026 (`VER` 48, Test `122-wettkampf-leitung`, Einzelheiten in docs/coop-und-netz.md, Wettkampf) |
 | W2 Wettkampf: Live-Vergleich, Wertung, Ergebnisseite, Shop-Gleichtakt, Ausscheiden, Abschluss, Revanche | gebaut am 27. Oktober 2026 (`VER` 49, Test `123-wettkampf-vergleich`, Einzelheiten in docs/coop-und-netz.md, Wettkampf) |
 | W3 Wettkampf: Zuschauer im Duell (Zweitverbindung, Übersichtskarte, Umschalten, Verzögerung) | gebaut am 27. Oktober 2026 (`VER` 50, Test `124-wettkampf-zuschauer`, Einzelheiten in docs/coop-und-netz.md, Wettkampf) |
+| R1 Raum zuerst: Modus, Rollen, Überlauf, Lobby-Chat | gebaut am 27. Oktober 2026 (`VER` 52, `UI_API` 11, Test `126-raum-zuerst`, Einzelheiten in docs/coop-und-netz.md, Raum zuerst) |
+| R2 Wettkampf-Raum: Teams, Team-Hosts, Verbindungsaufbau mit Haken | geplant, nach R1 |
 
 ## Änderungsprotokoll
 
@@ -269,4 +320,6 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 - v1.9 (27. Oktober 2026): Z4 gebaut (Menüs und Tribünen-Chat), damit ist die Spur Z fertig. Abweichungen und Festlegungen: (1) Die Zuschauer-Kachel im Hub ist eine flache Kachel unter dem Namensfeld (drei gleich große Kacheln in einer Zeile hätten die Titel abgeschnitten). (2) Die Lobby des Hosts hat `Spieler-Link`, `Zuschauer-Link` und den Schalter `Zuschauer: an/aus` (ein Zuschauer-Link in der Zwischenablage schaltet auch die Raumcode-Seite auf Zuschauen). (3) Die Tribüne geht **nur an Zuschauer**, Spieler und Host sehen sie nicht (Entscheidung beim Bau, gegen Mitschauen und Zuflüstern im Wettkampf; die Annahme im Plan sagte nur "Kanal Tribüne"). (4) Der Host kann Zuschauer über dieselbe Liste wie Mitspieler entfernen. (5) Kein `VER`-Sprung, weil das Kanalfeld von Anfang an da war und der Build-Abgleich beim Beitritt alte Seiten abweist.
 - v1.10 (27. Oktober 2026): W1 gebaut (Gegner-Leitung). Abweichungen und Festlegungen: (1) Statt einer Nachricht `cfg` steckt die Liste der Aufträge im `go` des Leiters (A würfelt sie erst, wenn beide bereit sind), `hi` und `ok` tragen Teamgröße und Länge. (2) Der Gast verbindet sich mit dem Leiter über eine zweite Verbindung (`TR.join`), nicht über die Verbindung seines Raums. (3) Eine Serie je Instanz (`opt.session`) wurde vorgezogen, weil zwei Teams in einer Test-Seite sonst dieselbe Serie (Konto, Fahndung, Runde) teilen würden. (4) Die Lobby der Hosts bekommt vier Kacheln in der Zeile, die Adresse des Raums wird dort nicht mehr angezeigt. (5) Ungleiche Teams lassen sich nicht bereit melden (kein Freundschaftsspiel). (6) `VER` steigt auf 48, obwohl der Build-Abgleich beim Beitritt alte Seiten ohnehin abweist.
 - v1.11 (27. Oktober 2026): W2 gebaut (Live-Vergleich und Wertung). Abweichungen und Festlegungen: (1) Gegen die Annahme im Plan (die Zeit steht in `t`) heißt das Feld in `pg` `tm`, weil `t` die Nachrichtenart ist. (2) Eine gescheiterte Runde (`soft`) zählt als gespielt, bringt aber keinen Sieg, keine Beute und keine Zeit in die Wertung, nur eine verlorene Serie scheidet aus. (3) Der Leiter startet den nächsten Auftrag erst, wenn er das Ergebnis des Gegners für den letzten Auftrag hat (sonst bräuchte ein Team beim Gleichtakt ein Ergebnis, das noch auf dem Weg ist). (4) Beim Ausscheiden und beim Abbruch spielt das andere Team ohne Warten weiter, das Urteil steht erst, wenn es selbst fertig ist. (5) Die Revanche setzt beide Serien zurück (`sessReset`) und schickt den Mitspielern `lb`, die Leitung bleibt. (6) `VER` steigt auf 49. (7) Kein Stechen bei Gleichstand: `UNENTSCHIEDEN`.
+- v1.13 (27. Oktober 2026): Spur R geplant (Raum zuerst), nach Tills Spielen des Wettkampfs und seiner Zeichnung. Ausgangspunkt war die Menüführung (Ist-Fluss, Zielbild als Seiten im Artifact-Bereich der Sitzung). Zwei Stufen: R1 Raum zuerst mit Modus, Rollen und Lobby-Chat, R2 Wettkampf in einem Raum mit zwei Team-Hosts. Till: "Du kannst den Plan schreiben und dann auch direkt umsetzen".
+- v1.14 (27. Oktober 2026): R1 gebaut (Raum zuerst). Abweichungen und Festlegungen: (1) Die Grenzen bleiben in R1 die heutigen (4 Spieler plus 6 Zuschauer), 10 und 14 gibt es mit R2, weil erst der Wettkampf-Raum mehr als vier Spieler hat. (2) Der Modus Coop Wettkampf zeigt in R1 die bisherige Lobby mit dem Fenster Wettkampf (zwei Räume). Dort ist Starten gesperrt, bis ein Gegner verbunden ist (vorher startete ein offener, aber unverbundener Wettkampf ein gewöhnliches Spiel), `duelOpen` und `duelJoin` setzen den Modus selbst. (3) Die Lobby hat nur noch einen Link (Spieler- und Zuschauer-Link in einem, der Link `&zu=1` bleibt gültig). (4) Die Lobby ist neu aufgeteilt (links Spielerzeilen und Zuschauernamen, rechts das Chat-Fenster, unten zwei Kachelreihen), das Fahndungs-Badge steht oben links, der Schalter Zuschauer an/aus heißt ohne Doppelpunkt und hat keine Taste mehr (die Tasten U und L entfallen, der Titel brauchte die Breite). (5) Der Host sieht in der Lobby die Kachel Teilnehmer statt Mitspieler, die Liste hat je Zeile Rolle und Entfernen. (6) Der Raum-Chat ersetzt in der Lobby die kurzlebigen Zeilen am Rand, Tribüne (Kanal 1) und Team-Chat (Kanal 0) gelten nur noch im Spiel. (7) Die lokalen Pixel-Schnappschüsse von `70-menues` (nicht eingecheckt) sind neu anzulegen. (8) `VER` steigt auf 52.
 - v1.12 (27. Oktober 2026): W3 gebaut (Zuschauer im Wettkampf), damit sind W1 bis W3 fertig, W4 (zwei volle Ansichten) bleibt eine Idee. Abweichungen und Festlegungen: (1) Statt in `wel` (der Duell-Code stünde dann nur beim Beitritt) schickt der Host den Code des Gegner-Raums als eigene Nachricht `dlc` und nur an Zuschauer, auch wenn der Wettkampf erst nach dem Beitritt entsteht. (2) Beide Ströme laufen durch eine gemeinsame Warteschlange mit Verbindungs-Marke, die Rolle (Haupt oder Zweit) wird erst beim Entnehmen entschieden, so bleibt die Reihenfolge nach einem Umschalten richtig. (3) Die Karte kommt aus `pl` und `en` der Zweitverbindung (verkleinerte Kopie), die zweite Welt gibt es nicht. (4) Umschalten baut die Welt aus dem letzten `go` oder `rst` des anderen Stroms, nicht über einen neuen Beitritt (kein Warten auf die nächste Runde). (5) Ablehnung, Abriss und Version der Zweitverbindung beenden nur sie, ein Wiederholen gibt es nicht. (6) Taste T (auch auf dem Ergebnisbild) und Klick auf die Karte schalten um. (7) `VER` steigt auf 50.

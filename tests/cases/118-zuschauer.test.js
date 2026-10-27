@@ -15,7 +15,7 @@ module.exports = [
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js');
       const r = await t.page.evaluate(`(() => { const G = CT.mkLobby(2, 2), [A, B] = G.players, [S1, S2] = G.specs, o = {};
         o.roster = A.NET.roster.length; o.specs = A.NET.specs.length; o.ids = [S1.NET.myId, S2.NET.myId]; o.flag = [S1.NET.spec, S2.NET.spec, A.NET.spec, B.NET.spec];
-        o.namen = [A, B, S1, S2].map(d => d.NET.spNames.length); o.startTitel = MT.tile(A, 'start').title; o.spielerRoster = [B, S1].map(d => d.NET.roster.length);
+        o.namen = [A, B, S1, S2].map(d => d.NET.spNames.length); A.setMode('coop'); G.run(.3); o.startTitel = MT.tile(A, 'start').title; o.spielerRoster = [B, S1].map(d => d.NET.roster.length);
         const C = mkInst(G.net, 'c2'); G.insts.push(C); C.joinRoom(A.NET.code); G.run(2); o.drittes = [A.NET.roster.length, A.NET.specs.length, C.NET.myId];
         return o; })()`);
       t.eq([r.roster, r.specs], [2, 2], 'zwei Spieler im Roster, zwei Zuschauer in NET.specs');

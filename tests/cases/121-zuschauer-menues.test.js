@@ -6,48 +6,43 @@ const SEND = `(d, s) => { MT.k(d, d.state().scr === 'play' ? 'Enter' : 'c'); MT.
 
 module.exports = [
   {
-    name: 'Coop-Hub: Kachel Zuschauen fuehrt zur Raumcode-Seite mit der Kachel Zuschauen, der Beitritt macht einen Zuschauer (ohne Platz), Raum beitreten bleibt ein Spieler; ein Zuschauer-Link wird beim Einfuegen erkannt',
+    name: 'Coop-Hub und Link: der Hub hat keine Kachel Zuschauen mehr (R1), ein Beitritt mit spec macht einen Zuschauer (ohne Platz), Raum beitreten bleibt ein Spieler; ein Zuschauer-Link wird beim Einfuegen erkannt und schaltet die Raumcode-Seite auf Zuschauen',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js');
       const r = await t.page.evaluate(`(async () => { const net = LoopNet(40, 0), A = mkInst(net, 'a'), S = mkInst(net, 's'), P = mkInst(net, 'p'), X = mkInst(net, 'x'), all = [A, S, P, X], run = sec => { for (let i = 0; i < sec * 60; i++) step(all, net, 1 / 60); }, o = {};
         A.hostRoom(); run(1); const code = A.NET.code;
-        S.toTitle(); S.ui().tiles(); MT.click(S, 'coop'); o.hub = S.ui().tiles().map(q => q.id); MT.click(S, 'spec'); o.seite = [S.state().scr, MT.tile(S, 'go').title, S.NET.joinSpec];
-        MT.type(S, code.toLowerCase()); MT.click(S, 'go'); run(3); o.spec = [S.NET.spec, S.state().scr, A.NET.specs.length, A.NET.conns.length, A.NET.roster.length];
-        P.toTitle(); P.ui().tiles(); MT.click(P, 'coop'); MT.click(P, 'spec'); MT.click(P, 'back'); MT.click(P, 'join'); o.seiteP = [P.state().scr, MT.tile(P, 'go').title, P.NET.joinSpec]; MT.type(P, code); MT.click(P, 'go'); run(3); o.spieler = [P.NET.spec, P.state().scr, A.NET.specs.length, A.NET.conns.length, A.NET.roster.length];
+        S.toTitle(); S.ui().tiles(); MT.click(S, 'coop'); o.hub = S.ui().tiles().map(q => q.id).filter(id => id !== 'name' && id !== 'back'); S.joinRoom(code, { spec: true }); run(3); o.spec = [S.NET.spec, S.state().scr, A.NET.specs.length, A.NET.conns.length, A.NET.roster.length];
+        P.toTitle(); P.ui().tiles(); MT.click(P, 'coop'); MT.click(P, 'join'); o.seiteP = [P.state().scr, MT.tile(P, 'go').title, P.NET.joinSpec]; MT.type(P, code); MT.click(P, 'go'); run(3); o.spieler = [P.NET.spec, P.state().scr, A.NET.specs.length, A.NET.conns.length, A.NET.roster.length];
         Object.defineProperty(navigator, 'clipboard', { value: { readText: () => Promise.resolve('Link: http://x.de/index.html#raum=K7Q2&zu=1') }, configurable: true });
         X.toTitle(); X.ui().tiles(); MT.click(X, 'coop'); MT.click(X, 'join'); o.vorPaste = [X.NET.joinSpec, MT.tile(X, 'go').title]; MT.click(X, 'paste'); await new Promise(r => setTimeout(r, 60)); X.ui().tiles(); o.paste = [X.NET.joinSpec, MT.tile(X, 'go').title];
-        X.toTitle(); X.ui().tiles(); X.SESSION.wallet = 500; MT.click(X, 'coop'); MT.click(X, 'spec'); o.stand = X.ui().tiles().map(q => q.id); MT.click(X, 'yes'); X.ui().tiles(); o.nachStand = [X.state().scr, X.NET.joinSpec]; X.SESSION.wallet = 0;
         o.parse = [A.parseJoin('https://x.de/y/index.html#raum=AB3D&zu=1'), A.parseJoin('https://x.de/y/index.html#raum=AB3D'), A.parseJoin(' ab3d '), A.parseJoin('nichts'), A.parseJoin('ZU=1 RAUM=K7Q2')];
         return o; })()`);
-      t.eq(r.hub.slice(0, 3), ['host', 'join', 'spec'], 'der Hub hat die Kachel Zuschauen neben Erstellen und Beitreten');
-      t.eq(r.seite, ['join', 'Zuschauen', true], 'Raumcode-Seite im Zuschauer-Modus: Kachel heisst Zuschauen');
+      t.eq(r.hub, ['host', 'join'], 'der Hub hat nur Raum erstellen und Raum beitreten');
       t.eq(r.spec, [true, 'lobby', 1, 0, 1], 'Beitritt als Zuschauer: kein Platz im Roster (nur der Host), keine Spielerverbindung, ein Eintrag in NET.specs');
       t.eq(r.seiteP, ['join', 'Beitreten', false], 'Raum beitreten bleibt Beitreten'); t.eq(r.spieler, [false, 'lobby', 1, 1, 2], 'Beitritt als Spieler: Platz im Roster');
-      t.eq(r.seiteP, ['join', 'Beitreten', false], 'nach einem Besuch bei Zuschauen und Zurueck ist Raum beitreten wieder Beitreten (kein Zuschauer-Modus haengengeblieben)');
       t.eq(r.vorPaste, [false, 'Beitreten'], 'Einfuegen: vorher Spieler-Modus'); t.eq(r.paste, [true, 'Zuschauen'], 'ein eingefuegter Zuschauer-Link schaltet auf Zuschauen');
-      t.eq(r.stand, ['yes', 'no'], 'mit einem Stand (Konto) fragt auch Zuschauen zurueck (der Beitritt setzt den Stand zurueck)'); t.eq(r.nachStand, ['join', true], 'nach Ja geht es zur Raumcode-Seite im Zuschauer-Modus');
       t.eq(r.parse, [{ code: 'AB3D', spec: true }, { code: 'AB3D', spec: false }, { code: 'AB3D', spec: false }, null, { code: 'K7Q2', spec: true }], 'parseJoin erkennt Code und Zuschauer-Link');
     },
   },
   {
-    name: 'Lobby des Hosts: Link kopieren (Spieler) und Zuschauer-Link legen die richtigen Adressen in die Zwischenablage, der Schalter Zuschauer an/aus stellt CFG.spec.on um und weist neue Zuschauer ab, "Zuschauer: N" steht in der Lobby bei Host, Spielern und Zuschauern, Mitspieler und Zuschauer haben die Link-Kacheln nicht',
+    name: 'Lobby des Hosts: Link kopieren legt die Adresse mit dem Code in die Zwischenablage (R1: ein Link, der Zuschauer-Link entfaellt), der Schalter Zuschauer an/aus stellt CFG.spec.on um und weist neue Zuschauer ab, "Zuschauer (N)" steht in der Lobby bei Host, Spielern und Zuschauern, Mitspieler und Zuschauer haben Link und Schalter nicht',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js'); await t.loadInpage('overlap.js');
       const r = await t.page.evaluate(`(() => { const G = CT.mkLobby(2, 1), [A, B] = G.players, [S] = G.specs, o = {}, texts = ${TEXTS}, copied = [];
         Object.defineProperty(navigator, 'clipboard', { value: { writeText: s => { copied.push(s); return Promise.resolve(); } }, configurable: true });
-        G.run(1); const code = A.NET.code; MT.click(A, 'link'); MT.click(A, 'linkz'); o.links = copied.map(s => s.replace(/^.*#/, '#')); o.code = code;
+        MT.click(A, 'mCoop'); G.run(1); const code = A.NET.code; MT.click(A, 'link'); o.links = copied.map(s => s.replace(/^.*#/, '#')); o.code = code;
         o.kickTitel = (MT.tile(A, 'kick') || {}).title;
-        o.tilesA = ['link', 'linkz', 'specOn'].map(id => !!MT.tile(A, id)); o.tilesB = ['link', 'linkz', 'specOn'].map(id => !!MT.tile(B, id)); o.tilesS = ['link', 'linkz', 'specOn'].map(id => !!MT.tile(S, id));
+        o.tilesA = ['link', 'specOn'].map(id => !!MT.tile(A, id)); o.tilesB = ['link', 'specOn'].map(id => !!MT.tile(B, id)); o.tilesS = ['link', 'specOn'].map(id => !!MT.tile(S, id));
         o.an = MT.tile(A, 'specOn').title; MT.click(A, 'specOn'); G.run(.2); o.aus = [MT.tile(A, 'specOn').title, A.CFG.spec.on]; const S2 = CT.addSpec(G); G.run(2); o.abgewiesen = [S2.state().scr, S2.titleNote() && S2.titleNote().s, A.NET.specs.length];
         MT.click(A, 'specOn'); G.run(.2); o.wieder = [MT.tile(A, 'specOn').title, A.CFG.spec.on]; const S3 = CT.addSpec(G); G.run(2); o.drei = [S3.state().scr, A.NET.specs.length];
-        o.txt = [A, B, S, S3].map(d => texts(d).filter(s => /^Zuschauer: \\d/.test(s))); o.ueberlappung = OV.check(A);
+        o.txt = [A, B, S, S3].map(d => texts(d).filter(s => /^Zuschauer \\(\\d\\)/.test(s))); o.ueberlappung = OV.check(A);
         return o; })()`);
-      t.eq(r.links, ['#raum=' + r.code, '#raum=' + r.code + '&zu=1'], 'Link kopieren: Spielerlink, Zuschauer-Link: mit &zu=1');
-      t.eq(r.kickTitel, 'Mitspieler', 'mit Mitspielern heisst die Kachel zum Entfernen Mitspieler');
-      t.eq(r.tilesA, [true, true, true], 'der Host hat Link, Zuschauer-Link und Schalter'); t.eq(r.tilesB, [false, false, false], 'Mitspieler nicht'); t.eq(r.tilesS, [false, false, false], 'Zuschauer nicht');
-      t.eq(r.an, 'Zuschauer: an', 'Standard: an'); t.eq(r.aus, ['Zuschauer: aus', 0], 'der Schalter stellt CFG.spec.on auf 0');
-      t.eq(r.abgewiesen, ['title', 'Zuschauer sind nicht erlaubt.', 1], 'ein neuer Zuschauer wird abgewiesen, der vorhandene bleibt'); t.eq(r.wieder, ['Zuschauer: an', 1], 'wieder an'); t.eq(r.drei, ['lobby', 2], 'danach geht es wieder');
-      t.eq(r.txt, [['Zuschauer: 2'], ['Zuschauer: 2'], ['Zuschauer: 2'], ['Zuschauer: 2']], 'die Lobby nennt die Zahl der Zuschauer bei allen'); t.eq(r.ueberlappung, [], 'keine Ueberdeckung in der Lobby des Hosts mit Zuschauern');
+      t.eq(r.links, ['#raum=' + r.code], 'Link kopieren: ein Einladungslink mit dem Code');
+      t.eq(r.kickTitel, 'Teilnehmer', 'die Kachel zum Entfernen und Umstellen heisst in der Lobby Teilnehmer');
+      t.eq(r.tilesA, [true, true], 'der Host hat Link und Schalter'); t.eq(r.tilesB, [false, false], 'Mitspieler nicht'); t.eq(r.tilesS, [false, false], 'Zuschauer nicht');
+      t.eq(r.an, 'Zuschauer an', 'Standard: an'); t.eq(r.aus, ['Zuschauer aus', 0], 'der Schalter stellt CFG.spec.on auf 0');
+      t.eq(r.abgewiesen, ['title', 'Zuschauer sind nicht erlaubt.', 1], 'ein neuer Zuschauer wird abgewiesen, der vorhandene bleibt'); t.eq(r.wieder, ['Zuschauer an', 1], 'wieder an'); t.eq(r.drei, ['lobby', 2], 'danach geht es wieder');
+      t.eq(r.txt, [['Zuschauer (2): Zuschauer 1, Zuschauer 2'], ['Zuschauer (2): Zuschauer 1, Zuschauer 2'], ['Zuschauer (2): Zuschauer 1, Zuschauer 2'], ['Zuschauer (2): Zuschauer 1, Zuschauer 2']], 'die Lobby nennt Zahl und Namen der Zuschauer bei allen'); t.eq(r.ueberlappung, [], 'keine Ueberdeckung in der Lobby des Hosts mit Zuschauern');
     },
   },
   {
@@ -55,12 +50,12 @@ module.exports = [
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js');
       const r = await t.page.evaluate(`(() => { const G = CT.mkLobby(1, 2), [A] = G.players, [S1, S2] = G.specs, o = {}, texts = ${TEXTS}; G.run(1);
-        o.kick = !!MT.tile(A, 'kick'); o.kickTitel = MT.tile(A, 'kick').title; MT.click(A, 'kick'); o.dlg1 = texts(A).filter(s => /ENTFERNEN/.test(s)); o.liste = A.ui().tiles().map(q => q.id + ':' + (q.title || '')).filter(s => /^kk:/.test(s)); const id = A.ui().tiles().find(q => /^kk:/.test(q.id)).id;
+        o.kick = !!MT.tile(A, 'kick'); o.kickTitel = MT.tile(A, 'kick').title; MT.click(A, 'kick'); o.dlg1 = texts(A).filter(s => /ENTFERNEN|TEILNEHMER/.test(s)); o.liste = A.ui().tiles().map(q => q.id + ':' + (q.title || '')).filter(s => /^kn:/.test(s)); const id = A.ui().tiles().find(q => /^kk:/.test(q.id)).id;
         MT.click(A, id); o.rueck = A.ui().tiles().map(q => q.id); o.dlg2 = texts(A).filter(s => /ENTFERNEN|entfernt/.test(s)); MT.click(A, 'yes'); G.run(1.5);
         o.danach = [S1.state().scr, S1.titleNote() && S1.titleNote().s, S2.state().scr, A.NET.specs.length, S2.NET.spNames.length, A.NET.spNames.length];
         o.nochMal = A.ui().tiles().find(q => q.id === 'kick') ? 1 : 0; return o; })()`);
       t.eq(r.kick, true, 'die Kachel zum Entfernen erscheint auch mit nur Zuschauern'); t.eq(r.liste.length, 2, 'zwei Eintraege'); t.ok(r.liste.every(s => /Zuschauer/.test(s)), 'die Eintraege tragen den Namen des Zuschauers: ' + JSON.stringify(r.liste));
-      t.eq(r.kickTitel, 'Zuschauer', 'nur Zuschauer im Raum: die Kachel heisst Zuschauer'); t.eq(r.dlg1, ['ZUSCHAUER ENTFERNEN'], 'Titel der Liste'); t.ok(r.dlg2.includes('ZUSCHAUER ENTFERNEN') && r.dlg2.some(s => /Zuschauer \d wird aus dem Raum/.test(s)), 'die Rueckfrage nennt den Zuschauer mit Namen: ' + JSON.stringify(r.dlg2));
+      t.eq(r.kickTitel, 'Teilnehmer', 'nur Zuschauer im Raum: die Kachel heisst in der Lobby Teilnehmer'); t.eq(r.dlg1, ['TEILNEHMER'], 'Titel der Liste in der Lobby'); t.ok(r.dlg2.includes('ZUSCHAUER ENTFERNEN') && r.dlg2.some(s => /Zuschauer \d wird aus dem Raum/.test(s)), 'die Rueckfrage nennt den Zuschauer mit Namen: ' + JSON.stringify(r.dlg2));
       t.eq(r.rueck, ['yes', 'no'], 'Rueckfrage');
       t.eq(r.danach, ['title', 'Der Host hat dich aus dem Raum entfernt.', 'lobby', 1, 1, 1], 'der Zuschauer ist weg mit Meldung, der andere bleibt, die Liste ist kuerzer');
     },
@@ -76,10 +71,10 @@ module.exports = [
     },
   },
   {
-    name: 'Tribuene: Zuschauer schreiben in Kanal 1 (Taste C in den Menues, Enter im Spiel) und lesen einander und den Team-Chat; Spieler und Host sehen die Tribuene nicht; der Host setzt den Namen, bereinigt, begrenzt, und verwirft Kanal 1 von Spielern und Kanal 0 von Zuschauern',
+    name: 'Tribuene: Zuschauer schreiben im Spiel in Kanal 1 (Enter; in der Lobby gilt seit R1 der Raum-Chat, Kanal 2) und lesen einander und den Team-Chat; Spieler und Host sehen die Tribuene nicht; der Host setzt den Namen, bereinigt, begrenzt, und verwirft Kanal 1 von Spielern und Kanal 0 von Zuschauern',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js');
-      const r = await t.page.evaluate(`(() => { const G = CT.mkLobby(2, 2), [A, B] = G.players, [S1, S2] = G.specs, o = {}, send = ${SEND}, ls = d => d.chat().lines.map(l => [l.id, l.s, l.c]); G.run(1);
+      const r = await t.page.evaluate(`(() => { const G = CT.mkGame('bank', 321, 2, 40, 0), A = G.A, B = G.clients[0], S1 = CT.addSpec(G), S2 = CT.addSpec(G), o = {}, send = ${SEND}, ls = d => d.chat().lines.map(l => [l.id, l.s, l.c]); G.run(2);
         o.chatOk = [S1, S2].map(d => d.chatOk ? d.chatOk() : null);
         let klick = 0; const snd0 = S1.SND.chat; S1.SND.chat = function () { klick++; return snd0.apply(this, arguments); };
         send(S1, 'Hallo Tribuene'); G.run(.5); o.klick = klick; S1.SND.chat = snd0; o.s1 = ls(S1); o.s2 = ls(S2); o.a = ls(A); o.b = ls(B);

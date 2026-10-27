@@ -146,6 +146,7 @@ module.exports = [
         const run = s => { for (let i = 0; i < s * 60; i++) step(insts, net, 1 / 60); };
         MT.click(A, 'coop'); MT.click(A, 'host'); run(1); o.host = [A.state().scr, A.NET.code];
         MT.click(B, 'coop'); MT.click(B, 'join'); MT.type(B, A.NET.code.toLowerCase()); MT.k(B, 'Enter'); run(2); o.client = B.state().scr;
+        MT.click(A, 'mCoop'); run(.5);   // R1: erst der Modus, dann Auftrag und Start
         o.clientJob = MT.tile(B, 'job').nofocus; MT.k(B, 't'); o.clientT = B.state().scr;
         MT.k(A, 't'); o.hostMission = [A.state().scr, A.SC.from]; MT.click(A, 'job:gas'); MT.click(A, 'start'); o.back = [A.state().scr, A.scen()];
         run(1); o.clientSees = B.scen();
@@ -196,6 +197,7 @@ module.exports = [
         const A = mkInst(net, 'a'), B = mkInst(net, 'b'), C = mkInst(net, 'c'), all = [A, B, C]; A.setName('Ada'); B.setName('Bo'); C.setName('Cy');
         const run = s => { for (let i = 0; i < s * 60; i++) step(all, net, 1 / 60); };
         A.hostRoom(); run(.5); B.joinRoom(A.NET.code); run(1); C.joinRoom(A.NET.code); run(2);
+        MT.shot(A, out, 'lobby-ohne-modus'); MT.shot(C, out, 'lobby-client-ohne-modus'); MT.click(A, 'mCoop'); run(.5);   // R1: Modus waehlen
         MT.shot(A, out, 'lobby-host'); MT.shot(C, out, 'lobby-client');
         MT.k(A, 't'); MT.shot(A, out, 'mission-lobby'); MT.click(A, 'job:truck'); MT.click(A, 'start'); run(1); MT.shot(C, out, 'lobby-client-truck');
         MT.hover(A, 'link'); MT.shot(A, out, 'lobby-host-hover');

@@ -145,20 +145,20 @@ module.exports = [
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js'); await t.loadInpage('overlap.js');
       const r = await t.page.evaluate(`(() => { const D = CT.mkDuel(2, 2), { A, B, pa, pb } = D, o = {}, texts = ${TEXTS}, gegner = d => texts(d).filter(s => /^Gegner: /.test(s));
-        o.kachel = [!!MT.tile(A, 'duel'), !!MT.tile(B, 'duel'), !!MT.tile(pa[1], 'duel')]; o.start0 = [MT.tile(A, 'start').title, MT.tile(B, 'start').title];
+        o.ohne = [!!MT.tile(A, 'duel'), !!MT.tile(B, 'duel')]; MT.click(A, 'mDuel'); MT.click(B, 'mDuel'); D.run(.3); o.kachel = [!!MT.tile(A, 'duel'), !!MT.tile(B, 'duel'), !!MT.tile(pa[1], 'duel')]; o.start0 = [MT.tile(A, 'start').title, MT.tile(B, 'start').title, !!MT.tile(A, 'start').lock];
         MT.click(A, 'duel'); o.modal1 = A.ui().tiles().map(q => q.id); MT.click(A, 'duelNew'); D.run(.3); o.eroeffnet = [A.NET.duel && A.NET.duel.lead, A.state().scr, A.ui().tiles().some(q => q.id === 'duelNew')];
         MT.click(B, 'duel'); o.modal2 = B.ui().tiles().map(q => q.id); MT.click(B, 'duelJoin'); o.seite = [B.state().scr, MT.tile(B, 'go').title, B.NET.joinDuel]; MT.type(B, A.NET.code.toLowerCase()); MT.click(B, 'go'); D.run(1.5);
         o.verbunden = [!!B.NET.duel.link, B.state().scr, B.NET.joinDuel]; o.start1 = [MT.tile(A, 'start').title, MT.tile(B, 'start').title];
         o.zeilen = [gegner(A), gegner(B), gegner(pa[1]), gegner(pb[1])]; MT.click(A, 'start'); D.run(.6); o.bereit = [MT.tile(A, 'start').title, A.NET.duel.rdy, gegner(B), gegner(pb[1])]; o.ueber = [OV.check(A), OV.check(B), OV.check(pa[1])];
         MT.click(A, 'duel'); o.modal3 = A.ui().tiles().map(q => q.id); o.ueberModal = OV.check(A, { modal: true }); MT.click(A, 'duelEnd'); D.run(1); o.ende = [A.NET.duel, B.NET.duel, MT.tile(A, 'start').title];
         MT.click(B, 'duel'); MT.click(B, 'duelJoin'); MT.k(B, 'Escape'); o.zurueck = [B.state().scr, B.NET.joinDuel]; return o; })()`);
-      t.eq(r.kachel, [true, true, false], 'die Kachel Wettkampf hat nur ein Host'); t.eq(r.start0, ['Starten (2 Spieler)', 'Starten (2 Spieler)'], 'ohne Gegner heisst die Kachel Starten');
+      t.eq(r.ohne, [false, false], 'ohne Modus Coop Wettkampf gibt es die Kachel Wettkampf nicht (R1)'); t.eq(r.kachel, [true, true, false], 'im Modus Coop Wettkampf hat nur ein Host die Kachel Wettkampf'); t.eq(r.start0, ['Starten', 'Starten', true], 'ohne Gegner heisst die Kachel Starten und ist gesperrt');
       t.eq(r.modal1, ['duelNew', 'duelJoin', 'no'], 'Fenster ohne Wettkampf: eroeffnen, beitreten, zurueck'); t.eq(r.eroeffnet, [true, 'lobby', false], 'eroeffnet, Fenster zu, noch in der Lobby');
       t.eq(r.modal2, ['duelNew', 'duelJoin', 'no'], 'beim anderen Host dasselbe Fenster'); t.eq(r.seite, ['join', 'Verbinden', true], 'Beitreten fuehrt zur Raumcode-Seite im Wettkampf-Modus'); t.eq(r.verbunden, [true, 'lobby', false], 'verbunden, wieder in der Lobby, Modus aus');
       t.eq(r.start1, ['Bereit', 'Bereit'], 'mit Gegner heisst die Kachel Bereit'); t.eq(r.zeilen, [['Gegner: Bert, 2 Spieler'], ['Gegner: Anna, 2 Spieler'], ['Gegner: Bert, 2 Spieler'], ['Gegner: Anna, 2 Spieler']], 'die Gegner-Zeile steht bei Hosts und Mitspielern');
       t.eq(r.bereit[0], 'Bereit zurücknehmen', 'nach dem Klick: zuruecknehmen'); t.eq(r.bereit[1], 1, 'A ist bereit'); t.eq(r.bereit.slice(2), [['Gegner: Anna, 2 Spieler, bereit'], ['Gegner: Anna, 2 Spieler, bereit']], 'B und sein Mitspieler sehen es');
       t.eq(r.ueber, [[], [], []], 'keine Ueberdeckung in der Lobby (Host, Gast, Mitspieler)'); t.eq(r.modal3, ['duelEnd', 'no'], 'mit Wettkampf: beenden und zurueck'); t.eq(r.ueberModal, [], 'Fenster ohne Ueberdeckung');
-      t.eq([r.ende[0], r.ende[1], r.ende[2]], [null, null, 'Starten (2 Spieler)'], 'Beenden: beide Seiten aus'); t.eq(r.zurueck, ['lobby', false], 'Esc auf der Raumcode-Seite fuehrt in die Lobby zurueck');
+      t.eq([r.ende[0], r.ende[1], r.ende[2]], [null, null, 'Starten'], 'Beenden: beide Seiten aus'); t.eq(r.zurueck, ['lobby', false], 'Esc auf der Raumcode-Seite fuehrt in die Lobby zurueck');
     },
   },
 ];
