@@ -33,5 +33,16 @@
     else { const i = a.its.findIndex((x, j) => x !== b.its[j]); if (i >= 0) out.push('its[' + i + '] ' + a.its[i] + ' != ' + b.its[i]); }
     return out;
   }
-  window.CT = { mkGame, sig, diff };
+  // mkLobby(n, ns, lat, jit): Host A, n-1 Mitspieler und ns Zuschauer im Raum, noch in der Lobby (nicht gestartet). players = die n Spieler, specs = die Zuschauer, run(sec) tickt alle.
+  function mkLobby(n, ns, lat, jit) {
+    const net = LoopNet(lat == null ? 40 : lat, jit || 0), insts = [], A = mkInst(net, 'a'); insts.push(A);
+    const run = sec => { for (let i = 0; i < Math.round(sec * 60); i++) step(insts, net, 1 / 60); };
+    A.hostRoom(); run(.2);
+    for (let k = 1; k < n; k++) { const C = mkInst(net, 'c' + k); insts.push(C); C.joinRoom(A.NET.code); run(2); }
+    const specs = []; for (let k = 0; k < (ns || 0); k++) { const S = mkInst(net, 's' + k); insts.push(S); specs.push(S); S.joinRoom(A.NET.code, { spec: true }); run(2); }
+    return { net, A, insts, players: insts.slice(0, n), specs, run };
+  }
+  // addSpec(G, name): ein weiterer Zuschauer tritt dem Raum von G.A bei (auch mitten im Spiel), G.run tickt ihn mit
+  function addSpec(G, name) { const S = mkInst(G.net, name || 's' + G.insts.length); G.insts.push(S); S.joinRoom(G.A.NET.code, { spec: true }); return S; }
+  window.CT = { mkGame, sig, diff, mkLobby, addSpec };
 })();

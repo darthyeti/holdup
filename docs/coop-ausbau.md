@@ -247,7 +247,8 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 | F2 Markierung | gebaut am 26. Oktober 2026 (kein neues Netzformat, Test `115-markierung`, Einzelheiten in docs/coop-und-netz.md, Funkspruch) |
 | F3 Textchat | gebaut am 26. Oktober 2026 (`VER` 45, Test `116-chat`, Optionen-Kachel Chat, Einzelheiten in docs/coop-und-netz.md, Textchat) |
 | W0 feste NPC-Ausgangslage | gebaut am 26. Oktober 2026 (`VER` 46, Test `117-npc-seed`, Einzelheiten in docs/karte-und-layout.md) |
-| Z1 bis Z4 Zuschauer | offen |
+| Z1 Zuschauer: Verbindung, Platzhalter-Figur, Spät-Einstieg | gebaut am 26. Oktober 2026 (`VER` 47, Test `118-zuschauer`, Einzelheiten in docs/coop-und-netz.md, Zuschauer), Beitritt vorerst nur über den Link `#raum=CODE&zu=1` |
+| Z2 bis Z4 Zuschauer: Bedienung, Last, Menüs | offen |
 | W1 bis W3 Wettkampf | offen |
 
 ## Änderungsprotokoll
@@ -258,3 +259,4 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 - v1.3 (26. Oktober 2026): F2 gebaut (Markierung). Der Randpfeil liegt auf der Linie von der Bildmitte zum Ziel, nicht in der Ecke (bei einem Ziel schräg oben rechts also am oberen Rand).
 - v1.4 (26. Oktober 2026): F3 gebaut (Textchat). Abweichungen vom Plan: (1) Die Zeitsperre läuft auf einer eigenen Uhr, weil die Spielzeit des Hosts beim Ergebnis stillsteht (der Test fand es). (2) Statt eines festen Chatfeldes in jedem Menü gibt es kurzlebige Zeilen am Rand, die in den dichten Menüs kurz über Kacheln liegen: Ein freier Platz ohne Überdeckung existiert in Shop, Auftragswahl und Ergebnis nicht. (3) Die Option Chat steht als halbe Kachel neben Funk, die Anleitung und der Spielbildschirm brauchten dafür engere Zeilen (19 Pixel).
 - v1.5 (26. Oktober 2026): W0 gebaut (feste NPC-Ausgangslage). Erweitert gegenüber dem Plan: Auch die Wege sind seed-fest (Wartezeiten und Ziele je NPC aus einem eigenen Strom `n.rr`), denn die Patrouille einer Wache entscheidet im Schleichen mehr als ihr Startpunkt. Nach dem Bau misst `tools/messung-netz.js gleich` Ausgangslage und NPCs nach 20 s Erkunden als gleich (davor verschieden). Die Standardwartezeit in `mk` war ein toter Zufallsaufruf (alle NPCs überschreiben sie).
+- v1.6 (26. Oktober 2026): Z1 gebaut (Zuschauer, in einem Commit mit Beitritt in der Lobby und im laufenden Spiel). Abweichungen vom Plan: (1) `rst` trägt `n`, weil ein Zuschauer, der in Shop oder Auftragswahl einsteigt, `go` nie bekam und die Spielerzahl sonst nicht kennt. (2) Der Zuschauer kann den Link `#raum=CODE&zu=1` schon jetzt benutzen, die Kachel kommt mit Z4. (3) Ein Beitritt während des Ergebnisses wartet bis zur nächsten Runde (die Welt der beendeten Runde wäre ohne Schnappschüsse starr). (4) Zuschauer bekommen die privaten Ereignisse einzelner Spieler nicht, auch nicht die des gefolgten.

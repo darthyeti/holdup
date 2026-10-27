@@ -144,9 +144,9 @@ function sLobby(){const{NET,PC,pn,myName,nameEdit,time,scenario,roomLink}=X,host
 const t=[];for(let i=0;i<4;i++){const r=NET.roster.find(q=>q.id===i),me=i===NET.myId;t.push({id:'p'+i,x:122+i*182,y:268,w:170,h:84,nofocus:!me,act:me?'name':'',key:me?'n':'',nochip:!me,pl:{i,r,me},paint:paintPlayer,chip:me?'N':''})}
 t.push({id:'job',x:122,y:366,w:350,h:56,key:host?'t':'',act:host?'missionOpen':'',nofocus:!host,title:'Auftrag: '+jobOf(scenario).n,sub:host?'Klick zum Ändern':'Der Host wählt den Auftrag',nochip:!host,icon:jobOf(scenario).i});
 if(host)t.push({id:'link',x:486,y:366,w:352,h:56,key:'l',act:'copyLink',icon:'link',title:'Link kopieren',sub:'Einladung zum Weitergeben'});
-t.push({id:'leave',x:60,y:488,w:200,h:40,kind:'g',act:'lobbyBack',title:host?'Raum schließen':'Verlassen',chip:'Esc'});
+t.push({id:'leave',x:60,y:488,w:200,h:40,kind:'g',act:'lobbyBack',title:host?'Raum schließen':NET.spec?'Zuschauen beenden':'Verlassen',chip:'Esc'});
 if(kickList().length)t.push({id:'kick',x:60,y:438,w:200,h:40,kind:'g',act:'ui:kick',title:'Mitspieler'});
-t.push({id:'start',x:620,y:484,w:280,h:44,kind:host?'p':'g',act:host?'lobbyStart':'',nofocus:!host,title:host?'Starten ('+NET.roster.length+(NET.roster.length===1?' Spieler)':' Spieler)'):'Der Host startet ...',chip:host?'Enter':'',nochip:!host});
+t.push({id:'start',x:620,y:484,w:280,h:44,kind:host?'p':'g',act:host?'lobbyStart':'',nofocus:!host,title:host?'Starten ('+NET.roster.length+(NET.roster.length===1?' Spieler)':' Spieler)'):NET.spec?'Du schaust zu ...':'Der Host startet ...',chip:host?'Enter':'',nochip:!host});
 return{def:host?'start':'leave',back:'lobbyBack',t,deco(){const{g}=X;g.textAlign='center';g.font='13px monospace';g.fillStyle=TX;g.fillText(host?'Dein Raum':'Du bist im Raum',480,188);g.font='bold 44px monospace';g.fillStyle=A;g.fillText(NET.code,480,232);
 if(host){g.font='11px monospace';g.fillStyle=MU;g.fillText(roomLink(),480,252)}g.font='13px monospace';g.fillStyle=Y;g.fillText(NET.msg||'',480,452);fhBadge(480,474,'c')}}}
 function paintPlayer(t){const{g,PC,pn,myName,nameEdit,time,NET}=X,{i,r,me}=t.pl;g.textAlign='left';g.fillStyle=r?PC[i].c:'rgba(255,255,255,.18)';g.fillRect(t.x+12,t.y+14,12,12);
@@ -194,8 +194,8 @@ deco(){const{g,VW,VH,SESSION,fmt}=X;g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0
 g.font='12px monospace';g.fillStyle=MU;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'',480,424+dy);fhBadge(480,446+dy,'c')}}}
 /* Ergebnis: Seite 1 (Beute) zeichnet der Kern, Seite 2 (Auszeichnungen, nur Coop) zeichnet pageAw. Weiter blaettert zuerst, dann geht es in den Shop oder die neue Serie. */
 function sEnded(){const{ended,NET}=X;if(!ended)return null;const win=ended.win||ended.soft,aw=ended.aw||[],pg=aw.length?ended.pg|0:0,last=!aw.length||pg===1;
-const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
-{id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':'Raum verlassen',tf:'bold 13px monospace'}];
+const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:(last&&NET.role==='client'&&(!win||NET.spec))?'':'endNext',chip:'Enter',title:!last?'Auszeichnungen':NET.spec?'Warte auf das Team ...':win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
+{id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':NET.spec?'Zuschauen beenden':'Raum verlassen',tf:'bold 13px monospace'}];
 if(pg===1)t.push({id:'endPrev',x:250,y:468,w:190,h:58,nofocus:true,act:'endPrev',chip:'←',title:'Übersicht',tf:'bold 13px monospace'});
 if(kickList().length)t.push({id:'kick',x:40,y:420,w:190,h:40,nofocus:true,act:'ui:kick',title:'Mitspieler',tf:'bold 13px monospace'});
 return{t,back:'endBack',deco:aw.length||ended.fh?()=>{if(ended.fh&&pg!==1)pageFh(ended.fh);if(aw.length)pageAw(aw,pg)}:null}}

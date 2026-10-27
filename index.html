@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=174"></script>
+<script src="js/ui.js?v=175"></script>
 <script>
-const BUILD={n:174,d:'2026-10-26'};//BUILD
+const BUILD={n:175,d:'2026-10-27'};//BUILD
 const UI_API=10;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -255,6 +255,7 @@ jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],tries:30,crowd:{few:93,ca
 hud:{lageLines:4,lageW:28,feedW:440},
 funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
 chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
+spec:{max:6,on:1},
 museumGen:{on:1,classic:.1,ww:[7,12],ew:[9,11],dy:[0,1],vx:[-1,1],tries:30},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,32],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
@@ -1394,7 +1395,7 @@ const live=o=>!o.dead&&!o.out&&!o.gone,actv=()=>players.filter(live),plRow=o=>o.
 /* Zaehler je Spieler fuer die Auszeichnungen im Coop-Ergebnis (zaehlt nur der Host, siehe awards()) */
 const mkSt=()=>({t:0,idle:0,dist:0,work:0,acts:0,k:0,civ:0,cap:0,sh:0,ht:0,dry:0,tk:0,dn:0,rev:0,sec:0,out:0,outT:0,gad:0,bar:0,boom:0,alarm:0});
 const r1=v=>Math.round(v*10)/10,r2=v=>Math.round(v*100)/100;
-const NET={role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0},LOG=mkFlog(()=>time);
+const NET={role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0},LOG=mkFlog(()=>time);
 const WPN_ORDER=['rifle','smg','pistol'],BASEKIT={w:'pistol',vest:0,helm:0,pack:0,drill:0,pick:0,radio:0,mask:0,jam:0,med:0,sm:0,dc:0,ad:0,bt:0,vh:null,hh:null,sk:{}};
 let kits=[];
 /* Ausruestung: Stufen 0 bis 3 (SESSION.own, Werte in CFG.shop.tier), Verschleiss (vh = Weste jetzt, hh = Helmtreffer uebrig, null = voll), Verbrauchsgueter als Zaehler (jam, med, sm Rauch, dc Ablenker, ad Adrenalin, bt Brettersaetze; die Blendgranate fl ist seit MRU 1 A1 gestrichen) */
@@ -1419,6 +1420,8 @@ for(const q of['vest','helm','pack','drill','pick','radio'])r[q]=clamp(k[q]|0,0,
 for(const q of CONS)r[q]=clamp(k[q]|0,0,sh[q+'Max']);
 if(r.vest&&k.vh!=null)r.vh=clamp(+k.vh||0,0,sh.tier.vest[r.vest-1]);if(r.helm&&k.hh!=null)r.hh=clamp(k.hh|0,0,sh.helmHits[r.helm-1]);return r}
 function buildKits(){return Array.from({length:nPl},(_,i)=>{if(i===0)return curKit();const c=NET.conns.find(q=>q.pid===i);return c&&c.kit?c.kit:BASEKIT})}
+/* Platzhalter fuer einen Zuschauer: eine tote, nicht in players gefuehrte Figur (id -2), p folgt dann einem aktiven Spieler (setView), Eingabe, Funk und Chat entfallen */
+const mkGhost=()=>{const g=mkPl(0,nPl,BASEKIT);g.id=-2;g.dead=true;g.gone=true;return g};
 function mkPl(i,n,k){k=k||BASEKIT;const wp=CFG.wpn[k.w]||CFG.wpn.pistol,x=LAY.spawn.x+(i-(n-1)/2)*26,y=LAY.spawn.y;return{id:i,radT:-99,radC:-1,kit:k,wp,bag:CFG.bag+(k.pack?CFG.shop.tier.pack[k.pack-1]:0),helm:k.helm,hh:k.helm?(k.hh==null?CFG.shop.helmHits[k.helm-1]:k.hh):0,mask:k.mask,bl:0,gs:0,cg:0,jam:k.jam+skv(k,'U0','jam'),med:k.med,sm:k.sm|0,dc:(k.dc|0)+skv(k,'U0','dc'),trap:skv(k,'V3','cnt')+skv(k,'V4','cnt'),c4:skv(k,'U4','cnt'),sx:skv(k,'A3','cnt')+skv(k,'A4','cnt'),ak:skv(k,'U3','cnt'),scool:0,ad:k.ad|0,bt:Math.max(0,(k.bt|0)-1),x,y,r:9,a:-1.57,hp:100,ar:k.vest?(k.vh==null?CFG.shop.tier.vest[k.vest-1]:k.vh):0,mag:wp.mag,res:Math.round(wp.res*(1+skv(k,'A0','res'))),sw:skR(k,'V2')>=3?1:0,cool:0,rl:0,hurt:0,w:0,mv:0,rec:0,mvg:false,armed:false,units:(k.bt|0)>0?CFG.shop.btMat*CFG.bar.matU:0,bd:0,mat:(k.bt|0)>0?CFG.shop.btMat:0,dn:0,rv:0,inv:0,loot:0,chipV:0,dead:false,out:false,gone:false,flash:0,sc:0,ack:0,dw:0,dwT:0,dx:x,dy:y,sl:false,lw:0,inp:IDLE,lastIn:0,tx:x,ty:y,ta:-1.57,st:mkSt()}}
 const teamLoot=()=>secured+players.reduce((s,o)=>s+(live(o)?o.loot:0),0);
 function setView(){p=live(me)?me:(actv()[0]||me)}
@@ -1449,7 +1452,7 @@ if(k==='x'&&!ended&&canRad(me)){funkT=CFG.funk.menuT;return true}return false}
 /* Textchat (Coop, docs/coop-ausbau.md F3): Positivliste, Host prueft und setzt den Absender, bcast an alle (auch in den Menues), Kanal 0 = Team (1 ist fuer die Tribuene reserviert). Im Flugschreiber nur Absender und Laenge. */
 const CHAT_RE=/[^\p{L}\p{N} .,:;!?'"()+\-\/%&@#_]/gu,CHAT_KEY=/^[\p{L}\p{N} .,:;!?'"()+\-\/%&@#_]$/u;
 const cleanChat=s=>String(s).replace(CHAT_RE,'').replace(/ +/g,' ').trim().slice(0,CFG.chat.max).trimEnd();
-const chatOk=()=>NET.role!=='solo'&&NET.roster.length>1;
+const chatOk=()=>NET.role!=='solo'&&!NET.spec&&NET.roster.length>1;
 function chatAdd(id,s,c){chat.push({id,s,c,tm:chatClk});if(chat.length>CFG.chat.hist)chat.shift();LOG.ev('chat',[id,s.length]);if(funkMode!=='stumm'&&!(me&&id===me.id))SND.chat()}
 function chatHost(id,s,ch){if(NET.role!=='host'||ch!==0||typeof s!=='string'||!NET.roster.some(r=>r.id===id))return false;const t=cleanChat(s);if(!t)return false;
 const L=(NET.chatT[id]=(NET.chatT[id]||[]).filter(x=>chatClk-x<20)),C=CFG.chat;if((L.length&&chatClk-L[L.length-1]<C.gap)||L.length>=C.burst)return false;L.push(chatClk);
@@ -1497,7 +1500,7 @@ if(tk&&tk.cells)for(const c of tk.cells)setc(c[0],c[1],'o');tk=null;
 if(mapSeed!==null&&(LAY.seed!==mapSeed||scOf(LAY)!==jobSc||(LAY.mission.lgw||[]).join(',')!==warnFor(jobSc)))buildWorld(layoutFor(mapSeed));
 LAY.lockCells.forEach(q=>setc(q[0],q[1],'L'));(LAY.wins||[]).forEach(w=>setc(w.x,w.y,'W'));camDown=0;rT=0;blk=0;evDone={};
 phase=1;tH=0;ended=null;vaultOpen=false;secured=0;escaped=0;code=false;mon=false;sus=0;alarmT=0;alarmBy=null;banner=null;waveN=0;waveT=0;hostN=0;hostK=0;holdX=0;shX=0;policeAt=0;vanAt=CFG.vanAuto;vanArr=false;vanCalled=false;vanX=LANE.van.from;vanMode=0;vanNv=0;vanBk=0;policeShown=false;civKills=0;kills=0;flowT=0;carsLight=0;eid=0;bid=0;seq=0;pend=[];evq=[];capd=[];keyTaken=false;cargoOpen=false;capt=0;surKilled=0;radioDown=0;
-if(NET.role!=='client')kits=buildKits();players=Array.from({length:nPl},(_,i)=>mkPl(i,nPl,kits[i]));me=players[Math.min(NET.myId,nPl-1)];p=me;if(NET.role==='host')players.forEach(o=>{if(o.id>0&&!NET.conns.some(c=>c.pid===o.id)){o.gone=true;o.dc=true}});
+if(NET.role!=='client')kits=buildKits();players=Array.from({length:nPl},(_,i)=>mkPl(i,nPl,kits[i]));me=NET.spec?mkGhost():players[Math.min(NET.myId,nPl-1)];p=me;if(NET.role==='host')players.forEach(o=>{if(o.id>0&&!NET.conns.some(c=>c.pid===o.id)){o.gone=true;o.dc=true}});
 en=[];pcs=[];fps=[];bl=[];gr=[];gc=[];gq=[];smk=[];dcy=[];pt=[];cs=[];corp=[];fx=[];feed=[];pk=[];npcs=[];funkMk=[];pings=[];funkT=0;funkLast=null;
 if(NET.role!=='client')decorCars();
 dc.save();dc.setTransform(1,0,0,1,0,0);dc.clearRect(0,0,WPX*2,WPY*2);dc.restore();
@@ -1948,7 +1951,8 @@ const res={win,title,extra:extra||'',lines,hi,score,n:players.length,soft:!!soft
 if(NET.role==='host')bcast({t:'end',res});endLocal(res)}
 /* Nach einem Auftrag bleibt, was uebrig ist: Vorraete, Westenrest und Helmtreffer */
 function keepKit(){for(const q of CONS)SESSION.cons[q]=me[q]|0;if(SESSION.own.vest)SESSION.wear.vest=Math.max(0,Math.round(me.ar));if(SESSION.own.helm)SESSION.wear.helm=Math.max(0,me.hh|0)}
-function endLocal(res){const share=res.score/res.n,lines=res.lines.slice();if(res.n>1)lines.push('Dein Anteil: '+fmt(share));
+function endLocal(res){if(NET.spec){LOG.ev('ende',{win:!!res.win,soft:!!res.soft,titel:String(res.title||'').slice(0,60),score:Math.round(res.score||0)});SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines:res.lines.slice(),hi:res.hi,fh:null};return}
+const share=res.score/res.n,lines=res.lines.slice();if(res.n>1)lines.push('Dein Anteil: '+fmt(share));
 if(!res.soft)SESSION.round++;
 if(res.win&&res.sp&&typeof res.sp==='object'){const P=CFG.skill.pts,n=P.win+(res.sp.goal?P.goal:0)+(res.sp.quiet?P.quiet:res.sp.tr?0:P.loud);SESSION.pts+=n;lines.push('Skillpunkte: +'+n+' (offen '+SESSION.pts+')')}
 /* Wachsamkeit der Laeden: lautlose Siege in Folge (der Transporter hat keine Phase 1 und zaehlt nicht, soft laesst den Zaehler) */
@@ -2104,7 +2108,7 @@ if(selIt>=0&&!inReach(itsAll()[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=46,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=47,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());
@@ -2118,21 +2122,36 @@ join(code,h){const P=window.Peer;if(!P){h.onError('lib');return null}const peer=
 peer.on('open',()=>{const c=peer.connect('holdup-'+code,{serialization:'json',reliable:true});const w=wrap(c);c.on('open',()=>h.onOpen(w))});
 peer.on('error',e=>h.onError(e&&e.type||String(e)));
 return{close:()=>{try{peer.destroy()}catch(e){}}}}}}
-const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m)};
-const bcastRoster=()=>bcast({t:'ros',r:NET.roster,sc:scenario,h:SESSION.heat,q:SESSION.quiet|0,l:SESSION.law?1:0});
-function netReset(){atLast='';chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns,c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0});nPl=1;
+const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m);for(const c of NET.specs)if(c.ok)c.send(m)};
+const bcastRoster=()=>{NET.spNames=NET.specs.map(c=>c.nm);bcast({t:'ros',r:NET.roster,sp:NET.spNames,sc:scenario,h:SESSION.heat,q:SESSION.quiet|0,l:SESSION.law?1:0})};
+function netReset(){atLast='';chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0});nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
 function hostRoom(tries){netReset();hostTicker(true);const code=newCode();NET.role='host';NET.code=code;NET.msg='Raum wird erstellt ...';NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';
 NET.srv=TR.host(code,{onOpen(){NET.msg='Raum bereit. Code weitergeben.';sessReset()},onConn:hostConn,onError(e){if(e==='unavailable-id'&&(tries||0)<5)hostRoom((tries||0)+1);else{NET.msg=errTxt(e);NET.fail=1}}})}
-function hostConn(c){if(NET.role!=='host'||scr!=='lobby'){c.send({t:'rej',why:'Das Spiel läuft schon.'});setTimeout(()=>c.close(),300);return}
-const id=[1,2,3].find(i=>!NET.roster.some(r=>r.id===i));if(id===undefined){c.send({t:'rej',why:'Der Raum ist voll.'});setTimeout(()=>c.close(),300);return}
+/* Verbindungen (Coop-Ausbau Z1): Beim Aufbau wartet der Host nur auf hi, erst damit entscheidet er ueber Spieler, Zuschauer oder Abweisung (hostHello). Vor hi gilt nichts, eine Verbindung ohne hi belegt keinen Platz. */
+const rejC=(c,why)=>{c.send({t:'rej',why});setTimeout(()=>c.close(),300)};
+function hostConn(c){if(NET.role!=='host'){rejC(c,'Das Spiel läuft schon.');return}
+c.pend=true;c.onmsg=m=>{if(c.pend&&m&&m.t==='hi')hostHello(c,m)};c.onclose=()=>{c.pend=false}}
+function hostHello(c,m){c.pend=false;
+if(m.ver!==VER||m.b!==BUILD.n){rejC(c,'Versionen passen nicht (Host: Build '+BUILD.n+', du: Build '+(m.b||'?')+'). Seite neu laden.');return}
+if(m.sp)return hostSpec(c,m);
+if(scr!=='lobby'){rejC(c,'Das Spiel läuft schon.');return}
+const id=[1,2,3].find(i=>!NET.roster.some(r=>r.id===i));if(id===undefined){rejC(c,'Der Raum ist voll.');return}
 c.pid=id;c.ok=true;NET.conns.push(c);NET.roster.push({id,name:PC[id].n});LOG.ev('netz',['verbunden',id]);
-c.onmsg=m=>hostMsg(c,m);
+c.onmsg=mm=>hostMsg(c,mm);
 c.onclose=()=>{c.ok=false;LOG.ev('netz',['getrennt',c.pid]);NET.conns=NET.conns.filter(x=>x!==c);const o=players[c.pid];
 if(scr==='lobby'||scr==='shop')NET.roster=NET.roster.filter(r=>r.id!==c.pid);if(scr!=='lobby'&&o&&!o.gone){o.gone=true;o.dc=true;say(pn(c.pid)+(c.kicked?' wurde entfernt':' hat das Spiel verlassen'));checkEnd()}
 bcastRoster()};
-}
+hostMsg(c,m)}
+/* Zuschauer: kein Platz, kein Eintrag im Roster, nur in NET.specs. Sie duerfen jederzeit kommen, laeuft gerade ein Spiel (nicht beendet), bekommen sie go und bauen die Welt, sonst warten sie bis zum naechsten go oder rst. */
+function hostSpec(c,m){const F=CFG.spec;if(!F.on){rejC(c,'Zuschauer sind nicht erlaubt.');return}if(NET.specs.length>=F.max){rejC(c,'Der Raum ist voll für Zuschauer.');return}
+c.spec=true;c.ok=true;c.sid=++NET.sidN;c.nm=cleanName(m.nm)||'Zuschauer '+c.sid;NET.specs.push(c);LOG.ev('netz',['zuschauer',c.sid]);
+c.onmsg=mm=>specMsg(c,mm);
+c.onclose=()=>{c.ok=false;LOG.ev('netz',['zuschauer weg',c.sid]);NET.specs=NET.specs.filter(x=>x!==c);bcastRoster()};
+c.send({t:'wel',id:-1,sid:c.sid,ver:VER,b:BUILD.n,code:NET.code});bcastRoster();
+if(scr==='play'&&!ended)c.send({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0})}
+function specMsg(c,m){if(!m||typeof m!=='object')return;if(m.t==='ping')c.send({t:'pong',n:m.n});else if(m.t==='nm'){c.nm=cleanName(m.v)||c.nm;bcastRoster()}}
 /* Mitspieler entfernen (P6, B7): nur der Host, jederzeit. Der Abbruchweg von c.onclose laeuft sofort (Lobby und Shop: aus der Liste, im Spiel: gone mit Meldung), die Verbindung schliesst nach 250 ms, damit kick noch ankommt. */
 function kickPlayer(id){if(NET.role!=='host'||!(id>0))return false;const c=NET.conns.find(q=>q.pid===id);if(!c||c.kicked)return false;c.kicked=true;LOG.ev('netz',['entfernt',id]);try{c.send({t:'kick'})}catch(e){}const f=c.onclose;c.onclose=()=>{};if(f)f();setTimeout(()=>{try{c.close()}catch(e){}},250);return true}
 function hostMsg(c,m){if(c.kicked)return;const o=players[c.pid];
@@ -2152,29 +2171,30 @@ else if(m.t==='ping')c.send({t:'pong',n:m.n})
 else if(m.t==='lg')flogRecv(c.pid,m)
 else if(m.t==='chk')flogChk(c.pid,m)}
 function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;nPl=NET.roster.length;mapSeed=newSeed();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0});beginPlay()}
-function joinRoom(code){netReset();NET.role='client';NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
-NET.srv=TR.join(code,{onOpen(c){NET.conn=c;LOG.ev('netz','verbunden mit dem Host');c.onmsg=clientMsg;c.onclose=()=>{if(NET.role==='client'&&NET.conn===c){LOG.ev('netz','Verbindung zum Host verloren');leaveGame('Verbindung zum Host verloren.')}};c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
+function joinRoom(code,opt){netReset();NET.role='client';NET.spec=!!(opt&&opt.spec);NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
+NET.srv=TR.join(code,{onOpen(c){NET.conn=c;LOG.ev('netz','verbunden mit dem Host');c.onmsg=clientMsg;c.onclose=()=>{if(NET.role==='client'&&NET.conn===c){LOG.ev('netz','Verbindung zum Host verloren');leaveGame('Verbindung zum Host verloren.')}};c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
 setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.msg='Keine Antwort. Code prüfen und erneut versuchen.'},15000)}
 function clientMsg(m){
-if(m.t==='wel'){NET.myId=m.id;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
+if(m.t==='wel'){NET.myId=m.id;if(m.id===-1){NET.spec=true;NET.sid=m.sid|0}if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
 else if(m.t==='kick'){LOG.ev('netz','entfernt');leaveGame('Der Host hat dich aus dem Raum entfernt.')}
 else if(m.t==='ch'){const t=typeof m.s==='string'?cleanChat(m.s):'';if(t&&m.c===0&&PC[m.id|0])chatAdd(m.id|0,t,0)}
-else if(m.t==='ros'){NET.roster=m.r;if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);if(m.l!=null)SESSION.law=!!m.l}
+else if(m.t==='ros'){NET.roster=m.r;NET.spNames=Array.isArray(m.sp)?m.sp.slice(0,CFG.spec.max).map(x=>cleanName(x)):[];if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);if(m.l!=null)SESSION.law=!!m.l}
 else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='go'){nPl=m.n;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
 else if(m.t==='snap'){if(scr==='play'&&!ended){LOG.snap();applySnap(m)}}
 else if(m.t==='end'){if(scr==='play'&&!ended)endLocal(m.res)}
 else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
-else if(m.t==='rst'){if(scr==='play'||scr==='shop'){if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
+else if(m.t==='rst'){if(scr==='play'||scr==='shop'||NET.spec){if(m.n>0)nPl=m.n|0;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong'){NET.ping=performance.now()-m.n;LOG.ping(NET.ping)}
 else if(m.t==='lgq')flogSend()}
 function leaveGame(msg){LOG.ev('netz',['verlassen',String(msg||'').slice(0,60)]);netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset();titleNote={s:msg||'',t:6}}
 function beginPlay(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.init();SND.resume();SND.ev('start');cv.focus()}
 function restartRound(){scr='play';paused=false;clearKeys();mouse.down=0;reset();SND.ev('start')}
-function startNext(){mapSeed=newSeed();if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcastRoster();bcast({t:'rst',k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0})}restartRound()}
+function startNext(){mapSeed=newSeed();if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcastRoster();bcast({t:'rst',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0})}restartRound()}
 let snapT=0;
-function netHostTick(dt){if(!NET.conns.length){evq.length=0;return}snapT+=dt;if(snapT<.05)return;snapT=0;const s=buildSnap();NET.chkH.push([s.T,chkVec()]);if(NET.chkH.length>80)NET.chkH.shift();
-for(const c of NET.conns)if(c.ok)c.send(Object.assign({ev:evq.filter(e=>e[0]===-1||e[0]===c.pid).map(e=>[e[1],e[2]])},s));evq.length=0}
+function netHostTick(dt){if(!NET.conns.length&&!NET.specs.length){evq.length=0;return}snapT+=dt;if(snapT<.05)return;snapT=0;const s=buildSnap();NET.chkH.push([s.T,chkVec()]);if(NET.chkH.length>80)NET.chkH.shift();
+for(const c of NET.conns)if(c.ok)c.send(Object.assign({ev:evq.filter(e=>e[0]===-1||e[0]===c.pid).map(e=>[e[1],e[2]])},s));
+for(const c of NET.specs)if(c.ok)c.send(Object.assign({ev:evq.filter(e=>e[0]===-1).map(e=>[e[1],e[2]])},s));evq.length=0}
 function buildSnap(){return{t:'snap',T:r2(time),
 g:[phase,r2(tH),waveN,r2(waveT),policeAt,vanAt,vanArr?1:0,vanCalled?1:0,Math.round(vanX),policeShown?1:0,r1(sus),Math.round(secured),civKills,kills,escaped,vaultOpen?1:0,code?1:0,mon?1:0,r2(camDown),r2(rT),r2(blk),goal&&goal.fail?1:0,vanMode,r1(vanNv),r1(alarmT),hostN,r1(holdX),hostK,r1(shX)],
 pl:players.map(o=>[o.id,r1(o.x),r1(o.y),r2(o.a),Math.ceil(o.hp),Math.ceil(o.ar),o.mag,o.res,r2(o.units),o.loot,(o.armed?1:0)|(o.dead?2:0)|(o.out?4:0)|(o.gone?8:0)|(o.mvg?16:0)|(o.ln?32:0),r2(o.w),r2(Math.max(0,o.hurt)),r2(Math.max(0,o.rl)),o.ack,r2(o.mv),o.jam,o.med,o.mat|0,r1(Math.max(0,o.dn)),r2(o.rv),r2(Math.max(0,o.bl||0)),r2(o.gs||0),o.chipV|0,r2(o.bd),o.hh|0,o.sm|0,o.dc|0,o.ad|0,o.bt|0,o.trap|0,o.c4|0,o.sx|0,o.ak|0]),
@@ -2458,7 +2478,7 @@ ended.lines.forEach((l,i)=>{g.fillStyle=i===ended.hi?'#ffb000':i===ended.lines.l
 g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}drawChat()}
 /* Ergebnis: Seite 1 = Beute, Seite 2 = Auszeichnungen (nur Coop, nur wenn es welche gibt). Weiter blaettert erst, danach geht es in den Shop oder die neue Serie. */
 function endPage(p){if(ended&&ended.aw.length&&ended.pg!==p){ended.pg=p;SND.ev('paper')}}
-function endNext(){if(!ended)return;if(ended.aw.length&&!ended.pg)return endPage(1);if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
+function endNext(){if(!ended)return;if(ended.aw.length&&!ended.pg)return endPage(1);if(NET.spec)return;if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
 function startGame(){netReset();mapSeed=newSeed();beginPlay()}
 function toTitle(){LOG.ev('menue','Titel');netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
 /* Spielername (nur Coop): wird in localStorage 'holdup.name' gemerkt, mit 'hi' an den Host geschickt, der prueft auf Duplikate und verteilt ihn ueber die Spielerliste (NET.roster[].name). pn(id) liefert den Anzeigenamen, ohne Namen die Farbe. */
@@ -2655,14 +2675,14 @@ let chkStat={n:0,bad:0,keine:0,letzte:[]};
 function flogChk(pid,m){const T=+m.T,c=Array.isArray(m.c)?m.c.slice(0,40):null;if(!c)return;const h=NET.chkH.find(q=>q[0]===T);if(!h){chkStat.keine++;return}chkStat.n++;
 const d=[];const nm=[].concat(CHK_KEYS,players.map((o,i)=>'hp'+i),players.map((o,i)=>'beute'+i));h[1].forEach((v,i)=>{if(c[i]!==v)d.push([nm[i]||('f'+i),v,c[i]])});if(c.length!==h[1].length)d.push(['laenge',h[1].length,c.length]);
 if(d.length){chkStat.bad++;chkStat.letzte.push({t:T,spieler:pid,d});if(chkStat.letzte.length>20)chkStat.letzte.shift();LOG.evl('abgleich',[pid,T,d],.5)}}
-function flogNet(dt){if(NET.role==='client'&&scr==='play'&&!ended){NET.chkT-=dt;if(NET.chkT<=0){NET.chkT=5;NET.chkDue=true}}
+function flogNet(dt){if(NET.role==='client'&&!NET.spec&&scr==='play'&&!ended){NET.chkT-=dt;if(NET.chkT<=0){NET.chkT=5;NET.chkDue=true}}
 if(NET.lgWait>0){NET.lgWait-=dt;if(NET.lgWait<=0){NET.lgWait=0;flogSaveNow()}}}
 /* Logs der Mitspieler (Stufe B): Der Client schickt sein Log (lite: letzte 3000 Ereignisse, 1800 Messzeilen, 5 Markierungen) am Rundenende, mit F9 und auf Anfrage lgq des Hosts in Stuecken (Nachricht lg: i Kennung, k Nummer, n Anzahl, d Text, hoechstens 400 Stuecke, flogPieces haelt jedes Stueck unter 6000 Zeichen und 11.000 Byte, damit keine Nachricht die PeerJS-Grenze von 16.300 Byte je JSON-Nachricht erreicht), der Host setzt sie zusammen (NET.logs je Spieler) und schreibt sie beim Speichern unter peers in die Datei. */
 let lgId=0;
 const FL_PIECE=6000,FL_MAXN=400,FL_BYTES=11000;
 /* Zerlegt den Log-Text in Stuecke von hoechstens 6000 Zeichen und hoechstens 11.000 Byte als JSON-Zeichenkette (Umlaute und CJK-Zeichen kosten 2 bis 3 Byte, Anfuehrungszeichen und Schraegstriche verdoppeln sich), PeerJS nimmt JSON-Nachrichten nur unter 16.300 Byte an, ein Paar aus Ersatzzeichen wird nie getrennt. */
 function flogPieces(t){const enc=new TextEncoder(),out=[];let i=0;while(i<t.length){let n=FL_PIECE,q;for(;;){q=t.slice(i,i+n);const z=q.charCodeAt(q.length-1);if(q.length>1&&z>=0xd800&&z<0xdc00)q=q.slice(0,-1);if(q.length<=40||enc.encode(JSON.stringify(q)).length<=FL_BYTES)break;n=Math.floor(n*.7)}out.push(q);i+=q.length}return out}
-function flogSend(){if(NET.role!=='client'||!NET.conn)return 0;const t=JSON.stringify(LOG.dump(flogX(),true)),P=flogPieces(t),n=P.length,i=++lgId;if(n>FL_MAXN){LOG.ev('netz',['Log zu gross',t.length]);return 0}
+function flogSend(){if(NET.role!=='client'||!NET.conn||NET.spec)return 0;const t=JSON.stringify(LOG.dump(flogX(),true)),P=flogPieces(t),n=P.length,i=++lgId;if(n>FL_MAXN){LOG.ev('netz',['Log zu gross',t.length]);return 0}
 P.forEach((d,k)=>NET.conn.send({t:'lg',i,k,n,d}));LOG.ev('netz',['Log gesendet',t.length,n]);return n}
 function flogRecv(pid,m){const n=m.n|0,k=m.k|0,i=m.i|0;if(n<1||n>FL_MAXN||k<0||k>=n||typeof m.d!=='string'||m.d.length>FL_PIECE+200)return;const key=pid+':'+i,b=NET.lgBuf[key]||(NET.lgBuf[key]={n,p:[],c:0});if(b.p[k]===undefined){b.p[k]=m.d;b.c++}
 if(b.c===n){delete NET.lgBuf[key];try{const o=JSON.parse(b.p.join(''));NET.logs[pid]={at:new Date().toISOString(),bytes:b.p.reduce((a,x)=>a+x.length,0),log:o};LOG.ev('netz',['Log erhalten',pid,NET.logs[pid].bytes])}catch(e){LOG.ev('netz',['Log kaputt',pid])}}}
@@ -2677,7 +2697,7 @@ function hostTicker(on){if(on&&!hostWk){try{hostWk=new Worker(URL.createObjectUR
    und verteilt die Liste (bcastRoster). Der eigene Eintrag kommt in der Leiste aus dem lokalen Zustand. Gesendet wird nur bei Aenderung (atSync in tick). */
 let atLast='';
 const curAt=()=>scr==='lobby'?'l':scr==='shop'?'s':scr==='mission'?'m':scr==='play'?(ended?'e':'p'):'';
-function atSync(){if(NET.role==='solo'){atLast='';return}const a=curAt();if(!a||a===atLast)return;
+function atSync(){if(NET.role==='solo'||NET.spec){atLast='';return}const a=curAt();if(!a||a===atLast)return;
 if(NET.role==='host'){const r=NET.roster.find(q=>q.id===0);if(r){atLast=a;r.at=a;bcastRoster()}}else if(NET.conn){atLast=a;NET.conn.send({t:'at',v:a})}}
 function tick(dt){chatClk+=dt;logStep(dt);flogNet(dt);atSync();if(funkT>0){funkT-=dt;if(scr!=='play'||paused||ended)funkT=0}
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
@@ -2717,14 +2737,14 @@ cv.addEventListener('keyup',e=>{const k=kn(e);keys[k]=0;if(aimG===3&&k==='3'){ai
 const mpos=e=>{const r=cv.getBoundingClientRect();mouse.sx=(e.clientX-r.left)*VW/r.width;mouse.sy=(e.clientY-r.top)*VH/r.height};
 /* Maus fangen (MLOCK): gesperrt ist der Zeiger nur im laufenden Spiel (nicht in Menues, Pause, Ergebnis). Gesperrt rechnet mousemove mit movementX/Y (auf logische Pixel umgerechnet, am Bildrand geklemmt)
    und mouse.sx/sy bleibt der Zeiger fuers Zielen. Gesperrt wird nur auf eine Eingabe hin (Klick oder Taste, Browserregel), Esc oder ein Klick auf Weiter genuegen also. Esc loest die Sperre und pausiert (pointerlockchange). */
-const plHeld=()=>document.pointerLockElement===cv,plWant=()=>MLOCK.on&&MLOCK.can&&scr==='play'&&!paused&&!ended;
+const plHeld=()=>document.pointerLockElement===cv,plWant=()=>MLOCK.on&&MLOCK.can&&scr==='play'&&!paused&&!ended&&!NET.spec;
 function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;mouse.down=1;if(spwOn&&!paused&&!ended)reqSpw()});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={VER,titleNote:()=>titleNote,setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
-{const m=/^#raum=([A-Za-z0-9]{4})$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase())}
+{const m=/^#raum=([A-Za-z0-9]{4})(&zu=1)?$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase(),{spec:!!m[2]})}
 }
 </script>
