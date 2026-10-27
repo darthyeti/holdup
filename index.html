@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=194"></script>
+<script src="js/ui.js?v=195"></script>
 <script>
-const BUILD={n:194,d:'2026-10-27'};//BUILD
+const BUILD={n:195,d:'2026-10-27'};//BUILD
 const UI_API=11;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -331,7 +331,7 @@ CFG.rank={gas:0,museum:2,casino:4};
 CFG.goal={bonus:{clean:.15,fast:.1,calm:.08,full:.12,team:.1},calm:40,fast:{bank:120,jewel:220,gas:105,museum:150,casino:135},full:{bank:.75,truck:.8,jewel:.6,gas:.8,museum:.45,casino:.35}};
 CFG.goods={cig:{u:.5,v:1500,t1:3.5,t2:1.2},shelf:{u:.5,v:800,t1:3,t2:1},art:{u:2,v:20000,t1:5,t2:3},statue:{u:3,v:40000,t1:7,t2:4},relic:{u:.5,v:6000,t1:4,t2:1.5},chips:{u:.25,v:8000,t1:2,t2:1.2},slot:{u:.5,v:6000,t1:0,t2:3},vip:{u:.5,v:20000,t1:6,t2:3}};
 CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
-CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:70};
+CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4]};
 CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*hGap()*(1+CFG.waveGapPer*Math.max(0,players.length-1));
 let M,TILES,LOBBY,SUNW,st,so,gone=[],stm=new Map(),vanSt=null,dcv,dc,LAY=null,LANE=null,ALT=null,vanAlt=0,altN=0,lgForce=null,turnForce=null,goal=null,goalForce=null;
@@ -2085,7 +2085,7 @@ function updNpc(n,i,dt){if(n.st==='cower'||n.st==='dead'||n.st==='away'||n.st===
 if(n.look&&n.look.t>0){n.look.t-=dt;n.a=alerp(n.a,Math.atan2(n.look.y-n.y,n.look.x-n.x),.15);n.mvg=false;return}
 if(n.still){n.a=n.base+Math.sin(time*.45+i*2)*.7;return}
 if(n.path.length){const t=n.path[0],dx=t[0]-n.x,dy=t[1]-n.y,dd=Math.hypot(dx,dy);if(dd<3)n.path.shift();else{n.a=alerp(n.a,Math.atan2(dy,dx),.2);mv(n,dx/dd*n.spd*dt,dy/dd*n.spd*dt);n.w+=n.spd*dt/9;n.mvg=true}}
-else{n.mvg=false;n.wait-=dt;if(n.wait<=0){if(n.route){n.ri=(n.ri+1)%n.route.length;const r=n.route[n.ri];n.path=pathTo(n.x,n.y,r[0],r[1]);n.wait=1+n.rr()*1.5}else{const c=LOBBY[Math.floor(n.rr()*LOBBY.length)];n.path=pathTo(n.x,n.y,c[0],c[1]);n.wait=2+n.rr()*5}}}}
+else{n.mvg=false;n.wait-=dt;if(n.wait<=0){if(n.route){n.ri=(n.ri+1)%n.route.length;const r=n.route[n.ri];n.path=pathTo(n.x,n.y,r[0],r[1]);n.wait=LAY.gAll?CFG.museum.pause[0]+n.rr()*(CFG.museum.pause[1]-CFG.museum.pause[0]):1+n.rr()*1.5}else{const c=LOBBY[Math.floor(n.rr()*LOBBY.length)];n.path=pathTo(n.x,n.y,c[0],c[1]);n.wait=2+n.rr()*5}}}}
 /* Lehnen: F halten, Waffe gezogen, Phase 2, eine Barrikade (X) in Zielrichtung in Reichweite. Gibt die Kachel zurueck oder null. Gegnerkugeln stoppen an X wie immer, nur die eigene Kugel ueberspringt dabei die erste X-Kachel (Flag ov). */
 function leanAt(o){if(!o.armed||phase!==2)return null;
 for(let d=o.r;d<=CFG.lean.reach;d+=4){const x=Math.floor((o.x+Math.cos(o.a)*d)/T),y=Math.floor((o.y+Math.sin(o.a)*d)/T);const c=cell(x,y);if(c==='X'||c==='Y')return[x,y];if(isSol(x,y))return null}return null}

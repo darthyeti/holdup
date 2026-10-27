@@ -22,7 +22,7 @@ const OBS = `(kind, how) => { const S = (${SETUP})(5017), { D, me, n, npcs } = S
     else { const q = kind === 'grd' ? npcs.find(x => x.k === 'grd' && x !== n) : npcs.find(x => x.k === kind); if (q) { q.st = 'idle'; q.at = 0; q.x = sp.x; q.y = sp.y; q.path = []; q.still = true; q.route = null; q.alert = 0; q.look = null; q.mvg = false; q.base = Math.atan2(n.y - sp.y, n.x - sp.x) + (how === 'weg' ? Math.PI : 0); q.a = q.base; if (how === 'schlaefer') D.koMi(q).act(me); o.platz = true } }
     for (const q of D.get().cams) if (kind !== 'cam') q.off = true; }
   for (let i = 0; i < Math.round(K.find * .5 * 30); i++) D.update(1 / 30); o.frueh = D.get().phase;
-  for (let i = 0; i < Math.round((K.find * .5 + 1) * 30); i++) D.update(1 / 30); o.spaet = D.get().phase; o.msg = D.msgs().feed.some(s => /findet|entdeckt/i.test(s)); return o; }`;
+  for (let i = 0; i < Math.round((K.find * .5 + 1) * 30); i++) D.update(1 / 30); o.spaet = D.get().phase; o.msg = D.msgs().feed.some(s => /findet einen Bewusstlosen: Alarm!/.test(s)); return o; }`;
 
 module.exports = [
   {
@@ -50,7 +50,7 @@ module.exports = [
         keys.e = true; for (let i = 0; i < 30; i++) { D.update(1 / 30); behind(30); } o.mitte = [n.st, +D.koMi(n).pr.toFixed(2), me.thf > 0];
         n.base += Math.PI; n.a = n.base; D.update(1 / 30); o.unterbrochen = [n.st, D.koMi(n).pr]; behind(30); n.alert = 0;
         for (let i = 0; i < 30 * (K.t + .8); i++) { D.update(1 / 30); if (n.st !== 'ko') behind(30); } keys.e = false;
-        o.danach = [n.st, Math.round(n.kt), n.mvg, n.alert, D.get().phase, me.st.ko]; o.msg = D.msgs().feed.some(s => /ausgeschaltet|bewusstlos/i.test(s)); o.K = K;
+        o.danach = [n.st, Math.round(n.kt), n.mvg, n.alert, D.get().phase, me.st.ko]; o.msg = D.msgs().feed.some(s => /schaltest eine Wache aus: bewusstlos für [0-9]+ s/.test(s)); o.K = K;
         return o; })()`);
       t.eq(r.mitte[0], 'idle', 'nach einer Sekunde ist noch nichts passiert'); t.ok(r.mitte[1] > .2 && r.mitte[1] < .6, 'der Fortschritt laeuft: ' + r.mitte[1]); t.ok(r.mitte[2], 'waehrend des Haltens ist der Spieler fuers Verdachtssystem beim Stehlen (thf)');
       t.eq(r.unterbrochen[1], 0, 'schaut die Wache um, ist der Fortschritt weg'); t.eq(r.danach[0], 'ko', 'nach der Haltezeit ist sie bewusstlos');
@@ -144,10 +144,10 @@ module.exports = [
         { const S = (${SETUP})(5017), { D, me, n, behind } = S; behind(80); n.base = Math.atan2(me.y - n.y, me.x - n.x); n.a = n.base; D.get().sus; const hot = () => { me.thf = .6; };
           let sus0 = 0; for (let i = 0; i < 60; i++) { hot(); D.update(1 / 30); sus0 = Math.max(sus0, D.get().sus); } o.wach = [Math.round(sus0), n.alert > 0 || D.get().phase === 2];
           const S2 = (${SETUP})(5017); const D2 = S2.D, m2 = S2.me, g2 = S2.n; S2.behind(80); g2.base = Math.atan2(m2.y - g2.y, m2.x - g2.x); g2.a = g2.base; D2.koMi(g2).act(m2); let sus1 = 0; for (let i = 0; i < 60; i++) { m2.thf = .6; D2.update(1 / 30); sus1 = Math.max(sus1, D2.get().sus); } o.schlaf = [Math.round(sus1), D2.get().phase]; }
-        { const S = (${SETUP})(5017), { D, me, n } = S, L = D.LAY(); me.x = L.spawn.x; me.y = L.spawn.y; n.still = false; n.route = [[Math.floor(n.x / 32) + 2, Math.floor(n.y / 32)], [Math.floor(n.x / 32), Math.floor(n.y / 32)]]; n.ri = 0; n.wait = 0; D.koMi(n).act(me); const x0 = n.x, y0 = n.y; step(D, 8); o.streife = Math.round(Math.hypot(n.x - x0, n.y - y0)); }
+        { const S = (${SETUP})(5017), { D, me, n } = S, L = D.LAY(); me.x = L.spawn.x; me.y = L.spawn.y; n.still = false; const tx = Math.floor(n.x / 32), ty = Math.floor(n.y / 32); let tg = null; for (let dy = -4; dy <= 4 && !tg; dy++) for (let dx = -4; dx <= 4 && !tg; dx++) if ((dx || dy) && !D.isSol(tx + dx, ty + dy) && D.pathTo(n.x, n.y, tx + dx, ty + dy).length >= 3) tg = [tx + dx, ty + dy]; o.ziel = !!tg; n.route = [[tx, ty], tg]; n.ri = 1; n.wait = 0; D.koMi(n).act(me); const x0 = n.x, y0 = n.y; step(D, 8); o.streife = Math.round(Math.hypot(n.x - x0, n.y - y0)); }
         return o; })()`);
       t.eq(r.wach[1], true, 'Gegenprobe: eine wache Wache sieht den Dieb (Alarmstufe oder Alarm)'); t.ok(r.wach[0] > 20, 'Gegenprobe: der Verdacht steigt bei wacher Wache: ' + r.wach[0]);
-      t.eq(r.schlaf, [0, 1], 'eine bewusstlose Wache sieht nichts: kein Verdacht, kein Alarm'); t.eq(r.streife, 0, 'ein Bewusstloser auf Streife bleibt liegen');
+      t.eq(r.ziel, true, 'Aufbau: die Wache hat einen Weg'); t.eq(r.schlaf, [0, 1], 'eine bewusstlose Wache sieht nichts: kein Verdacht, kein Alarm'); t.eq(r.streife, 0, 'ein Bewusstloser auf Streife bleibt liegen');
     },
   },
   {
