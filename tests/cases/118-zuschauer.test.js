@@ -58,7 +58,7 @@ module.exports = [
         o.typen = [...new Set(sent)].sort(); o.phase = [A.get().phase, S.get().phase]; o.wallet = S.SESSION.wallet; o.round = S.SESSION.round; o.pause = S.state().paused;
         return o; })()`);
       t.ok(r.typen.every(x => ['hi', 'nm', 'ping'].includes(x)), 'gesendete Nachrichtenarten: ' + JSON.stringify(r.typen));
-      t.eq([r.funk, r.chat], [false, false], 'Funk-Menue und Chat oeffnen sich nicht');
+      t.eq([r.funk, r.chat], [false, true], 'das Funk-Menue oeffnet sich nicht, der Chat schon (Tribuene, Z4: Zuschauer duerfen unter sich schreiben)');
       t.eq(r.phase, [1, 1], 'die Phase bleibt Erkunden (F loest nichts aus)');
       t.eq([r.wallet, r.round], [0, 0], 'das Konto und die Serie des Zuschauers bleiben unberuehrt');
     },
