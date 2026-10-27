@@ -3,23 +3,13 @@
   "hash": {
    "Insel": "f907f72e",
    "Klassik": "862aebe5",
-   "Gänge": "dae9320e",
+   "G\u00e4nge": "dae9320e",
    "Wandregale": "dd320881"
-  },
-  "px": {
-   "Insel#1": "3552b0fa:2816x1920 36b1c01f:2816x1920",
-   "Insel#2": "1d39beca:2816x1920 ed6f251f:2816x1920",
-   "Klassik#3": "1f81393e:2816x1920 78078ada:2816x1920",
-   "Klassik#4": "c82b04b5:2816x1920 9543adda:2816x1920",
-   "Gänge#8": "1e5d955f:2816x1920 cd4f7c5f:2816x1920",
-   "Gänge#9": "deecdee6:2816x1920 87957d5f:2816x1920",
-   "Wandregale#10": "215e8df0:2816x1920 567cdb98:2816x1920",
-   "Wandregale#11": "cfa91f11:2816x1920 567cdb98:2816x1920"
   },
   "n": {
    "Insel": 60,
    "Klassik": 50,
-   "Gänge": 35,
+   "G\u00e4nge": 35,
    "Wandregale": 55
   }
  }

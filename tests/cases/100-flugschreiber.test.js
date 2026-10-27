@@ -45,7 +45,7 @@ module.exports = [
         for (let i = 0; i < 7000; i++) L.ev('x', i); for (let i = 0; i < 400; i++) L.frame([0, [], []]); for (let i = 0; i < 30; i++) L.mark('m' + i); const d = L.dump(); o.cap = [d.ereignisse.length, d.markierungen.length, d.markierungen[0].frames.length, d.markierungen[19].note];
         window.dispatchEvent(new ErrorEvent('error', { message: 'Testfehler', filename: 'http://x/y/index.html', lineno: 42, error: new Error('boom') })); o.err = L.dump().ereignisse.filter(e => e[2] === 'fehler').map(e => [e[3].m, e[3].f, e[3].l, /boom/.test(e[3].s)]);
         const e2 = new Event('unhandledrejection'); e2.reason = new Error('versprochen'); window.dispatchEvent(e2); o.rej = L.dump().ereignisse.filter(e => e[2] === 'fehler' && /Promise/.test(e[3].m)).length; o.nErr = L.dump().fehler;
-        const cnt = () => L.dump().ereignisse.filter(e => e[2] === 'ruckler').length, n0 = cnt(); for (let i = 0; i < 20; i++) L.evl('ruckler', 120, 5); o.evl = cnt() - n0;
+        const cnt = () => L.dump().ereignisse.filter(e => e[2] === 'evltest').length, n0 = cnt(); for (let i = 0; i < 20; i++) L.evl('evltest', 120, 5); o.evl = cnt() - n0;   // eigener Schluessel: die Spielschleife der Seite schreibt selbst 'ruckler' (bei langsamen Bildern in der Cloud) und sperrt sonst das Zeitfenster
         Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; o.tab = L.dump().ereignisse.filter(e => e[2] === 'tab').map(e => e[3]).slice(-1);
         return o;
       });

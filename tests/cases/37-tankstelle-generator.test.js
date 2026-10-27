@@ -22,7 +22,8 @@ module.exports = [
         return out;
       }, { HALLS });
       t.ok(HALLS.every(h => r.n[h] > 20), 'alle vier Hallen kommen vor: ' + JSON.stringify(r.n));
-      await t.snapshot('gas-basis', r);
+      await t.snapshot('gas-basis', { hash: r.hash, n: r.n });
+      await t.snapshot('gas-basis-px', r.px, { local: true });   // Pixel haengen an der Maschine (Schrift, Gradienten): nur lokal, wie bei Juwelier, Museum und Casino
     },
   },
   {
