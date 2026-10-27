@@ -41,7 +41,7 @@ module.exports = [
         o.clientJob = [ids(B).includes('job'), !!(MT.tile(B, 'job') || {}).nofocus, (MT.tile(B, 'start') || {}).title];
         MT.click(A, 'mode'); run(.5); o.zurueck = [A.NET.mode, B.NET.mode, !!MT.tile(A, 'start').lock];
         A.duelOpen(); run(.5); o.implizit = [A.NET.mode, B.NET.mode]; A.setMode(''); run(.5);
-        MT.click(A, 'mDuel'); run(.5); o.duel = [A.NET.mode, B.NET.mode, ids(A).includes('duel'), ids(A).includes('job')];
+        MT.click(A, 'mDuel'); run(.5); o.duel = [A.NET.mode, B.NET.mode, ids(A).includes('duel'), ids(A).includes('job'), (MT.tile(A, 'job') || {}).title];
         A.duelOpen(); run(.5); o.offen = !!A.NET.duel; MT.click(A, 'mode'); run(.5); o.beendet = [A.NET.duel, A.NET.mode];
         MT.click(A, 'mCoop'); run(.5); MT.click(A, 'start'); run(2); o.start = [A.state().scr, B.state().scr, A.NET.roster.length];
         return o;
@@ -50,7 +50,7 @@ module.exports = [
       t.eq(r.tilesCoop, [true, true, true, true, true, true], 'Coop-Raum: Auftrag, Link, Zuschauer-Schalter, Modus aendern, Start, Raum schliessen'); t.eq(r.keineCoop, [false, false, false], 'keine Modus-Kacheln und kein Wettkampf-Fenster im Coop');
       t.ok(r.startFrei, 'Starten ist frei'); t.eq(r.clientJob, [true, true, 'Der Host startet ...'], 'Mitspieler sehen den Auftrag (ohne Bedienung) und den Starthinweis');
       t.eq(r.zurueck, ['', '', true], 'Modus aendern geht zurueck in den Raum ohne Modus, bei allen'); t.eq(r.implizit, ['duel', 'duel'], 'ein eroeffneter Wettkampf setzt den Modus Coop Wettkampf selbst');
-      t.eq(r.duel, ['duel', 'duel', true, true], 'Coop Wettkampf: Modus bei allen, die Lobby hat das Wettkampf-Fenster (bis R2 mit zwei Raeumen) und den Auftrag');
+      t.eq(r.duel, ['duel', 'duel', false, true, '3 Aufträge, gleiche Karten'], 'Coop Wettkampf: Modus bei allen, kein Fenster Wettkampf mehr (R2), die Auftrags-Kachel zeigt die Liste der Aufträge');
       t.eq(r.offen, true, 'ein Wettkampf ist offen'); t.eq(r.beendet, [null, ''], 'Modus aendern beendet den offenen Wettkampf');
       t.eq(r.start, ['play', 'play', 2], 'Coop spielen und Starten bringt beide ins Spiel');
     },

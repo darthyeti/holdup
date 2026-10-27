@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=184"></script>
+<script src="js/ui.js?v=185"></script>
 <script>
-const BUILD={n:184,d:'2026-10-27'};//BUILD
+const BUILD={n:185,d:'2026-10-27'};//BUILD
 const UI_API=11;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -1427,7 +1427,7 @@ const live=o=>!o.dead&&!o.out&&!o.gone,actv=()=>players.filter(live),plRow=o=>o.
 /* Zaehler je Spieler fuer die Auszeichnungen im Coop-Ergebnis (zaehlt nur der Host, siehe awards()) */
 const mkSt=()=>({t:0,idle:0,dist:0,work:0,acts:0,k:0,civ:0,cap:0,sh:0,ht:0,dry:0,tk:0,dn:0,rev:0,sec:0,out:0,outT:0,gad:0,bar:0,boom:0,alarm:0});
 const r1=v=>Math.round(v*10)/10,r2=v=>Math.round(v*100)/100;
-const NET={role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,joinDuel:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null},LOG=mkFlog(()=>time);
+const NET={role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null},LOG=mkFlog(()=>time);
 const WPN_ORDER=['rifle','smg','pistol'],BASEKIT={w:'pistol',vest:0,helm:0,pack:0,drill:0,pick:0,radio:0,mask:0,jam:0,med:0,sm:0,dc:0,ad:0,bt:0,vh:null,hh:null,sk:{}};
 let kits=[];
 /* Ausruestung: Stufen 0 bis 3 (SESSION.own, Werte in CFG.shop.tier), Verschleiss (vh = Weste jetzt, hh = Helmtreffer uebrig, null = voll), Verbrauchsgueter als Zaehler (jam, med, sm Rauch, dc Ablenker, ad Adrenalin, bt Brettersaetze; die Blendgranate fl ist seit MRU 1 A1 gestrichen) */
@@ -1496,8 +1496,8 @@ if(k==='x'&&!ended&&canRad(me)){funkT=CFG.funk.menuT;return true}return false}
 /* Textchat (Coop, docs/coop-ausbau.md F3): Positivliste, Host prueft und setzt den Absender, bcast an alle (auch in den Menues), Kanal 0 = Team (1 ist fuer die Tribuene reserviert). Im Flugschreiber nur Absender und Laenge. */
 const CHAT_RE=/[^\p{L}\p{N} .,:;!?'"()+\-\/%&@#_]/gu,CHAT_KEY=/^[\p{L}\p{N} .,:;!?'"()+\-\/%&@#_]$/u;
 const cleanChat=s=>String(s).replace(CHAT_RE,'').replace(/ +/g,' ').trim().slice(0,CFG.chat.max).trimEnd();
-const chatOk=()=>NET.role!=='solo'&&(NET.spec||NET.roster.length>1||(scr==='lobby'&&NET.spNames.length>0));
-function chatAdd(id,s,c,n,own){chat.push({id,s,c,n,tm:chatClk});if(chat.length>CFG.chat.hist)chat.shift();LOG.ev('chat',[id,s.length]);if(funkMode!=='stumm'&&!own&&!(me&&id===me.id))SND.chat()}
+const chatOk=()=>NET.role!=='solo'&&(NET.spec||NET.roster.length>1||(scr==='lobby'&&(NET.spNames.length>0||NET.t2n.length>0||NET.team===2)));
+function chatAdd(id,s,c,n,own){chat.push({id,s,c,n,own:!!own,tm:chatClk});if(chat.length>CFG.chat.hist)chat.shift();LOG.ev('chat',[id,s.length]);if(funkMode!=='stumm'&&!own&&!(me&&id===me.id))SND.chat()}
 function chatHost(id,s,ch){if(NET.role!=='host'||ch!==0||typeof s!=='string'||!NET.roster.some(r=>r.id===id))return false;const t=cleanChat(s);if(!t)return false;
 const L=(NET.chatT[id]=(NET.chatT[id]||[]).filter(x=>chatClk-x<20)),C=CFG.chat;if((L.length&&chatClk-L[L.length-1]<C.gap)||L.length>=C.burst)return false;L.push(chatClk);
 bcast({t:'ch',id,s:t,c:0});chatAdd(id,t,0);return true}
@@ -1506,9 +1506,9 @@ function chatSpec(c,s,ch){if(NET.role!=='host'||!c.spec||ch!==1||typeof s!=='str
 const k='s'+c.sid,L=(NET.chatT[k]=(NET.chatT[k]||[]).filter(x=>chatClk-x<20)),C=CFG.chat;if((L.length&&chatClk-L[L.length-1]<C.gap)||L.length>=C.burst)return false;L.push(chatClk);
 const m={t:'ch',id:-1,s:t,c:1,n:c.nm,sid:c.sid};for(const x of NET.specs)if(x.ok)x.send(m);LOG.ev('chat',['T'+c.sid,t.length]);return true}
 /* Raum-Chat (R1, Kanal 2): nur in der Lobby, fuer Spieler und Zuschauer, der Host prueft wie bei Kanal 0 und 1 (Text, Zeitsperre) und sendet an alle. id = Spieler-Id oder 's'+sid, nm der Name des Zuschauers. */
-function chatRoom(id,s,nm){if(NET.role!=='host'||scr!=='lobby'||typeof s!=='string')return false;const sp=typeof id==='string';if(sp?!NET.specs.some(q=>'s'+q.sid===id):!NET.roster.some(r=>r.id===id))return false;const t=cleanChat(s);if(!t)return false;
+function chatRoom(id,s,nm){if(NET.role!=='host'||scr!=='lobby'||typeof s!=='string')return false;const sp=typeof id==='string',t2=sp&&id[0]==='t';if(sp?(t2?!NET.t2.some(q=>'t'+q.tk===id):!NET.specs.some(q=>'s'+q.sid===id)):!NET.roster.some(r=>r.id===id))return false;const t=cleanChat(s);if(!t)return false;
 const L=(NET.chatT[id]=(NET.chatT[id]||[]).filter(x=>chatClk-x<20)),C=CFG.chat;if((L.length&&chatClk-L[L.length-1]<C.gap)||L.length>=C.burst)return false;L.push(chatClk);
-const m={t:'ch',id:sp?-1:id,s:t,c:2};if(sp){m.n=nm;m.sid=+id.slice(1)}bcast(m);chatAdd(sp?-1:id,t,2,sp?nm:undefined);return true}
+const m={t:'ch',id:sp?(t2?-2:-1):id,s:t,c:2};if(sp){m.n=nm;if(t2)m.tk=+id.slice(1);else m.sid=+id.slice(1)}bcast(m);chatAdd(sp?-1:id,t,2,sp?nm:undefined);return true}
 function chatSend(){const s=cleanChat(chatBuf);chatOpen=false;chatBuf='';if(!s)return;if(scr==='lobby'&&NET.role!=='solo'){if(NET.role==='host')chatRoom(0,s)||SND.ev('deny');else NET.conn&&NET.conn.send({t:'ch',s,c:2});return}if(NET.spec){NET.conn&&NET.conn.send({t:'ch',s,c:1})}else if(NET.role==='client'){NET.conn&&NET.conn.send({t:'ch',s,c:0})}else if(!chatHost(0,s,0))SND.ev('deny')}
 function chatKey(e){if(e.key==='Enter')chatSend();else if(e.key==='Escape'){chatOpen=false;chatBuf=''}else if(e.key==='Backspace')chatBuf=chatBuf.slice(0,-1);else if(chatBuf.length<CFG.chat.max&&!e.ctrlKey&&!e.metaKey&&CHAT_KEY.test(e.key))chatBuf+=e.key}
 /* Oeffnen: im Spiel Enter, in Lobby, Shop, Auftragswahl, Pause und Ergebnis die Taste C (Enter loest dort Kacheln aus). Nur im Coop mit Mitspielern, nicht in einem Fenster. */
@@ -2169,7 +2169,7 @@ if(selIt>=0&&!inReach(itsAll()[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=52,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=53,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},buffered:()=>{try{return (c.dataChannel?c.dataChannel.bufferedAmount|0:0)+(c.bufferSize|0)*CFG.spec.msgB}catch(e){return 0}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());
@@ -2183,12 +2183,12 @@ join(code,h){const P=window.Peer;if(!P){h.onError('lib');return null}const peer=
 peer.on('open',()=>{const c=peer.connect('holdup-'+code,{serialization:'json',reliable:true});const w=wrap(c);c.on('open',()=>h.onOpen(w))});
 peer.on('error',e=>h.onError(e&&e.type||String(e)));
 return{close:()=>{try{peer.destroy()}catch(e){}}}}}}
-const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m);for(const c of NET.specs)if(c.ok)c.send(m)};
-const bcastRoster=()=>{NET.spNames=NET.specs.map(c=>c.nm);NET.du=duelInfo();NET.specOn=CFG.spec.on?1:0;bcast({t:'ros',du:NET.du,r:NET.roster,sp:NET.spNames,sc:scenario,h:SESSION.heat,q:SESSION.quiet|0,l:SESSION.law?1:0,md:NET.mode,so:NET.specOn});NET.specs.forEach(specDlc)};
+const bcast=m=>{for(const c of NET.conns)if(c.ok)c.send(m);for(const c of NET.specs)if(c.ok)c.send(m);for(const c of NET.t2)if(c.ok)c.send(m)};
+const bcastRoster=()=>{NET.spNames=NET.specs.map(c=>c.nm);NET.t2n=NET.t2.map(c=>({k:c.tk,n:c.nm}));NET.hp=NET.ho?NET.ho.ph:'';NET.du=duelInfo();NET.specOn=CFG.spec.on?1:0;bcast({t:'ros',du:NET.du,r:NET.roster,sp:NET.spNames,t2:NET.t2n,hp:NET.hp,sd:NET.side,sc:scenario,h:SESSION.heat,q:SESSION.quiet|0,l:SESSION.law?1:0,md:NET.mode,so:NET.specOn});NET.specs.forEach(specDlc)};
 /* Zuschauer im Wettkampf (W3): Nur Zuschauer bekommen den Raumcode des Gegners (dlc, mit der Verzoegerung), Spieler nie. Der Host merkt je Zuschauer, was er zuletzt geschickt hat (c.rc), leer heisst: kein Wettkampf. */
 const duelRc=()=>{const d=NET.duel;return d&&d.link&&d.rv&&d.rv.code||''};
 function specDlc(c){const rc=duelRc();if(c.rc===rc)return;c.rc=rc;c.send({t:'dlc',c:rc,dl:rc?CFG.duel.specDelay:0})}
-function netReset(){duelClose();sp2Close();atLast='';specT=null;specFree=false;chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,joinDuel:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null});spQ=[];nPl=1;
+function netReset(){duelClose();sp2Close();holdClose();p2Close();atLast='';specT=null;specFree=false;chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs,NET.t2),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null});spQ=[];nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
 function hostRoom(tries){netReset();hostTicker(true);const code=newCode();NET.role='host';NET.code=code;NET.msg='Raum wird erstellt ...';NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';
@@ -2202,8 +2202,65 @@ if(m.ver!==VER||m.b!==BUILD.n){rejC(c,'Versionen passen nicht (Host: Build '+BUI
 if(m.rv)return hostRival(c,m);
 if(m.sp)return hostSpec(c,m);
 if(scr!=='lobby'){rejC(c,'Das Spiel läuft schon.');return}
-const id=freeId();if(id===undefined){if(CFG.spec.on&&NET.specs.length<CFG.spec.max)return hostSpec(c,m);rejC(c,'Der Raum ist voll.');return}
-playerAttach(c,id);hostMsg(c,m)}
+if(NET.ho){rejC(c,'Der Start läuft gerade. Gleich nochmal versuchen.');return}
+const to=placeFor();
+if(to===2){t2Attach(c,m.nm);c.send({t:'wel',id:-2,tk:c.tk,ver:VER,b:BUILD.n,code:NET.code});bcastRoster();return}
+if(to===1){playerAttach(c,freeId());hostMsg(c,m);return}
+if(CFG.spec.on&&NET.specs.length<CFG.spec.max)return hostSpec(c,m);rejC(c,'Der Raum ist voll.')}
+/* Wettkampf-Raum (R2, docs/coop-ausbau.md, Spur R): Neben den Spielern des Raum-Hosts (Roster, NET.conns, Team 1) gibt es die Liste NET.t2 (Team 2, ein Eintrag je Verbindung mit Nummer tk, die Reihenfolge zaehlt: der erste ist spaeter der Host von Team 2) und die Zuschauer (NET.specs). placeFor liefert fuer einen neuen Teilnehmer 1 (Roster), 2 (Team 2) oder 0 (nur Zuschauer): im Wettkampf (solange noch keine Leitung zum anderen Host steht) ins kleinere Team, ohne Modus fuellt sich erst Team 1, dann die Warteliste Team 2, im Coop gibt es nur Team 1. */
+function placeFor(){const n1=NET.roster.length,n2=NET.t2.length,md=NET.mode;
+if(md==='duel'&&!NET.duel&&!NET.hb){if(n1<=n2)return n1<4?1:n2<4?2:0;return n2<4?2:n1<4?1:0}
+if(n1<4)return 1;return md===''&&n2<4?2:0}
+function t2Name(nm,c){const taken=x=>NET.roster.some(r=>String(r.name).toLowerCase()===x.toLowerCase())||NET.t2.some(q=>q!==c&&String(q.nm).toLowerCase()===x.toLowerCase());const b=nm||'Spieler '+c.tk;let n=b,k=2;while(taken(n)){n=b.slice(0,NAME_MAX-2)+' '+k;k++}return n}
+function t2Attach(c,nm){c.t2=true;c.ok=true;c.tk=++NET.tkN;c.nm0=cleanName(nm);c.nm=t2Name(c.nm0,c);NET.t2.push(c);LOG.ev('netz',['team2',c.tk]);
+c.onmsg=mm=>t2Msg(c,mm);
+c.onclose=()=>{c.ok=false;LOG.ev('netz',['team2 weg',c.tk]);NET.t2=NET.t2.filter(x=>x!==c);if(NET.ho&&NET.ho.ph!=='go')hoAbort((c.nm||'Ein Spieler')+' hat den Raum verlassen.');bcastRoster()}}
+function t2Msg(c,m){if(!m||typeof m!=='object'||c.kicked)return;if(m.t==='ping')c.send({t:'pong',n:m.n});
+else if(m.t==='nm'){c.nm0=cleanName(m.v)||c.nm0;c.nm=t2Name(c.nm0,c);bcastRoster()}
+else if(m.t==='ch'){if(m.c===2)chatRoom('t'+c.tk,m.s,c.nm)}
+else if(m.t==='role')roleReq(c,m.v)
+else if(m.t==='t2')hoMsg(c,m)}
+/* ---- Uebergabe (R2c): Der Start im Wettkampf-Raum. Raum-Host A (Team 1) und der erste Spieler von Team 2 (Host B) rechnen je ein Spiel, so wie in W1 bis W3. A prueft vorher, dass sich Team 2 mit B verbinden kann (prep, probe), dann wechselt Team 2 in einen eigenen Raum bei B (go) und B verbindet sich als Gegner mit A (die Leitung aus W1, automatisch bereit). Schlaegt es vor go fehl, bleibt jeder im Raum und der Start bricht mit einer Meldung ab (hoAbort). Nachrichten t2: A an Team 2 prep (nur B), probe {code}, go {code,a,n}, abort {why}; Team 2 an A ready {code} (nur B), ok, fail {why}. Auf B's verdecktem Raum gilt vor go nur pr (Probe) und hi (wird gemerkt). ---- */
+const HO_T={prep:6,probe:14,go:40};
+function duelStart(){if(NET.role!=='host'||scr!=='lobby'||NET.mode!=='duel'||NET.ho||(NET.duel&&(NET.duel.link||!NET.duel.lead))||!NET.t2.length)return false;
+const B=NET.t2[0];if(!B.ok)return false;
+if(!NET.duel)NET.duel=duelNew();NET.duel.uni=1;NET.ho={ph:'prep',t:0,b:B.tk,ok:{},code:''};NET.msg='Verbindungen werden geprüft ...';LOG.ev('duell',['uebergabe',NET.t2.length]);B.send({t:'t2',k:'prep'});bcastRoster();return true}
+function hoMsg(c,m){const h=NET.ho;if(!h||NET.role!=='host'||!m||typeof m!=='object')return;
+if(m.k==='ready'){const code=String(m.code||'').toUpperCase();if(h.ph!=='prep'||c.tk!==h.b||!dlcOk(code)||code===NET.code)return;h.code=code;h.ph='probe';h.t=0;h.ok={};const need=NET.t2.filter(q=>q.tk!==h.b);
+ if(!need.length){hoGo();return}for(const q of need)q.send({t:'t2',k:'probe',code});bcastRoster()}
+else if(m.k==='ok'){if(h.ph!=='probe'||c.tk===h.b)return;h.ok[c.tk]=1;if(NET.t2.filter(q=>q.tk!==h.b).every(q=>h.ok[q.tk]))hoGo()}
+else if(m.k==='fail'){if(h.ph==='go')return;const B=NET.t2.find(q=>q.tk===h.b);
+ if(c.tk===h.b)hoAbort((c.nm||'Der Host von Team 2')+' kann keinen Raum öffnen: '+String(m.why||'unbekannter Fehler').slice(0,60));else hoAbort((c.nm||'Ein Spieler')+' kann sich nicht mit '+(B?B.nm:'dem Host von Team 2')+' verbinden.')}}
+function hoGo(){const h=NET.ho;h.ph='go';h.t=0;for(const q of NET.t2)q.send({t:'t2',k:'go',code:h.code,a:NET.code,n:NET.t2.length});NET.msg='Team 2 verbindet sich ...';LOG.ev('duell',['uebergabe go',NET.t2.length]);bcastRoster()}
+function hoAbort(why){const h=NET.ho;if(!h)return;NET.ho=null;why=String(why||'Start abgebrochen.').slice(0,100);for(const q of NET.t2)try{q.send({t:'t2',k:'abort',why})}catch(e){}
+if(NET.duel&&NET.duel.uni&&!NET.duel.link)duelEnd(why,true);else NET.msg=why;LOG.ev('duell',['uebergabe abgebrochen',why.slice(0,40)]);bcastRoster()}
+function hoTick(dt){const h=NET.ho;if(!h||NET.role!=='host')return;h.t+=dt;
+if(h.ph==='go'){if(NET.duel&&NET.duel.link){NET.ho=null;bcastRoster()}else if(h.t>HO_T.go)hoAbort('Team 2 konnte sich nicht verbinden.')}
+else{const B=NET.t2.find(q=>q.tk===h.b);if(h.ph==='prep'&&h.t>HO_T.prep)hoAbort((B?B.nm:'Der Host von Team 2')+' antwortet nicht.');
+ else if(h.ph==='probe'&&h.t>HO_T.probe){const q=NET.t2.find(x=>x.tk!==h.b&&!h.ok[x.tk]);hoAbort((q?q.nm:'Ein Spieler')+' kann sich nicht mit '+(B?B.nm:'dem Host von Team 2')+' verbinden.')}}}
+/* Team-Seite: Host B (erster von Team 2) oeffnet auf prep einen verdeckten Raum (HOLD), die anderen pruefen ihn mit einer Probe-Verbindung (P2), auf go wechselt B in diesen Raum (adoptRoom, bleibt Host) und die anderen treten ihm bei, dann verbindet sich B als Gegner mit A (hbTick). */
+let HOLD=null,P2=null;
+function holdClose(){const h=HOLD;if(!h)return;HOLD=null;try{h.srv&&h.srv.close()}catch(e){}}
+function p2Close(){const p=P2;if(!p)return;P2=null;try{p.c&&p.c.close()}catch(e){}try{p.srv&&p.srv.close()}catch(e){}}
+function holdOpen(tries){const code=newCode();if(code===NET.code)return holdOpen(tries);const h=HOLD={code,srv:null,q:[],ready:false,adopted:false};
+h.srv=TR.host(code,{onOpen(){if(HOLD!==h)return;h.ready=true;if(NET.conn)NET.conn.send({t:'t2',k:'ready',code})},onConn:c=>holdConn(h,c),
+ onError(e){if(HOLD!==h)return;holdClose();if(e==='unavailable-id'&&tries<4){holdOpen(tries+1);return}if(NET.conn)NET.conn.send({t:'t2',k:'fail',why:errTxt(e)})}})}
+function holdConn(h,c){if(h.adopted){hostConn(c);return}if(HOLD!==h){try{c.close()}catch(e){}return}
+c.onmsg=m=>{if(!m||typeof m!=='object')return;if(m.t==='pr')c.send({t:'pr',ok:1});else if(m.t==='hi'){c.onmsg=null;h.q.push([c,m])}};c.onclose=()=>{h.q=h.q.filter(x=>x[0]!==c)}}
+function p2Open(code){p2Close();const p=P2={code,c:null,srv:null};
+p.srv=TR.join(code,{onOpen(c){if(P2!==p){try{c.close()}catch(e){}return}p.c=c;c.onmsg=m=>{if(P2===p&&m&&m.t==='pr'&&m.ok&&NET.conn)NET.conn.send({t:'t2',k:'ok'})};c.onclose=()=>{};c.send({t:'pr'})},
+ onError(e){if(P2===p&&NET.conn)NET.conn.send({t:'t2',k:'fail',why:errTxt(e)})}})}
+function adoptRoom(h,a,n){const srv=h.srv,code=h.code,q=h.q;HOLD=null;h.adopted=true;
+netReset();hostTicker(true);NET.role='host';NET.code=code;NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';NET.srv=srv;NET.mode='duel';NET.side='b';NET.hb={a,n:n-1,t:0,max:20};NET.msg=n>1?'Team 2: warte auf '+(n-1)+' Mitspieler ...':'';sessReset();
+for(const x of q){hostConn(x[0]);if(x[0].onmsg)x[0].onmsg(x[1])}}
+function hbTick(dt){const h=NET.hb;if(!h||NET.role!=='host'||scr!=='lobby')return;h.t+=dt;
+if(NET.conns.length>=h.n||h.t>h.max){NET.hb=null;if(!duelJoin(h.a,true))NET.msg='Wettkampf: Verbindung zum Raum-Host fehlgeschlagen.'}}
+function t2cMsg(m){if(NET.role!=='client'||NET.team!==2||!NET.conn||!m||typeof m!=='object')return;
+if(m.k==='prep'){holdClose();holdOpen(0)}
+else if(m.k==='probe'){const code=String(m.code||'').toUpperCase();if(dlcOk(code)&&code!==NET.code)p2Open(code)}
+else if(m.k==='go'){const code=String(m.code||'').toUpperCase(),a=String(m.a||'').toUpperCase();if(!dlcOk(code)||!dlcOk(a))return;
+ if(HOLD&&HOLD.code===code&&HOLD.ready)adoptRoom(HOLD,a,clamp(m.n|0,1,4));else{p2Close();joinRoom(code)}}
+else if(m.k==='abort'){holdClose();p2Close();NET.msg=String(m.why||'Start abgebrochen.').slice(0,100)}}
 /* Spieler und Zuschauer sind zwei Verbindungsarten (Spieler: Platz im Roster und in NET.conns, Zuschauer: NET.specs). Beitritt und Rollenwechsel in der Lobby benutzen dieselben zwei Anbinder. */
 const freeId=()=>[1,2,3].find(i=>!NET.roster.some(r=>r.id===i));
 function playerAttach(c,id){c.pid=id;c.ok=true;NET.conns.push(c);NET.roster.push({id,name:PC[id].n});LOG.ev('netz',['verbunden',id]);
@@ -2233,13 +2290,13 @@ if(d.lead&&!full){d.rv=null;d.rdy=0;d.cd=-1;d.cs=-1;d.jobs=[];d.k=0}else{if(d.sr
 NET.msg=msg||'';LOG.ev('duell',['ende',String(msg||'').slice(0,40)]);bcastRoster()}
 function duelOpen(){if(NET.role!=='host'||scr!=='lobby'||(NET.duel&&!NET.duel.lead))return false;if(NET.duel)duelEnd('Wettkampf beendet.',true);else{NET.duel=duelNew();NET.mode='duel';NET.msg='Wettkampf offen: Der andere Host tritt mit deinem Raumcode bei.';bcastRoster()}return true}
 function duelLeave(){const d=NET.duel;if(!d)return false;if(d.lead)return duelOpen();duelEnd('Wettkampf verlassen.');return true}
-function duelJoin(code){if(NET.role!=='host'||scr!=='lobby'||NET.duel)return false;code=String(code||'').toUpperCase();if(code.length!==4||code===NET.code)return false;
-const d=Object.assign(duelNew(),{lead:false,rv:{nm:'',n:0,rdy:0,code}});NET.duel=d;NET.mode='duel';NET.msg='Verbinde mit dem Leiter '+code+' ...';
+function duelJoin(code,uni){if(NET.role!=='host'||scr!=='lobby'||NET.duel)return false;code=String(code||'').toUpperCase();if(code.length!==4||code===NET.code)return false;
+const d=Object.assign(duelNew(),{lead:false,uni:uni?1:0,rv:{nm:'',n:0,rdy:0,code}});NET.duel=d;NET.mode='duel';NET.msg='Verbinde mit dem Leiter '+code+' ...';
 d.srv=TR.join(code,{onOpen(c){if(NET.duel!==d){try{c.close()}catch(e){}return}d.conn=c;c.onmsg=m=>duelMsg(d,m);c.onclose=()=>{if(NET.duel===d){d.conn=null;d.link=null;duelEnd('Verbindung zum Leiter verloren.')}};c.send({t:'hi',ver:VER,b:BUILD.n,rv:1,nm:duelName(),n:NET.roster.length,code:NET.code})},onError(e){if(NET.duel===d)duelEnd(errTxt(e))}});bcastRoster();return true}
 function duelSt(){const d=NET.duel,l=d&&d.link;if(l)l.send({t:'dl',k:'st',n:NET.roster.length,rdy:d.rdy,nm:duelName()})}
 function duelRvSt(d,m){const r=d.rv;if(!r)return;const n=clamp(m.n|0,0,4),rdy=m.rdy?1:0,nm=m.nm!=null?(cleanName(m.nm)||r.nm):r.nm;if(n!==r.n||rdy!==r.rdy||nm!==r.nm){r.n=n;r.rdy=rdy;r.nm=nm;bcastRoster()}}
-const duelBoth=()=>{const d=NET.duel;return !!(d&&d.link&&d.rdy&&d.rv&&d.rv.rdy&&d.rv.n===NET.roster.length&&d.n===NET.roster.length)};
-function duelReady(){const d=NET.duel;if(NET.role!=='host'||scr!=='lobby'||!d||!d.link)return false;if(d.rdy)d.rdy=0;else{if(!d.rv||d.rv.n!==NET.roster.length||NET.roster.length<1)return false;d.rdy=1;d.n=NET.roster.length}duelSt();bcastRoster();return true}
+const duelBoth=()=>{const d=NET.duel;return !!(d&&d.link&&d.rdy&&d.rv&&d.rv.rdy&&(d.uni||(d.rv.n===NET.roster.length&&d.n===NET.roster.length)))};
+function duelReady(){const d=NET.duel;if(NET.role!=='host'||scr!=='lobby'||!d||!d.link)return false;if(d.rdy)d.rdy=0;else{if(!d.rv||(!d.uni&&d.rv.n!==NET.roster.length)||NET.roster.length<1)return false;d.rdy=1;d.n=NET.roster.length}duelSt();bcastRoster();return true}
 const sanJobs=j=>Array.isArray(j)?j.slice(0,CFG.duel.maxLen).map(x=>({sd:clamp((x&&x.sd)|0,1,999999),sc:SCS.includes(x&&x.sc)?x.sc:'bank'})):[];
 function duelJobs(){const n=clamp(NET.duel.len|0,1,CFG.duel.maxLen);return Array.from({length:n},(_,i)=>{const pool=SCS.filter(k=>i>=(CFG.rank[k]||0));return{sd:rndSeed(),sc:pool[Math.floor(Math.random()*pool.length)]}})}
 /* Die naechsten Seed und das Szenario: im Wettkampf der Reihe nach aus der Liste, sonst wie immer (newSeed). */
@@ -2258,7 +2315,8 @@ if(d.link)d.link.send({t:'dl',k:'res',i:r.i,w:r.w,s:r.s,h:r.h,sc:r.sc,du:r.du,n:
 function duelNext(){const d=NET.duel;if(NET.role!=='host'||!d||!d.run||scr!=='shop'||!duelMore(d))return false;if(d.rdy)d.rdy=0;else{if(NET.roster.some(r=>r.id!==0&&!r.rdy)&&time-shopConf>4){shopConf=time;shopNote={s:'Nicht alle sind bereit. Nochmal: trotzdem weiter.',t:4};return true}d.rdy=1}duelSt();bcastRoster();return true}
 function duelGoNext(){const d=NET.duel;d.rdy=0;d.cd=-1;d.cs=-1;d.pgT=0;NET.msg='';duelSt();startNext()}
 function duelEndNext(){const d=NET.duel;if(!d||!d.run||!duelFin(d))return;if(d.gone){duelRematch();return}d.rdy=d.rdy?0:1;duelSt();bcastRoster()}
-function duelRematch(){const d=NET.duel;if(!d)return;const gone=d.gone;d.run=0;d.k=0;d.jobs=[];d.mine=[];d.rvr=[];d.out=0;d.pg=null;d.rdy=0;d.cd=-1;d.cs=-1;d.gone=0;if(d.rv)d.rv.rdy=0;
+/* Revanche: Wer zuerst sieht, dass beide bereit sind, schickt rm, damit der andere nicht auf ein Bereit wartet, das sein Gegenueber mit dem Zuruecksetzen schon wieder abgeraeumt hat (die zwei st dicht hintereinander kann der erste Host verpassen). */
+function duelRematch(notify){const d=NET.duel;if(!d)return;if(notify&&d.link){try{d.link.send({t:'dl',k:'rm'})}catch(e){}}const gone=d.gone;d.run=0;d.k=0;d.jobs=[];d.mine=[];d.rvr=[];d.out=0;d.pg=null;d.rdy=0;d.cd=-1;d.cs=-1;d.gone=0;if(d.rv)d.rv.rdy=0;
 if(gone){if(d.lead){d.rv=null}else{if(d.srv){try{d.srv.close()}catch(e){}}NET.duel=null}}
 scr='lobby';ended=null;paused=false;clearKeys();mouse.down=0;sessReset();NET.roster.forEach(r=>r.rdy=0);NET.msg='';bcast({t:'lb'});if(NET.duel)duelSt();bcastRoster()}
 function duelRunTick(dt){const d=NET.duel;if(d.link){d.hb-=dt;if(d.hb<=0){d.hb=CFG.duel.hb;duelSt()}if(scr==='play'&&!ended){d.pgT-=dt;if(d.pgT<=0){d.pgT=CFG.duel.pg;duelPg()}}}
@@ -2267,25 +2325,27 @@ if(d.cd>=0){if(!free&&!(d.rv&&d.rv.rdy)){d.cd=-1;d.cs=-1;NET.msg='Start abgebroc
 else if(free)duelGoNext();
 else if(d.lead&&d.link&&d.rv&&d.rv.rdy&&d.rvr.some(x=>x.i===d.k-1)){d.cd=CFG.duel.count;d.cs=-1;d.link.send({t:'dl',k:'go',i:d.k,cd:d.cd});bcastRoster()}}
 else if(scr==='shop'&&d.cd>=0){d.cd=-1;d.cs=-1}
-if(scr==='play'&&ended&&d.rdy&&duelFin(d)&&d.rv&&d.rv.rdy)duelRematch()}
+if(scr==='play'&&ended&&d.rdy&&duelFin(d)&&d.rv&&d.rv.rdy)duelRematch(1)}
+function duelRm(d){if(NET.duel===d&&scr==='play'&&ended&&d.rdy&&duelFin(d))duelRematch(0)}
 function duelMsg(d,m){if(NET.duel!==d||!m||typeof m!=='object')return;
 if(m.t==='rej'){duelEnd(String(m.why||'Abgewiesen.').slice(0,120));return}
 if(m.t!=='dl')return;
-if(m.k==='ok'&&!d.link&&d.conn){d.link=d.conn;d.rv={nm:cleanName(m.nm)||'Gegner',n:clamp(m.n|0,0,4),rdy:0,code:d.rv.code};d.len=clamp(m.len|0,1,CFG.duel.maxLen);NET.msg='Wettkampf: verbunden.';LOG.ev('duell',['verbunden',d.rv.nm]);duelSt();bcastRoster()}
+if(m.k==='ok'&&!d.link&&d.conn){d.link=d.conn;d.rv={nm:cleanName(m.nm)||'Gegner',n:clamp(m.n|0,0,4),rdy:0,code:d.rv.code};d.len=clamp(m.len|0,1,CFG.duel.maxLen);NET.msg='Wettkampf: verbunden.';if(d.uni){d.rdy=1;d.n=NET.roster.length}LOG.ev('duell',['verbunden',d.rv.nm]);duelSt();bcastRoster()}
 else if(!d.link)return;
 else if(m.k==='st')duelRvSt(d,m);
 else if(m.k==='pg')duelRvPg(d,m);
 else if(m.k==='res')duelRvRes(d,m);
 else if(m.k==='go'){if(d.run){if(d.lead||!d.rdy||d.cd>=0||scr!=='shop'||(m.i|0)!==d.k)return;d.cd=clamp(+m.cd||CFG.duel.count,1,15);d.cs=-1;bcastRoster();return}if(d.lead||!duelBoth()||d.cd>=0)return;const J=sanJobs(m.jobs);if(!J.length)return;d.jobs=J;d.cd=clamp(+m.cd||CFG.duel.count,1,15);d.cs=-1;d.k=0;bcastRoster()}
+else if(m.k==='rm')duelRm(d)
 else if(m.k==='bye')duelEnd('Der Leiter hat den Wettkampf beendet.')}
 function hostRival(c,m){const d=NET.duel;if(!d||!d.lead){rejC(c,'In diesem Raum ist kein Wettkampf offen.');return}if(d.link){rejC(c,'Es ist schon ein Gegner da.');return}if(scr!=='lobby'){rejC(c,'Das Spiel läuft schon.');return}
 c.rival=true;c.ok=true;d.link=c;d.rv={nm:cleanName(m.nm)||'Gegner',n:clamp(m.n|0,0,4),rdy:0,code:String(m.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4)};
 c.onmsg=mm=>rivalMsg(c,mm);c.onclose=()=>{c.ok=false;if(NET.duel&&NET.duel.link===c){NET.duel.link=null;duelEnd('Der Gegner hat den Wettkampf verlassen.')}};
-c.send({t:'dl',k:'ok',nm:duelName(),n:NET.roster.length,len:d.len});LOG.ev('duell',['gegner',d.rv.nm]);NET.msg=d.rv.nm+' ist als Gegner dabei.';bcastRoster()}
-function rivalMsg(c,m){const d=NET.duel;if(!d||d.link!==c||!m||typeof m!=='object'||m.t!=='dl')return;if(m.k==='st')duelRvSt(d,m);else if(m.k==='pg')duelRvPg(d,m);else if(m.k==='res')duelRvRes(d,m);else if(m.k==='bye')duelEnd('Der Gegner hat den Wettkampf verlassen.')}
+c.send({t:'dl',k:'ok',nm:duelName(),n:NET.roster.length,len:d.len});if(d.uni){d.rdy=1;d.n=NET.roster.length}LOG.ev('duell',['gegner',d.rv.nm]);NET.msg=d.rv.nm+' ist als Gegner dabei.';bcastRoster()}
+function rivalMsg(c,m){const d=NET.duel;if(!d||d.link!==c||!m||typeof m!=='object'||m.t!=='dl')return;if(m.k==='st')duelRvSt(d,m);else if(m.k==='pg')duelRvPg(d,m);else if(m.k==='res')duelRvRes(d,m);else if(m.k==='rm')duelRm(d);else if(m.k==='bye')duelEnd('Der Gegner hat den Wettkampf verlassen.')}
 /* Takt des Wettkampfs in der Lobby (Host): Teamgroesse beobachten (Aenderung nimmt Bereit zurueck), Status einmal je Sekunde senden, Countdown zaehlen und abbrechen, wenn die Bedingung wegfaellt, der Leiter schickt go, sobald beide bereit sind. */
 function duelTick(dt){const d=NET.duel;if(!d||NET.role!=='host')return;if(d.run){duelRunTick(dt);return}if(scr!=='lobby')return;
-if(NET.roster.length!==d.n){d.n=NET.roster.length;d.rdy=0;duelSt();bcastRoster()}
+if(NET.roster.length!==d.n){d.n=NET.roster.length;if(!d.uni)d.rdy=0;duelSt();bcastRoster()}
 if(d.link){d.hb-=dt;if(d.hb<=0){d.hb=CFG.duel.hb;duelSt()}}
 if(d.cd>=0){if(!duelBoth()){d.cd=-1;d.cs=-1;d.jobs=[];NET.msg='Start abgebrochen.';bcastRoster()}else{d.cd-=dt;const s=Math.ceil(d.cd);if(s!==d.cs){d.cs=s;bcastRoster()}if(d.cd<=0)duelGo()}}
 else if(d.lead&&duelBoth()){d.jobs=duelJobs();d.k=0;d.cd=CFG.duel.count;d.cs=-1;d.link.send({t:'dl',k:'go',jobs:d.jobs,cd:d.cd});bcastRoster()}}
@@ -2299,23 +2359,37 @@ c.send({t:'wel',id:-1,sid:c.sid,ver:VER,b:BUILD.n,code:NET.code});bcastRoster();
 if(scr==='play'&&!ended)c.send({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0})}
 function specMsg(c,m){if(!m||typeof m!=='object')return;if(m.t==='ping')c.send({t:'pong',n:m.n});else if(m.t==='nm'){c.nm0=cleanName(m.v)||c.nm0;c.nm=cleanName(m.v)||c.nm;bcastRoster()}else if(m.t==='ch'){if(m.c===2)chatRoom('s'+c.sid,m.s,c.nm);else chatSpec(c,m.s,m.c)}else if(m.t==='role')roleReq(c,m.v)}
 /* Modus des Raums (R1, docs/coop-ausbau.md, Spur R): '' offen, 'coop' oder 'duel' (bis R2 die heutige Lobby mit dem Fenster Wettkampf). Nur der Host in der Lobby setzt ihn, er steht im Raumstand (ros md). Ein Wechsel weg vom Wettkampf beendet ein offenes Angebot. */
-function setMode(v){if(NET.role!=='host'||scr!=='lobby'||!['','coop','duel'].includes(v)||NET.mode===v)return false;
+function setMode(v){if(NET.role!=='host'||scr!=='lobby'||NET.ho||!['','coop','duel'].includes(v)||NET.mode===v)return false;
+if(v==='coop'&&NET.t2.length)return false;
 if(v!=='duel'&&NET.duel)duelEnd('Wettkampf beendet.',true);NET.mode=v;LOG.ev('netz',['modus',v]);bcastRoster();return true}
-/* Rolle wechseln (nur Lobby): who = Spieler-Id (Zahl, nicht der Host) oder 's'+sid, to = 's' (Zuschauer) oder 'p' (Spieler). Die Verbindung wandert zwischen NET.conns und NET.specs, der Client bekommt ein neues wel (rl:1). Gelingt es nicht (kein Platz, Zuschauer aus oder voll), bleibt alles, wie es ist. */
-function roleSet(who,to){if(NET.role!=='host'||scr!=='lobby')return false;const F=CFG.spec;
-if(to==='s'){if(!(who>0)||!F.on||NET.specs.length>=F.max)return false;const c=NET.conns.find(q=>q.pid===who);if(!c||c.kicked)return false;
-const r=NET.roster.find(q=>q.id===who),nm=r&&r.name!==PC[who].n?r.name:'';NET.conns=NET.conns.filter(q=>q!==c);NET.roster=NET.roster.filter(q=>q.id!==who);delete c.pid;delete c.kit;specAttach(c,nm);
-LOG.ev('netz',['rolle','zuschauer',who]);c.send({t:'wel',id:-1,sid:c.sid,ver:VER,b:BUILD.n,code:NET.code,rl:1});bcastRoster();return true}
-if(to==='p'){const sid=typeof who==='string'?+who.slice(1):-1,c=NET.specs.find(q=>q.sid===sid),id=freeId();if(!c||c.kicked||id===undefined)return false;
-const nm=c.nm0||'';NET.specs=NET.specs.filter(q=>q!==c);for(const k of['spec','sid','nm','nm0','rc','evBuf','sk'])delete c[k];playerAttach(c,id);c.kit=sanKit(BASEKIT);setRoster(id,nm);
-LOG.ev('netz',['rolle','spieler',id]);c.send({t:'wel',id,ver:VER,b:BUILD.n,code:NET.code,rl:1});bcastRoster();return true}
-return false}
-function roleReq(c,v){if(NET.role!=='host'||scr!=='lobby'||c.kicked)return;
-if(v==='s'&&!c.spec){if(!roleSet(c.pid,'s'))c.send({t:'rolr',why:!CFG.spec.on?'Zuschauer sind nicht erlaubt.':'Alle Zuschauerplätze sind belegt.'})}
-else if(v==='p'&&c.spec){if(!roleSet('s'+c.sid,'p'))c.send({t:'rolr',why:'Alle Plätze sind belegt.'})}}
+/* Rolle oder Team wechseln (nur Lobby, nicht waehrend der Uebergabe): who = Spieler-Id (Zahl groesser 0, der Host bleibt in Team 1), 's'+sid oder 't'+tk, to = 's' (Zuschauer), 1 (Team 1, Roster), 2 (Team 2, nicht im Coop) oder 'p' (ein Zuschauer wird Spieler wie ein Beitretender, siehe placeFor). Die Verbindung wandert zwischen NET.conns, NET.t2 und NET.specs, der Client bekommt ein neues wel (rl:1). Gelingt es nicht (kein Platz, Zuschauer aus oder voll), bleibt alles, wie es ist. */
+const roleWho=c=>c.spec?'s'+c.sid:c.t2?'t'+c.tk:c.pid;
+function roleSet(who,to){if(NET.role!=='host'||scr!=='lobby'||NET.ho)return false;const F=CFG.spec;let c=null,cur=-1,nm='';
+if(typeof who==='number'){if(!(who>0))return false;c=NET.conns.find(q=>q.pid===who);cur=1;if(c){const r=NET.roster.find(q=>q.id===who);nm=r&&r.name!==PC[who].n?r.name:''}}
+else if(typeof who==='string'&&who[0]==='s'){c=NET.specs.find(q=>q.sid===+who.slice(1));cur=0;nm=c&&c.nm0||''}
+else if(typeof who==='string'&&who[0]==='t'){c=NET.t2.find(q=>q.tk===+who.slice(1));cur=2;nm=c&&c.nm0||''}
+if(!c||c.kicked)return false;
+const tgt=to==='s'?0:to==='p'?(cur===0?placeFor():cur):to;if(tgt!==0&&tgt!==1&&tgt!==2)return false;if(tgt===cur)return false;
+if(tgt===0&&(!F.on||NET.specs.length>=F.max))return false;
+if(tgt===1&&freeId()===undefined)return false;
+if(tgt===2&&(NET.mode==='coop'||NET.t2.length>=4))return false;
+if(cur===1){NET.conns=NET.conns.filter(q=>q!==c);NET.roster=NET.roster.filter(q=>q.id!==who);delete c.pid;delete c.kit}
+else if(cur===0){NET.specs=NET.specs.filter(q=>q!==c);for(const k of['spec','sid','nm','nm0','rc','evBuf','sk'])delete c[k]}
+else{NET.t2=NET.t2.filter(q=>q!==c);for(const k of['t2','tk','nm','nm0'])delete c[k]}
+let w;
+if(tgt===0){specAttach(c,nm);w={id:-1,sid:c.sid}}
+else if(tgt===1){const id=freeId();playerAttach(c,id);c.kit=sanKit(BASEKIT);setRoster(id,nm);w={id}}
+else{t2Attach(c,nm);w={id:-2,tk:c.tk}}
+LOG.ev('netz',['rolle',tgt]);c.send(Object.assign({t:'wel',ver:VER,b:BUILD.n,code:NET.code,rl:1},w));bcastRoster();return true}
+function roleReq(c,v){if(NET.role!=='host'||scr!=='lobby'||c.kicked||NET.ho)return;if(v!=='s'&&v!==1&&v!==2&&v!=='p')return;if(v==='p'&&!c.spec)return;
+const cur=c.spec?0:c.t2?2:1,tgt=v==='s'?0:v==='p'?placeFor():v;
+if(!(v==='p'&&tgt===0)){if(tgt===cur)return;if(roleSet(roleWho(c),v))return}
+c.send({t:'rolr',why:tgt===0&&v!=='p'?(!CFG.spec.on?'Zuschauer sind nicht erlaubt.':'Alle Zuschauerplätze sind belegt.'):tgt===2?(NET.mode==='coop'?'Team 2 gibt es nur im Wettkampf.':'Team 2 ist voll.'):NET.mode==='duel'?'Team 1 ist voll.':'Alle Plätze sind belegt.'})}
+/* Reihenfolge in Team 2 (nur Host, Lobby): ein Platz nach oben, der erste Spieler ist der Host von Team 2 */
+function t2Up(tk){if(NET.role!=='host'||scr!=='lobby'||NET.ho)return false;const i=NET.t2.findIndex(q=>q.tk===tk);if(i<1)return false;const q=NET.t2[i-1];NET.t2[i-1]=NET.t2[i];NET.t2[i]=q;bcastRoster();return true}
 /* Mitspieler entfernen (P6, B7): nur der Host, jederzeit. Der Abbruchweg von c.onclose laeuft sofort (Lobby und Shop: aus der Liste, im Spiel: gone mit Meldung), die Verbindung schliesst nach 250 ms, damit kick noch ankommt. */
 function kickPlayer(id){if(NET.role!=='host')return false;
-if(typeof id==='string'){const c=NET.specs.find(q=>'s'+q.sid===id);if(!c||c.kicked)return false;c.kicked=true;LOG.ev('netz',['zuschauer entfernt',c.sid]);try{c.send({t:'kick'})}catch(e){}const f=c.onclose;c.onclose=()=>{};if(f)f();setTimeout(()=>{try{c.close()}catch(e){}},250);return true}
+if(typeof id==='string'){const c=id[0]==='t'?NET.t2.find(q=>'t'+q.tk===id):NET.specs.find(q=>'s'+q.sid===id);if(!c||c.kicked)return false;c.kicked=true;LOG.ev('netz',['zuschauer entfernt',id]);try{c.send({t:'kick'})}catch(e){}const f=c.onclose;c.onclose=()=>{};if(f)f();setTimeout(()=>{try{c.close()}catch(e){}},250);return true}
 if(!(id>0))return false;const c=NET.conns.find(q=>q.pid===id);if(!c||c.kicked)return false;c.kicked=true;LOG.ev('netz',['entfernt',id]);try{c.send({t:'kick'})}catch(e){}const f=c.onclose;c.onclose=()=>{};if(f)f();setTimeout(()=>{try{c.close()}catch(e){}},250);return true}
 function hostMsg(c,m){if(c.kicked)return;const o=players[c.pid];
 if(m.t==='hi'){if(m.ver!==VER||m.b!==BUILD.n){c.send({t:'rej',why:'Versionen passen nicht (Host: Build '+BUILD.n+', du: Build '+(m.b||'?')+'). Seite neu laden.'});setTimeout(()=>c.close(),300);return}c.kit=sanKit(m.k);c.send({t:'wel',id:c.pid,ver:VER,b:BUILD.n,code:NET.code});setRoster(c.pid,m.nm);bcastRoster()}
@@ -2334,7 +2408,7 @@ else if(m.t==='at'){const r=NET.roster.find(q=>q.id===c.pid);if(r&&'lsmep'.inclu
 else if(m.t==='ping')c.send({t:'pong',n:m.n})
 else if(m.t==='lg')flogRecv(c.pid,m)
 else if(m.t==='chk')flogChk(c.pid,m)}
-function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;if(NET.duel&&!NET.duel.jobs.length)duelEnd('Wettkampf beendet.',true);nPl=NET.roster.length;mapSeed=seedFor();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0});beginPlay()}
+function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;for(const c of NET.t2.slice())kickPlayer('t'+c.tk);if(NET.duel&&!NET.duel.jobs.length)duelEnd('Wettkampf beendet.',true);nPl=NET.roster.length;mapSeed=seedFor();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0});beginPlay()}
 function joinRoom(code,opt){netReset();NET.role='client';NET.spec=!!(opt&&opt.spec);NET.joinSpec=NET.spec;NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
 NET.srv=TR.join(code,{onOpen(c){NET.conn=c;LOG.ev('netz','verbunden mit dem Host');c.onmsg=m=>clientMsg(m,c);c.onclose=()=>connLost(c);c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
 setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.msg='Keine Antwort. Code prüfen und erneut versuchen.'},15000)}
@@ -2383,12 +2457,13 @@ for(const q of d.own){if(q.d===2)continue;g.globalAlpha=q.d?.4:1;g.fillStyle=PC[
 g.lineWidth=1.5;for(const q of d.other){if(q.d===2)continue;g.globalAlpha=q.d?.4:1;g.strokeStyle=PC[q.id]?PC[q.id].c:'#fff';g.beginPath();g.arc(X(q.x),Y(q.y),3.5,0,6.283);g.stroke()}g.globalAlpha=1;
 g.font='10px monospace';g.fillStyle='#8d95a1';g.textAlign='right';g.fillText('T: Team wechseln',R.x+R.w-8,R.y+R.h-7);g.textAlign='left'}
 function clientMsg0(m){
-if(m.t==='wel'){NET.myId=m.id;NET.spec=m.id===-1;NET.sid=m.id===-1?m.sid|0:0;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}
-if(m.rl){NET.msg=NET.spec?'Du schaust jetzt zu.':'Du spielst jetzt mit.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
+if(m.t==='wel'){NET.myId=m.id;NET.spec=m.id===-1;NET.sid=m.id===-1?m.sid|0:0;NET.team=m.id>=0?1:m.id===-2?2:0;NET.tk=m.id===-2?m.tk|0:0;if(m.ver!==VER||(m.b&&m.b!==BUILD.n)){NET.msg='Version passt nicht (Host: Build '+(m.b||'?')+', du: Build '+BUILD.n+'). Seite neu laden.';return}
+if(m.rl){NET.msg=NET.spec?'Du schaust jetzt zu.':NET.mode==='duel'?'Du spielst jetzt in Team '+NET.team+'.':'Du spielst jetzt mit.';return}NET.msg='Verbunden. Warte auf den Start ...';sessReset()}
 else if(m.t==='rolr')NET.msg=String(m.why||'').slice(0,60)
+else if(m.t==='t2')t2cMsg(m)
 else if(m.t==='kick'){LOG.ev('netz','entfernt');leaveGame('Der Host hat dich aus dem Raum entfernt.')}
-else if(m.t==='ch'){const t=typeof m.s==='string'?cleanChat(m.s):'';if(t){if(m.c===0&&PC[m.id|0])chatAdd(m.id|0,t,0);else if(m.c===1&&NET.spec)chatAdd(-1,t,1,cleanName(m.n)||'Zuschauer',(m.sid|0)===NET.sid);else if(m.c===2&&scr==='lobby'){const sp=!PC[m.id|0]||m.id<0;chatAdd(sp?-1:m.id|0,t,2,sp?cleanName(m.n)||'Zuschauer':undefined,sp&&NET.spec&&(m.sid|0)===NET.sid)}}}
-else if(m.t==='ros'){NET.du=m.du&&typeof m.du==='object'?m.du:null;NET.roster=m.r;NET.spNames=Array.isArray(m.sp)?m.sp.slice(0,CFG.spec.max).map(x=>cleanName(x)):[];NET.mode=m.md==='coop'||m.md==='duel'?m.md:'';NET.specOn=m.so===0?0:1;if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);if(m.l!=null)SESSION.law=!!m.l}
+else if(m.t==='ch'){const t=typeof m.s==='string'?cleanChat(m.s):'';if(t){if(m.c===0&&PC[m.id|0])chatAdd(m.id|0,t,0);else if(m.c===1&&NET.spec)chatAdd(-1,t,1,cleanName(m.n)||'Zuschauer',(m.sid|0)===NET.sid);else if(m.c===2&&scr==='lobby'){const sp=!PC[m.id|0]||m.id<0;chatAdd(sp?-1:m.id|0,t,2,sp?cleanName(m.n)||(m.id===-2?'Spieler':'Zuschauer'):undefined,sp&&((NET.spec&&m.id===-1&&(m.sid|0)===NET.sid)||(NET.team===2&&m.id===-2&&(m.tk|0)===NET.tk)))}}}
+else if(m.t==='ros'){NET.du=m.du&&typeof m.du==='object'?m.du:null;NET.roster=m.r;NET.spNames=Array.isArray(m.sp)?m.sp.slice(0,CFG.spec.max).map(x=>cleanName(x)):[];NET.mode=m.md==='coop'||m.md==='duel'?m.md:'';NET.specOn=m.so===0?0:1;NET.t2n=Array.isArray(m.t2)?m.t2.slice(0,4).map(x=>({k:(x&&x.k)|0,n:cleanName(x&&x.n)||'Spieler'})):[];NET.hp=typeof m.hp==='string'?m.hp.slice(0,6):'';NET.side=m.sd==='b'?'b':'';if(m.sc)scenario=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);if(m.l!=null)SESSION.law=!!m.l}
 else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='dlc')dlcMsg(m)
 else if(m.t==='go'){NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;nPl=m.n;if(m.sc)jobSc=m.sc;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
@@ -2769,17 +2844,15 @@ case'join':joinText='';NET.msg='';NET.joinSpec=false;scr='join';break;
 case'mode':setMode(v);break;
 case'role':if(NET.role==='client'&&NET.conn)NET.conn.send({t:'role',v});break;
 case'roleOf':if(v)roleSet(v.who,v.to);break;
+case't2up':t2Up(v);break;
 case'chatOpen':if(chatOk()){chatOpen=true;chatBuf=''}break;
-case'joinBack':scr=NET.joinDuel?'lobby':'coop';NET.joinDuel=false;break;
-case'duelNew':duelOpen();break;
-case'duelEnd':duelLeave();break;
-case'duelJoin':joinText='';NET.msg='';NET.joinDuel=true;NET.joinSpec=false;scr='join';break;
-case'joinGo':if(joinText.length===4){if(NET.joinDuel){NET.joinDuel=false;scr='lobby';duelJoin(joinText)}else joinRoom(joinText,{spec:NET.joinSpec})}break;
+case'joinBack':scr='coop';break;
+case'joinGo':if(joinText.length===4)joinRoom(joinText,{spec:NET.joinSpec});break;
 case'paste':pasteClip();break;
 case'name':nameEdit=true;break;
 case'copyLink':copyLink();break;
 case'specOn':CFG.spec.on=CFG.spec.on?0:1;if(NET.role==='host')bcastRoster();break;
-case'lobbyStart':if(NET.mode==='coop')startCoop();else if(NET.mode==='duel'&&NET.duel&&NET.duel.link)duelReady();break;
+case'lobbyStart':if(NET.mode==='coop')startCoop();else if(NET.mode==='duel'){if(NET.duel&&NET.duel.link)duelReady();else duelStart()}break;
 case'lobbyBack':netReset();scr='coop';break;
 case'kick':kickPlayer(v);break;
 case'buy':shopBuy(v);break;
@@ -2937,7 +3010,7 @@ let atLast='';
 const curAt=()=>scr==='lobby'?'l':scr==='shop'?'s':scr==='mission'?'m':scr==='play'?(ended?'e':'p'):'';
 function atSync(){if(NET.role==='solo'||NET.spec){atLast='';return}const a=curAt();if(!a||a===atLast)return;
 if(NET.role==='host'){const r=NET.roster.find(q=>q.id===0);if(r){atLast=a;r.at=a;bcastRoster()}}else if(NET.conn){atLast=a;NET.conn.send({t:'at',v:a})}}
-function tick(dt){chatClk+=dt;if(spQ.length)specQStep();duelTick(dt);logStep(dt);flogNet(dt);atSync();if(funkT>0){funkT-=dt;if(scr!=='play'||paused||ended)funkT=0}
+function tick(dt){chatClk+=dt;if(spQ.length)specQStep();duelTick(dt);hoTick(dt);hbTick(dt);logStep(dt);flogNet(dt);atSync();if(funkT>0){funkT-=dt;if(scr!=='play'||paused||ended)funkT=0}
 if(scr==='play'){if(NET.role==='solo'){if(focus&&!paused)update(dt)}else update(dt)}else{time+=dt;titleCam()}
 if(titleNote){titleNote.t-=dt;if(titleNote.t<=0)titleNote=null}
 volT=Math.max(0,volT-dt);shopNote.t=Math.max(0,shopNote.t-dt);SND.pause(scr==='play'&&NET.role==='solo'&&(paused||!focus)&&volT<=0);SND.frame(dt,{mode:scr!=='play'?1:ended?0:phase===2?2:1,sus,wave:waveN,police:policeShown,van:vanArr,sd:pcs.some(c=>!c.dead&&!c.civ)?Math.min(...pcs.filter(c=>!c.dead&&!c.civ).map(c=>Math.hypot(c.x-p.x,c.y-p.y))):null});
@@ -2981,7 +3054,7 @@ function plTry(){if(!plWant()||plHeld())return;try{const r=cv.requestPointerLock
 document.addEventListener('pointerlockchange',()=>{if(plHeld()){if(time-mouse.t>=4){mouse.sx=clamp(p.x-camX+Math.cos(p.a)*90,0,VW);mouse.sy=clamp(p.y-camY+Math.sin(p.a)*90,0,VH);mouse.t=time}}else if(plWant()&&document.hasFocus()){paused=true;clearKeys();mouse.down=0}});
 cv.addEventListener('mousedown',e=>{cv.focus();focus=true;SND.init();SND.resume();if(!plHeld())mpos(e);if(nameEdit){nameEdit=false;saveName()}const hit=UI.down(mouse.sx,mouse.sy);plTry();if(hit||scr!=='play')return;if(NET.spec){specClick(mouse.sx,mouse.sy);return}mouse.down=1;if(spwOn&&!paused&&!ended)reqSpw()});window.addEventListener('mouseup',()=>{mouse.down=0;UI.up(mouse.sx,mouse.sy)});
 cv.addEventListener('mousemove',e=>{if(plHeld()){const r=cv.getBoundingClientRect();mouse.sx=clamp(mouse.sx+e.movementX*VW/r.width,0,VW);mouse.sy=clamp(mouse.sy+e.movementY*VH/r.height,0,VH);mouse.t=time;return}mpos(e);mouse.t=time;UI.move(mouse.sx,mouse.sy)});
-const dbg={VER,setMode,roleSet,chatRoom,duelCmp,duelNext,duelJobs:()=>NET.duel?duelJobs():null,duelOpen,duelJoin,duelReady,duelLeave,seedFor,parseJoin,chatOk,evt,fitSnap,specQ:()=>spQ.length,spec:()=>({t:specT,free:specFree,all:specAll,chips:specChips.map(c=>({id:c.id,x:c.x,y:c.y,w:c.w,h:c.h}))}),specClick,alt:()=>ALT?{t:ALT.t,r:ALT.r,from:ALT.from,d:ALT.d,e:ALT.e,e0:ALT.e0,stop:ALT.lane.van.stop,pos:ALT.lane.van.pos,dir:ALT.lane.van.dir,goal:ALT.lane.exit.goal,zone:ALT.lane.exit.cells,swept:ALT.lane.van.swept,cur:vanAlt,n:altN}:null,altOf,setAlt,altCan,altSwap,copsNearVan,copsCount,sp2:()=>NET.sp2?{code:NET.sp2.code,live:!!NET.sp2.live,msg:NET.sp2.msg||'',go:!!NET.sp2.go,n:NET.sp2.pl.length,end:!!NET.sp2.end}:null,spMap:specMapData,spLegend:specLegend,spMapRect:specMapR,specKey:k=>specKey(k,{shiftKey:false,preventDefault(){}}),dlDelay:()=>NET.dlDelay|0,titleNote:()=>titleNote,setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
+const dbg={VER,setMode,roleSet,chatRoom,placeFor,t2Up,duelStart,hold:()=>HOLD&&{code:HOLD.code,ready:HOLD.ready,q:HOLD.q.length},holdClose,ho:()=>NET.ho,duelCmp,duelNext,duelJobs:()=>NET.duel?duelJobs():null,duelOpen,duelJoin,duelReady,duelLeave,seedFor,parseJoin,chatOk,evt,fitSnap,specQ:()=>spQ.length,spec:()=>({t:specT,free:specFree,all:specAll,chips:specChips.map(c=>({id:c.id,x:c.x,y:c.y,w:c.w,h:c.h}))}),specClick,alt:()=>ALT?{t:ALT.t,r:ALT.r,from:ALT.from,d:ALT.d,e:ALT.e,e0:ALT.e0,stop:ALT.lane.van.stop,pos:ALT.lane.van.pos,dir:ALT.lane.van.dir,goal:ALT.lane.exit.goal,zone:ALT.lane.exit.cells,swept:ALT.lane.van.swept,cur:vanAlt,n:altN}:null,altOf,setAlt,altCan,altSwap,copsNearVan,copsCount,sp2:()=>NET.sp2?{code:NET.sp2.code,live:!!NET.sp2.live,msg:NET.sp2.msg||'',go:!!NET.sp2.go,n:NET.sp2.pl.length,end:!!NET.sp2.end}:null,spMap:specMapData,spLegend:specLegend,spMapRect:specMapR,specKey:k=>specKey(k,{shiftKey:false,preventDefault(){}}),dlDelay:()=>NET.dlDelay|0,titleNote:()=>titleNote,setChatShow:v=>{chatShow=!!v},chat:()=>({open:chatOpen,buf:chatBuf,show:chatShow,lines:chat.map(l=>({id:l.id,s:l.s,c:l.c}))}),cleanChat,chatOwn:()=>chat.map(l=>l.own),chatHost,funk:()=>({open:funkT>0,t:funkT,mode:funkMode,mk:funkMk.map(q=>({id:q.id,t:q.t})),pings:pings.map(q=>({id:q.id,x:q.x,y:q.y,t:q.t})),fc:feed.map(f=>f.c||null),last:funkLast}),radHost,FUNK,setFunkMode,edgePt,setN:v=>{nPl=v},pinfo,pickIt,cands,cycleSel,altIt,sel:()=>selIt,setSel:v=>{selIt=v},waveGap,pAt:()=>policeAt,hostMi,grabHost,relHost,hasHost,hFrom,toPost,skv,skR,shotSp,skOk,skNeed,skBlock,skCanSell,skillBuy,skillSell,SKID,holdCap,endLocal,blastAt,toolT,hostSt:()=>({n:hostN,k:hostK,x:holdX,s:shX}),setShield:v=>{shX=v},hostShield,nightOn,lgv,lgvM:lgM,lgvA:lgA,carHurt,heatLv,heatBook,heatCalc,lawCost,itsAll,carMi,decorCars,deriveDecor,awards,AWARDS,smokeN:()=>smk.length,dyN:()=>dcy.length,staffBlind,dcyList:()=>dcy,finish,setSecured:v=>{secured=v},quietFade,trapKind,trapSpot,placeTrap,trapStep,traps:()=>traps,flog:()=>LOG,peerTransport,flogMeta:()=>flogMeta(),flogLogs:()=>NET.logs,flogStat:()=>chkStat,flogChk,chkVec,flogSend,flogSaveNow,spw:()=>spwOn,spwKind,spwMul,fireSpw,aidDown,aidStep,aids:()=>aids,throwPoint,useGadget,smoked,aimPoint,gadStep,hitPlayer,keepKit,repCost,itemPrice,sanKit,shopState,msgs:()=>({feed:feed.map(f=>f.s),banner:banner&&banner.s}),plock:()=>({on:MLOCK.on,can:MLOCK.can,held:plHeld(),want:plWant(),paused,sx:mouse.sx,sy:mouse.sy}),BUILD,LAGE,canSee,angd,coneRays,ui:()=>UI,scen:()=>scenario,SC:{get unlock(){return unlockAll},get same(){return sameMap},get name(){return myName},get from(){return missionFrom}},setSus:v=>{sus=v},GOALS,goal:()=>goal,setGoal:v=>{goalForce=v||null},goalOk,goalDone,goalNeed,leanLine,setLage:v=>{lgForce=Array.isArray(v)?v:null},setTurn:v=>{turnForce=v||null},lgM,lgA,lgOn,leanAt,spawnSnipers,mkSniper,clearSn,deriveWins,wbarItem,mkCop,spawnWave,throwGren,stormGren,flashBang,gasCloud,gren:()=>({gr,gc,gq}),setScenario:v=>{scenario=v;jobSc=v==='random'?'bank':v},sc:()=>jobSc,tk:()=>tk,setName:v=>{myName=cleanName(v);saveName()},pn,revive,revTarget,bars:()=>bars,rT:()=>rT,blk:()=>blk,evStep,CLASSICM,genMission,setSeedMode:v=>{seedMode=v},newSeed,genLayout,validLayout,validateMap,laneOf,autoPosts,fillDerived,meetKit,meetCands,placeMeet,derivedBackDoors,finishLay,lootOf,MAP_FIELDS,layoutFor,layoutBase,turnFor,genGas,GS_SHOPS,gasParams,genJewel,JW_HALLS,jewParams,genMuseum,MU_HALLS,museumParams,muTubes,genCasino,CS_FLOORS,casinoParams,csTubes,CLASSICP,buildSeed:sd=>{mapSeed=sd;reset()},buildLay:lay=>{buildWorld(lay);mapSeed=lay.seed;reset()},world:()=>({M:M.map(r=>r.join('')),setc,st,so,restricted,LOBBY,POSTS:LAY.posts,PSLOT:LAY.slots,PCY:LAY.laneY,SUNW,mat:LAY.mat,W,H,WX0,WY0,cell,isSol,isOpq,isBul}),LAY:()=>LAY,LANE:()=>LANE,roadOf,turnLayout,vaultStand,SESSION,sessReset,curKit,useGadget,openShop,shopBuy,shopGo,startNext,get:()=>({time,phase,alarmT,alarmBy,p,me,players,npcs,en,pcs:pcs.filter(c=>!c.civ),cars:pcs,fps,bl,cams,its,capt,surKilled,keyTaken,cargoOpen,radioDown,loot:teamLoot(),units:me.units,secured,escaped,code,mon,sus,vaultOpen,ended,waveN,tH,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,kills,civKills,camDown}),update,tick,draw,keys,startHeist,callVan,reset,mouse,pathTo,isSol,los,clear,POSTS:()=>LAY.posts,T,CFG,startGame,toTitle,SND,NET,hostRoom,joinRoom,kickPlayer,sendKit,startCoop,applySnap,buildSnap,leaveGame,state:()=>({scr,paused,role:NET.role,me:me&&me.id,nPl}),setFocus:v=>{focus=v}};
 if(DBG){window.__dbgs=window.__dbgs||[];window.__dbgs.push(dbg);if(!window.__dbg)window.__dbg=dbg}
 cv.focus({preventScroll:true});
 {const m=/^#raum=([A-Za-z0-9]{4})(&zu=1)?$/.exec(location.hash);if(m&&!opt.noLoop)joinRoom(m[1].toUpperCase(),{spec:!!m[2]})}

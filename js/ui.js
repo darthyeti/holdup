@@ -132,47 +132,56 @@ g.textAlign='right';g.fillStyle=MU;g.font='11px monospace';g.fillText(nameEdit?'
 {id:'back',x:60,y:488,w:170,h:40,kind:'g',act:'coopBack',title:'Zurück',chip:'Esc'}],
 deco(){const{g,errTxt}=X;g.textAlign='center';g.font='bold 30px monospace';g.fillStyle=BL;g.fillText('COOP',480,196);g.font='13px monospace';g.fillStyle=TX;g.fillText('Ein Raum, ein Überfall, bis zu 4 Räuber.',480,216);
 if(!window.Peer){g.font='12px monospace';g.fillStyle=RD;g.fillText(errTxt('lib'),480,492)}else if(NET.msg){g.font='12px monospace';g.fillStyle=Y;g.fillText(NET.msg,480,492)}}}}
-function sJoin(){const{NET,joinText}=X,ok=joinText.length===4,sp=!!NET.joinSpec,dd=!!NET.joinDuel;
+function sJoin(){const{NET,joinText}=X,ok=joinText.length===4,sp=!!NET.joinSpec;
 return{def:ok?'go':'paste',back:'joinBack',enter:'go',t:[
 {id:'paste',x:250,y:338,w:220,h:60,key:'v',act:'paste',icon:'clip',title:'Einfügen',sub:'Aus der Zwischenablage',chip:'Strg V'},
-{id:'go',x:490,y:338,w:220,h:60,kind:'p',act:'joinGo',icon:'enter',title:dd?'Verbinden':sp?'Zuschauen':'Beitreten',lock:ok?'':'erst 4 Zeichen',chip:'Enter',sub:ok?(dd?'Mit dem Leiter verbinden':sp?'Als Zuschauer verbinden':'Mit dem Host verbinden'):'Erst 4 Zeichen eingeben'},
+{id:'go',x:490,y:338,w:220,h:60,kind:'p',act:'joinGo',icon:'enter',title:sp?'Zuschauen':'Beitreten',lock:ok?'':'erst 4 Zeichen',chip:'Enter',sub:ok?(sp?'Als Zuschauer verbinden':'Mit dem Host verbinden'):'Erst 4 Zeichen eingeben'},
 {id:'back',x:60,y:488,w:170,h:40,kind:'g',act:'joinBack',title:'Zurück',chip:'Esc'}],
-deco(){const{g}=X;g.textAlign='center';g.font='bold 30px monospace';g.fillStyle=BL;g.fillText(dd?'WETTKAMPF':sp?'ZUSCHAUEN':'RAUMCODE',480,196);g.font='13px monospace';g.fillStyle=TX;g.fillText(dd?'Raumcode des Leiters (Host des anderen Teams) eintippen.':sp?'Code oder Zuschauer-Link des Hosts. Du bekommst keinen Platz im Team.':'Code des Hosts eintippen oder Link einfügen.',480,220);
+deco(){const{g}=X;g.textAlign='center';g.font='bold 30px monospace';g.fillStyle=BL;g.fillText(sp?'ZUSCHAUEN':'RAUMCODE',480,196);g.font='13px monospace';g.fillStyle=TX;g.fillText(sp?'Code oder Zuschauer-Link des Hosts. Du bekommst keinen Platz im Team.':'Code des Hosts eintippen oder Link einfügen.',480,220);
 for(let i=0;i<4;i++){const x=480-110+i*60;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x,250,50,64);g.strokeStyle=i===joinText.length?A:'rgba(255,176,0,.35)';g.lineWidth=2;g.strokeRect(x+1,251,48,62);g.font='bold 40px monospace';g.fillStyle=Y;g.fillText(joinText[i]||'',x+25,299)}
 if(NET.msg){g.font='13px monospace';g.fillStyle=Y;g.fillText(NET.msg,480,424)}}}}
-/* Raum (R1, docs/coop-ausbau.md, Spur R): ein Bildschirm in drei Zustaenden. Ohne Modus (NET.mode '') waehlt der Host Coop spielen oder Coop Wettkampf, mit Modus zeigt er Auftrag, Link und Zuschauer-Schalter (im Wettkampf dazu das Fenster Wettkampf), Modus aendern nimmt ihn zurueck. Links stehen vier Spielerzeilen und darunter die Zuschauernamen, rechts das Chat-Fenster (Kanal 2), unten zwei Kachelreihen. */
-function roleLock(){const{NET,PC,CFG}=X;if(NET.spec)return NET.roster.length>=PC.length?'alle Plätze belegt':'';return !NET.specOn?'Zuschauer aus':(NET.spNames||[]).length>=CFG.spec.max?'Zuschauerplätze voll':''}
-function sLobby(){const{NET,scenario,CFG}=X,host=NET.role==='host',md=NET.mode,spec=NET.spec,dsp=NET.du,dlk=!!(dsp&&dsp.link),jb=jobOf(scenario),t=[];
-for(let i=0;i<4;i++){const r=NET.roster.find(q=>q.id===i),me=i===NET.myId&&!spec;t.push({id:'p'+i,x:60,y:262+i*39,w:390,h:34,nofocus:!me,act:me?'name':'',key:me?'n':'',nochip:!me,pl:{i,r,me},paint:paintPlayer,chip:me?'N':''})}
+/* Raum (R1 und R2, docs/coop-ausbau.md, Spur R): ein Bildschirm in drei Zustaenden. Ohne Modus (NET.mode '') waehlt der Host Coop spielen oder Coop Wettkampf, mit Modus zeigt er Auftrag, Link und Zuschauer-Schalter, Modus aendern nimmt ihn zurueck. Links stehen die Spieler des Raum-Hosts (im Wettkampf Team 1), rechts im Wettkampf Team 2 (ohne Modus die Warteliste der weiteren Spieler, im Coop gibt es sie nicht), darunter die Zuschauernamen, rechts daneben das Chat-Fenster (Kanal 2), unten zwei Kachelreihen. Im Wettkampf waehlt jeder sein Team (Team 1, Team 2, Zuschauer), der Host startet die Uebergabe an die zwei Team-Hosts. */
+function roleLock(){const{NET,PC,CFG}=X;if(NET.spec)return NET.roster.length>=PC.length&&(NET.mode==='coop'||(NET.t2n||[]).length>=PC.length)?'alle Plätze belegt':'';return !NET.specOn?'Zuschauer aus':(NET.spNames||[]).length>=CFG.spec.max?'Zuschauerplätze voll':''}
+function sLobby(){const{NET,scenario,CFG,PC}=X,host=NET.role==='host',md=NET.mode,spec=NET.spec,dsp=NET.du,dlk=!!(dsp&&dsp.link),duelM=md==='duel',two=md!=='coop'&&!dlk&&NET.side!=='b',jb=jobOf(scenario),t2n=NET.t2n||[],me2=NET.team===2,hp=NET.hp||'',t=[];
+const rw=two?188:390,ry=two?278:262,rh=two?30:34,rg=two?4:5;
+for(let i=0;i<PC.length;i++){const r=NET.roster.find(q=>q.id===i),me=i===NET.myId&&!spec&&!me2;t.push({id:'p'+i,x:60,y:ry+i*(rh+rg),w:rw,h:rh,nofocus:!me,act:me?'name':'',key:me?'n':'',nochip:!me,pl:{i,r,me,wide:!two,host:i===0},paint:paintPlayer,chip:me?'N':''})}
+if(two)for(let i=0;i<PC.length;i++){const r=t2n[i],me=me2&&!!r&&r.k===NET.tk;t.push({id:'u'+i,x:262,y:ry+i*(rh+rg),w:188,h:rh,nofocus:!me,act:me?'name':'',key:me?'n':'',nochip:!me,pl:{u:1,i,r,me,host:i===0},paint:paintPlayer,chip:me?'N':''})}
 t.push({id:'chatbox',x:470,y:262,w:430,h:151,nofocus:true,act:'chatOpen',paint:paintChatbox,nochip:true});
 let x=60;const row1=(o,w)=>{t.push(Object.assign({x,y:438,w,h:40},o));x+=w+10};
 if(host){
- if(!md){row1({id:'mCoop',kind:'p',key:'1',act:'mode',arg:'coop',icon:'coop',title:'Coop spielen: bis 4 Spieler',tf:'bold 13px monospace'},416);row1({id:'mDuel',kind:'p',key:'2',act:'mode',arg:'duel',icon:'coop',title:'Coop Wettkampf: zwei Teams',tf:'bold 13px monospace'},414)}
- else{row1({id:'job',key:dlk?'':'t',act:dlk?'':'missionOpen',nofocus:dlk,nochip:dlk,icon:dlk?'coop':jb.i,title:dlk?dsp.len+' Aufträge, gleiche Karten':'Auftrag: '+jb.n,tf:'bold 12px monospace'},md==='duel'?230:260);
+ if(!md){row1({id:'mCoop',kind:'p',key:'1',act:'mode',arg:'coop',icon:'coop',lock:t2n.length?'höchstens 4 Spieler':'',title:'Coop spielen: bis 4 Spieler',tf:'bold 13px monospace'},416);row1({id:'mDuel',kind:'p',key:'2',act:'mode',arg:'duel',icon:'coop',title:'Coop Wettkampf: zwei Teams',tf:'bold 13px monospace'},414)}
+ else{row1({id:'job',key:duelM?'':'t',act:duelM?'':'missionOpen',nofocus:duelM,nochip:duelM,icon:duelM?'coop':jb.i,title:duelM?CFG.duel.len+' Aufträge, gleiche Karten':'Auftrag: '+jb.n,tf:'bold 12px monospace'},260);
   row1({id:'link',act:'copyLink',icon:'link',title:'Link kopieren',tf:'bold 12px monospace'},150);
-  if(md==='duel')row1({id:'duel',act:'ui:duel',icon:'coop',title:'Wettkampf',tf:'bold 12px monospace'},150);
   row1({id:'specOn',nochip:true,act:'specOn',title:'Zuschauer '+(CFG.spec.on?'an':'aus'),tf:'bold 12px monospace'},150);
-  row1({id:'mode',act:'mode',arg:'',title:'Modus ändern',tf:'bold 12px monospace'},md==='duel'?120:140)}}
+  row1({id:'mode',act:'mode',arg:'',lock:hp?'Start läuft':'',title:'Modus ändern',tf:'bold 12px monospace'},140)}}
 else{
- if(md)row1({id:'job',nofocus:true,nochip:true,icon:dlk?'coop':jb.i,title:dlk?dsp.len+' Aufträge':'Auftrag: '+jb.n,tf:'bold 12px monospace'},430);
- const lk=roleLock();row1({id:'role',key:'z',act:'role',arg:spec?'p':'s',lock:lk,icon:'enter',title:spec?'Mitspielen':'Zuschauer werden',tf:'bold 12px monospace'},210)}
+ if(md)row1({id:'job',nofocus:true,nochip:true,icon:duelM?'coop':jb.i,title:duelM?CFG.duel.len+' Aufträge':'Auftrag: '+jb.n,tf:'bold 12px monospace'},duelM?250:430);
+ if(duelM){const n1=NET.roster.length,n2=t2n.length,sl=roleLock();
+  row1({id:'tm1',key:'1',act:'role',arg:1,chosen:NET.team===1,lock:NET.team!==1&&n1>=PC.length?'Team 1 voll':hp?'Start läuft':'',title:'Team 1',tf:'bold 12px monospace'},120);
+  row1({id:'tm2',key:'2',act:'role',arg:2,chosen:NET.team===2,lock:NET.team!==2&&n2>=PC.length?'Team 2 voll':hp?'Start läuft':'',title:'Team 2',tf:'bold 12px monospace'},120);
+  row1({id:'tmS',key:'z',act:'role',arg:'s',chosen:spec,lock:!spec&&sl?sl:hp?'Start läuft':'',title:'Zuschauer',tf:'bold 12px monospace'},140)}
+ else{const lk=roleLock();row1({id:'role',key:'z',act:'role',arg:spec?'p':'s',lock:lk,icon:'enter',title:spec?'Mitspielen':'Zuschauer werden',tf:'bold 12px monospace'},210)}}
 /* Reihe 2: Verlassen, Teilnehmer, ohne Modus beim Host noch Link und Zuschauer-Schalter, rechts Start */
 let x2=60;const row2=(o,w)=>{t.push(Object.assign({x:x2,y:488,w,h:40},o));x2+=w+10};
 row2({id:'leave',kind:'g',act:'lobbyBack',title:host?'Raum schließen':spec?'Zuschauen beenden':'Verlassen',tf:'bold 12px monospace',chip:'Esc'},200);
 if(kickList().length)row2({id:'kick',kind:'g',act:'ui:kick',title:'Teilnehmer',tf:'bold 12px monospace'},host&&!md?110:180);
 if(host&&!md){row2({id:'link',act:'copyLink',icon:'link',title:'Link',tf:'bold 12px monospace'},90);row2({id:'specOn',nochip:true,act:'specOn',title:'Zuschauer '+(CFG.spec.on?'an':'aus'),tf:'bold 12px monospace'},130)}
-const duelM=md==='duel',stT=!host?(!md?'Der Host wählt den Modus ...':spec?'Du schaust zu ...':'Der Host startet ...'):!md?'Starten':duelM?(dlk?(dsp.my?'Bereit zurücknehmen':'Bereit'):'Starten'):'Starten ('+NET.roster.length+(NET.roster.length===1?' Spieler)':' Spieler)'),
- stLk=!host?'':!md?'erst Modus wählen':duelM&&!dlk?'erst Gegner verbinden':'';
+const bSide=NET.side==='b'&&!dlk,stT=!host?(!md?'Der Host wählt den Modus ...':spec?'Du schaust zu ...':'Der Host startet ...'):!md?'Starten':duelM?(dlk?(dsp.my?'Bereit zurücknehmen':'Bereit'):bSide?'Verbinde mit Team 1 ...':'Wettkampf starten'):'Starten ('+NET.roster.length+(NET.roster.length===1?' Spieler)':' Spieler)'),
+ stLk=!host?'':!md?'erst Modus wählen':duelM?(dlk?'':bSide?'wartet auf Team 1':hp?'Verbindungen werden geprüft':!t2n.length?'Team 2 ist leer':''):'';
 t.push({id:'start',x:630,y:488,w:270,h:40,kind:host?'p':'g',act:host?'lobbyStart':'',nofocus:!host,lock:stLk,title:stT,chip:host&&!stLk?'Enter':'',nochip:!host||!!stLk});
 return{def:host?(md?'start':'mCoop'):'leave',back:'lobbyBack',t,deco(){const{g}=X;g.textAlign='center';g.font='13px monospace';g.fillStyle=TX;g.fillText(host?'Dein Raum':'Du bist im Raum',480,176);g.font='bold 44px monospace';g.fillStyle=A;g.fillText(NET.code,480,218);
- g.font='13px monospace';g.fillStyle=Y;g.fillText(fit(NET.msg||(duelM&&host&&!dsp?'Wettkampf eröffnen oder beitreten: Kachel Wettkampf':''),840,g.font),480,240);
+ const hpT=hp==='prep'||hp==='probe'?'Verbindungen werden geprüft ...':hp==='go'?'Team 2 wechselt in den Wettkampf-Raum ...':'';
+ g.font='13px monospace';g.fillStyle=Y;g.fillText(fit(NET.msg||hpT||(duelM&&host&&!dlk&&!t2n.length?'Wettkampf: Team 2 braucht mindestens einen Spieler':''),840,g.font),480,240);
  if(dlk){if(dsp.cd>0){g.font='bold 14px monospace';g.fillStyle=Y;g.fillText('Wettkampf: Start in '+dsp.cd,480,256)}else{g.font='12px monospace';g.fillStyle=dsp.rdy?G:TX;g.fillText('Gegner: '+dsp.nm+', '+dsp.n+' Spieler'+(dsp.rdy?', bereit':''),480,256)}}
+ else if(duelM&&t2n.length&&NET.roster.length!==t2n.length){g.font='12px monospace';g.fillStyle=Y;g.fillText('Teams verschieden groß: '+NET.roster.length+' gegen '+t2n.length,480,256)}
+ if(two){g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;g.fillText(duelM?'TEAM 1':'SPIELER',60,272);g.fillText(duelM?'TEAM 2':'WEITERE SPIELER',262,272)}
  const sn=NET.spNames||[];if(sn.length){g.textAlign='left';g.font='12px monospace';g.fillStyle=MU;g.fillText(fit('Zuschauer ('+sn.length+'): '+sn.join(', '),840,g.font),60,429)}
  fhBadge(60,196,'l')}}}
-/* Spielerzeile: Farbe, Name, rechts die Rolle, bei der eigenen Zeile der Hinweis zum Namen */
-function paintPlayer(t){const{g,PC,pn,myName,nameEdit,time}=X,{i,r,me}=t.pl;g.textAlign='left';g.fillStyle=r?PC[i].c:'rgba(255,255,255,.18)';g.fillRect(t.x+10,t.y+11,12,12);
-if(r){g.font='bold 14px monospace';g.fillStyle='#e6eaf0';const nm=me&&nameEdit?myName+(Math.floor(time*2)%2?'|':' '):pn(i);g.fillText(fit(nm,200,g.font),t.x+30,t.y+22);g.font='11px monospace';g.fillStyle=SU;g.textAlign='right';g.fillText(me?(nameEdit?'tippen, Enter':'Klick: Name'):((i===0?'Host':'Mitspieler')),t.x+t.w-(me?40:12),t.y+21);g.textAlign='left'}
-else{g.font='12px monospace';g.fillStyle='#6c7480';g.fillText('wartet auf Spieler ...',t.x+30,t.y+22)}}
+/* Spielerzeile: Farbe, Name, rechts die Rolle, in der breiten Spalte bei der eigenen Zeile der Hinweis zum Namen. pl.u = Zeile in Team 2 (Eintrag r mit Name n, der erste ist der Host von Team 2) */
+function paintPlayer(t){const{g,PC,pn,myName,nameEdit,time}=X,{i,r,me,u,wide,host}=t.pl,nm0=u?(r&&r.n):(r&&pn(i));g.textAlign='left';g.fillStyle=r?(u?BL:PC[i].c):'rgba(255,255,255,.18)';g.fillRect(t.x+10,t.y+t.h/2-6,12,12);
+if(r){g.font='bold 14px monospace';g.fillStyle='#e6eaf0';const nm=me&&nameEdit?myName+(Math.floor(time*2)%2?'|':' '):nm0,cw=wide?200:t.w-(me?96:84);g.fillText(fit(nm,cw,g.font),t.x+30,t.y+t.h/2+5);g.font='11px monospace';g.fillStyle=SU;g.textAlign='right';
+ g.fillText(me&&wide?(nameEdit?'tippen, Enter':'Klick: Name'):host?(u?'Host 2':'Host'):me?'du':wide?'Mitspieler':'',t.x+t.w-(me?40:12),t.y+t.h/2+4);g.textAlign='left'}
+else{g.font='12px monospace';g.fillStyle='#6c7480';g.fillText(wide?'wartet auf Spieler ...':'frei',t.x+30,t.y+t.h/2+4)}}
 /* Chat-Fenster der Lobby: die letzten Zeilen des Raum-Kanals (2), unten die Eingabe */
 function paintChatbox(t){const{g,chat,chatOpen,chatBuf,chatClk,chatWho,chatCol}=X;g.textAlign='left';g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('CHAT',t.x+12,t.y+17);
 g.textAlign='right';g.fillText(chatOpen?'Enter senden, Esc abbrechen':X.chatOk()?'C oder Klick: schreiben':'Chat, sobald jemand im Raum ist',t.x+t.w-12,t.y+17);
@@ -353,19 +362,21 @@ function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
 return{def:'no',back:m.no||'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:m.no||'ui:close',title:'Zurück',chip:'Esc'}],
 deco(){const{g}=X;panelFrame(px,py,pw,ph,m.title||'Sicher?');g.textAlign='left';g.font='13px monospace';g.fillStyle=TX;wrap(m.msg||'',pw-40,'13px monospace',3).forEach((l,i)=>g.fillText(l,px+20,py+66+i*20))}}}
 /* Mitspieler entfernen (P6, B7): nur der Host, nur Mitspieler mit lebender Verbindung. Eine Kachel "Mitspieler" in Lobby, Pause, Shop, Auftragswahl und Ergebnis oeffnet die Liste, ein Klick fragt zurueck, Ja ruft die Aktion kick (uiAct) mit der Kennung. */
-/* Wettkampf-Fenster (nur Host in der Lobby): eroeffnen oder beitreten, mit Wettkampf beenden oder verlassen. Die Aktionen duelNew, duelJoin und duelEnd laufen im Kern (uiAct). */
-function mDuel(){const{NET}=X,d=NET.du,px=240,pw=480,ph=(d?1:2)*70+130,py=Math.round((544-ph)/2);
-const t=(d?[{id:'duelEnd',x:px+20,y:py+78,w:pw-40,h:56,kind:'x',act:'duelEnd',title:d.lead?'Wettkampf beenden':'Wettkampf verlassen',sub:d.link?'Trennt die Verbindung zum anderen Team.':'Schließt das Angebot.',nochip:true}]:[{id:'duelNew',x:px+20,y:py+78,w:pw-40,h:56,act:'duelNew',title:'Wettkampf eröffnen',sub:'Du leitest. Der andere Host tritt mit deinem Raumcode bei.',nochip:true},{id:'duelJoin',x:px+20,y:py+148,w:pw-40,h:56,act:'duelJoin',title:'Wettkampf beitreten',sub:'Raumcode des Leiters eintippen.',nochip:true}]).concat([{id:'no',x:px+pw-200,y:py+ph-58,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'}]);
-return{def:t[0].id,back:'ui:close',t,deco(){const{g}=X;panelFrame(px,py,pw,ph,'WETTKAMPF');g.textAlign='left';g.font='12px monospace';g.fillStyle=TX;g.fillText(d?(d.link?'Gegner: '+d.nm+', '+d.n+' Spieler':'Wartet auf den Gegner-Host.'):'Zwei Teams spielen dieselben Aufträge auf denselben Karten.',px+20,py+60)}}}
-function kickList(){const{NET}=X;return NET.role==='host'?NET.roster.filter(r=>r.id!==0&&NET.conns.some(c=>c.pid===r.id)).concat(NET.specs.filter(c=>c.ok).map(c=>({id:'s'+c.sid,spec:1,nm:c.nm}))):[]}
+function kickList(){const{NET}=X;return NET.role==='host'?NET.roster.filter(r=>r.id!==0&&NET.conns.some(c=>c.pid===r.id)).concat(NET.t2.filter(c=>c.ok).map(c=>({id:'t'+c.tk,t2:1,nm:c.nm})),NET.specs.filter(c=>c.ok).map(c=>({id:'s'+c.sid,spec:1,nm:c.nm}))):[]}
 function kickTitle(){return kickList().some(r=>!r.spec)?'Mitspieler':'Zuschauer'}
-/* Teilnehmer-Liste (Host): je Zeile Name und Ort, in der Lobby dazu Rolle (Zuschauer werden oder Mitspielen) und Entfernen. Ausserhalb der Lobby gibt es nur Entfernen. */
-function mKick(){const{pn,PC,CFG,NET}=X,list=kickList(),lob=X.scr==='lobby',px=lob?200:240,pw=lob?560:480,ph=Math.max(1,list.length)*54+112,py=Math.round((544-ph)/2),st={l:'in der Lobby',s:'im Shop',m:'in der Auftragswahl',e:'beim Ergebnis',p:'im Spiel'},
- canS=NET.specs.length<CFG.spec.max&&!!CFG.spec.on,canP=NET.roster.length<PC.length,nmW=lob?220:pw-40-130,t=[];
-list.forEach((r,i)=>{const y=py+52+i*54,nm=r.spec?r.nm:pn(r.id);
- t.push({id:'kn:'+r.id,x:px+20,y,w:nmW,h:46,nofocus:true,title:nm,sub:r.spec?'Zuschauer':lob?'Spieler':st[r.at]||'',nochip:true});
- if(lob)t.push({id:'kr:'+r.id,x:px+20+nmW+8,y,w:150,h:46,act:'roleOf',arg:{who:r.spec?r.id:r.id,to:r.spec?'p':'s'},lock:r.spec?(canP?'':'alle Plätze belegt'):(canS?'':'Zuschauer aus oder voll'),title:r.spec?'Zum Spieler':'Zum Zuschauer',sub:'Rolle wechseln',nochip:true});
- t.push({id:'kk:'+r.id,x:px+pw-20-(lob?130:130),y,w:130,h:46,act:'ui:kickAsk',arg:r.id,nm:r.spec?r.nm:null,title:'Entfernen',kind:'x',nochip:true})});
+/* Teilnehmer-Liste (Host): je Zeile Name und Ort, in der Lobby dazu die Rolle und Entfernen. Im Wettkampf waehlt die Zeile das Team (Team 1, Team 2, Zuschauer) und schiebt Spieler in Team 2 nach oben (der erste ist der Host von Team 2), sonst gibt es einen Rollenwechsel (Zum Zuschauer oder Zum Spieler). Ausserhalb der Lobby gibt es nur Entfernen. */
+function mKick(){const{pn,PC,CFG,NET}=X,list=kickList(),lob=X.scr==='lobby',duelM=lob&&NET.mode==='duel',px=duelM?160:lob?200:240,pw=duelM?640:lob?560:480,ph=Math.max(1,list.length)*54+112,py=Math.round((544-ph)/2),st={l:'in der Lobby',s:'im Shop',m:'in der Auftragswahl',e:'beim Ergebnis',p:'im Spiel'},
+ canS=NET.specs.length<CFG.spec.max&&!!CFG.spec.on,n1=NET.roster.length,n2=NET.t2.length,nmW=duelM?190:lob?220:pw-40-130,kw=duelM?110:130,t=[];
+list.forEach((r,i)=>{const y=py+52+i*54,nm=r.spec||r.t2?r.nm:pn(r.id),cur=r.spec?0:r.t2?2:1,ti=r.t2?NET.t2.findIndex(q=>'t'+q.tk===r.id):-1;
+ t.push({id:'kn:'+r.id,x:px+20,y,w:nmW,h:46,nofocus:true,title:nm,sub:r.spec?'Zuschauer':r.t2?(duelM?(ti===0?'Team 2, Host':'Team 2'):'wartet auf Team 2'):lob?(duelM?'Team 1':'Spieler'):st[r.at]||'',nochip:true});
+ let xx=px+20+nmW+6;const bt=(id,w,o)=>{t.push(Object.assign({id:id+':'+r.id,x:xx,y,w,h:46,nochip:true},o));xx+=w+6};
+ if(duelM){
+  bt('k1',70,{act:'roleOf',arg:{who:r.id,to:1},chosen:cur===1,lock:cur!==1&&n1>=PC.length?'Team 1 voll':'',nolock:true,title:'Team 1',tf:'bold 11px monospace'});
+  bt('k2',70,{act:'roleOf',arg:{who:r.id,to:2},chosen:cur===2,lock:cur!==2&&n2>=PC.length?'Team 2 voll':'',nolock:true,title:'Team 2',tf:'bold 11px monospace'});
+  bt('kS',96,{act:'roleOf',arg:{who:r.id,to:'s'},chosen:cur===0,lock:cur!==0&&!canS?'Zuschauer aus oder voll':'',nolock:true,title:'Zuschauer',tf:'bold 11px monospace'});
+  if(ti>0)bt('ku',36,{act:'t2up',arg:+r.id.slice(1),title:'↑',tf:'bold 14px monospace'})}
+ else if(lob)bt('kr',150,{act:'roleOf',arg:{who:r.id,to:r.spec?'p':'s'},lock:r.spec?(n1<PC.length||(NET.mode===''&&n2<PC.length)?'':'alle Plätze belegt'):(canS?'':'Zuschauer aus oder voll'),title:r.spec?'Zum Spieler':'Zum Zuschauer',sub:'Rolle wechseln'});
+ t.push({id:'kk:'+r.id,x:px+pw-20-kw,y,w:kw,h:46,act:'ui:kickAsk',arg:r.id,nm:r.spec||r.t2?r.nm:null,title:'Entfernen',kind:'x',nochip:true})});
 t.push({id:'no',x:px+pw-200,y:py+ph-58,w:180,h:44,kind:'p',act:'ui:close',title:'Zurück',chip:'Esc'});
 return{def:list.length?'kk:'+list[0].id:'no',back:'ui:close',t,
 deco(){const{g}=X;panelFrame(px,py,pw,ph,lob?'TEILNEHMER':!list.some(r=>r.spec)?'MITSPIELER ENTFERNEN':list.some(r=>!r.spec)?'MITSPIELER UND ZUSCHAUER ENTFERNEN':'ZUSCHAUER ENTFERNEN');if(!list.length){g.textAlign='left';g.font='13px monospace';g.fillStyle=TX;g.fillText('Niemand sonst im Raum.',px+20,py+78)}}}}
@@ -379,7 +390,7 @@ function closeAll(){const m=stack[0];stack=[];modal=null;if(m)focus=m.ret}
 function base(){const{scr,paused,ended,NET}=X;
 if(scr==='title')return sTitle();if(scr==='mission')return sMission();if(scr==='coop')return sCoop();if(scr==='join')return sJoin();if(scr==='lobby')return sLobby();if(scr==='shop')return sShop();
 if(scr==='play'){if(ended)return sEnded();if(paused)return sPause()}return null}
-function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='dbg')return mDebug();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);if(m.k==='kick')return mKick();if(m.k==='duel')return mDuel();return null}
+function modalSpec(m){if(m.k==='skills')return mSkills();if(m.k==='dbg')return mDebug();if(m.k==='options')return mOptions();if(m.k==='help')return mHelp();if(m.k==='confirm')return mConfirm(m);if(m.k==='kick')return mKick();return null}
 function cur(){const b=base();if(!b){stack=[];modal=null;sig='';return null}
 const sg=X.scr+'|'+(X.paused?1:0)+'|'+(X.ended?1:0);if(sg!==sig){sig=sg;stack=[];modal=null;focus=null;hov=null}
 const c=modal?modalSpec(modal):b;
@@ -391,9 +402,8 @@ function tileAt(x,y){const c=cur();if(!c)return null;for(let i=c.t.length-1;i>=0
 function setSlider(t,x){X.volAdj(t.slider,Math.max(0,Math.min(1,(x-(t.x+130))/(t.w-200))),true)}
 function activate(t){if(!t||!t.act)return;if(t.lock){SND.ev('deny');return}const a=t.act;
 if(a==='ui:close'){closeModal();return}
-if(a==='ui:options'||a==='ui:help'||a==='ui:skills'||a==='ui:dbg'||a==='ui:kick'||a==='ui:duel'){openModal({k:a.slice(3)});return}
-if(a==='duelNew'||a==='duelJoin'||a==='duelEnd'){closeAll();X.act(a);return}
-if(a==='ui:kickAsk'){closeModal();openModal({k:'confirm',title:t.nm?'ZUSCHAUER ENTFERNEN':'MITSPIELER ENTFERNEN',msg:(t.nm||X.pn(t.arg))+' wird aus dem Raum entfernt und sieht den Titel. Wirklich entfernen?',yesLabel:'Ja, entfernen',yes:'kick',arg:t.arg,no:'ui:kickBack'});return}
+if(a==='ui:options'||a==='ui:help'||a==='ui:skills'||a==='ui:dbg'||a==='ui:kick'){openModal({k:a.slice(3)});return}
+if(a==='ui:kickAsk'){closeModal();openModal({k:'confirm',title:t.nm&&String(t.arg)[0]==='s'?'ZUSCHAUER ENTFERNEN':'MITSPIELER ENTFERNEN',msg:(t.nm||X.pn(t.arg))+' wird aus dem Raum entfernt und sieht den Titel. Wirklich entfernen?',yesLabel:'Ja, entfernen',yes:'kick',arg:t.arg,no:'ui:kickBack'});return}
 if(a==='ui:kickBack'){closeModal();openModal({k:'kick'});return}
 if((a==='host'||a==='join'||a==='spec')&&hasStand()){openModal({k:'confirm',title:'NEUE SERIE IM COOP',msg:'Coop beginnt immer eine neue Serie. Dein Stand (Konto, Ausrüstung, Skills, Fahndung) geht verloren. Wirklich weiter?',yesLabel:'Ja, neue Serie',yes:a});return}
 if(a==='ui:confirm'){const solo=X.NET.role==='solo',host=X.NET.role==='host';openModal(Object.assign({k:'confirm'},(t.arg||{}).k==='series'?{title:'NEUE SERIE',msg:'Konto, Ausrüstung und Serienstand gehen verloren. Wirklich neu beginnen?',yesLabel:'Ja, neue Serie',yes:'newSeries'}:host?{title:'RAUM SCHLIESSEN',msg:'Du bist der Host: Der Raum wird geschlossen und alle Mitspieler werden getrennt.',yesLabel:'Ja, Raum schließen',yes:'leave'}:{title:solo?'ZUM TITEL':'RAUM VERLASSEN',msg:solo?'Der laufende Auftrag wird abgebrochen. Die Serie bleibt bestehen.':'Du verlässt das Spiel, die anderen spielen weiter.',yesLabel:solo?'Ja, zum Titel':'Ja, verlassen',yes:'leave'}));return}

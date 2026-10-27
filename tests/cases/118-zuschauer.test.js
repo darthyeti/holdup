@@ -94,7 +94,7 @@ module.exports = [
         // falsche Version und Spieler waehrend des Spiels ueber rohe Verbindungen
         const raw = (hi) => { const got = []; G.net.join(A.NET.code, { onOpen(c) { c.onmsg = m => got.push(m); c.send(hi); }, onError() { } }); G.run(1); return got.map(m => m.t + ':' + (m.why || '')); };
         o.version = raw({ t: 'hi', ver: 1, b: 1, k: {}, nm: 'x' }); o.versionZuschauer = raw({ t: 'hi', ver: 1, b: 1, k: {}, nm: 'x', sp: 1 }); o.nachVersion = A.NET.specs.length;
-        for (const nm of ['c2', 'c3']) { const C = mkInst(G.net, nm); G.insts.push(C); C.joinRoom(A.NET.code); G.run(2); } const E = mkInst(G.net, 'c4'); G.insts.push(E); E.joinRoom(A.NET.code); G.run(2); o.voll = [A.NET.roster.length, E.state().scr];
+        for (const nm of ['c2', 'c3']) { const C = mkInst(G.net, nm); G.insts.push(C); C.joinRoom(A.NET.code); G.run(2); } A.setMode('coop'); const E = mkInst(G.net, 'c4'); G.insts.push(E); E.joinRoom(A.NET.code); G.run(2); o.voll = [A.NET.roster.length, E.state().scr];   // ohne Modus kaeme der fuenfte Spieler in die Warteliste von Team 2 (R2), im Coop ist der Raum voll
         A.startCoop(); G.run(1); o.spiel = raw({ t: 'hi', ver: A.VER, b: A.BUILD.n, k: {}, nm: 'x' }); o.rest = [A.NET.conns.length, A.NET.roster.length];
         const S5 = spec(); o.spaet = [A.NET.specs.length, S5.state().scr];
         return o; })()`);
