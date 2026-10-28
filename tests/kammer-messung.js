@@ -1,5 +1,5 @@
 // Messung: Wie oft haben die fuenf Gebaeude-Generatoren Platz fuer eine Kammer (Abstellraum oder WC) zum Verstecken von Bewusstlosen? (28. Oktober 2026, Plan Kammern in docs/ideen-und-planung.md)
-// Aufruf: cd tests && node kammer-messung.js [Szenarien, Standard bank,jewel,gas,museum,casino] [Seeds je Szenario, Standard 40]   (PROPS=1: Pflanzen, Baenke, Kisten und Faesser duerfen weichen, HOLDUP_ROOT wie bei den Tests)
+// Aufruf: cd tests && node kammer-messung.js [Szenarien, Standard bank,jewel,gas,museum,casino] [Seeds je Szenario, Standard 40]   (Sperrzonen `LAY.zones` zaehlen seit dem 28. Oktober 2026 nicht mit, PROPS=1: Pflanzen, Baenke, Kisten und Faesser duerfen weichen, HOLDUP_ROOT wie bei den Tests)
 // Gesucht wird in den fertigen Karten (Basisorientierung): Kammer innen 2x2, 3x2 oder 2x3 mit Wandring und einer Tuer d. Bedingungen: Innenflaeche frei, mindestens vier Ringkacheln sind schon Wand, Abstand 2 Kacheln zu jeder Wach- und Managerroute und zu den Kassierern,
 // kein Posten (Routenpunkt, Kassierer) sieht eine Innenkachel (Sichtlinie, Reichweite 12 Kacheln, nur # und P blocken), alle vorher vom Spawn erreichbaren Routenpunkte bleiben erreichbar, die Tuer ist erreichbar. Kameras zaehlen noch nicht.
 // Ausgabe je Szenario: Anteil der Seeds mit mindestens einem Platz (anyPct), mittlere Zahl der Plaetze, Plaetze je Groesse, und warum Kandidaten ausschieden (ring: Dinge im Ring, zu frei: weniger als vier Wandkacheln, Route, Weg, sichtbar, keine Tuer).
@@ -12,7 +12,7 @@ const SCS = process.argv[2] ? process.argv[2].split(',') : ['bank', 'jewel', 'ga
     const seeds = [];
     for (let i = 0; i < N; i++) {
       const d = await page.evaluate(([sc, sd]) => { const D = __dbg; D.sessReset(); D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(sd); const w = D.world(), L = D.LAY(), M = w.M.map(r => r.join ? r.join('') : r), sol = {}; for (let y = 0; y < M.length; y++) for (let x = 0; x < M[y].length; x++) { const c = M[y][x]; if (!(c in sol)) sol[c] = D.isSol(x + w.WX0, y + w.WY0); }
-        return { M, x0: w.WX0, y0: w.WY0, bld: L.bld, guards: (L.guards || []).map(g => g.route), mgr: L.mgr && L.mgr.route, tellers: L.tellers || [], spawn: L.spawn, sol, cams: (L.cams || []).map(c => [c.x / 32, c.y / 32, c.rng / 32]), q: L.q || null }; }, [sc, 3 + i * 11]);
+        return { M, x0: w.WX0, y0: w.WY0, bld: L.bld, guards: (L.guards || []).map(g => g.route), mgr: L.mgr && L.mgr.route, tellers: L.tellers || [], spawn: L.spawn, sol, cams: (L.cams || []).map(c => [c.x / 32, c.y / 32, c.rng / 32]), zones: L.zones || [], q: L.q || null }; }, [sc, 3 + i * 11]);
       seeds.push(d);
     }
     const res = { n: N, any: 0, cands: 0, why: {}, kinds: {} };
@@ -35,6 +35,8 @@ const SCS = process.argv[2] ? process.argv[2].split(',') : ['bank', 'jewel', 'ga
         const ring = []; for (let x = bx - 1; x <= bx + iw; x++) for (let y = by - 1; y <= by + ih; y++) if (x < bx || x >= bx + iw || y < by || y >= by + ih) ring.push([x, y]);
         let walls = 0, bad = false; for (const [x, y] of ring) { const c = at(x, y); if (c === '#') walls++; else if (!free(x, y)) { bad = true; break; } }
         if (bad) { why('ring'); continue; } if (walls < 4) { why('zu frei'); continue; }
+        const inZone = (x, y) => d.zones.some(z => x >= z[0] && x <= z[2] && y >= z[1] && y <= z[3]);   // Tills Entscheidung 28. Oktober 2026: keine Kammer in der Sperrzone
+        if (ring.some(([x, y]) => inZone(x, y)) || (() => { for (let x = bx; x < bx + iw; x++) for (let y = by; y < by + ih; y++) if (inZone(x, y)) return true; return false; })()) { why('Sperrzone'); continue; }
         // Tuer: eine Ringkachel (keine Ecke), die freie Kachel dahinter ausserhalb hat
         const doors = ring.filter(([x, y]) => { if (at(x, y) === '#') return false; const inx = x >= bx && x < bx + iw, iny = y >= by && y < by + ih; if (!inx && !iny) return false; const ox = x < bx ? x - 1 : x >= bx + iw ? x + 1 : x, oy = y < by ? y - 1 : y >= by + ih ? y + 1 : y; return free(ox, oy); });
         if (!doors.length) { why('keine Tuer'); continue; }
