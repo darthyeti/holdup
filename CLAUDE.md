@@ -16,7 +16,7 @@ Diese Datei ist der Kern: Idee, Arbeitsweise, Dateiübersicht, Grundregeln, Stan
 - `docs/coop-und-netz.md`: Netz, Transport, Spielername, Am Boden und Wiederbeleben, Coop-Spielablauf.
 - `docs/spielsystem.md`: Spielablauf Phase 1 und 2, Serie, Fahndungslevel, Shop, Ausrüstung, Beute, Ton, Bildschirmzustände, Spieler.
 - `docs/tests-und-messwerte.md`: Balance-Bot, Richtwerte und Messwerte, Testverfahren für Barrikaden, Transporter, Coop und Ton, Alt-Neu-Vergleich (`tests/altneu.js`), Freie Straße testen.
-- `docs/ideen-und-planung.md`: Barrikaden-Ausbau, lautloser Raub, weitere Ideen, Struktur und Wartbarkeit, Langzeitmotivation.
+- `docs/ideen-und-planung.md`: Barrikaden-Ausbau, lautloser Raub, weitere Ideen, Struktur und Wartbarkeit, Plan Kammern (Verstecke), Langzeitmotivation.
 - `docs/bugfix-plaene.md`: Bugfix-Pakete (laufende Nummer P1, P2, ...) mit Bugs, Befund, versioniertem Plan und Status.
 - `docs/major-release-update-1.md`: der große Plan Major Release Update 1 (Skillbaum-Umbau mit Gegenständen, Zusätze zu Geiseln, Ablenker und Blendgranate, Wachsamkeit der Läden, Fluchtwagen-Treffpunkt abseits mit Ausweichpunkt): Schritte mit Stand, Reihenfolge, Plan der Spur 2.
 - `docs/coop-ausbau.md`: Plan und Stand (F1 bis F3, W0, Z1 bis Z4, W1 bis W3, R1 und R2 gebaut) für Funkspruch und Chat, Zuschauer, den Wettkampf zweier Teams auf demselben Seed und Raum zuerst (Modus, Rollen, Wettkampf in einem Raum), mit Messungen, Schritten und Entscheidungen.
