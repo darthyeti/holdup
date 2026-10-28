@@ -131,7 +131,7 @@ module.exports = [
         KEY(B, 'h'); G.run(.5); o.rel = [n.dr, !!pa.dg, !!pb.dg];
         return o; })()`);
       t.eq(r.id, [1, 1], 'Aufbau: der Client ist Spieler 1'); t.eq(r.mitte[0], 'idle', 'mitten im Halten noch nicht'); t.ok(r.mitte[1], 'der Fortschritt steht im Schnappschuss'); t.eq(r.ko.slice(0, 2), ['ko', 4], 'der Host fuehrt sie als Bewusstlose, der Schnappschuss Code 4');
-      t.ok(r.ko[2], 'der Wecker steht im Schnappschuss'); t.eq(r.ko[3], 'ko', 'der Client sieht sie bewusstlos'); t.eq(r.ko[4], 1, 'die Kennzahl zaehlt beim Client-Spieler'); t.eq(r.ko[5], 54, 'Netzformat 54');
+      t.ok(r.ko[2], 'der Wecker steht im Schnappschuss'); t.eq(r.ko[3], 'ko', 'der Client sieht sie bewusstlos'); t.eq(r.ko[4], 1, 'die Kennzahl zaehlt beim Client-Spieler'); t.ok(r.ko[5] >= 54, 'Netzformat mindestens 54 (mit T5 eingefuehrt)');
       t.eq([r.zug[0], r.zug[1], r.zug[2], r.zug[3], r.zug[4]], [1, true, true, 2, 1], 'der Client zieht: Host und Client wissen es (Zieher 1, im Schnappschuss 2)');
       t.ok(r.platz >= 90, 'Aufbau: Platz: ' + r.platz); t.ok(r.tempo[1] < 22, 'Host und Client stehen am Ende nah beieinander (die Vorhersage bremst gleich): ' + JSON.stringify(r.tempo)); t.ok(r.tempo[0] > 20, 'und er ist gelaufen: ' + JSON.stringify(r.tempo)); t.eq(r.rel, [-1, false, false], 'H des Clients laesst ihn los');
     },

@@ -12,8 +12,8 @@ async function setup(t) {
 // Seeds nach Variante suchen (genTruckMission ist rein rechnerisch, ohne Kartenbau)
 const FIND = `(pred, n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd < 600 && out.length < n; sd++) { const m = D.genTruckMission(sd); if (pred(m)) out.push(sd); } return out; }`;
 const OPT = `{ kit: 'full', sigma: .05, react: .35, police: false }`;
-// die ersten n Seeds ab 3000 ohne Panne (die Panne hat einen anderen Ablauf, eigener Test unten)
-const NP = `(n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 3000; out.length < n; sd++) if (!D.genTruckMission(sd).panne) out.push(sd); return out; }`;
+// die ersten n Seeds ab 3000 ohne Panne und ohne Vorhut (beide haben einen anderen Ablauf und Zeitnullpunkt, eigene Tests unten)
+const NP = `(n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 3000; out.length < n; sd++) { const m = D.genTruckMission(sd); if (!m.panne && !m.vorhut) out.push(sd); } return out; }`;
 
 module.exports = [
   {
@@ -63,6 +63,16 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); const P = []; for (let sd = 1; sd < 300 && P.length < 4; sd++) if (D.genTruckMission(sd).panne) P.push(sd); return P.map(sd => { const x = bot.truck(Object.assign({ seed: sd }, ${OPT})); return { sd, res: x.res, why: x.stopWhy, panne: x.mission.panne, m: x.milestones, t: x.t, kills: x.kills }; }); })()`);
       t.eq(r.length, 4, 'vier Pannen-Seeds'); t.ok(r.filter(x => x.res === 'WIN').length >= 3, 'mindestens drei von vier gewonnen (bei der Panne steht die Besatzung nah, der Bot verliert gelegentlich): ' + JSON.stringify(r.map(x => x.res))); t.eq(r.filter(x => x.why !== 'panne' || !x.panne).map(x => x.sd), [], 'als Panne erkannt');
       t.eq(r.filter(x => x.res === 'WIN').filter(x => !(x.m.stand === 0 && x.m.offen > 0 && x.m.offen < x.m.voll && x.m.voll < x.m.zone && x.kills >= 1)).map(x => [x.sd, JSON.stringify(x.m)]), [], 'der Wagen steht von Anfang an, danach Laderaum, Taschen, Fluchtzone in dieser Reihenfolge');
+    },
+  },
+  {
+    name: 'Transporter-Bot: mit Vorhut baut er die Sperre vor der Abfahrt fertig, die Vorhut haelt davor (Ueberfall beginnt, Meilenstein vorhut vor stand), er wartet und schiesst auf ihre Wachen, bis der Wagen steht, dann Laderaum, Taschen, Fluchtzone (ohne Polizei mindestens vier von fuenf Siege)',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); const P = []; for (let sd = 3000; sd < 3300 && P.length < 5; sd++) if (D.genTruckMission(sd).vorhut) P.push(sd); return P.map(sd => { const x = bot.truck(Object.assign({ seed: sd }, ${OPT})); return { sd, res: x.res, why: x.stopWhy, vh: x.mission.vorhut, lead: x.lead, m: x.milestones, t: x.t, kills: x.kills, tPre: x.tPre }; }); })()`);
+      t.eq(r.length, 5, 'fuenf Vorhut-Seeds'); t.ok(r.filter(x => x.res === 'WIN').length >= 4, 'mindestens vier von fuenf gewonnen: ' + JSON.stringify(r.map(x => [x.sd, x.res]))); t.eq(r.filter(x => !x.vh).map(x => x.sd), [], 'als Vorhut erkannt');
+      t.eq(r.filter(x => x.res === 'WIN').filter(x => !(x.m.sperre > 0 && x.m.sperre < x.m.vorhut && x.m.vorhut < x.m.stand && x.lead > 5 && x.m.offen > 0 && x.m.offen < x.m.voll && x.m.voll < x.m.zone)).map(x => [x.sd, JSON.stringify(x.m), x.lead]), [], 'Sperre fertig, Vorhut haelt, der Wagen steht erst danach (lead Sekunden), dann Laderaum, Taschen, Fluchtzone');
+      t.eq(r.filter(x => x.res === 'WIN').filter(x => !(x.m.besatzung > x.lead)).map(x => [x.sd, x.m.besatzung, x.lead]), [], 'der Meilenstein Besatzung zaehlt erst ab dem Halt des Wagens (nicht die Wachen der Vorhut)');
     },
   },
   {
