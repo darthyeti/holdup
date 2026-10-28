@@ -36,7 +36,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Offene Entscheidungen (Till)
 
-- **Transporter solo** (Bot-Messung vom 28. Oktober 2026, docs/tests-und-messwerte.md): Der Bot braucht vom Halt des Wagens bis zum Einsteigen rund 77 s, die erste Polizei kommt nach 26 s. Solo gewinnt er 1 von 90 Läufen und erreicht die Fluchtzone nur in 2 %. Der Regler `CFG.truck.policeAt` (erste Polizei in s nach dem Halt) zeigt die Schwelle: 56 s gibt rund 35 %, 66 s rund 60 %, 80 s rund 97 % Siegquote des Bots. Soll der Transporter solo leichter werden (zum Beispiel erste Polizei später, wenn nur ein Spieler da ist), oder bleibt er als Team-Auftrag so hart?
+- **Transporter solo** (entschieden von Till am 28. Oktober 2026): Kein Balancing am Transporter, auch solo nicht. Till empfindet ihn solo als eher leicht, das Problem ist der immer gleiche Ablauf. Erst mehr Abwechslung, wird er dann zu hart, wird reagiert. Die Bot-Messung (docs/tests-und-messwerte.md, der Bot gewinnt solo mit Polizei nach 26 s nur 1 %, ab erster Polizei 56 s rund 35 %, 66 s 60 %, 80 s 97 %) bleibt als Reglertabelle für `CFG.truck.policeAt`, falls es später nötig wird.
 - **Coop-Ausbau** (Funkspruch, Chat, Zuschauer, Wettkampf, Plan v1 vom 26. Oktober 2026): zehn Entscheidungen mit Empfehlung in docs/coop-ausbau.md, Abschnitt Entscheidungen (zum Beispiel Taste X für den Funk, Zuschauer standardmäßig an mit höchstens 6, Länge des Duells, ob ein gemieteter Relay nötig wird).
 - Fahndungslevel: SWAT-Vorsprung ab Stufe 5 (heute aus, kostet allein 11 Punkte Siegquote) und eine milde Grundsteigerung nach Auftragsnummer für Serien ohne Fahndung (`CFG.series.at`).
 
