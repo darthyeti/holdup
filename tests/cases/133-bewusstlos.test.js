@@ -58,6 +58,21 @@ module.exports = [
     },
   },
   {
+    // Flugschreiber 28. Oktober 2026 und Messung (Juwelier, Spieler folgt der Wache mit E gehalten): 71 von 75 Abbruechen kamen daher, dass E beim Vorbeigehen an einer Vitrine auf das Schneiden umsprang (Rang +pen fuer das Ausschalten).
+    name: 'Bewusstlos: der erste Druck von E gehoert der naeheren Beute, laeuft das Halten aber schon, bleibt die Wache vorn und wird ausgeschaltet, auch wenn danach eine Vitrine naeher kommt',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const S = (${SETUP})(5017), { D, me, n, behind } = S, o = {}, K = D.CFG.ko, keys = D.keys, its = D.get().its; behind(30); const it = D.koMi(n);
+        const vit = { t: 'vit', x: me.x + 8, y: me.y, r: 44, pr: 0, done: false, fit: () => true, sn: 'tick', lab: () => 'Vitrine', dur: () => 10, ok() { return !this.done; }, act() { this.done = true; } };
+        its.push(vit); o.erst = D.pickIt(me, -1) === vit; it.pr = .3; o.laeuft = D.pickIt(me, -1) === it; it.pr = 0; its.splice(its.indexOf(vit), 1);
+        keys.e = true; for (let i = 0; i < 30; i++) { D.update(1 / 30); behind(30); } o.vorher = +it.pr.toFixed(2); its.push(vit);
+        for (let i = 0; i < 30 * (K.t + .8) && n.st !== 'ko'; i++) { D.update(1 / 30); behind(30); } keys.e = false;
+        o.danach = [n.st, vit.pr, vit.done]; return o; })()`);
+      t.eq(r.erst, true, 'ohne laufendes Halten gewinnt die naehere Vitrine (Beute zuerst)'); t.eq(r.laeuft, true, 'mit laufendem Halten steht die Wache vor der Vitrine');
+      t.ok(r.vorher > .2, 'das Halten lief vor der Vitrine: ' + r.vorher); t.eq(r.danach, ['ko', 0, false], 'die Wache ist bewusstlos, die Vitrine wurde nie bearbeitet');
+    },
+  },
+  {
     name: 'Bewusstlos: eine Wache oder ein Angestellter, die den Koerper sehen (CFG.ko.find s lang), schlagen Alarm; nicht ohne Blick (abgewandt, hinter der Wand), nicht Kunden, nicht Bewusstlose; eine aktive Kamera sieht ihn auch, eine abgeschaltete nicht',
     async run(t) {
       await setup(t);

@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=202"></script>
+<script src="js/ui.js?v=207"></script>
 <script>
-const BUILD={n:202,d:'2026-10-28'};//BUILD
+const BUILD={n:207,d:'2026-10-28'};//BUILD
 const UI_API=11;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -678,6 +678,17 @@ const vu=r(),vorhut=!panne&&street!=='baustelle'&&vu<V.vorhut.p;
 const ru=r(),rev=ru<V.rev.p;
 const vt=[V.cargo[cargo],V.lock[lock],V.alarm[alarm],heavy?{tag:V.heavy.tag[heavy-1]}:null,panne?{tag:'Panne'}:null,vorhut?{tag:'Vorhut'}:null,rev?{tag:'Wagen von Osten'}:null,street==='baustelle'?{tag:'Baustelle'}:street==='gassen'?{tag:closed.filter(Boolean).length+(closed.filter(Boolean).length===1?' Gasse dicht':' Gassen dicht')}:null].filter(Boolean).map(q=>q.tag);
 return{code:'',vault:'none',guards:0,cams:0,civ:0,west:false,tags:lg.map(k=>LAGE[k].n).concat(['Panzerwagen',crew+' Wachen',bagN+' '+cg.nm]).concat(vt),ev:[],lg,at:{},extra:[],bags:[],blackoutAt:null,crew,bagN,arrive,cargo,bv:cg.v,bu:cg.u,blab:cg.lab,lock,lk:V.lock[lock]?V.lock[lock].k:1,alarm,al:V.alarm[alarm]?V.alarm[alarm].d:0,heavy,street,closed,panne,px,vorhut,rev}}
+/* Baustelle (T4b): die gesperrten Kacheln der oberen Spuren, x0 y0 x1 y1 (Zaun im Raster, gezeichnet als Baustelle) */
+const TK_SITE=[25,9,33,10],inSite=(lay,x,y)=>!!lay.truck&&lay.mission.street==='baustelle'&&x>=TK_SITE[0]&&x<=TK_SITE[2]&&y>=TK_SITE[1]&&y<=TK_SITE[3];
+function paintSite(s){const x0=TK_SITE[0]*T,y0=TK_SITE[1]*T,w=(TK_SITE[2]-TK_SITE[0]+1)*T,h=(TK_SITE[3]-TK_SITE[1]+1)*T,hs=(a,b)=>((a*73856093)^(b*19349663))>>>0;
+s.fillStyle='rgba(0,0,0,.22)';s.fillRect(x0+3,y0+6,w-4,h-6);s.fillStyle='#665a4c';s.fillRect(x0+4,y0+4,w-8,h-8);
+for(let i=0;i<150;i++){const q=hs(i,7),gx=x0+8+q%(w-20),gy=y0+8+(q>>>9)%(h-20);s.fillStyle=(q>>>5)&1?'#8a7d6c':'#4c423a';s.fillRect(gx,gy,2+(q>>>7)%3,2)}
+s.fillStyle='#3d352e';s.fillRect(x0+26,y0+16,w-52,h-32);s.fillStyle='rgba(0,0,0,.3)';s.fillRect(x0+26,y0+16,w-52,5);
+[[58,26],[170,22]].forEach(p=>{s.fillStyle='rgba(0,0,0,.3)';s.fillRect(x0+p[0],y0+p[1]+5,46,10);s.fillStyle='#a6a9a4';s.fillRect(x0+p[0],y0+p[1],46,10);s.fillStyle='#c9ccc7';s.fillRect(x0+p[0],y0+p[1],46,3);s.fillStyle='#6f726e';s.fillRect(x0+p[0]+43,y0+p[1],3,10)});
+const bar=(bx,by,len,hz)=>{const n=Math.ceil(len/16);s.fillStyle='rgba(0,0,0,.28)';if(hz)s.fillRect(bx,by+5,len,4);else s.fillRect(bx+5,by,4,len);for(let i=0;i<n;i++){const l=Math.min(16,len-i*16);s.fillStyle=i%2?'#e9ece9':'#c8372b';if(hz)s.fillRect(bx+i*16,by,l,6);else s.fillRect(bx,by+i*16,6,l)}s.fillStyle='rgba(0,0,0,.35)';if(hz){s.fillRect(bx,by,len,1);s.fillRect(bx,by+5,len,1)}else{s.fillRect(bx,by,1,len);s.fillRect(bx+5,by,1,len)}};
+bar(x0+2,y0+2,w-4,true);bar(x0+2,y0+h-8,w-4,true);bar(x0+2,y0+8,h-16,false);bar(x0+w-8,y0+8,h-16,false);
+s.fillStyle='#4a4f55';for(let i=0;i<=w;i+=48){s.fillRect(x0+i-1,y0,3,4);s.fillRect(x0+i-1,y0+h-4,3,4)}
+[[-9,10],[-9,h-10],[w+9,10],[w+9,h-10],[w/2-70,-7],[w/2+70,-7],[w/2-70,h+7],[w/2+70,h+7]].forEach(p=>{const cx=x0+p[0],cy=y0+p[1];s.fillStyle='rgba(0,0,0,.3)';s.beginPath();s.arc(cx+1.5,cy+2,6,0,6.283);s.fill();s.fillStyle='#e2661f';s.beginPath();s.arc(cx,cy,5.5,0,6.283);s.fill();s.fillStyle='#f4f4ef';s.beginPath();s.arc(cx,cy,3.4,0,6.283);s.fill();s.fillStyle='#e2661f';s.beginPath();s.arc(cx,cy,1.7,0,6.283);s.fill()})}
 function truckLayout(sd){const tms=genTruckMission(sd),st=tms.street;newGrid(60,24,0,0);fill(0,0,59,23,'o');
 fill(0,0,59,0,'f');fill(0,23,59,23,'f');fill(0,0,0,23,'f');fill(59,0,59,23,'f');
 for(let y=9;y<=12;y++){setc(0,y,'o');setc(59,y,'o')}
@@ -690,14 +701,14 @@ parked.forEach(c=>fill(c.x,c.y,c.x+3,c.y+1,'v'));
 [[5,7],[6,7],[25,7],[44,7],[52,7],[18,2],[18,3],[39,2],[39,3],[14,14],[15,14],[36,14],[54,14],[10,17],[32,18],[32,19]].forEach(a=>setc(a[0],a[1],'k'));
 [[3,7],[30,7],[48,7],[56,7],[19,5],[38,5],[11,14],[11,16],[40,14],[33,16],[57,14]].forEach(a=>setc(a[0],a[1],'q'));
 /* Strassenvarianten (T4b): Baustelle sperrt in der Mitte die Zeilen 9 und 10, Gassen mauert einen Teil der vier Seitengassen zu (nach den Kulissen, damit auch deren Kisten verschwinden) */
-if(st==='baustelle')fill(25,9,33,10,'f');
+if(st==='baustelle')fill(TK_SITE[0],TK_SITE[1],TK_SITE[2],TK_SITE[3],'f');
 if(st==='gassen')[[17,19,1,6],[38,40,1,6],[9,11,15,22],[31,33,15,22]].forEach((a,i)=>{if(tms.closed[i])fill(a[0],a[2],a[1],a[3],'#')});
 const spots=[];[18,29,39].forEach((x,i)=>(st==='baustelle'&&i===1?[11,12]:[9,10,11,12]).forEach(y=>spots.push({cells:[[x,y]],x:x*T+16,y:y*T+16,side:null,iv:[1,0],ex:false,lk:false,rd:true,g:i,r:54,n:['Sperre West','Sperre Mitte','Sperre Ost'][i]})));
 const tr=mulberry32((((typeof sd==='number'?sd:3)|0)*40503>>>0)^0x1b873593),ti=Math.floor(tr()*THEMES.length),tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
 const lay={seed:sd,truck:true,bld:{x0:1,y0:1,x1:58,y1:6},winN:[],winS:[],
 mat:(x,y)=>y>=9&&y<=12?'a':y===8||y===13?'s':'y',
-paintFloor(s){s.fillStyle='rgba(235,235,225,.55)';for(let i=0;i<8;i++)s.fillRect(26*T+3,9*T+4+i*15,2*T-6,8)},
-paintTop(s){},
+paintFloor(s){s.fillStyle='rgba(235,235,225,.55)';for(let i=st==='baustelle'?4:0;i<8;i++)s.fillRect(26*T+3,9*T+4+i*15,2*T-6,8)},
+paintTop(s){if(st==='baustelle')paintSite(s)},
 spawn:tms.panne?{x:4.5*T,y:13.6*T}:{x:29.5*T,y:13.6*T},zones:[],lobby:[2,8,57,8],cams:[],tellers:[],mgr:{p:[0,0],route:[]},guards:[],civ:0,
 mission:tms,theme:mkTheme(ti,tms.lg.includes('nacht')?4:di,0),note:[0,0],mon:[0,0],vault:{door:[0,0],pad:[0,0],dir:1,bundles:[]},tills:[],atms:[],backDoors:[],sw:{x:0,y:0},
 exit:{x:55*T,y0:9*T,y1:13*T,dir:1,tx:55},van:{y:10*T+16,x0:66*T,stop:55*T,dir:-1},flip:false,
@@ -1409,7 +1420,7 @@ if(horiz){s.fillRect(X,Y+9,5,14);s.fillRect(X+T-5,Y+9,5,14)}else{s.fillRect(X+9,
 if(c==='D'){s.fillStyle='rgba(190,225,240,.28)';if(horiz)s.fillRect(X+5,Y+13,T-10,6);else s.fillRect(X+13,Y+5,6,T-10)}
 if(c==='g'){s.fillStyle='#7a5434';s.fillRect(X+4,Y+4,T-10,3)}}}
 lay.paintTop(s);
-for(const [x,y] of TILES){if(cell(x,y)!=='f')continue;const X=x*T,Y=y*T,hz=cell(x-1,y)==='f'||cell(x+1,y)==='f';
+for(const [x,y] of TILES){if(cell(x,y)!=='f'||inSite(lay,x,y))continue;const X=x*T,Y=y*T,hz=cell(x-1,y)==='f'||cell(x+1,y)==='f';
 if(hz){s.fillStyle='rgba(0,0,0,.2)';s.fillRect(X,Y+17,T,4);s.fillStyle='rgba(165,173,182,.5)';s.fillRect(X,Y+12,T,6);s.fillStyle='#59616b';s.fillRect(X,Y+12,T,1);s.fillRect(X,Y+17,T,1);s.fillRect(X+2,Y+9,3,11)}
 else{s.fillStyle='rgba(0,0,0,.2)';s.fillRect(X+17,Y,4,T);s.fillStyle='rgba(165,173,182,.5)';s.fillRect(X+12,Y,6,T);s.fillStyle='#59616b';s.fillRect(X+12,Y,1,T);s.fillRect(X+17,Y,1,T);s.fillRect(X+9,Y+2,11,3)}}
 so=document.createElement('canvas');so.width=WPX*2;so.height=WPY*2;gone=[];stm.clear();vanSt=null;paintObjs();
@@ -1714,9 +1725,10 @@ function grabHost(n,o){n.st='hostage';n.own=o.id;n.path=[];n.mvg=false;n.alert=0
 function relHost(o){const n=npcs.find(q=>q.st==='hostage'&&q.own===o.id);if(!n)return false;n.st='cower';n.own=-1;n.mvg=false;say('Die Geisel ist frei.');return true}
 /* Bewusstlos ausschalten (T5, Tills Idee vom 27. Oktober 2026, docs/spielsystem.md): In der Erkundung schlaegt man eine Wache, einen Manager oder einen Schalterangestellten mit E (halten, CFG.ko.t) von hinten bewusstlos (nicht aufgeregt, schaut nicht her, Winkel zur Blickrichtung ueber CFG.ko.back).
    Der Koerper (st 'ko') schlaeft CFG.ko.wake s, laesst sich mit E (halten, CFG.ko.grabT) greifen und langsam (CFG.ko.drag, Spielerflag dg) in eine Ecke ziehen, H laesst ihn los. Sieht eine Wache, ein Angestellter oder eine aktive Kamera den Koerper CFG.ko.find s lang, gibt es Alarm.
-   Beim Aufwachen gibt es Alarm, im Ueberfall steht er still als Zivilist auf. Ein Ueberfall macht aus Bewusstlosen keine Beamten. */
+   Beim Aufwachen gibt es Alarm, im Ueberfall steht er still als Zivilist auf. Ein Ueberfall macht aus Bewusstlosen keine Beamten.
+   Rang (28. Oktober 2026, Flugschreiber und Messung): Beute gewinnt beim ersten Druck (Rang +CFG.ko.pen), laeuft das Halten aber schon (Fortschritt ueber 0), bleibt die Wache vorn (Rang -CFG.ko.pen). Sonst sprang E im Juwelier beim Folgen an der naechsten Vitrine auf das Schneiden um und der Fortschritt war weg (71 von 75 Abbruechen). */
 function koKind(n){return n.k==='grd'||n.k==='mgr'||n.k==='tel'}
-function koMi(n){return n.kmi||(n.kmi={t:'ko',pr:0,sn:'grab',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>CFG.ko.pen,
+function koMi(n){return n.kmi||(n.kmi={t:'ko',pr:0,sn:'grab',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>n.kmi.pr>0?-CFG.ko.pen:CFG.ko.pen,
 ok(o){return phase===1&&!ended&&(!LAY.truck||LAY.mission.panne)&&koKind(n)&&n.st==='idle'&&n.alert<=0&&!(n.look&&n.look.t>0)&&live(o)&&!(o.dn>0)&&angd(n.a,Math.atan2(o.y-n.y,o.x-n.x))>CFG.ko.back},
 lab:()=>'Ausschalten',dur:()=>CFG.ko.t,act(o){koDown(n,o)}})}
 function bodyMi(n){return n.bmi||(n.bmi={t:'body',pr:0,sn:'grab',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>CFG.ko.pen,

@@ -62,4 +62,26 @@ module.exports = [
       t.eq(r.filter(x => !x[1]).map(x => x[0]), [], 'Host und Client sehen dieselben Varianten (Seed)'); t.ok(new Set(r.map(x => x[2])).size >= 1, 'die Seeds decken Fracht ab: ' + JSON.stringify(r.map(x => x[2])));
     },
   },
+  {
+    // Tills Rueckmeldung vom 28. Oktober 2026 (Flugschreiber, Marker 4): die Sperre der oberen Spuren sah wie aufgemalte Leitplanken aus und lief durch den Zebrastreifen.
+    name: 'Transporter, Baustelle: die gesperrten oberen Spuren sehen wie eine Baustelle aus (rot-weisse Schranken, Pylonen, Grube) statt wie der Zaun, der Zebrastreifen geht nicht durch die Sperre; das Raster bleibt Zaun (solide, Zeilen 9 und 10, x 25 bis 33)',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]);
+        let bs = null, std = null; for (let sd = 1; sd < 400 && !(bs && std); sd++) { const m = D.genTruckMission(sd); if (m.street === 'baustelle' && !m.lg.includes('nacht')) bs = bs || sd; if (m.street === 'std' && !m.lg.includes('nacht')) std = std || sd; }
+        const rec = () => { const o = { rects: [], arcs: 0 }; o.s = { fillRect: (x, y, w, h) => o.rects.push([x, y, w, h]), beginPath() {}, arc() { o.arcs++; }, fill() {}, fillStyle: '' }; return o; };
+        const look = sd => { D.sessReset(); D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(sd); const L = D.LAY(), f = rec(), g = rec(); L.paintFloor(f.s); L.paintTop(g.s);
+          let solid = 0; for (let y = 9; y <= 10; y++) for (let x = 25; x <= 33; x++) if (D.isSol(x, y)) solid++;
+          return { street: L.mission.street, stripes: f.rects.length, inSite: f.rects.filter(q => q[1] >= 9 * 32 && q[1] < 11 * 32).length, top: g.rects.length, arcs: g.arcs, solid }; };
+        const a = look(bs), b = look(std);
+        D.sessReset(); D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(bs); const me = D.get().me; me.x = 944; me.y = 405; for (let i = 0; i < 5; i++) D.update(1 / 30); me.x = 944; me.y = 405; D.draw(); D.draw();
+        const cam = D.cam(), g2 = document.getElementById('c').getContext('2d'), avg = (wx, wy, ww, wh) => { const d = g2.getImageData(Math.round((wx - cam[0]) * 2), Math.round((wy - cam[1]) * 2), ww * 2, wh * 2).data; let r = 0, bl = 0, n = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; bl += d[i + 2]; n++; } return [Math.round(r / n), Math.round(bl / n)]; };
+        return { bs, std, a, b, red: avg(25 * 32 + 4, 9 * 32 + 3, 12, 4), dirt: avg(25 * 32 + 6, 9 * 32 + 12, 16, 6) }; })()`);
+      t.ok(r.bs && r.std, 'je ein Seed mit und ohne Baustelle: ' + r.bs + ', ' + r.std);
+      t.eq([r.a.street, r.b.street], ['baustelle', 'std'], 'die Seeds tragen die erwartete Strassenvariante'); t.eq(r.a.solid, 18, 'das Raster bleibt Zaun: alle 9 mal 2 Kacheln solide');
+      t.eq(r.a.inSite, 0, 'auf der Baustelle liegen keine Zebrastreifen in den Zeilen 9 und 10'); t.eq([r.a.stripes, r.b.stripes, r.b.inSite], [4, 8, 4], 'unten bleiben 4 Streifen, ohne Baustelle sind es 8');
+      t.ok(r.a.top > 100 && r.a.arcs >= 8 * 3, 'die Baustelle wird gemalt (Grube, Schranken, Pylonen): ' + r.a.top + ' Rechtecke, ' + r.a.arcs + ' Kreise'); t.eq([r.b.top, r.b.arcs], [0, 0], 'ohne Baustelle malt paintTop nichts');
+      t.ok(r.red[0] - r.red[1] > 80, 'die Schranke ist rot (rot minus blau): ' + r.red); t.ok(r.dirt[0] - r.dirt[1] > 15, 'unter der Sperre liegt Erde, der graue Zaun wird dort nicht mehr darueber gezeichnet (rot minus blau): ' + r.dirt);
+    },
+  },
 ];
