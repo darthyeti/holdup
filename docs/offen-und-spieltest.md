@@ -49,7 +49,7 @@ Coop (in sinnvoller Reihenfolge):
 
 1. Echter Test über das Internet: Latenz, Spielgefühl, ob die Verbindung durch Heim-Router geht (bisher gespielt, aber Latenz und Router nicht festgehalten; der Wettkampf mit Spielern in Homeoffice und Firmennetzwerk lief am 27. Oktober 2026 zweimal flüssig, ohne Log). Die Direktverbindung scheitert bei strengen NATs, dann braucht es einen TURN-Server oder ein WebSocket-Relay (zum Beispiel Cloudflare Workers). Der PeerJS-Vermittler `0.peerjs.com` ist ein öffentlicher Gratisdienst ohne Zusage. Seit dem Flugschreiber liefert jede Partie Messwerte (Ping, Zeitsprünge, Abgleich Host und Client).
 2. Zuschauer (Z1 und Z2 gebaut: Link `#raum=CODE&zu=1`, Bedienung), Last (Z3) und Menü-Einträge (Z4) stehen in docs/coop-ausbau.md. Hinweis in der Lobby, wenn die Seite per Link (`#raum=XXXX`) geöffnet wurde und der Raum nicht existiert (zeigt aktuell die Fehlermeldung im Menü).
-3. Coop-Balance: Wellengröße je Spielerzahl (`CFG.perPlayer`) und Zeiten sind Schätzungen, ein Coop-Bot fehlt (`tools/bot.js` spielt nur Solo). Funk-Ping (Plan F1 und F2 in docs/coop-ausbau.md), Rollenlogik und Missionen (Kundschafter gegen Fahrer und Absicherer) und mehr Karten sind Ideen.
+3. Coop-Balance: Wellengröße je Spielerzahl (`CFG.perPlayer`) und Zeiten sind Schätzungen, ein Coop-Bot fehlt (`tools/bot.js` spielt nur Solo). Rollenlogik (der Funkspruch mit Markierung ist seit F1 und F2 gebaut, docs/coop-ausbau.md) und Missionen (Kundschafter gegen Fahrer und Absicherer) und mehr Karten sind Ideen.
 4. Reconnect nach Verbindungsabbruch und Hostwechsel (heute beendet der Host-Abbruch das Spiel für alle).
 5. Eigenen Schuss ohne Verzögerung abrechnen (Lag-Kompensation), heute trifft der Host mit seiner Sicht.
 
