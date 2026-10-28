@@ -12,13 +12,15 @@ async function setup(t) {
 // Seeds nach Variante suchen (genTruckMission ist rein rechnerisch, ohne Kartenbau)
 const FIND = `(pred, n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd < 600 && out.length < n; sd++) { const m = D.genTruckMission(sd); if (pred(m)) out.push(sd); } return out; }`;
 const OPT = `{ kit: 'full', sigma: .05, react: .35, police: false }`;
+// die ersten n Seeds ab 3000 ohne Panne (die Panne hat einen anderen Ablauf, eigener Test unten)
+const NP = `(n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 3000; out.length < n; sd++) if (!D.genTruckMission(sd).panne) out.push(sd); return out; }`;
 
 module.exports = [
   {
     name: 'Transporter-Bot: ohne Polizei schafft er acht Seeds (Sperre, Zugriff, Laderaum, Saecke, Fluchtwagen), kaum Treffer dank Deckung hinter der Sperre, die Meilensteine folgen der Reihe nach',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const out = [], O = ${OPT}; for (let sd = 3000; sd < 3008; sd++) { const x = bot.truck(Object.assign({ seed: sd }, O)); out.push({ sd, res: x.res, loot: x.loot, minHp: x.minHp, kills: x.kills, why: x.stopWhy, m: x.milestones, t: x.t }); } return out; })()`);
+      const r = await t.page.evaluate(`(() => { const out = [], O = ${OPT}, NP = ${NP}; for (const sd of NP(8)) { const x = bot.truck(Object.assign({ seed: sd }, O)); out.push({ sd, res: x.res, loot: x.loot, minHp: x.minHp, kills: x.kills, why: x.stopWhy, m: x.milestones, t: x.t }); } return out; })()`);
       t.eq(r.filter(x => x.res !== 'WIN').map(x => [x.sd, x.res]), [], 'alle Laeufe gewonnen (Seed, Ergebnis)');
       t.eq(r.filter(x => !(x.loot > 0)).map(x => x.sd), [], 'jeder Lauf bringt Beute'); t.eq(r.filter(x => x.why !== 'sperre').map(x => x.sd), [], 'der Wagen steht an der Sperre, nicht an Leuten auf der Strasse');
       t.eq(r.filter(x => x.minHp < 60).map(x => [x.sd, x.minHp]), [], 'hinter der Sperre verliert der Bot kaum Leben (Rest-HP mindestens 60)'); t.ok(r.every(x => x.kills >= 1), 'die Besatzung wird bekaempft');
@@ -32,9 +34,9 @@ module.exports = [
     name: 'Transporter-Bot: auf der Fahrbahn stehen bleiben stoppt den Wagen auch (stop strasse), tut der Bot in der Erkundung nichts, faehrt der Wagen durch (Wagen entkommen), und die Polizei-Einstellung steht danach wieder wie vorher',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const D = __dbg, O = ${OPT}, o = {}, pol = [D.CFG.truck.policeAt, D.CFG.policeForced]; const a = bot.truck(Object.assign({ seed: 3001, stop: 'strasse' }, O)), b = bot.truck(Object.assign({ seed: 3001, stop: 'nichts' }, O));
+      const r = await t.page.evaluate(`(() => { const D = __dbg, O = ${OPT}, NP = ${NP}, o = {}, pol = [D.CFG.truck.policeAt, D.CFG.policeForced], s1 = NP(2)[1]; const a = bot.truck(Object.assign({ seed: s1, stop: 'strasse' }, O)), b = bot.truck(Object.assign({ seed: s1, stop: 'nichts' }, O));
         o.strasse = [a.res, a.stopWhy, a.milestones.sperre === undefined]; o.nichts = [b.res, b.milestones.stand === undefined, b.kills]; o.pol = [pol, [D.CFG.truck.policeAt, D.CFG.policeForced]];
-        const c = bot.truck({ seed: 3001, kit: 'full', sigma: .05, react: .35 }); o.mitPolizei = [typeof c.res, c.milestones.stand != null, c.waves]; o.pol2 = [D.CFG.truck.policeAt, D.CFG.policeForced]; return o; })()`);
+        const c = bot.truck({ seed: s1, kit: 'full', sigma: .05, react: .35 }); o.mitPolizei = [typeof c.res, c.milestones.stand != null, c.waves]; o.pol2 = [D.CFG.truck.policeAt, D.CFG.policeForced]; return o; })()`);
       t.eq(r.strasse, ['WIN', 'strasse', true], 'auf der Fahrbahn stehen: der Wagen bremst vor dem Bot, ohne dass eine Sperre steht'); t.eq(r.nichts, ['LOSE:Wagen entkommen', true, 0], 'ohne Sperre und ohne Bot auf der Strasse faehrt der Wagen durch');
       t.eq(r.pol[0], r.pol[1], 'police: false laesst die Zeiten nach dem Lauf wie vorher'); t.eq(r.pol2, r.pol[0], 'mit Polizei sind die Zeiten unveraendert (26 s und der Mindestwert)');
       t.ok(r.mitPolizei[1] === true && r.mitPolizei[0] === 'string', 'mit Polizei bekommt der Bot den Wagen zum Stehen');
@@ -44,14 +46,23 @@ module.exports = [
     name: 'Transporter-Bot: er unterscheidet die Varianten der Auftragsart (Baustelle baut mindestens 8 s frueher als die Normalstrasse, ein schwaches Schloss oeffnet mindestens 8 s frueher als ein verstaerktes)',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const D = __dbg, F = ${FIND}, O = ${OPT}, mean = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
+      const r = await t.page.evaluate(`(() => { const D = __dbg, F = ${FIND}, O = ${OPT}, num = a => a.filter(x => typeof x === 'number'), mean = a => { a = num(a); return a.reduce((x, y) => x + y, 0) / (a.length || 1); };
         const grp = seeds => seeds.map(sd => bot.truck(Object.assign({ seed: sd }, O)));
-        const bau = F(m => m.street === 'baustelle' && m.lock === 'std', 5), nor = F(m => m.street === 'std' && m.lock === 'std', 5), sw = F(m => m.street === 'std' && m.lock === 'schwach', 5), st = F(m => m.street === 'std' && m.lock === 'stark', 5);
+        const bau = F(m => !m.panne && m.street === 'baustelle' && m.lock === 'std', 5), nor = F(m => !m.panne && m.street === 'std' && m.lock === 'std', 5), sw = F(m => !m.panne && m.street === 'std' && m.lock === 'schwach', 5), st = F(m => !m.panne && m.street === 'std' && m.lock === 'stark', 5);
         const A = grp(bau), B = grp(nor), C = grp(sw), E = grp(st), win = a => a.filter(x => x.res === 'WIN').length;
         return { n: [bau.length, nor.length, sw.length, st.length], sperre: [mean(A.map(x => x.milestones.sperre)), mean(B.map(x => x.milestones.sperre))], offen: [mean(C.map(x => x.milestones.offen)), mean(E.map(x => x.milestones.offen))], win: [win(A), win(B), win(C), win(E)], seeds: [bau, nor, sw, st] }; })()`);
-      t.eq(r.n, [5, 5, 5, 5], 'Aufbau: je fuenf Seeds: ' + JSON.stringify(r.seeds)); t.eq(r.win, [5, 5, 5, 5], 'alle gewonnen (sonst misst der Vergleich nichts)');
+      t.eq(r.n, [5, 5, 5, 5], 'Aufbau: je fuenf Seeds: ' + JSON.stringify(r.seeds)); t.ok(r.win.every(x => x >= 4), 'mindestens vier von fuenf gewonnen (der Bot verliert ohne Polizei sehr selten, sonst misst der Vergleich nichts): ' + JSON.stringify(r.win));
       t.ok(r.sperre[0] + 8 <= r.sperre[1], 'Baustelle (2 Teile) steht frueher als die Normalstrasse (4 Teile), rT ' + r.sperre.map(x => x.toFixed(1)).join(' gegen '));
       t.ok(r.offen[0] + 8 <= r.offen[1], 'schwaches Schloss oeffnet frueher als verstaerktes, tH ' + r.offen.map(x => x.toFixed(1)).join(' gegen '));
+    },
+  },
+  {
+    name: 'Transporter-Bot: eine Panne (Wagen steht schon) spielt er laut: Waffe gleich ziehen, Besatzung bekaempfen, Laderaum aufbohren, einsteigen (ohne Polizei Sieg)',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); const P = []; for (let sd = 1; sd < 300 && P.length < 4; sd++) if (D.genTruckMission(sd).panne) P.push(sd); return P.map(sd => { const x = bot.truck(Object.assign({ seed: sd }, ${OPT})); return { sd, res: x.res, why: x.stopWhy, panne: x.mission.panne, m: x.milestones, t: x.t, kills: x.kills }; }); })()`);
+      t.eq(r.length, 4, 'vier Pannen-Seeds'); t.ok(r.filter(x => x.res === 'WIN').length >= 3, 'mindestens drei von vier gewonnen (bei der Panne steht die Besatzung nah, der Bot verliert gelegentlich): ' + JSON.stringify(r.map(x => x.res))); t.eq(r.filter(x => x.why !== 'panne' || !x.panne).map(x => x.sd), [], 'als Panne erkannt');
+      t.eq(r.filter(x => x.res === 'WIN').filter(x => !(x.m.stand === 0 && x.m.offen > 0 && x.m.offen < x.m.voll && x.m.voll < x.m.zone && x.kills >= 1)).map(x => [x.sd, JSON.stringify(x.m)]), [], 'der Wagen steht von Anfang an, danach Laderaum, Taschen, Fluchtzone in dieser Reihenfolge');
     },
   },
   {

@@ -89,7 +89,7 @@ function levels(n,o,lv,from,sp){const D2=__dbg,step=D2.CFG.fahndung.step,out={};
 /* Transporter-Bot (Schritt D der Transporter-Planung, 28. Oktober 2026): spielt einen Geldtransporter solo vom Start bis zum Fluchtwagen. Ablauf wie ein vorsichtiger Spieler:
    (1) Erkunden: Material sammeln (Kisten, Faesser, Autos) und die Sperre bauen, die am wenigsten fehlt (Baustelle: zwei Teilstuecke). Gelingt sie nicht rechtzeitig, faehrt der Wagen durch (Ergebnis "Wagen entkommen").
    (2) Zugriff: der Wagen steht, die Besatzung wird beschossen (Ziel- und Schusslogik wie bei run), (3) Laderaum aufbohren (der Bot ueberwaeltigt keine ergebenen Wachen: im Solospiel ergibt sich nur die letzte bei hoechstens 35 Leben, das Gewehr laesst das fast nie uebrig), (4) Saecke einpacken bis die Tasche voll ist, Fluchtwagen rufen und einsteigen.
-   Optionen: seed, kit, skills, lage, turn, sigma, react, call (Sekunden nach dem Zugriff bis zum Funkruf, Standard 0), maxT, police (false = Messlauf ohne Polizei, nur die Zeitleiste), stop ('sperre' = Standard, 'strasse' = auf der Fahrbahn stehen bleiben statt zu bauen, 'nichts' = in der Erkundung nichts tun, der Wagen faehrt durch),
+   Optionen: seed, kit, skills, lage, turn, sigma, react, call (Sekunden nach dem Zugriff bis zum Funkruf, Standard 0), maxT, police (false = Messlauf ohne Polizei, nur die Zeitleiste), Panne-Auftraege (mission.panne) spielt er laut: Waffe gleich ziehen, dann wie der normale Zugriff. stop ('sperre' = Standard, 'strasse' = auf der Fahrbahn stehen bleiben statt zu bauen, 'nichts' = in der Erkundung nichts tun, der Wagen faehrt durch),
    van wie bei run. Ergebnis: res ('WIN', 'LOSE:Titel', 'TIMEOUT'), t (Sekunden seit dem Zugriff), tPre (Sekunden bis der Wagen stand), loot, hp, minHp, waves, kills, stopWhy, milestones (rT bzw. tH der Schritte: sperre, stand, erster = erster Treffer-Abschuss, besatzung = letzte kampfbereite Wache des Wagens ausgeschaltet, offen, voll, wagen, zone), tags der Karte (variant), mission (street, cargo, lock, alarm, heavy, crew, bagN, arrive aus dem Seed). */
 function truck(o){o=Object.assign({sigma:.09,react:.35,call:0,maxT:420,kit:'old',cons:{},round:0,heat:0,stop:'sperre',police:true},o||{});const POL0=[D.CFG.truck.policeAt,D.CFG.policeForced];if(o.police===false){D.CFG.truck.policeAt=99999;D.CFG.policeForced=99999}try{return truck1(o)}finally{D.CFG.truck.policeAt=POL0[0];D.CFG.policeForced=POL0[1]}}
 function truck1(o){
@@ -97,8 +97,8 @@ function truck1(o){
  D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;D.SESSION.heat=o.heat||0;Object.assign(D.SESSION.sk,o.skills||{});
  D.setScenario('truck');D.setSeedMode('random');if(o.lage!==undefined)D.setLage(o.lage);if(o.turn!==undefined)D.setTurn(o.turn);
  if(o.seed!=null){if(o.lage!==undefined||o.turn!==undefined)D.buildLay(D.layoutFor(o.seed));else D.buildSeed(o.seed)}
- D.reset();const L=D.LAY(),LN=D.LANE(),M=L.mission;k.a=k.d=k.w=k.s=k[' ']=k.e=0;
- const R={res:null,t:0,tPre:null,loot:0,hp:100,minHp:100,waves:0,kills:0,stopWhy:null,milestones:{},variant:M.tags.join('|'),street:M.street,mission:{street:M.street,cargo:M.cargo,lock:M.lock,alarm:M.alarm,heavy:M.heavy|0,crew:M.crew,bagN:M.bagN,arrive:M.arrive},trace:[]};let seen=new Map(),jit=0,jt=0,calledAt=null,gi=null,rtSeen=0;
+ D.reset();const L=D.LAY(),LN=D.LANE(),M=L.mission;k.a=k.d=k.w=k.s=k[' ']=k.e=0;if(M.panne)D.startHeist(false); // Panne: der Wagen steht schon, der Bot zieht gleich die Waffe (laut)
+ const R={res:null,t:0,tPre:null,loot:0,hp:100,minHp:100,waves:0,kills:0,stopWhy:null,milestones:{},variant:M.tags.join('|'),street:M.street,mission:{panne:!!M.panne,street:M.street,cargo:M.cargo,lock:M.lock,alarm:M.alarm,heavy:M.heavy|0,crew:M.crew,bagN:M.bagN,arrive:M.arrive},trace:[]};let seen=new Map(),jit=0,jt=0,calledAt=null,gi=null,rtSeen=0;
  const mark=(n,v)=>{if(R.milestones[n]==null)R.milestones[n]=+v.toFixed(1)};
  const reachTile=it=>{const p=S().p;let best=null,bd=1e9;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const tx=Math.floor(it.x/32)+dx,ty=Math.floor(it.y/32)+dy;if(D.isSol(tx,ty))continue;const d=Math.hypot(tx*32+16-it.x,ty*32+16-it.y);if(d>=(it.r||44)*.9)continue;const pl=D.pathTo(p.x,p.y,tx,ty).length;if(!pl&&!(tileOf(p)[0]===tx&&tileOf(p)[1]===ty))continue;const sc=pl+d*.05;if(sc<bd){bd=sc;best=[tx,ty]}}return best};
  // Fluchtzone: die naechste begehbare Zonenkachel (das Ziel der Karte liegt im haltenden Wagen und ist dann fest)
@@ -109,7 +109,7 @@ function truck1(o){
  let task=null,taskT=0,taskN=0;
  for(let n=0;n<o.maxT*30;n++){
   const s=S(),p=s.p;if(s.ended)break;const tk=D.tk(),ph2=s.phase===2;
-  if(tk&&R.stopWhy==null&&tk.st==='stopped'){R.stopWhy=R.milestones.sperre!=null?'sperre':'strasse';R.tPre=+D.rT().toFixed(1);mark('stand',D.rT())}
+  if(tk&&R.stopWhy==null&&tk.st==='stopped'){R.stopWhy=M.panne?'panne':R.milestones.sperre!=null?'sperre':'strasse';R.tPre=+D.rT().toFixed(1);mark('stand',D.rT())}
   if(grp!=null&&R.milestones.sperre==null&&D.bars().filter(b=>b.rd&&b.g===grp).every(b=>b.lv>0))mark('sperre',D.rT());
   k.a=k.d=k.w=k.s=0;k.e=0;
   // Feinde in Sicht (ergebene Besatzung zaehlt nicht)

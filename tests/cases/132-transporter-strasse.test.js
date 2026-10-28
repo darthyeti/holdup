@@ -28,7 +28,7 @@ module.exports = [
     name: 'Transporter-Baustelle: in der Mitte sind die Zeilen 9 und 10 zugezaeunt, der Wagen faehrt in den Zeilen 11 und 12 ohne Sperre durch (Auftrag gescheitert), zwei Teilstuecke der Sperre Mitte halten ihn, die anderen Sperren brauchen weiter vier',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const D = __dbg, o = {}, f = (${FIND})([m => m.street === 'baustelle' && 'b', m => m.street === 'std' && 's']);
+      const r = await t.page.evaluate(`(() => { const D = __dbg, o = {}, f = (${FIND})([m => !m.panne && m.street === 'baustelle' && 'b', m => !m.panne && m.street === 'std' && 's']);
         const build = sd => { D.sessReset(); D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(sd); D.CFG.snp.from = 99; D.startHeist(false, D.get().me); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; return D.LAY(); };
         const run = sec => { for (let i = 0; i < sec * 30; i++) { const g = D.get(); if (g.ended) return true; const m = g.me; m.hp = 1e9; D.update(1 / 30); } return false; };
         const built = (g, pick) => { for (const b of D.bars()) if (b.rd && b.g === g && (!pick || pick(b))) { b.lv = 1; b.hp = 100; } };
@@ -50,7 +50,7 @@ module.exports = [
     name: 'Transporter-Gassen: die zugemauerten Gassen sind massive Mauer, die offenen bleiben begehbar (Weg von der Strasse bis ans Ende), mindestens eine ist offen, alles andere ist wie im Normalfall',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const D = __dbg, o = { zu: [], offen: [], rest: [] }, A = ${JSON.stringify(ALLEYS)}, f = (${FIND})([m => m.street === 'gassen' && m.closed.filter(Boolean).length === 1 && 'g1', m => m.street === 'gassen' && m.closed.filter(Boolean).length === 3 && 'g3', m => m.street === 'std' && 's']);
+      const r = await t.page.evaluate(`(() => { const D = __dbg, o = { zu: [], offen: [], rest: [] }, A = ${JSON.stringify(ALLEYS)}, f = (${FIND})([m => !m.panne && m.street === 'gassen' && m.closed.filter(Boolean).length === 1 && 'g1', m => !m.panne && m.street === 'gassen' && m.closed.filter(Boolean).length === 3 && 'g3', m => !m.panne && m.street === 'std' && 's']);
         const build = sd => { D.sessReset(); D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(sd); return D.LAY(); };
         const std = (build(f.s), D.world().M.slice());
         for (const k of ['g1', 'g3']) { const L = build(f[k]), W = D.world(), cl = L.mission.closed; o[k] = cl.slice();
@@ -66,7 +66,7 @@ module.exports = [
     name: 'Transporter-Strasse im Coop: der Client baut dieselbe Karte (Raster, Sperren, Tags) aus dem Seed, auch bei Baustelle und zugemauerten Gassen',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const f = (${FIND})([m => m.street === 'baustelle' && 'b', m => m.street === 'gassen' && 'g', m => m.street === 'std' && 's']), out = []; for (const k of ['b', 'g', 's']) { const G = CT.mkGame('truck', f[k], 2), A = G.A, B = G.clients[0], sig = d => [d.world().M.join(''), d.LAY().mission.tags.join('|'), d.bars().filter(b => b.rd).length]; out.push([k, JSON.stringify(sig(A)) === JSON.stringify(sig(B))]); } return out; })()`);
+      const r = await t.page.evaluate(`(() => { const f = (${FIND})([m => !m.panne && m.street === 'baustelle' && 'b', m => !m.panne && m.street === 'gassen' && 'g', m => !m.panne && m.street === 'std' && 's']), out = []; for (const k of ['b', 'g', 's']) { const G = CT.mkGame('truck', f[k], 2), A = G.A, B = G.clients[0], sig = d => [d.world().M.join(''), d.LAY().mission.tags.join('|'), d.bars().filter(b => b.rd).length]; out.push([k, JSON.stringify(sig(A)) === JSON.stringify(sig(B))]); } return out; })()`);
       t.eq(r.filter(x => !x[1]).map(x => x[0]), [], 'Host und Client haben dieselbe Karte');
     },
   },
