@@ -29,9 +29,9 @@ canvas:focus-visible{border-color:var(--accent)}
 <p id="err" hidden></p>
 </main>
 <script src="assets/peerjs.min.js"></script>
-<script src="js/ui.js?v=201"></script>
+<script src="js/ui.js?v=202"></script>
 <script>
-const BUILD={n:201,d:'2026-10-28'};//BUILD
+const BUILD={n:202,d:'2026-10-28'};//BUILD
 const UI_API=11;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -302,7 +302,7 @@ CFG.guard={spd:40,fov:1,rng:330};
 CFG.jewel={u:.5,smashT:1.2,cutT:6,win:2500,wall:4000,isl:6000,ctr:9000,boxU:1,boxV:14000,boxT:2,guard:{spd:28,fov:.8,rng:260}};
 CFG.truck={spd:150,acc:90,brake:240,gap:36,tire:100,tireSlide:170,policeAt:26,jamDelay:30,jamWin:12,crewHold:22,crew:{hp:120,dmg:8,rate:.9,spd:50,acc:.12},seg:{mc:2,bt:.8},arriveCut:12,arriveMin:35,surHp:35,capT:1.8,capBonus:6000,surPen:0,bagV:9000,bagU:1,bagT:1.4,keyT:1.8,drillT:22,keyTakeT:1.6};
 /* Varianten des Transporters (T4a, 27. Oktober 2026, der Seed wuerfelt sie hinter den alten Wuerfen): cargo Fracht (p Wahrscheinlichkeit, v Wert je Stueck, u Taschenplaetze je Stueck, n Anzahl von bis, lab Beschriftung, nm Name im Tag), lock Schloss (k Faktor auf die Bohrzeit), alarm Funkalarm (d Sekunden auf die erste Polizei, nicht unter CFG.policeForced), heavy schwere Wachen (p Grenzen fuer 0, 1 oder 2, hp und dmg Faktoren auf die Besatzung, nie der Fahrer) */
-CFG.truck.var={cargo:{gold:{p:.2,v:24000,u:2,n:[3,4],lab:'Goldbarren einpacken',nm:'Goldbarren',tag:'Fracht: Gold'},muenzen:{p:.2,v:5500,u:1,n:[9,11],lab:'Münzsack einpacken',nm:'Münzsäcke',tag:'Fracht: Münzen'}},lock:{schwach:{p:.2,k:.55,tag:'Schwaches Schloss'},stark:{p:.2,k:1.6,tag:'Verstärktes Schloss'}},alarm:{sofort:{p:.25,d:-6,tag:'Funkalarm sofort'},spaet:{p:.25,d:12,tag:'Funkalarm verzögert'}},heavy:{p:[.6,.9],hp:1.7,dmg:1.25,tag:['Schwere Wache','Zwei schwere Wachen']},street:{baustelle:.25,gassen:.35},panne:{p:.3,x:[22,38]},vorhut:{p:.3,lead:12,sight:520,n:2}};
+CFG.truck.var={cargo:{gold:{p:.2,v:24000,u:2,n:[3,4],lab:'Goldbarren einpacken',nm:'Goldbarren',tag:'Fracht: Gold'},muenzen:{p:.2,v:5500,u:1,n:[9,11],lab:'Münzsack einpacken',nm:'Münzsäcke',tag:'Fracht: Münzen'}},lock:{schwach:{p:.2,k:.55,tag:'Schwaches Schloss'},stark:{p:.2,k:1.6,tag:'Verstärktes Schloss'}},alarm:{sofort:{p:.25,d:-6,tag:'Funkalarm sofort'},spaet:{p:.25,d:12,tag:'Funkalarm verzögert'}},heavy:{p:[.6,.9],hp:1.7,dmg:1.25,tag:['Schwere Wache','Zwei schwere Wachen']},street:{baustelle:.25,gassen:.35},panne:{p:.3,x:[23,37]},vorhut:{p:.3,lead:12,sight:520,n:2},rev:{p:.35}};
 /* Explosionen (T2, 27. Oktober 2026, nur Optik): Zahl der Teilchen je 110 Pixel Radius (fire Feuerball, deb Truemmer, smoke Rauch), glow Lichtschein als Vielfaches des Radius, shake Kamerawackeln in Pixeln bei Abstand 0 (faellt bis shakeR mal Radius auf 0, dauert shakeT s), ptMax Obergrenze aller Teilchen, burn Brandstelle in s je Art (1 Auto, 2 Zapfsaeule), puff und flame Abstand von Rauch und Flammen der Brandstelle in s */
 CFG.fx={boom:{fire:20,deb:16,smoke:12,glow:2.1,shake:7,shakeR:5,shakeT:.45,ptMax:900,puff:.14,flame:.09,burn:{1:14,2:6}}};
 /* Lage-Tags (LAY.mission.lg): n = Schwellen fuer 0, 1 oder 2 Tags, max = Tags und Ereignisse zusammen. Je Tag: loot Beute-Faktor, pol Sekunden auf die erste Polizei, gap Faktor auf den Wellenabstand, sight/vis Faktor auf Sichtweite von Personal und Kameras bzw. des Spielers, dark zusaetzliche Dunkelheit, sus Faktor auf die Verdachtsrate, stl Zuschlag auf den Lautlos-Bonus, shield Verschiebung der ersten Schild-Welle, guards/cams/civ fuer die Auftragslage. Alles erste Schaetzungen, nichts gemessen. */
@@ -674,8 +674,10 @@ if(street==='gassen'){if(!closed.some(Boolean))closed[Math.floor(gu[0]*4)]=true;
 const pu=r(),xu=r(),panne=pu<V.panne.p,px=V.panne.x[0]+Math.floor(xu*(V.panne.x[1]-V.panne.x[0]+1));
 /* Vorhut (E2, hinter den Wuerfeln der Panne): ein Begleitwagen faehrt vor dem Panzerwagen, nicht bei der Panne und nicht bei der Baustelle (dort sind die oberen Spuren zu) */
 const vu=r(),vorhut=!panne&&street!=='baustelle'&&vu<V.vorhut.p;
-const vt=[V.cargo[cargo],V.lock[lock],V.alarm[alarm],heavy?{tag:V.heavy.tag[heavy-1]}:null,panne?{tag:'Panne'}:null,vorhut?{tag:'Vorhut'}:null,street==='baustelle'?{tag:'Baustelle'}:street==='gassen'?{tag:closed.filter(Boolean).length+(closed.filter(Boolean).length===1?' Gasse dicht':' Gassen dicht')}:null].filter(Boolean).map(q=>q.tag);
-return{code:'',vault:'none',guards:0,cams:0,civ:0,west:false,tags:lg.map(k=>LAGE[k].n).concat(['Panzerwagen',crew+' Wachen',bagN+' '+cg.nm]).concat(vt),ev:[],lg,at:{},extra:[],bags:[],blackoutAt:null,crew,bagN,arrive,cargo,bv:cg.v,bu:cg.u,blab:cg.lab,lock,lk:V.lock[lock]?V.lock[lock].k:1,alarm,al:V.alarm[alarm]?V.alarm[alarm].d:0,heavy,street,closed,panne,px,vorhut}}
+/* Gegenrichtung (E3, hinter allen Wuerfeln): der Wagen faehrt von Osten nach Westen, Fluchtzone und Fluchtwagen liegen im Westen */
+const ru=r(),rev=ru<V.rev.p;
+const vt=[V.cargo[cargo],V.lock[lock],V.alarm[alarm],heavy?{tag:V.heavy.tag[heavy-1]}:null,panne?{tag:'Panne'}:null,vorhut?{tag:'Vorhut'}:null,rev?{tag:'Wagen von Osten'}:null,street==='baustelle'?{tag:'Baustelle'}:street==='gassen'?{tag:closed.filter(Boolean).length+(closed.filter(Boolean).length===1?' Gasse dicht':' Gassen dicht')}:null].filter(Boolean).map(q=>q.tag);
+return{code:'',vault:'none',guards:0,cams:0,civ:0,west:false,tags:lg.map(k=>LAGE[k].n).concat(['Panzerwagen',crew+' Wachen',bagN+' '+cg.nm]).concat(vt),ev:[],lg,at:{},extra:[],bags:[],blackoutAt:null,crew,bagN,arrive,cargo,bv:cg.v,bu:cg.u,blab:cg.lab,lock,lk:V.lock[lock]?V.lock[lock].k:1,alarm,al:V.alarm[alarm]?V.alarm[alarm].d:0,heavy,street,closed,panne,px,vorhut,rev}}
 function truckLayout(sd){const tms=genTruckMission(sd),st=tms.street;newGrid(60,24,0,0);fill(0,0,59,23,'o');
 fill(0,0,59,0,'f');fill(0,23,59,23,'f');fill(0,0,0,23,'f');fill(59,0,59,23,'f');
 for(let y=9;y<=12;y++){setc(0,y,'o');setc(59,y,'o')}
@@ -692,7 +694,7 @@ if(st==='baustelle')fill(25,9,33,10,'f');
 if(st==='gassen')[[17,19,1,6],[38,40,1,6],[9,11,15,22],[31,33,15,22]].forEach((a,i)=>{if(tms.closed[i])fill(a[0],a[2],a[1],a[3],'#')});
 const spots=[];[18,29,39].forEach((x,i)=>(st==='baustelle'&&i===1?[11,12]:[9,10,11,12]).forEach(y=>spots.push({cells:[[x,y]],x:x*T+16,y:y*T+16,side:null,iv:[1,0],ex:false,lk:false,rd:true,g:i,r:54,n:['Sperre West','Sperre Mitte','Sperre Ost'][i]})));
 const tr=mulberry32((((typeof sd==='number'?sd:3)|0)*40503>>>0)^0x1b873593),ti=Math.floor(tr()*THEMES.length),tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
-return{seed:sd,truck:true,bld:{x0:1,y0:1,x1:58,y1:6},winN:[],winS:[],
+const lay={seed:sd,truck:true,bld:{x0:1,y0:1,x1:58,y1:6},winN:[],winS:[],
 mat:(x,y)=>y>=9&&y<=12?'a':y===8||y===13?'s':'y',
 paintFloor(s){s.fillStyle='rgba(235,235,225,.55)';for(let i=0;i<8;i++)s.fillRect(26*T+3,9*T+4+i*15,2*T-6,8)},
 paintTop(s){},
@@ -702,7 +704,13 @@ exit:{x:55*T,y0:9*T,y1:13*T,dir:1,tx:55},van:{y:10*T+16,x0:66*T,stop:55*T,dir:-1
 posts:[{x:4,y:8,a:0,k:'W'},{x:5,y:13,a:0,k:'W'},{x:14,y:8,a:0,k:'W'},{x:14,y:13,a:0,k:'W'},{x:18,y:8,a:1.57,k:'M'},{x:18,y:13,a:-1.57,k:'M'},{x:30,y:8,a:1.57,k:'M'},{x:30,y:13,a:-1.57,k:'M'},
 {x:49,y:8,a:3.14,k:'E',anchor:true},{x:49,y:13,a:3.14,k:'E',anchor:true},{x:53,y:8,a:3.14,k:'E',anchor:true},{x:53,y:13,a:3.14,k:'E',anchor:true}],
 slots:{W:[2,6,10,14],E:[42,46,50]},laneY:10*T+16,title:{cx:12*T,ax:9*T,cy:4*T,ay:16},
-spots,lockCells:[],parked}}
+spots,lockCells:[],parked};if(tms.rev)truckRev(lay);return lay}
+/* Gegenrichtung (E3): Die Karte bleibt, gespiegelt (wie mirrorLayout, nur fuer diese Felder) werden Fluchtzone, Fluchtwagen, Wagenplaetze der Polizei und bei der Panne der Startplatz des Spielers (gegenueber der Fluchtzone). Die Posten behalten ihre Plaetze (gespiegelte laegen teils in Festem), nur die Anker wechseln: sie sichern die Fluchtseite, also stehen sie jetzt im Westen. */
+function truckRev(lay){const Mx=60,X=x=>Mx-1-x,XP=x=>Mx*T-x;
+lay.exit.x=XP(lay.exit.x);lay.exit.dir=-lay.exit.dir;lay.exit.tx=X(lay.exit.tx);
+lay.van.x0=XP(lay.van.x0)-128;lay.van.stop=XP(lay.van.stop)-128;lay.van.dir=-lay.van.dir;
+lay.posts.forEach(p=>{if(p.k==='E')delete p.anchor;else if(p.k==='W')p.anchor=true});lay.slots={W:lay.slots.E.map(X),E:lay.slots.W.map(X)};
+if(lay.mission.panne)lay.spawn.x=XP(lay.spawn.x)}
 /* ---- Szenario Juwelier: kleine Boutique (Gebaeude x0..23, y0..13) mit Schaufenster im Sueden, vier Vitrineninseln, Wandvitrinen, Tresen mit Verkaeufern und Bueroraum plus Tresorraum im Nordosten.
    Eingaenge: Vordertuer (Glas, Sueden, offen), Hintertuer (Norden, Personaltuer, fuehrt ins Bueroraum) und Lieferanteneingang (Osten, hinter den Tresen, zugleich Fluchttuer zum Hof, in dem der Wagen wartet).
    Dieselben LAY-Felder wie die Bank (Tresor = Hinterzimmer-Safe, Bundles = Schmuckkassetten), dazu LAY.jewel und LAY.vit (Vitrinen als Beute). ---- */
@@ -1813,21 +1821,21 @@ function carMatItem(c){return{t:'mat',car:c,x:(c.x+2)*T,y:(c.y+1)*T,r:62,pr:0,do
 ok(o){return !this.done&&(o.mat|0)+this.cnt<=CFG.bar.matMax},
 act(o){const u=CFG.bar.matU*this.cnt;if(o.units+u>o.bag+.01){say('Tasche ist voll',o.id);ban('Tasche voll',1.4,o.id);sndTo(o,'ev','deny');return}o.mat=(o.mat|0)+this.cnt;o.units+=u;this.done=true;matGone(this);snd('thud',this.x,this.y);evt('sp',[this.x,this.y,16])}}}
 /* Transporter: Wagen, Besatzung, Laderaum (Schluessel oder Bohrer), Saecke. Die Logik steht in tkStep (Host), tkSync gleicht Item-Positionen an den Wagen an (alle Instanzen). */
-const TKL=192,TKH=60,VHL=128,VHH=52;
+const TKL=192,TKH=60,VHL=128,VHH=52,tkD=()=>LAY&&LAY.mission&&LAY.mission.rev?-1:1; // tkD: Fahrtrichtung des Wagens (+1 nach Osten, -1 bei der Gegenrichtung)
 function cargoItems(){const C=CFG.truck,M=LAY.mission;
 its.push({t:'ckey',x:0,y:0,r:56,pr:0,sn:()=>'tick',lab:()=>'Laderaum mit Schlüssel öffnen',dur:()=>C.keyT,ok:()=>!!tk&&tk.st==='stopped'&&!cargoOpen&&keyTaken,act(){cargoOpen=true;snd('ev','latch');say('Laderaum leise geöffnet');ban('Laderaum offen',2)}});
 its.push({t:'cargo',x:0,y:0,r:56,pr:0,keep:true,sn:()=>'drill',lab:()=>'Laderaum aufbohren (laut)',dur:()=>C.drillT*(M.lk||1),ok:()=>phase===2&&!!tk&&tk.st==='stopped'&&!cargoOpen&&!keyTaken,act(){cargoOpen=true;snd('ev','vault');say('Laderaum aufgebohrt');ban('Laderaum offen',2)}});
 its.push({t:'c4t',x:0,y:0,r:56,pr:0,sn:'tick',lab:()=>'Laderaum sprengen (C4, laut)',dur:()=>CFG.c4.t,ok:o=>!!tk&&tk.st==='stopped'&&!cargoOpen&&!!o&&(o.c4|0)>0,rk:()=>keyTaken?CFG.c4.rk:-CFG.c4.rk,act(o){c4Blast(o,'cargo')}});
 for(let i=0;i<M.bagN;i++)its.push({t:'tbag',x:0,y:0,r:40,pr:0,done:false,i,lab:()=>M.blab||'Geldsack einpacken',fit:o=>fits(o,M.bu||C.bagU),dur:()=>C.bagT,ok(){return cargoOpen&&!this.done},act(o){if(!take(o,M.bu||C.bagU,M.bv||C.bagV))return;this.done=true}})}
 /* C4 (MRU 1 B3): oeffnet Tresor oder Laderaum sofort. Laut: im Erkunden erzwungener Alarm (startHeist(true)), im Ueberfall kommt die Polizei CFG.c4.pol s frueher (nicht frueher als 3 s ab jetzt, nur solange sie nicht da ist). Ein Teil der Beute dort verbrennt (lost und done, zaehlt nicht fuers Nebenziel), die Stufen sparen davon (skill save). */
-function c4Blast(o,kind){const C=CFG.c4,cg=kind==='cargo',loss=C.loss*(1-skv(o.kit,'U4','save')),vm=cg||!LAY.vault?null:vaultMid(LAY.vault),at=cg?{x:tk.x-TKL/2-16,y:tk.y}:{x:vm[0],y:vm[1]};o.c4=Math.max(0,(o.c4|0)-1);o.st.gad++;
+function c4Blast(o,kind){const C=CFG.c4,cg=kind==='cargo',loss=C.loss*(1-skv(o.kit,'U4','save')),vm=cg||!LAY.vault?null:vaultMid(LAY.vault),at=cg?{x:tk.x-tkD()*(TKL/2+16),y:tk.y}:{x:vm[0],y:vm[1]};o.c4=Math.max(0,(o.c4|0)-1);o.st.gad++;
 const pool=its.filter(i=>cg?i.t==='tbag'&&!i.done:i.t==='bundle'&&!i.done),k=pool.length?Math.max(1,Math.round(pool.length*loss)):0,tot=pool.length;if(k>0)pool.slice(-k).forEach(i=>{i.lost=true;i.done=true});
 if(cg)cargoOpen=true;else{vaultOpen=true;flowT=0}
 evt('bx',[at.x,at.y]);evt('sp',[at.x,at.y,18]);snd('ev','crash');
 const who=players.length>1?pn(o.id)+' sprengt ':'Du sprengst ';say(who+(cg?'den Laderaum':'den Tresor')+' auf! '+k+' von '+tot+' Beutestücken sind verbrannt.');ban((cg?'Laderaum':'Tresor')+' gesprengt',2);
 if(phase===1)startHeist(true,o,cg?'hat den Laderaum gesprengt: Alarm!':'hat den Tresor gesprengt: Alarm!');
 else if(!policeShown){policeAt=Math.max(Math.ceil(tH)+3,policeAt-C.pol);say('Der Knall war weit zu hören: Polizei in '+Math.max(0,Math.ceil(policeAt-tH))+' s')}}
-function tkSync(){if(!tk)return;const rx=tk.x-TKL/2-16,ry=tk.y;for(const it of its){if(it.t==='ckey'||it.t==='cargo'||it.t==='c4t'){it.x=rx;it.y=ry}else if(it.t==='tbag'){it.x=rx-10-(it.i%3)*14;it.y=ry-18+Math.floor(it.i/3)*18}}}
+function tkSync(){if(!tk)return;const D=tkD(),rx=tk.x-D*(TKL/2+16),ry=tk.y;for(const it of its){if(it.t==='ckey'||it.t==='cargo'||it.t==='c4t'){it.x=rx;it.y=ry}else if(it.t==='tbag'){it.x=rx-D*(10+(it.i%3)*14);it.y=ry-18+Math.floor(it.i/3)*18}}}
 /* Ankunft des Wagens: je weiterem Mitspieler kommt er arriveCut s frueher (nicht frueher als arriveMin), solo bleibt die Missionszeit. */
 const tkArrive=()=>{const a=LAY.mission.arrive,n=Math.max(1,players.length);return Math.min(a,Math.max(CFG.truck.arriveMin,a-CFG.truck.arriveCut*(n-1)))};
 function sperre(g){let n=0,k=0;for(const b of bars)if(b.rd&&b.g===g){n++;if(b.lv>0)k++}return{n,k}}
@@ -1835,14 +1843,15 @@ function tkStep(dt){const t=tk;if(!t)return;
 if(radioDown>0)radioDown=Math.max(0,radioDown-dt);
 if(t.st==='wait'){if(rT>=tkArrive()){t.st='drive';t.v=CFG.truck.spd*.6;say('Der Panzerwagen kommt die Straße entlang!');ban('Der Panzerwagen kommt!',2.4);snd('van')}return}
 if(t.st!=='drive')return;
-const C=CFG.truck,front=t.x+TKL/2;let stopC=1e9,why=0;
-for(const b of bars)if(b.rd&&b.lv>0){const q=sperre(b.g);if(q.k<q.n)continue;const xb=b.cells[0][0]*T;if(xb>front-10){const c=xb-C.gap-TKL/2;if(c<stopC){stopC=c;why=1}}}
-for(const o of actv())if(Math.abs(o.y-t.y)<TKH/2+16&&o.x>front-6&&o.x<front+130){const c=o.x-100-TKL/2;if(c<stopC){stopC=c;why=2}}
-if(t.tire<=0){if(t.slideX===undefined)t.slideX=t.x+C.tireSlide;if(t.slideX<stopC){stopC=t.slideX;why=why||3}}
-const d=stopC-t.x;let want=C.spd;if(stopC<1e8)want=Math.min(want,Math.max(0,d)*1.8);
-t.v+=clamp(want-t.v,-dt*C.brake,dt*C.acc);t.x+=t.v*dt;
+/* Alle Vergleiche laufen in u = D*x (Fahrtrichtung D), so bleibt der Ablauf nach Osten Zeichen fuer Zeichen derselbe */
+const C=CFG.truck,D=tkD(),tu=D*t.x,front=tu+TKL/2;let stopC=1e9,why=0;
+for(const b of bars)if(b.rd&&b.lv>0){const q=sperre(b.g);if(q.k<q.n)continue;const xb=b.cells[0][0]*T,ub=D>0?xb:-(xb+T);if(ub>front-10){const c=ub-C.gap-TKL/2;if(c<stopC){stopC=c;why=1}}}
+for(const o of actv()){const ou=D*o.x;if(Math.abs(o.y-t.y)<TKH/2+16&&ou>front-6&&ou<front+130){const c=ou-100-TKL/2;if(c<stopC){stopC=c;why=2}}}
+if(t.tire<=0){if(t.slideX===undefined)t.slideX=tu+C.tireSlide;if(t.slideX<stopC){stopC=t.slideX;why=why||3}}
+const d=stopC-tu;let want=C.spd;if(stopC<1e8)want=Math.min(want,Math.max(0,d)*1.8);
+t.v+=clamp(want-t.v,-dt*C.brake,dt*C.acc);t.x+=D*t.v*dt;
 if(stopC<1e8&&t.v<4&&d<10){t.v=0;t.st='stopped';tkStopped(why)}
-else if(t.x>(WX0+W)*T+TKL){t.st='gone';finish(false,'Wagen entkommen','Der Panzerwagen ist durch. Niemand wurde gefasst, die Serie läuft weiter.',true)}}
+else if(D>0?t.x>(WX0+W)*T+TKL:t.x<WX0*T-TKL){t.st='gone';finish(false,'Wagen entkommen','Der Panzerwagen ist durch. Niemand wurde gefasst, die Serie läuft weiter.',true)}}
 function tkStamp(){const t=tk,x0=Math.floor((t.x-TKL/2+4)/T),x1=Math.floor((t.x+TKL/2-4)/T),y0=Math.floor((t.y-TKH/2+2)/T),y1=Math.floor((t.y+TKH/2-2)/T);t.cells=[];
 for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(cell(x,y)==='o'){setc(x,y,'v');t.cells.push([x,y])}return y0}
 function tkStopped(why){const t=tk,y0=tkStamp();const out=y0*T-14;for(const o of players.concat(en,npcs))if(Math.abs(o.x-t.x)<TKL/2+8&&Math.abs(o.y-t.y)<TKH/2+10)o.y=out;
@@ -1858,37 +1867,37 @@ function jamLate(){if(radioDown>0){policeAt+=CFG.truck.jamDelay;say('Funk gestö
 function vhStamp(){const v=vh,x0=Math.floor((v.x-VHL/2+4)/T),x1=Math.floor((v.x+VHL/2-4)/T),y0=Math.floor((v.y-VHH/2+2)/T),y1=Math.floor((v.y+VHH/2-2)/T);v.cells=[];
 for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(cell(x,y)==='o'){setc(x,y,'v');v.cells.push([x,y])}return y0}
 function vhAlert(why){if(phase!==1)return;say('Die Vorhut meldet '+(why===2?'Teile einer Sperre':'Leute auf der Fahrbahn')+': Alarm!');startHeist(true,null,false);jamLate()}
-function vhStopped(why){const v=vh,y0=vhStamp(),out=y0*T-14,V=CFG.truck.var.vorhut;for(const o of players.concat(en,npcs))if(Math.abs(o.x-v.x)<VHL/2+8&&Math.abs(o.y-v.y)<VHH/2+10)o.y=out;
+function vhStopped(why){const v=vh,y0=vhStamp(),out=y0*T-14,V=CFG.truck.var.vorhut,D=tkD();for(const o of players.concat(en,npcs))if(Math.abs(o.x-v.x)<VHL/2+8&&Math.abs(o.y-v.y)<VHH/2+10)o.y=out;
 flowT=0;snd('skid',v.x,v.y);if(why===1&&phase===1){startHeist(false);jamLate()}
 say(why===1?'Der Begleitwagen bremst vor der Sperre!':'Der Begleitwagen hält: Zwei Wachen steigen aus!');ban('Der Begleitwagen steht!',2.4);
 const C=CFG.truck,offs=[[44,-44],[-32,-44],[44,44],[-32,44]];
-for(let i=0;i<V.n;i++){const o=offs[i%4];let x=v.x+o[0],y=v.y+o[1];if(blocked(x,y,9)){y=v.y-o[1];if(blocked(x,y,9))y=v.y+(o[1]<0?-34:34)}
+for(let i=0;i<V.n;i++){const o=offs[i%4];let x=v.x+D*o[0],y=v.y+o[1];if(blocked(x,y,9)){y=v.y-o[1];if(blocked(x,y,9))y=v.y+(o[1]<0?-34:34)}
 const e=mkCrew(x,y,1+i,y<v.y?-1.57:1.57);Object.assign(e,{vg:true,drv:false,hv:0,hp:C.crew.hp,mhp:C.crew.hp,dmg:C.crew.dmg});en.push(e)}}
 function vhStep(dt){const v=vh;if(!v||v.st==='gone'||v.st==='stopped')return;const C=CFG.truck,V=C.var.vorhut;
 if(v.st==='wait'){if(rT>=tkArrive()-V.lead){v.st='drive';v.v=C.spd*.6;say('Ein Begleitwagen fährt vor: Der Panzerwagen folgt in '+V.lead+' s.');snd('van')}return}
-const front=v.x+VHL/2;let stopC=1e9,why=0,fullX=1e9;
-for(const b of bars)if(b.rd&&b.lv>0){const xb=b.cells[0][0]*T;if(xb<front-10)continue;const q=sperre(b.g),full=q.k>=q.n;if(full&&xb<fullX)fullX=xb;if(!full&&xb-front>V.sight)continue;const c=xb-C.gap-VHL/2;if(c<stopC){stopC=c;why=full?1:2}}
-for(const o of actv())if(o.y>=9*T&&o.y<13*T&&o.x>front-6&&o.x<front+V.sight&&o.x<fullX){const c=o.x-100-VHL/2;if(c<stopC){stopC=c;why=3}}
+const D=tkD(),vu=D*v.x,front=vu+VHL/2;let stopC=1e9,why=0,fullX=1e9;
+for(const b of bars)if(b.rd&&b.lv>0){const xb=b.cells[0][0]*T,ub=D>0?xb:-(xb+T);if(ub<front-10)continue;const q=sperre(b.g),full=q.k>=q.n;if(full&&ub<fullX)fullX=ub;if(!full&&ub-front>V.sight)continue;const c=ub-C.gap-VHL/2;if(c<stopC){stopC=c;why=full?1:2}}
+for(const o of actv()){const ou=D*o.x;if(o.y>=9*T&&o.y<13*T&&ou>front-6&&ou<front+V.sight&&ou<fullX){const c=ou-100-VHL/2;if(c<stopC){stopC=c;why=3}}}
 if(why>1&&!v.rep){v.rep=1;vhAlert(why)}
-const d=stopC-v.x;let want=C.spd;if(stopC<1e8)want=Math.min(want,Math.max(0,d)*1.8);
-v.v+=clamp(want-v.v,-dt*C.brake,dt*C.acc);v.x+=v.v*dt;
+const d=stopC-vu;let want=C.spd;if(stopC<1e8)want=Math.min(want,Math.max(0,d)*1.8);
+v.v+=clamp(want-v.v,-dt*C.brake,dt*C.acc);v.x+=D*v.v*dt;
 if(stopC<1e8&&v.v<4&&d<10){v.v=0;v.st='stopped';vhStopped(why)}
-else if(v.x>(WX0+W)*T+VHL)v.st='gone'}
+else if(D>0?v.x>(WX0+W)*T+VHL:v.x<WX0*T-VHL)v.st='gone'}
 /* Ein Besatzungsmitglied als Gegner: i = Nummer (0 ist der Fahrer, die letzten LAY.mission.heavy sind schwere Wachen). Beim normalen Zugriff steigt die Besatzung aus (spawnCrew), bei der Panne wird die wache Besatzung beim Ueberfall dazu (startHeist). */
 function mkCrew(x,y,i,a){const C=CFG.truck,n=LAY.mission.crew,V=C.var.heavy,e=mkCop(x,y,false),hv=i>=n-(LAY.mission.heavy|0),hp=C.crew.hp*(hv?V.hp:1);
 return Object.assign(e,{kind:'grd',row:2,hv:hv?1:0,hp,mhp:hp,cool:1+i*.25,dmg:C.crew.dmg*(hv?V.dmg:1),rate:C.crew.rate,acc:C.crew.acc,spd:C.crew.spd,muz:16,mode:'post',post:{x:0,y:0,a},rt:tH+C.crewHold+i*2,crew:true,drv:i===0,a})}
-function spawnCrew(){const t=tk,C=CFG.truck,n=LAY.mission.crew,offs=[[80,-44],[80,44],[-24,-44],[-24,44],[-88,-44],[-88,44]];
-for(let i=0;i<n;i++){const o=offs[i%6];let x=t.x+o[0],y=t.y+o[1];if(blocked(x,y,9)){y=t.y-o[1];if(blocked(x,y,9))y=t.y+(o[1]<0?-34:34)}
+function spawnCrew(){const t=tk,C=CFG.truck,n=LAY.mission.crew,D=tkD(),offs=[[80,-44],[80,44],[-24,-44],[-24,44],[-88,-44],[-88,44]];
+for(let i=0;i<n;i++){const o=offs[i%6];let x=t.x+D*o[0],y=t.y+o[1];if(blocked(x,y,9)){y=t.y-o[1];if(blocked(x,y,9))y=t.y+(o[1]<0?-34:34)}
 en.push(mkCrew(x,y,i,y<t.y?-1.57:1.57))}}
 /* Panne (E1): Die Besatzung steht als ruhige Wachen um den liegengebliebenen Wagen (Phase 1, mit Sichtkegel, ausschaltbar). Plaetze in Pixeln vom Wagenmittelpunkt: Fahrer vorn am Fuehrerhaus, dann Heck, Nordseite (laeuft auf und ab), Suedseite, Reserve. */
-function panneCrew(){const M=LAY.mission,cx=M.px*T,cy=12*T,G=CFG.guard,spots=[[118,-4,0,0],[-122,8,Math.PI,0],[10,-50,-1.57,1],[-30,50,1.57,0],[60,50,1.57,0],[-70,-50,-1.57,0]];
-for(let i=0;i<M.crew;i++){const o=spots[i%6];let x=cx+o[0],y=cy+o[1];if(blocked(x,y,9)){y=cy-o[1];if(blocked(x,y,9)){x=cx+o[0]*.7;y=cy+(o[1]<0?-34:34)}}
+function panneCrew(){const M=LAY.mission,cx=M.px*T,cy=12*T,G=CFG.guard,D=tkD(),spots=[[118,-4,0,0],[-122,8,Math.PI,0],[10,-50,-1.57,1],[-30,50,1.57,0],[60,50,1.57,0],[-70,-50,-1.57,0]];
+for(let i=0;i<M.crew;i++){const o=spots[i%6],ang=D>0?o[2]:Math.PI-o[2];let x=cx+D*o[0],y=cy+o[1];if(blocked(x,y,9)){y=cy-o[1];if(blocked(x,y,9)){x=cx+D*o[0]*.7;y=cy+(o[1]<0?-34:34)}}
 let tx=Math.floor(x/T),ty=Math.floor(y/T);if(isSol(tx,ty))out:for(let r=1;r<=3;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(!isSol(tx+dx,ty+dy)&&!(ty+dy>=11&&ty+dy<=12&&tx+dx>=M.px-3&&tx+dx<=M.px+2)){tx+=dx;ty+=dy;break out}
-const e=mk('grd',2,tx,ty,{spd:G.spd,fov:G.fov,rng:G.rng,still:!o[3],base:o[2],a:o[2],crew:true,ci:i,drv:i===0});if(o[3]){setRoute(e,[[tx-3,ty],[tx+3,ty]]);e.ri=0;e.wait=.5}}}
+const e=mk('grd',2,tx,ty,{spd:G.spd,fov:G.fov,rng:G.rng,still:!o[3],base:ang,a:ang,crew:true,ci:i,drv:i===0});if(o[3]){setRoute(e,[[tx-3,ty],[tx+3,ty]]);e.ri=0;e.wait=.5}}}
 function crewSur(e){if(!e.crew||e.sur||e.cap||e.hp>CFG.truck.surHp)return false;const others=en.filter(q=>q!==e&&q.crew&&!q.sur&&!q.cap&&q.hp>0).length;return others===0||others+1<actv().length}
 function capTarget(o){let b=null,bd=38;for(const e of en){if(!e.sur||e.cap)continue;const d=Math.hypot(e.x-o.x,e.y-o.y);if(d<bd){bd=d;b=e}}return b}
 function capture(e){e.cap=true;capt++;capd.push({x:e.x,y:e.y,a:e.a});if(e.drv){keyTaken=true;say('Fahrer überwältigt: Schlüssel erbeutet');ban('Schlüssel erbeutet',2)}else say('Wache überwältigt');snd('pick',6)}
-function initTruck(){tk={x:-3*T-TKL/2,y:12*T,v:0,st:'wait',tire:CFG.truck.tire,cells:null};vh=LAY.mission.vorhut?{x:-3*T-VHL/2,y:10*T,v:0,st:'wait',cells:null,rep:0}:null;if(LAY.mission.panne){tk.x=LAY.mission.px*T;tk.st='stopped';tkStamp()}
+function initTruck(){const D=tkD(),x0=L=>D>0?-3*T-L/2:(WX0+W)*T+3*T+L/2;tk={x:x0(TKL),y:12*T,v:0,st:'wait',tire:CFG.truck.tire,cells:null};vh=LAY.mission.vorhut?{x:x0(VHL),y:10*T,v:0,st:'wait',cells:null,rep:0}:null;if(LAY.mission.panne){tk.x=LAY.mission.px*T;tk.st='stopped';tkStamp()}
 for(const [x,y] of TILES)if(matCell(x,y))its.push(matItem(x,y,cell(x,y)))
 LAY.parked.forEach(c=>its.push(carMatItem(c)));cargoItems()}
 function barArm(b,e){b.st='fuse';b.fz=CFG.bar.fuse;b.bp=0;e.mode='plant';e.tb=b;e.path=[];ban(b.n+': Sprengladung!',2.4);say(b.n+': Polizei legt eine Ladung ('+CFG.bar.fuse+' s). Weg von der Tür!')}
@@ -2758,12 +2767,12 @@ function S0(){g.setTransform(2,0,0,2,0,0)}
 function drawCar(c){const w=LANE.axis==='x'?Math.cos(c.a)<0:Math.sin(c.a)<0,a=w?c.a-Math.PI:c.a;g.save();g.translate(c.x+5,c.y+7);g.rotate(a);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-62,-28,124,56);g.restore();g.save();g.translate(c.x,c.y);g.rotate(a);if(w)g.scale(-1,1);g.drawImage(cars,0,(c.cv||1)*128,256,128,-64,-32,128,64);g.restore();
 if(c.dead){g.save();g.translate(c.x,c.y);g.rotate(a);g.fillStyle='rgba(8,8,10,.66)';g.fillRect(-60,-30,120,60);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=3;g.strokeRect(-56,-26,112,52);g.restore()}
 else if(c.hp<(c.civ?CFG.dec.hp:CFG.pol.car.hp)){const f=Math.max(0,c.hp/(c.civ?CFG.dec.hp:CFG.pol.car.hp));g.fillStyle='rgba(0,0,0,.6)';g.fillRect(c.x-30,c.y-46,60,6);g.fillStyle=f>.5?'#7ee34a':f>.25?'#ffb000':'#ff5040';g.fillRect(c.x-29,c.y-45,58*f,4)}}
-function drawTruck(){const t=tk;if(!t||t.st==='wait'||t.st==='gone')return;g.save();g.translate(t.x,t.y);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-TKL/2+6,-TKH/2+8,TKL-6,TKH);g.drawImage(cars,0,4*128,256,128,-TKL/2,-48,192,96);
+function drawTruck(){const t=tk;if(!t||t.st==='wait'||t.st==='gone')return;g.save();g.translate(t.x,t.y);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-TKL/2+6,-TKH/2+8,TKL-6,TKH);if(tkD()<0)g.scale(-1,1);g.drawImage(cars,0,4*128,256,128,-TKL/2,-48,192,96);
 if(cargoOpen){g.fillStyle='#14171c';g.fillRect(-TKL/2-2,-TKH/2+6,6,TKH-12);g.fillStyle='rgba(255,210,100,.18)';g.fillRect(-TKL/2-12,-TKH/2+8,10,TKH-16)}
 if(LAY.mission.panne&&t.st==='stopped'&&!ended&&((time*2.2)%1)<.5){g.fillStyle='rgba(255,170,40,.95)';for(const o of [[-TKL/2+8,-TKH/2+3],[-TKL/2+8,TKH/2-3],[TKL/2-8,-TKH/2+3],[TKL/2-8,TKH/2-3]]){g.beginPath();g.arc(o[0],o[1],3,0,6.283);g.fill()}}
 if(t.tire<=0&&t.st==='drive'){g.fillStyle='rgba(70,70,70,'+(.25+.2*Math.sin(time*18))+')';g.beginPath();g.arc(-TKL/2+40,TKH/2+4,9+3*Math.sin(time*9),0,6.283);g.fill()}
 g.restore()}
-function drawVh(){const v=vh;if(!v||v.st==='wait'||v.st==='gone')return;g.save();g.translate(v.x,v.y);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-VHL/2+5,-VHH/2+7,VHL-5,VHH);g.drawImage(cars,0,3*128,256,128,-VHL/2,-32,VHL,64);
+function drawVh(){const v=vh;if(!v||v.st==='wait'||v.st==='gone')return;g.save();g.translate(v.x,v.y);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-VHL/2+5,-VHH/2+7,VHL-5,VHH);if(tkD()<0)g.scale(-1,1);g.drawImage(cars,0,3*128,256,128,-VHL/2,-32,VHL,64);
 g.fillStyle='rgba(235,235,225,.85)';g.fillRect(-VHL/2+30,-3,52,6);if(v.st==='stopped'&&!ended){g.fillStyle=((time*3)%1)<.5?'#ff4a3a':'#3a7bff';g.fillRect(-5,-10,10,20)}
 g.restore()}
 /* Fenster zeichnen: w zerschossen (dunkle Oeffnung, Scherben), Y mit Brettern gesichert. Die statische Ebene zeigt weiter das heile Glas, darauf wird gemalt. */

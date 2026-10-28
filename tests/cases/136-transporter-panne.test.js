@@ -23,20 +23,20 @@ module.exports = [
     },
   },
   {
-    name: 'Panne: etwa jeder dritte Auftrag (22 bis 38 % von 600 Seeds), der Wagen steht auf einer der Kacheln 22 bis 38, der Tag Panne steht nur bei diesen',
+    name: 'Panne: etwa jeder dritte Auftrag (22 bis 38 % von 600 Seeds), der Wagen steht auf einer der Kacheln 23 bis 37 (so beruehrt er in keiner Richtung einen Wagenplatz der Polizei), der Tag Panne steht nur bei diesen',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const D = __dbg, o = { n: 0, p: 0, px: [], tag: [] }; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd <= 600; sd++) { const m = D.genTruckMission(sd); o.n++; if (m.panne) { o.p++; o.px.push(m.px); } if (!!m.panne !== m.tags.includes('Panne')) o.tag.push(sd); } o.min = Math.min(...o.px); o.max = Math.max(...o.px); o.var = new Set(o.px).size; return o; })()`);
-      t.ok(r.p / r.n >= .22 && r.p / r.n <= .38, 'Anteil der Pannen: ' + r.p + ' von ' + r.n); t.ok(r.min >= 22 && r.max <= 38, 'Lage des Wagens: ' + r.min + ' bis ' + r.max); t.ok(r.var >= 8, 'die Lage streut: ' + r.var + ' verschiedene'); t.eq(r.tag, [], 'Tag Panne genau bei den Pannen');
+      t.ok(r.p / r.n >= .22 && r.p / r.n <= .38, 'Anteil der Pannen: ' + r.p + ' von ' + r.n); t.ok(r.min >= 23 && r.max <= 37, 'Lage des Wagens: ' + r.min + ' bis ' + r.max); t.ok(r.var >= 8, 'die Lage streut: ' + r.var + ' verschiedene'); t.eq(r.tag, [], 'Tag Panne genau bei den Pannen');
     },
   },
   {
-    name: 'Panne: Aufbau (Wagen steht von Anfang an auf sechs Kacheln, Besatzung als ruhige Wachen um ihn, Fahrer vorn, keine in Waenden, Spieler startet weit weg, Phase 1), normale Auftraege bleiben wie vorher (Wagen wartet, keine Wachen, gleicher Start)',
+    name: 'Panne: Aufbau (Wagen steht von Anfang an auf sechs Kacheln, Besatzung als ruhige Wachen um ihn, Fahrer vorn, keine in Waenden, Spieler startet weit weg auf der Seite gegenueber der Fluchtzone, Phase 1; in der Gegenrichtung gespiegelt), normale Auftraege bleiben wie vorher (Wagen wartet, keine Wachen, gleicher Start)',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const F = ${FIND}, B = ${BUILD}, o = { panne: [], norm: [] }; const P = F(m => m.panne, 6), N = F(m => !m.panne, 3);
         for (const sd of P) { const { D, g, L, M, W } = B(sd), tk = D.tk(), crew = g.npcs.filter(q => q.crew); const cells = []; for (let i = 0; i < 6; i++) cells.push(W.cell(M.px - 3 + i, 11) + W.cell(M.px - 3 + i, 12));
-          o.panne.push({ sd, st: tk.st, x: tk.x, px: M.px, y: tk.y, cells: cells.join(','), n: crew.length, want: M.crew, drv: crew.filter(q => q.drv).length, kinds: [...new Set(crew.map(q => q.k + ':' + q.st))].join('|'), solid: crew.filter(q => D.isSol(Math.floor(q.x / 32), Math.floor(q.y / 32))).length, far: Math.round(Math.max(...crew.map(q => Math.hypot(q.x - tk.x, q.y - tk.y)))), drvFront: crew.find(q => q.drv).x > tk.x + 96, spawnFar: L.spawn.x < tk.x - 200, phase: g.phase, en: g.en.length, ok: D.validateMap(L).ok }); }
+          o.panne.push({ sd, st: tk.st, x: tk.x, px: M.px, y: tk.y, cells: cells.join(','), n: crew.length, want: M.crew, drv: crew.filter(q => q.drv).length, kinds: [...new Set(crew.map(q => q.k + ':' + q.st))].join('|'), solid: crew.filter(q => D.isSol(Math.floor(q.x / 32), Math.floor(q.y / 32))).length, far: Math.round(Math.max(...crew.map(q => Math.hypot(q.x - tk.x, q.y - tk.y)))), drvFront: (crew.find(q => q.drv).x - tk.x) * (M.rev ? -1 : 1) > 96, spawnFar: M.rev ? L.spawn.x > tk.x + 200 : L.spawn.x < tk.x - 200, phase: g.phase, en: g.en.length, ok: D.validateMap(L).ok }); }
         for (const sd of N) { const { D, g, L } = B(sd), tk = D.tk(); o.norm.push({ sd, st: tk.st, npcs: g.npcs.length, spawn: L.spawn.x, phase: g.phase }); } return o; })()`);
       t.eq(r.panne.length, 6, 'sechs Pannen-Seeds'); for (const a of r.panne) { const k = 'Seed ' + a.sd + ': ';
         t.eq([a.st, a.x, a.y], ['stopped', a.px * 32, 12 * 32], k + 'der Wagen steht von Anfang an'); t.eq(a.cells, 'vv,vv,vv,vv,vv,vv', k + 'sechs Kacheln in den Zeilen 11 und 12 sind Wagen'); t.eq([a.n, a.drv, a.kinds], [a.want, 1, 'grd:idle'], k + 'Besatzung als ruhige Wachen, ein Fahrer');
@@ -46,13 +46,13 @@ module.exports = [
   },
   {
     slow: true,
-    name: 'Panne: auf allen Pannen-Karten der Seeds 1 bis 800 (rund 240, mit Baustelle und Gassen) steht jede Wache der Besatzung auf freiem Boden, ein Fahrer, der Wagen steht, die Wachen mit Route haben einen Weg',
+    name: 'Panne: auf allen Pannen-Karten der Seeds 1 bis 800 (rund 240, mit Baustelle und Gassen, in beiden Richtungen) steht jede Wache der Besatzung auf freiem Boden, ein Fahrer, der Wagen steht, die Wachen mit Route haben einen Weg, und die Karte besteht validateMap (kein Wagenplatz der Polizei unter dem Wagen)',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const D = __dbg, bad = []; let n = 0; for (let sd = 1; sd < 800; sd++) { D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); const m = D.genTruckMission(sd); if (!m.panne) continue; D.sessReset(); D.setTurn('S'); D.buildSeed(sd); n++;
         const crew = D.get().npcs.filter(q => q.crew), solid = crew.filter(q => D.isSol(Math.floor(q.x / 32), Math.floor(q.y / 32))).length, noway = crew.filter(q => q.route && !(q.line && q.line.length)).length;
-        if (crew.length !== m.crew || solid || noway || crew.filter(q => q.drv).length !== 1 || D.tk().st !== 'stopped') bad.push([sd, m.street, crew.length, m.crew, solid, noway]); } return { n, bad: bad.slice(0, 10) }; })()`);
-      t.ok(r.n >= 200, 'genug Pannen-Karten geprueft: ' + r.n); t.eq(r.bad, [], 'Karten mit falscher Besatzung (Seed, Strasse, Zahl, soll, in der Wand, ohne Weg)');
+        const vm = D.validateMap(D.LAY()); if (crew.length !== m.crew || solid || noway || crew.filter(q => q.drv).length !== 1 || D.tk().st !== 'stopped' || !vm.ok) bad.push([sd, m.street, crew.length, m.crew, solid, noway, vm.ok ? '' : vm.err.map(e => e.m).join(';')]); } return { n, bad: bad.slice(0, 10) }; })()`);
+      t.ok(r.n >= 200, 'genug Pannen-Karten geprueft: ' + r.n); t.eq(r.bad, [], 'Karten mit falscher Besatzung oder Pruefung (Seed, Strasse, Zahl, soll, in der Wand, ohne Weg, Pruefung)');
     },
   },
   {

@@ -84,13 +84,13 @@
   "truck": {
    "sc": "truck",
    "seeds": 200,
-   "huelle": 1,
+   "huelle": 2,
    "groessen": 1,
-   "flucht": 1,
+   "flucht": 2,
    "beute": 1,
    "hallen": 0,
    "hallenVerteilung": {},
-   "raster": 9,
+   "raster": 13,
    "rasterVon": 20
   }
  }

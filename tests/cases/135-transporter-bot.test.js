@@ -72,7 +72,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); const P = []; for (let sd = 3000; sd < 3300 && P.length < 5; sd++) if (D.genTruckMission(sd).vorhut) P.push(sd); return P.map(sd => { const x = bot.truck(Object.assign({ seed: sd }, ${OPT})); return { sd, res: x.res, why: x.stopWhy, vh: x.mission.vorhut, lead: x.lead, m: x.milestones, t: x.t, kills: x.kills, tPre: x.tPre }; }); })()`);
       t.eq(r.length, 5, 'fuenf Vorhut-Seeds'); t.ok(r.filter(x => x.res === 'WIN').length >= 4, 'mindestens vier von fuenf gewonnen: ' + JSON.stringify(r.map(x => [x.sd, x.res]))); t.eq(r.filter(x => !x.vh).map(x => x.sd), [], 'als Vorhut erkannt');
       t.eq(r.filter(x => x.res === 'WIN').filter(x => !(x.m.sperre > 0 && x.m.sperre < x.m.vorhut && x.m.vorhut < x.m.stand && x.lead > 5 && x.m.offen > 0 && x.m.offen < x.m.voll && x.m.voll < x.m.zone)).map(x => [x.sd, JSON.stringify(x.m), x.lead]), [], 'Sperre fertig, Vorhut haelt, der Wagen steht erst danach (lead Sekunden), dann Laderaum, Taschen, Fluchtzone');
-      t.eq(r.filter(x => x.res === 'WIN').filter(x => !(x.m.besatzung > x.lead)).map(x => [x.sd, x.m.besatzung, x.lead]), [], 'der Meilenstein Besatzung zaehlt erst ab dem Halt des Wagens (nicht die Wachen der Vorhut)');
+      t.eq(r.filter(x => x.res === 'WIN').filter(x => x.m.besatzung != null && x.m.besatzung <= x.lead).map(x => [x.sd, x.m.besatzung, x.lead]), [], 'der Meilenstein Besatzung (wenn er gesetzt wird, die Wachen hinter der Vorhut treffen die Kugeln nicht immer) zaehlt erst ab dem Halt des Wagens, nicht die Wachen der Vorhut');
     },
   },
   {
