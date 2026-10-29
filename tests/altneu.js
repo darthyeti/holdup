@@ -47,7 +47,7 @@ async function spielen(root) {
     const page = await lib.openGame(env);
     const res = await page.evaluate(new Function('args', 'const [sc,seed]=args;' + SEEDED + `
       const D = __dbg, lines = [], r1 = v => Math.round(v * 1000) / 1000;
-      D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.meet) D.CFG.meet.on = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildSeed(seed); D.startHeist(true);
+      D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.meet) D.CFG.meet.on = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; if (D.CFG.stash) D.CFG.stash.on = 0; D.buildSeed(seed); D.startHeist(true);
       const L = D.LAY();
       for (let i = 0; i < 30 * 170; i++) {
         const G = D.get(), me = G.me;
@@ -68,7 +68,7 @@ async function spielen(root) {
     const page = await lib.openGame(env);
     await page.addScriptTag({ content: botSrc });
     const res = await page.evaluate(new Function('args', 'const [sc,seed,o,n]=args;' + SEEDED + `
-      const D = __dbg; D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.meet) D.CFG.meet.on = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; D.buildSeed(seed);
+      const D = __dbg; D.setScenario(sc); D.setSeedMode(typeof seed === 'number' ? 'random' : 'classic'); D.setLage([]); if (D.setTurn) D.setTurn('S'); D.CFG.map.tpW = 0; if (D.CFG.meet) D.CFG.meet.on = 0; if (D.CFG.gasGen) D.CFG.gasGen.on = 0; if (D.CFG.jewGen) D.CFG.jewGen.on = 0; if (D.CFG.museumGen) D.CFG.museumGen.on = 0; if (D.CFG.casinoGen) D.CFG.casinoGen.on = 0; if (D.CFG.stash) D.CFG.stash.on = 0; D.buildSeed(seed);
       const rs = []; for (let i = 0; i < n; i++) { const r = bot.run(Object.assign({}, o)); rs.push(r.res + '@' + r.t + ' hp' + r.minHp + ' loot' + r.loot + ' w' + r.waves + ' k' + r.kills); }
       return rs;`), [sc, seed, o, n]);
     out.push('### Bot ' + sc + ' ' + seed + ' ' + JSON.stringify(o) + (page.errors.length ? ' FEHLER ' + page.errors.join(' | ') : ''), ...res);

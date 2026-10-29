@@ -583,7 +583,7 @@ c.fillStyle='rgba(185,205,235,.16)';c.fillRect(x+4,y+4,w-8,h-8)}
 /* Zufallsparameter des Museums (eigener Strom wie jewParams): k ist der Versuch, Versuch 0 ist mit CFG.museumGen.classic die Klassik-Huelle (9, 9, 0, 0). ww Breite der Westgalerie, ew Breite der Ostgalerie, dy Zusatztiefe, vx Versatz der Haupttuer im Atrium. */
 function museumParams(sn,k){const G=CFG.museumGen,P=Object.assign({},CLASSICMU);if(!G.on)return P;const r=mulberry32((Math.imul(sn|0,374761393)+Math.imul(k+1,668265263))^0x510e527f),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),c=r();if(k===0&&c<G.classic)return P;
 P.ww=ri(G.ww[0],G.ww[1]);P.ew=ri(G.ew[0],G.ew[1]);P.dy=ri(G.dy[0],G.dy[1]);P.vx=ri(G.vx[0],G.vx[1]);P.classic=P.ww===9&&P.ew===9&&P.dy===0&&P.vx===0;return P}
-function museumLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.museumGen;if(G.on){const H=muHallOf(sn);for(let k=0;k<G.tries;k++){const P=museumParams(sn,k);if(P.classic)return genMuseum(sn,P);if(P.ww<H.minWw||P.ew<H.minEw)continue;const lay=finishLay(genMuseum(sn,P));if(validateMap(lay).ok){lay.tries=k+1;return lay}}}return genMuseum(sn,CLASSICMU)}
+function museumLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.museumGen;if(G.on){const H=muHallOf(sn);for(let k=0;k<G.tries;k++){const P=museumParams(sn,k);if(P.classic)return genMuseum(sn,P);if(P.ww<H.minWw||P.ew<H.minEw)continue;const lay=finishLay(genMuseum(sn,P),sn);if(validateMap(lay).ok){lay.tries=k+1;return lay}}}return genMuseum(sn,CLASSICMU)}
 function genMuseum(sn,P){const dx=P.ww-9,ox=dx+P.ew-9,dy=P.dy,S=16+dy,X1=27+ox,Y1=17+dy,dd=13+dx+P.vx,c=muDims(P);frameWorld(44+ox,34,-6,-6,17);setc(37+ox,7,'o');setc(37+ox,8,'o');
 const H=P.hall!=null?MU_HALLS[P.hall]:muHallOf(sn),HT=H.mk(c);
 /* Huelle (Raster wie MUSEUM_ROWS, relativ): Aussenwand, Westgalerie x1..ww, Atriumwaende x10+dx und x17+dx mit je drei Zeilen Durchgang, Sicherheitsraum mit Tuer, Depot mit Tresortuer, Fenster, Osttuer, Haupttuer im Atrium */
@@ -660,7 +660,7 @@ function csCage(c,x,y,w){c.fillStyle='rgba(0,0,0,.3)';c.fillRect(x,y+T-2,w,5);c.
 /* Zufallsparameter des Casinos (eigener Strom wie jewParams): k ist der Versuch, Versuch 0 ist mit CFG.casinoGen.classic die Klassik-Huelle (0, 0, 0). dx Zusatzbreite, dy Zusatztiefe, vx Versatz des Haupteingangs. */
 function casinoParams(sn,k){const G=CFG.casinoGen,P=Object.assign({},CLASSICCS);if(!G.on)return P;const r=mulberry32((Math.imul(sn|0,374761393)+Math.imul(k+1,668265263))^0x1f83d9ab),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),c=r();if(k===0&&c<G.classic)return P;
 P.dx=ri(G.dx[0],G.dx[1]);P.dy=ri(G.dy[0],G.dy[1]);P.vx=ri(G.vx[0],G.vx[1]);P.classic=P.dx===0&&P.dy===0&&P.vx===0;return P}
-function casinoLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.casinoGen;if(G.on){for(let k=0;k<G.tries;k++){const P=casinoParams(sn,k);if(P.classic)return genCasino(sn,P);const lay=finishLay(genCasino(sn,P));if(validateMap(lay).ok){lay.tries=k+1;return lay}}}return genCasino(sn,CLASSICCS)}
+function casinoLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.casinoGen;if(G.on){for(let k=0;k<G.tries;k++){const P=casinoParams(sn,k);if(P.classic)return genCasino(sn,P);const lay=finishLay(genCasino(sn,P),sn);if(validateMap(lay).ok){lay.tries=k+1;return lay}}}return genCasino(sn,CLASSICCS)}
 function genCasino(sn,P){const dx=P.dx,dy=P.dy,vx=P.vx,X1=39+dx,Y1=23+dy,S=22+dy,e=19+vx,c=csDims(P);frameWorld(56+dx,40+dy,-6,-6,23+dy);setc(49+dx,11,'o');setc(49+dx,12,'o');
 const H=P.hall!=null?CS_FLOORS[P.hall]:csHallOf(sn),HT=H.mk(c),tT=[];HT.tb.forEach(r=>r[1].forEach(x=>tT.push([x,r[0]])));
 /* Huelle (Raster wie CASINO_ROWS, relativ): Aussenwand, VIP-Salon mit Tueren, Flur, Sicherheitsraum (waechst um dx nach Osten) mit Tuer, Cage mit Tresen und Tor, Tresorraum mit Tuer, Geldautomaten, Osttuer, Haupteingang */
@@ -717,6 +717,40 @@ slots:{W:[24,19,14,9,4,-1],E:[30,35,40,45]}}:{q:{dx,dy,vx}}),laneY:(29+dy)*T,tit
 // Karten-Vertrag: Auf den Zellen der Strasse (Fahrstrecke des Fluchtwagens samt Rand bis zum Weltrand, Wagenplaetze) steht nichts Festes, das nur Dekor ist. Zaun wird zum Tor, Einzelkacheln-Props (Pflanze, Fass, Kiste) verschwinden. Laeuft nach dem Bau und nach der Pruefung und macht nur Kacheln frei, deshalb kann es keine Erreichbarkeit zerstoeren. Autos (v) und Waende bleiben stehen, die meldet validateMap weiter.
 function clearLane(lay){if(lay.truck)return lay;const ln=laneOf(lay),cs=[].concat(ln.van.swept,ln.van.rest);ln.slots.forEach(s=>s.cells.forEach(c=>cs.push(c)));for(const c of cs){if(OOB(c[0],c[1]))continue;const ch=cell(c[0],c[1]);if(ch==='f'||ch==='p'||ch==='q'||ch==='k')setc(c[0],c[1],'o')}return lay}
 // Letzter Schritt jeder Karte: fehlende Listen ableiten, dann die Strasse freiraeumen (die abgeleiteten Wagenplaetze duerfen Zaun und Einzelkachel-Props kreuzen)
-function finishLay(lay){return clearLane(placeMeet(fillDerived(lay)))}
+/* Kammer nachtraeglich (Museum und Casino, Plan Kammern K3 in docs/ideen-und-planung.md): Auf der fertigen Karte (nach fillDerived) werden Kandidaten gesucht (Innenraum 2x2, 3x2 oder 2x3 frei, Ring ausserhalb der Sperrzonen, mindestens vier Ringkacheln schon Wand, die uebrigen freien Ringkacheln werden Wand, eine Tuer d auf einer freien Ringkachel mit freier Kachel davor), ein eigener Zufallsstrom (Seed) wuerfelt Ja/Nein (CFG.stash.p), die Art und die Reihenfolge der Kandidaten. Ein Kandidat gilt, wenn
+   (1) kein Wegpunkt einer Route und kein Kassierer naeher als CFG.stash.gap am Ring liegt, (2) Tuer, Kachel davor und deren begehbare Nachbarn (die letzten Schritte beim Ziehen) von keinem Routenpunkt, Kassierer und keiner Kamera eingesehen werden (echte Reichweiten: Wachen 8,1 Kacheln, Manager 8,8, Kassierer 7,8, Kameras Reichweite mal 1,25; Wachen gucken auf der Strecke in Laufrichtung (Kegel 1,35), an Wegpunkten rundum, Kassierer nach Sueden, Kameras im ganzen Schwenkbereich; der Koerper in der Tuer darf nicht in CFG.ko.find gefunden werden, Lehre aus K2), (2b) weder diese Kacheln noch der Innenraum einem Laser (LAY.lasers) naeher als 1,2 Kacheln kommen, (3) mindestens eine Innenkachel verborgen ist (deep, Reichweite CFG.stash.sight) und (4) validateMap keinen Fehler und keine Warnung mehr meldet als vorher. Gibt es keinen Kandidaten, bleibt die Karte ohne Kammer. Idempotent (lay.stash gesetzt: nichts), CFG.stash.on 0 laesst die Karte unberuehrt. */
+function placeStash(lay,sn0){const K=CFG.stash,sc=lay.museum?'museum':lay.casino?'casino':null;if(!K||!K.on||!sc||!K.scs.includes(sc)||lay.stash||lay.truck||!lay.bld)return lay;
+const sn=typeof lay.seed==='number'?lay.seed:typeof sn0==='number'?sn0:7,r=mulberry32((Math.imul(sn|0,2246822519)^0x4b414d4d)>>>0),roll=r(),kind=r()<.5?'abstell':'wc';if(roll>=K.p)return lay;
+const B=lay.bld,zs=lay.zones||[],inZ=(x,y)=>zs.some(z=>x>=z[0]&&x<=z[2]&&y>=z[1]&&y<=z[3]),free=(x,y)=>x>B.x0&&x<B.x1&&y>B.y0&&y<B.y1&&cell(x,y)==='.';
+const pts=[],wps=[],seg=(q,rg)=>{if(!q)return;for(let k=0;k<q.length;k++){pts.push([q[k][0],q[k][1],null,rg]);wps.push(q[k]);if(k){const a=q[k-1],b=q[k],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])*2)),an=Math.atan2(b[1]-a[1],b[0]-a[0]);for(let t=1;t<n;t++)pts.push([a[0]+(b[0]-a[0])*t/n,a[1]+(b[1]-a[1])*t/n,an,rg])}}};
+(lay.guards||[]).forEach(g=>seg(g.route,8.2));if(lay.mgr)seg(lay.mgr.route,8.8);(lay.mission.extra||[]).forEach(x=>seg(x.route,8.2));(lay.tellers||[]).forEach(t=>{pts.push([t[0],t[1],Math.PI/2,7.9,1.3]);wps.push(t)});
+const opq=(x,y)=>{const c=cell(x,y);return OOB(x,y)||c==='#'||c==='P'||c==='V'},los=(ax,ay,bx,by)=>{const n=Math.ceil(Math.hypot(bx-ax,by-ay)*8);for(let i=1;i<n;i++)if(opq(Math.floor(ax+(bx-ax)*i/n),Math.floor(ay+(by-ay)*i/n)))return false;return true};
+const angd=(a,b)=>{let d=Math.abs(a-b)%(2*Math.PI);return d>Math.PI?2*Math.PI-d:d};
+const seen=(cx,cy,rg,acc)=>{const x=cx+.5,y=cy+.5;return pts.some(p=>{const dd=Math.hypot(p[0]+.5-x,p[1]+.5-y);if(dd>=(acc?p[3]:rg))return false;if(acc&&p[2]!=null&&angd(p[2],Math.atan2(y-p[1]-.5,x-p[0]-.5))>(p[4]||1.35))return false;return los(p[0]+.5,p[1]+.5,x,y)})||(lay.cams||[]).some(m=>{const dd=Math.hypot(m.x/T-x,m.y/T-y);if(dd>=m.rng*1.25/T)return false;if(acc&&angd(m.a0,Math.atan2(y-m.y/T,x-m.x/T))>(m.amp||0)+(m.fov||1)+.1)return false;return los(m.x/T,m.y/T,x,y)})};
+const laserNear=q=>(lay.lasers||[]).some(L=>{const x=q[0]+.5,y=q[1]+.5,dx=L[2]-L[0],dy=L[3]-L[1],t=Math.max(0,Math.min(1,((x-L[0])*dx+(y-L[1])*dy)/(dx*dx+dy*dy||1)));return Math.hypot(x-(L[0]+dx*t),y-(L[1]+dy*t))<1.2});
+const cands=[];for(const[iw,ih]of[[2,2],[3,2],[2,3]])for(let bx=B.x0+1;bx<=B.x1-iw-1;bx++)for(let by=B.y0+1;by<=B.y1-ih-1;by++){
+ let ok=true;for(let x=bx;x<bx+iw&&ok;x++)for(let y=by;y<by+ih;y++)if(!free(x,y)||inZ(x,y)){ok=false;break}if(!ok)continue;
+ const ring=[];for(let x=bx-1;x<=bx+iw;x++)for(let y=by-1;y<=by+ih;y++)if(x<bx||x>=bx+iw||y<by||y>=by+ih)ring.push([x,y]);
+ let walls=0;for(const[x,y]of ring){const c=cell(x,y);if(c==='#')walls++;else if(!free(x,y)){ok=false;break}if(inZ(x,y))ok=false}if(!ok)continue;
+ for(const d of ring){if(cell(d[0],d[1])==='#')continue;const ix=d[0]>=bx&&d[0]<bx+iw,iy=d[1]>=by&&d[1]<by+ih;if(!ix&&!iy)continue;
+  const ou=[d[0]<bx?d[0]-1:d[0]>=bx+iw?d[0]+1:d[0],d[1]<by?d[1]-1:d[1]>=by+ih?d[1]+1:d[1]];if(!free(ou[0],ou[1])||inZ(ou[0],ou[1]))continue;
+  cands.push({bx,by,iw,ih,ring,d,ou,nat:walls>=K.wall?0:1})}}
+
+for(let i=cands.length-1;i>0;i--){const j=Math.floor(r()*(i+1)),t=cands[i];cands[i]=cands[j];cands[j]=t}
+cands.sort((a,b)=>a.nat-b.nat);
+const sig=rep=>rep.err.concat(rep.warn).map(e=>e.r+': '+e.m),base=sig(validateMap(lay)),gp=K.gap;let tried=0;
+for(const c of cands){const{bx,by,iw,ih,ring,d,ou}=c;
+ if(wps.some(p=>p[0]>=bx-1-gp&&p[0]<bx+iw+1+gp&&p[1]>=by-1-gp&&p[1]<by+ih+1+gp))continue;
+ const was=ring.map(q=>cell(q[0],q[1]));ring.forEach(q=>setc(q[0],q[1],'#'));setc(d[0],d[1],'d');
+ const undo=()=>{ring.forEach((q,i)=>setc(q[0],q[1],was[i]))};
+ const cells=[];for(let x=bx;x<bx+iw;x++)for(let y=by;y<by+ih;y++)cells.push([x,y]);const acc=[d,ou].concat([[1,0],[-1,0],[0,1],[0,-1]].map(v=>[ou[0]+v[0],ou[1]+v[1]]).filter(q=>!isSol(q[0],q[1])));
+ if(acc.some(q=>seen(q[0],q[1],0,1))||acc.concat(cells).some(q=>laserNear(q))){undo();continue}
+const deep=cells.filter(q=>!seen(q[0],q[1],K.sight));if(!deep.length){undo();continue}
+ if(++tried>24){undo();break}
+ lay.stash={kind,door:d,out:ou,cells,deep};delete lay.spots;delete lay.lockCells;
+ const rep=validateMap(lay);if(sig(rep).every(m=>base.includes(m))){const pf=lay.paintFloor,pt=lay.paintTop,S=lay.stash;lay.paintFloor=s=>{pf&&pf(s);stashFloor(s,S)};lay.paintTop=s=>{pt&&pt(s);stashTop(s,S)};return lay}
+ delete lay.stash;delete lay.spots;delete lay.lockCells;undo()}
+return lay}
+function finishLay(lay,sn){return placeStash(clearLane(placeMeet(fillDerived(lay))),sn)}
 return{CLASSICM,CLASSICP,CS_FLOORS,GS_SHOPS,JW_HALLS,LAGE,MU_HALLS,PLACE,SCL,casinoLayout,casinoParams,classicLayout,csTubes,finishLay,gasLayout,gasParams,gasWide,genCasino,genGas,genJewel,genLayout,genMission,genMuseum,genTruckMission,inSite,inStash,jewParams,jewWide,jewelLayout,muTubes,mulberry32,museumLayout,museumParams,scOf,truckLayout,turnLayout,validLayout,warnFor}}
 mkMaps.api=1;

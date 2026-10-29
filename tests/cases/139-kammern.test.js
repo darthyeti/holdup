@@ -1,8 +1,10 @@
 // Kammern (Plan Kammern, docs/ideen-und-planung.md, Schritte K1 und K2, Entscheidungen von Till am 28. und 29. Oktober 2026): Der Juwelier bekommt ein Versteck fuer Bewusstlose, einen Abstellraum oder ein WC (LAY.stash {kind, door, out, cells, deep}) in der Suedwestecke
 // der Halle (ausserhalb der Sicht der Kassierer), und die Huelle wird tiefer (CFG.jewGen.deep: hd bis 15, die Strasse im Sueden rueckt ab hd 14 mit). Geprueft wird: (1) mit CFG.stash.on 0 und CFG.jewGen.deep.on 0 ist jede Karte Zeichen fuer Zeichen die von vorher (60 Seeds, Hashes vom Stand vor dem Umbau),
 // (2) die Tiefe 12 bis 15 kommt vor, die Strasse sitzt hinter dem Gebaeude, alle Huellen bestehen validateMap, (3) Anteil, Art und Aufbau der Kammern, (4) die Regel kammer samt Mutanten, (5) alle acht Lagen, (6) wer einen Bewusstlosen durch die Tuer zieht und im Innenraum loslaesst (H), dessen Koerper liegt verstaut in der Versteck-Kachel, dort findet ihn keine Streife in 90 s,
-// einer in der Halle schon, (7) Host und Client bauen dieselbe Kammer.
+// einer in der Halle schon, (7) Host und Client bauen dieselbe Kammer. Ab K3 (Museum und Casino, nachtraeglich platziert mit placeStash) dieselben Pruefungen je Szenario, am Ende des Blocks 'Museum und Casino'.
 const { coopGame } = require('../lib');
+// Hashes von Raster und Feldern der Museums- und Casino-Karten 1 bis 40 auf der Basis (Lage S, ohne Treffpunkt abseits) vom Stand vor K3 (Commit 3dfcb21), siehe Test 'Kammern aus (Museum, Casino)'
+const OLD_MC = {"museum":[[1,"5b4b770b"],[2,"72088cf1"],[3,"6718d05d"],[4,"d1401b8f"],[5,"1ac4a11e"],[6,"c68cac47"],[7,"42aef955"],[8,"fd074811"],[9,"78ba0562"],[10,"fb1b7ae7"],[11,"f5acfa64"],[12,"3ec9019b"],[13,"27bccd10"],[14,"75f9921d"],[15,"16e1308a"],[16,"81ee8759"],[17,"af8c1720"],[18,"ce2ab031"],[19,"8b0a1894"],[20,"91e2a85f"],[21,"1478c211"],[22,"2ab23590"],[23,"c786b28f"],[24,"8684ada"],[25,"5aa275e8"],[26,"2c7c03b6"],[27,"36f66d4b"],[28,"daed6a83"],[29,"cffb854f"],[30,"102ca9f1"],[31,"45e759e7"],[32,"abe2a6b0"],[33,"c902b78d"],[34,"d762a99"],[35,"97a88223"],[36,"5003e21"],[37,"62289381"],[38,"2dee2322"],[39,"730880c9"],[40,"4065e291"]],"casino":[[1,"839996c6"],[2,"9fe12f6b"],[3,"14dd53d9"],[4,"a3b04a1a"],[5,"2b30ec53"],[6,"c4fe5c1d"],[7,"109c9a5d"],[8,"ee5b33bd"],[9,"929f3810"],[10,"d14ecc38"],[11,"1ed464d"],[12,"1a922cab"],[13,"1ebb8a"],[14,"12a74d0f"],[15,"d3d1f709"],[16,"ce1c37df"],[17,"e349ed54"],[18,"80ca73ba"],[19,"60dc321d"],[20,"7edae550"],[21,"e11bb520"],[22,"fa179035"],[23,"cae134f0"],[24,"80345f43"],[25,"2551a387"],[26,"99b9eaab"],[27,"4e2a0636"],[28,"c4a60a78"],[29,"8dc98553"],[30,"984dd1dc"],[31,"fff7c856"],[32,"85d0702b"],[33,"a3299858"],[34,"a667d37"],[35,"7687c71a"],[36,"da87feb5"],[37,"b17e99db"],[38,"9787bbe"],[39,"c81f8005"],[40,"d57d6c3e"]]};
 // Hashes von Raster und Feldern (TN.layHash) der Juwelier-Karten 1 bis 60 auf der Basis (Lage S, ohne Treffpunkt abseits) vom Stand vor dem Umbau (Commit 338fb25)
 const OLD = [[1,"6c951475"],[2,"9988addf"],[3,"eb68afd5"],[4,"513a9c19"],[5,"55c54349"],[6,"62a3e8a5"],[7,"e8259ca"],[8,"dc60ed56"],[9,"a68e360d"],[10,"b1e2f265"],[11,"61dd77aa"],[12,"d34af0a0"],[13,"fa12b5a6"],[14,"fb99ecfe"],[15,"786fcb1d"],[16,"ffa6962e"],[17,"6c9f7fcb"],[18,"9a158dcf"],[19,"b8128afe"],[20,"263e183a"],[21,"84666c95"],[22,"512188e1"],[23,"10000ddb"],[24,"6d78168e"],[25,"19117b9d"],[26,"e40b5d5a"],[27,"2e7b2fba"],[28,"1d7522ac"],[29,"c039ed1e"],[30,"94585456"],[31,"aa2c716f"],[32,"726727ef"],[33,"72b3747b"],[34,"5124f2b"],[35,"3e9a38b6"],[36,"a7046b22"],[37,"5a376774"],[38,"9da1fdc5"],[39,"f25d1268"],[40,"9d59bc93"],[41,"20aca1cd"],[42,"c60312e2"],[43,"44be270"],[44,"31a9dabe"],[45,"45e09352"],[46,"89170870"],[47,"94481fd"],[48,"ae47d090"],[49,"3dca4bf6"],[50,"9d4e7124"],[51,"e5d45bb0"],[52,"9c2c64a0"],[53,"14891f6b"],[54,"a3014d8"],[55,"90450256"],[56,"dbc782dc"],[57,"c3b124aa"],[58,"69b05b9b"],[59,"574fe8d"],[60,"635f40dd"]];
 
@@ -206,6 +208,149 @@ module.exports = [
         } finally { C.meet.p = keep; }
         out.bad = out.bad.slice(0, 8); return out; });
       t.eq(r.bad, [], 'Abweichungen'); t.ok(r.n >= 700, 'Zahl der Kombinationen: ' + r.n);
+    },
+  },
+
+  // ---- K3: Museum und Casino (nachtraeglich platziert, js/maps.js placeStash) ----
+  {
+    name: 'Kammern aus (Museum, Casino): mit CFG.stash.on 0 ist jede der Karten 1 bis 40 Zeichen fuer Zeichen die vom Stand vor K3, keine Kammer',
+    timeout: 120000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate((OLD) => {
+        const D = __dbg, C = D.CFG, keep = [C.meet.p, C.stash.on]; C.meet.p = 0; C.stash.on = 0; const diff = [], n = {}; let st = 0;
+        try {
+          D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
+          for (const sc of ['museum', 'casino']) { D.setScenario(sc); n[sc] = 0; for (const [s, h] of OLD[sc]) { const lay = D.layoutBase(s); n[sc]++; if (TN.layHash(D, lay) !== h) diff.push(sc + '#' + s); if (lay.stash) st++; } }
+        } finally { C.meet.p = keep[0]; C.stash.on = keep[1]; }
+        return { diff, st, n };
+      }, OLD_MC);
+      t.eq(r.diff, [], 'Karten, die von vorher abweichen'); t.eq(r.st, 0, 'keine Kammer'); t.eq(r.n, { museum: 40, casino: 40 }, '40 Seeds je Szenario');
+    },
+  },
+  {
+    name: 'Kammer in Museum und Casino: Anteil (Museum gut ein Viertel bis die Haelfte, Casino gut drei Viertel: die offenen Hallen lassen nur Ecken und Nebenraeume zu, die keine Kamera und keine Streife einsieht), beide Arten, Innenraum 4 oder 6 Kacheln frei, Ring geschlossen mit einer Tuer d, nichts in einer Sperrzone, kein Laser naeher als 1,2 Kacheln, validateMap meldet nichts Neues gegenueber derselben Karte ohne Kammer, gleiche Seeds geben gleiche Kammern',
+    timeout: 290000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, C = D.CFG, keep = C.meet.p; C.meet.p = 0; const out = {}, sig = rep => rep.err.concat(rep.warn).map(e => e.r + ': ' + e.m);
+        try {
+          D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
+          for (const sc of ['museum', 'casino']) {
+            D.setScenario(sc); const o = out[sc] = { n: 0, st: 0, kinds: {}, sizes: {}, bad: [], nd: 0 }, seeds = [];
+            for (let s = 1; s <= 150; s++) { const lay = D.layoutBase(s); o.n++; if (!lay.stash) continue; o.st++; seeds.push(s); const K = lay.stash, w = D.world(), tag = sc + '#' + s + ' ' + JSON.stringify(K); o.kinds[K.kind] = (o.kinds[K.kind] || 0) + 1; o.sizes[K.cells.length] = (o.sizes[K.cells.length] || 0) + 1;
+              if (K.cells.length < 4 || K.cells.some(c => D.isSol(c[0], c[1]))) o.bad.push(tag + ' Innenraum');
+              if (!K.deep.length || K.deep.some(c => !K.cells.some(q => q[0] === c[0] && q[1] === c[1]))) o.bad.push(tag + ' Versteck-Kacheln');
+              if (w.cell(K.door[0], K.door[1]) !== 'd' || D.isSol(K.out[0], K.out[1]) || Math.abs(K.out[0] - K.door[0]) + Math.abs(K.out[1] - K.door[1]) !== 1) o.bad.push(tag + ' Tuer');
+              const X = K.cells.map(c => c[0]), Y = K.cells.map(c => c[1]); let ring = 0; for (let x = Math.min(...X) - 1; x <= Math.max(...X) + 1; x++) for (let y = Math.min(...Y) - 1; y <= Math.max(...Y) + 1; y++) { if (X.includes(x) && Y.includes(y)) continue; const ch = w.cell(x, y); if (ch === '#') ring++; else if (ch !== 'd') o.bad.push(tag + ' Ring ' + x + ',' + y + ' ' + ch); }
+              if (lay.zones.some(z => K.cells.concat([K.door, K.out]).some(c => c[0] >= z[0] && c[0] <= z[2] && c[1] >= z[1] && c[1] <= z[3]))) o.bad.push(tag + ' Sperrzone');
+              for (const L of lay.lasers || []) for (const c of K.cells.concat([K.door, K.out])) { const x = c[0] + .5, y = c[1] + .5, dx = L[2] - L[0], dy = L[3] - L[1], q = Math.max(0, Math.min(1, ((x - L[0]) * dx + (y - L[1]) * dy) / (dx * dx + dy * dy || 1))); if (Math.hypot(x - (L[0] + dx * q), y - (L[1] + dy * q)) < 1.2) o.bad.push(tag + ' Laser'); }
+              const rep = sig(D.validateMap(lay)); if (s <= 40) { D.CFG.stash.on = 0; const base = sig(D.validateMap(D.layoutBase(s))); D.CFG.stash.on = 1; const lay2 = D.layoutBase(s); if (rep.some(m => !base.includes(m))) o.bad.push(tag + ' validateMap neu: ' + rep.filter(m => !base.includes(m)).join(' | ')); if (JSON.stringify(lay2.stash) !== JSON.stringify(K)) o.nd++; }
+              else if (D.validateMap(lay).err.length) o.bad.push(tag + ' validateMap Fehler'); }
+            o.bad = o.bad.slice(0, 6); o.seeds = seeds.slice(0, 6);
+          }
+        } finally { C.meet.p = keep; D.CFG.stash.on = 1; }
+        return out;
+      });
+      for (const sc of ['museum', 'casino']) { const o = r[sc]; t.eq(o.bad, [], sc + ': Abweichungen'); t.eq(o.nd, 0, sc + ': gleiche Seeds, gleiche Kammern'); t.ok(o.kinds.wc >= o.st * .25 && o.kinds.abstell >= o.st * .25, sc + ': beide Arten: ' + JSON.stringify(o.kinds)); }
+      t.ok(r.museum.st >= r.museum.n * .18 && r.museum.st <= r.museum.n * .6, 'Museum: Anteil mit Kammer ' + r.museum.st + ' von ' + r.museum.n);
+      t.ok(r.casino.st >= r.casino.n * .65 && r.casino.st <= r.casino.n * .9, 'Casino: Anteil mit Kammer ' + r.casino.st + ' von ' + r.casino.n);
+      t.note('Museum ' + r.museum.st + '/' + r.museum.n + ' ' + JSON.stringify(r.museum.sizes) + ', Casino ' + r.casino.st + '/' + r.casino.n + ' ' + JSON.stringify(r.casino.sizes));
+    },
+  },
+  {
+    name: 'Kammer in Museum und Casino: die Regel kammer schlaegt bei jeder Verletzung an (Ring offen, Tuer weg, Sperrzone, Wegpunkt am Ring, Kamera im Raum), die unveraenderte Kammer besteht',
+    timeout: 120000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, C = D.CFG, keep = C.meet.p; C.meet.p = 0; const out = {};
+        try {
+          D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
+          for (const sc of ['museum', 'casino']) {
+            D.setScenario(sc); let seed = 0; for (let s = 1; s < 300 && !seed; s++) { const l = D.layoutBase(s); if (l.stash && l.guards.length) seed = s; }
+            const run = (name, f) => { const lay = D.layoutBase(seed), w = D.world(), K = lay.stash; f && f(w.setc, lay, w, K); const rep = D.validateMap(lay); out[sc + ':' + name] = { kammer: rep.err.some(e => e.r === 'kammer'), neu: rep.err.map(e => e.r).join() }; };
+            out[sc + ':seed'] = seed; run('ohne');
+            run('ring', (c, l, w, K) => { const x = K.cells[0][0], y = Math.min(...K.cells.map(q => q[1])) - 1; if (w.cell(x, y) === '#' && !(K.door[0] === x && K.door[1] === y)) c(x, y, '.'); else c(K.door[0], K.door[1] + (K.out[1] - K.door[1]) * 0, '#'); });
+            run('tuer', (c, l, w, K) => { c(K.door[0], K.door[1], '#'); });
+            run('zone', (c, l, w, K) => { l.zones.push([K.cells[0][0], K.cells[0][1], K.cells[0][0], K.cells[0][1]]); });
+            run('wegpunkt', (c, l, w, K) => { l.guards[0].route.push([K.out[0], K.out[1]]); });
+            run('kamera', (c, l, w, K) => { l.cams.push({ x: (K.deep[0][0] + .5) * 32, y: (K.deep[0][1] + .5) * 32, a0: 0, amp: .5, sp: .5, rng: 200, fov: .5 }); });
+          }
+        } finally { C.meet.p = keep; }
+        return out;
+      });
+      for (const sc of ['museum', 'casino']) {
+        t.ok(!r[sc + ':ohne'].kammer, sc + ': die unveraenderte Kammer (Seed ' + r[sc + ':seed'] + ') besteht die Regel: ' + JSON.stringify(r[sc + ':ohne']));
+        for (const k of ['ring', 'tuer', 'zone', 'wegpunkt', 'kamera']) t.ok(r[sc + ':' + k].kammer, sc + ' ' + k + ': Regel kammer muss anschlagen, bekam ' + JSON.stringify(r[sc + ':' + k]));
+      }
+    },
+  },
+  {
+    name: 'Kammer in Museum und Casino in allen acht Lagen (Strasse an N, E, W, auch gespiegelt): Tuer d, Innenraum frei, Ring Wand, Kachel vor der Tuer begehbar, validateMap ohne neue Fehler',
+    timeout: 240000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, C = D.CFG, keep = C.meet.p; C.meet.p = 0; const bad = []; let n = 0;
+        try {
+          D.setSeedMode('random'); D.setLage([]);
+          for (const sc of ['museum', 'casino']) { D.setScenario(sc); D.setTurn('S'); const seeds = []; for (let s = 1; s < 200 && seeds.length < 3; s++) if (D.layoutBase(s).stash) seeds.push(s);
+            for (const s of seeds) for (const side of TN.SIDES) {
+              D.setTurn(side); const lay = D.layoutFor(s), K = lay.stash, w = D.world(), tag = sc + '#' + s + ' ' + side;
+              if (!K) { bad.push(tag + ' keine Kammer'); continue; } n++;
+              if (w.cell(K.door[0], K.door[1]) !== 'd') bad.push(tag + ' Tuer ' + w.cell(K.door[0], K.door[1]));
+              if (K.cells.some(c => D.isSol(c[0], c[1]))) bad.push(tag + ' Innenraum belegt');
+              if (!K.deep.length || K.deep.some(c => !K.cells.some(q => q[0] === c[0] && q[1] === c[1]))) bad.push(tag + ' Versteck-Kacheln');
+              if (Math.abs(K.out[0] - K.door[0]) + Math.abs(K.out[1] - K.door[1]) !== 1 || D.isSol(K.out[0], K.out[1])) bad.push(tag + ' Kachel vor der Tuer');
+              const rep = D.validateMap(lay); if (rep.err.some(e => e.r === 'kammer')) bad.push(tag + ' ' + rep.err.filter(e => e.r === 'kammer').map(e => e.m).join(' | '));
+            } }
+        } finally { D.setTurn(null); C.meet.p = keep; }
+        return { bad: bad.slice(0, 8), nbad: bad.length, n };
+      });
+      t.eq(r.bad, [], 'Abweichungen (' + r.nbad + ')'); t.eq(r.n, 48, 'je 3 Seeds mal 8 Lagen mal 2 Szenarien');
+    },
+  },
+  {
+    name: 'Kammer im Spiel (Museum, Casino): mit allen Wachen, Angestellten und Kameras im Dienst laesst sich eine ausgeschaltete Wache durch die Tuer in die Kammer ziehen (zu jedem Zeitpunkt der Streife, vier Anlaufzeiten), ohne Alarm; H verstaut sie, dort findet sie die Streife in 90 s nie; derselbe Koerper mitten in der Halle wird gefunden',
+    timeout: 290000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const D = __dbg, res = { drag: [], hid: [], hall: [] }, px = c => (c + .5) * 32, away = me => { me.x = -16; me.y = 176; };
+        const setup = (sc, s, warm) => { D.sessReset(); D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.CFG.meet.p = 0; D.buildSeed(s); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
+          const g = D.get(), me = g.me, L = D.LAY(); for (const q of g.npcs) if (q.st === 'away') q.at = 1e9; away(me); for (let i = 0; i < warm * 30; i++) { away(me); D.update(1 / 30); } return { g, me, L }; };
+        for (const sc of ['museum', 'casino']) {
+          D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.CFG.meet.p = 0; const seeds = []; for (let s = 1; s < 200 && seeds.length < 4; s++) { const l = D.layoutBase(s); if (l.stash && l.guards.length >= 2) seeds.push(s); }
+          res[sc] = seeds;
+          for (const s of seeds) for (const warm of [0, 13, 29, 47]) {
+            { const { g, me, L } = setup(sc, s, warm), K = L.stash, a = g.npcs.find(q => q.k === 'grd' && q.st === 'idle'); D.koMi(a).act(me); a.kt = 1e9;
+              const nb = c => [[1, 0], [-1, 0], [0, 1], [0, -1]].map(d => [c[0] + d[0], c[1] + d[1]]).filter(q => !D.isSol(q[0], q[1]) && !(q[0] === K.door[0] && q[1] === K.door[1])), ap = nb(K.out)[0];
+              a.x = px(ap[0]); a.y = px(ap[1]); me.x = px(K.out[0]); me.y = px(K.out[1]); D.bodyMi(a).act(me);
+              const first = K.cells.find(c => Math.abs(c[0] - K.door[0]) + Math.abs(c[1] - K.door[1]) === 1), wps = [K.door, first, first]; let wi = 0, ticks = 0;
+              while (wi < wps.length && ticks < 900 && D.get().phase === 1) { const w = wps[wi], dx = px(w[0]) - me.x, dy = px(w[1]) - me.y; if (Math.hypot(dx, dy) < 8) { wi++; continue; } D.keys.d = dx > 2; D.keys.a = dx < -2; D.keys.s = dy > 2; D.keys.w = dy < -2; D.update(1 / 30); ticks++; }
+              D.keys.w = D.keys.a = D.keys.s = D.keys.d = false; for (let i = 0; i < 6; i++) D.update(1 / 30);
+              const ph = D.get().phase, cell = [Math.floor(a.x / 32), Math.floor(a.y / 32)]; D.relBody(me); const deep = K.deep.some(q => q[0] === Math.floor(a.x / 32) && q[1] === Math.floor(a.y / 32)); let tt = 0; for (; tt < 30 * 90 && D.get().phase === 1; tt++) { away(me); D.update(1 / 30); }
+              res.drag.push([sc, s, warm, wi, ph, deep ? 1 : 0, D.get().phase, +(tt / 30).toFixed(1)]); }
+          }
+          for (const s of seeds) { const { g, me, L } = setup(sc, s, 5), a = g.npcs.find(q => q.k === 'grd' && q.st === 'idle'), o = g.npcs.find(q => q.k === 'grd' && q !== a), rp = L.guards[0].route[0]; D.koMi(a).act(me); a.kt = 1e9; a.x = px(Math.round(rp[0])); a.y = px(Math.round(rp[1])); let tt = 0; for (; tt < 30 * 90 && D.get().phase === 1; tt++) { away(me); D.update(1 / 30); } res.hall.push([sc, s, D.get().phase, +(tt / 30).toFixed(1)]); }
+        }
+        return res; })()`);
+      t.eq(r.drag.length, 32, 'Laeufe: ' + JSON.stringify(r.museum) + ' / ' + JSON.stringify(r.casino));
+      t.eq(r.drag.map(x => [x[3], x[4]]), r.drag.map(() => [3, 1]), 'der Spieler zieht den Koerper bis in den Raum, kein Alarm waehrend des Ziehens: ' + JSON.stringify(r.drag.filter(x => x[3] !== 3 || x[4] !== 1)));
+      t.ok(r.drag.every(x => x[5] === 1), 'H verstaut den Koerper in einer Versteck-Kachel: ' + JSON.stringify(r.drag.filter(x => x[5] !== 1)));
+      t.eq(r.drag.map(x => x[6]), r.drag.map(() => 1), 'in der Kammer findet ihn in 90 s weder Streife noch Kamera: ' + JSON.stringify(r.drag.filter(x => x[6] !== 1)));
+      t.ok(r.hall.filter(x => x[2] === 2).length >= r.hall.length - 1, 'derselbe Koerper auf einem Wegpunkt der Streife: in aller Regel Alarm: ' + JSON.stringify(r.hall));
+    },
+  },
+  {
+    name: 'Kammer im Coop (Museum, Casino): Host und Client bauen dieselbe Kammer (je ein Seed mit Kammer, vom Start bis zum Sieg)',
+    timeout: 290000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const seeds = await t.page.evaluate(() => { const D = __dbg, out = {}; D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.CFG.meet.p = 0; for (const sc of ['museum', 'casino']) { D.setScenario(sc); for (let s = 1; s < 200 && !out[sc]; s++) if (D.layoutBase(s).stash) out[sc] = s; } return out; });
+      const res = []; for (const sc of ['museum', 'casino']) res.push(await coopGame(t.env, sc, seeds[sc]));
+      t.ok(seeds.museum && seeds.casino, 'je ein Seed mit Kammer: ' + JSON.stringify(seeds)); t.note(res.map(r => r.tag + ' ' + r.stat.hall).join(', '));
+      t.eq(res.flatMap(r => r.bad.map(b => r.tag + ': ' + b)), [], 'Abweichungen');
     },
   },
 ];

@@ -102,8 +102,8 @@ alt:{on:1,p:.4,hold:3,scs:['bank','jewel','gas','museum','casino'],drive:2,dMin:
 turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:.5},
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,camsFew:2,two:48}},
 jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],deep:{on:1,p:.5,max:2},tries:30,crowd:{few:93,camsFew:5,two:96}},
-/* Kammern (Abstellraum oder WC) als Versteck fuer Bewusstlose (Plan Kammern in docs/ideen-und-planung.md, Entscheidungen von Till am 28. Oktober 2026): on schaltet alle ab, p Anteil der Karten mit Kammer, scs die Szenarien mit Kammer, cells Mindestzahl Innenkacheln, gap Abstand der Wegpunkte zum Ring in Kacheln, sight Sichtweite in Kacheln, mit der validateMap Posten gegen die Versteck-Kacheln (stash.deep) prueft (Wachen sehen 8,1 Kacheln, mit Reserve fuer Lage-Tags). */
-stash:{on:1,p:.85,scs:['jewel'],cells:4,gap:2,sight:10},
+/* Kammern (Abstellraum oder WC) als Versteck fuer Bewusstlose (Plan Kammern in docs/ideen-und-planung.md, Entscheidungen von Till am 28. Oktober 2026): on schaltet alle ab, p Anteil der Karten mit Kammer, scs die Szenarien mit Kammer, cells Mindestzahl Innenkacheln, gap Abstand der Wegpunkte zum Ring in Kacheln, sight Sichtweite in Kacheln, mit der validateMap Posten gegen die Versteck-Kacheln (stash.deep) prueft (Wachen sehen 8,1 Kacheln, mit Reserve fuer Lage-Tags), wall bevorzugte Zahl schon vorhandener Wandkacheln im Ring (nur Museum und Casino, placeStash nimmt sonst jeden Kandidaten). */
+stash:{on:1,p:.85,scs:['jewel','museum','casino'],cells:4,gap:2,sight:10,wall:4},
 hud:{lageLines:4,lageW:28,feedW:440},
 funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
 chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
