@@ -1,0 +1,60 @@
+# Automatische Tests auf GitHubs Rechnern (öffentliches Repo: kostenlos).
+# - Bei jedem Pull Request und jedem Push auf main: schneller Lauf (ohne slow: true). Der Job "schnell" ist der Pflicht-Check der Branch Protection.
+# - Nachts und von Hand (Actions > Tests > Run workflow) oder mit dem Label "voller-lauf" am PR: voller Lauf.
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'schedule' && 'nacht' || 'lauf' }}
+  cancel-in-progress: true
+
+jobs:
+  schnell:
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - name: Abhängigkeiten und Chromium
+        working-directory: tests
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright-core install --with-deps chromium
+          echo "HOLDUP_CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Schneller Lauf
+        working-directory: tests
+        run: node run.js --fast --jobs=auto
+
+  voll:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'voller-lauf'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - name: Abhängigkeiten und Chromium
+        working-directory: tests
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright-core install --with-deps chromium
+          echo "HOLDUP_CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - name: Voller Lauf
+        working-directory: tests
+        run: node run.js --jobs=auto
