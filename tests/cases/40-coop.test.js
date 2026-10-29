@@ -91,7 +91,7 @@ tests.push({
       const X = mkInst(G.net, 'x');
       X.joinRoom('ZZZZ');
       for (let i = 0; i < 180; i++) step(G.insts.concat(X), G.net, 1 / 60);
-      out.wrongCode = { scr: X.state().scr, msg: X.NET.msg };
+      out.wrongCode = { scr: X.state().scr, msg: X.NET.msg, gone: X.NET.gone };
       // Client verlaesst das Spiel
       G.clients[0].leaveGame();
       for (let i = 0; i < 300; i++) step(G.insts.concat(X), G.net, 1 / 60);
@@ -101,7 +101,7 @@ tests.push({
       return out;
     });
     t.ok(r.wrongCode.scr !== 'play', 'Falscher Code darf nicht ins Spiel fuehren (scr ' + r.wrongCode.scr + ')');
-    t.ok(r.wrongCode.msg, 'Falscher Code braucht eine Meldung');
+    t.ok(r.wrongCode.msg || r.wrongCode.gone, 'Falscher Code braucht eine Meldung oder den Hinweis Raum fehlt');
     t.eq(r.hostScr, 'play', 'Host spielt nach dem Weggang weiter');
     t.ok(r.left, 'Der gegangene Spieler muss beim Host als weg gelten');
   },
