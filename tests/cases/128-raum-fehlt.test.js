@@ -33,4 +33,16 @@ module.exports = [
       t.eq(r.C, ['lobby', 'client', '', false], 'ein vorhandener Raum zeigt den Hinweis nicht');
     },
   },
+  {
+    name: 'Raum fehlt: ein alter Fehler (NET.fail) blockiert die Zeitgrenze des naechsten Beitritts nicht, netReset setzt ihn zurueck',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(() => {
+        const net = LoopNet(40, 0), A = MT.solo(net, 'a');
+        A.NET.fail = 1; A.joinRoom('YYYY');
+        return { fail: A.NET.fail, role: A.NET.role };
+      });
+      t.eq(r, { fail: 0, role: 'client' }, 'nach joinRoom ist NET.fail wieder 0');
+    },
+  },
 ];
