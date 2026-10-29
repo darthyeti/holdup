@@ -738,7 +738,7 @@ const cands=[];for(const[iw,ih]of[[2,2],[3,2],[2,3]])for(let bx=B.x0+1;bx<=B.x1-
 
 for(let i=cands.length-1;i>0;i--){const j=Math.floor(r()*(i+1)),t=cands[i];cands[i]=cands[j];cands[j]=t}
 cands.sort((a,b)=>a.nat-b.nat);
-const sig=rep=>rep.err.concat(rep.warn).map(e=>e.r+': '+e.m),base=sig(validateMap(lay)),gp=K.gap;let tried=0;
+const sig=rep=>rep.err.concat(rep.warn).map(e=>e.r+': '+e.m),base=sig(validateMap(lay)),gp=K.gap;let tried=0;const sp0=lay.spots,lk0=lay.lockCells;
 /* Fluchtachse: die Zeilen (Spalten) der Fluchttuer plus 2 quer durch das Gebaeude und die Kacheln um Kameras (Kamera braucht Boden in der Naehe) bleiben frei von der Kammer. */
 const axis=[];for(const sp of(lay.spots||[]).filter(z=>z.ex)){const hz=sp.side==='E'||sp.side==='W';for(const c of sp.cells)axis.push(hz?[null,c[1]]:[c[0],null])}
 const onAxis=q=>axis.some(a=>a[0]==null?Math.abs(q[1]-a[1])<=1:Math.abs(q[0]-a[0])<=1),nearCam=q=>(lay.cams||[]).some(m=>Math.abs(Math.floor(m.x/T)-q[0])<=1&&Math.abs(Math.floor(m.y/T)-q[1])<=1);
@@ -754,6 +754,7 @@ const deep=cells.filter(q=>!seen(q[0],q[1],K.sight));if(!deep.length){undo();con
  lay.stash={kind,door:d,out:ou,cells,deep};delete lay.spots;delete lay.lockCells;
  const rep=validateMap(lay);if(sig(rep).every(m=>base.includes(m))){const pf=lay.paintFloor,pt=lay.paintTop,S=lay.stash;lay.paintFloor=s=>{pf&&pf(s);stashFloor(s,S)};lay.paintTop=s=>{pt&&pt(s);stashTop(s,S)};return lay}
  delete lay.stash;delete lay.spots;delete lay.lockCells;undo()}
+if(sp0)lay.spots=sp0;if(lk0)lay.lockCells=lk0;
 return lay}
 function finishLay(lay,sn){return placeStash(clearLane(placeMeet(fillDerived(lay))),sn)}
 return{CLASSICM,CLASSICP,CS_FLOORS,GS_SHOPS,JW_HALLS,LAGE,MU_HALLS,PLACE,SCL,casinoLayout,casinoParams,classicLayout,csTubes,finishLay,gasLayout,gasParams,gasWide,genCasino,genGas,genJewel,genLayout,genMission,genMuseum,genTruckMission,inSite,inStash,jewParams,jewWide,jewelLayout,muTubes,mulberry32,museumLayout,museumParams,scOf,truckLayout,turnLayout,validLayout,warnFor}}
