@@ -169,7 +169,7 @@ module.exports = [
     },
   },
   {
-    name: 'Vorhut im Coop: der Client sieht dieselbe Vorhut (Zustand, Ort) schon in der Fahrt, nach dem Halt als Auto im Raster, VER 55, und kennt die ausgestiegenen Wachen mit',
+    name: 'Vorhut im Coop: der Client sieht dieselbe Vorhut (Zustand, Ort) schon in der Fahrt, nach dem Halt als Auto im Raster, VER 56, und kennt die ausgestiegenen Wachen mit',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const F = ${FIND}, RUN = ${RUN}, sd = F(m => m.vorhut, 1)[0], G = CT.mkGame('truck', sd, 2), A = G.A, B = G.clients[0], o = {}; A.CFG.policeAt = 26; A.CFG.policeForced = 20; const b = A.bars().find(x => x.rd && x.g === 1); b.lv = 1; b.hp = 100; const bb = B.bars().find(x => x.rd && x.g === 1); bb.lv = 1; bb.hp = 100;
@@ -177,7 +177,7 @@ module.exports = [
         for (let i = 0; i < 100 * 2; i++) { A.get().me.hp = 1e9; G.run(.5); if (A.vh().st === 'stopped') break; } G.run(1); o.a = [A.vh().st, Math.round(A.vh().x)]; o.b = [B.vh().st, Math.round(B.vh().x), B.vh().cells ? B.vh().cells.length : 0, B.vh().cells ? B.world().cell(B.vh().cells[0][0], B.vh().cells[0][1]) : '']; o.ver = A.VER; o.en = [A.get().en.filter(e => e.vg).length, A.get().en.length, B.get().en.length]; return o; })()`);
       t.eq(r.fahrt[0], 'drive', 'Aufbau: die Vorhut faehrt auf dem Host'); t.eq(r.fahrt[1], 'drive', 'der Client sieht sie fahren'); t.ok(Math.abs(r.fahrt[2] - r.fahrt[3]) <= 60 && r.fahrt[3] > -100, 'in der Fahrt am fast selben Ort (der Client gleitet nach): ' + JSON.stringify(r.fahrt));
       t.eq(r.a[0], 'stopped', 'Aufbau: die Vorhut hat auf dem Host gehalten'); t.eq(r.b[0], 'stopped', 'der Client sieht sie stehen'); t.ok(Math.abs(r.a[1] - r.b[1]) <= 12, 'am selben Ort: ' + JSON.stringify([r.a, r.b])); t.ok(r.b[2] >= 6 && r.b[3] === 'v', 'beim Client steht sie als Auto im Raster: ' + JSON.stringify(r.b));
-      t.eq(r.ver, 55, 'Netzformat 55'); t.eq(r.en[0], 2, 'Aufbau: zwei Wachen der Vorhut auf dem Host'); t.eq(r.en[2], r.en[1], 'der Client kennt dieselben Gegner (' + r.en[1] + ')');
+      t.eq(r.ver, 56, 'Netzformat 56'); t.eq(r.en[0], 2, 'Aufbau: zwei Wachen der Vorhut auf dem Host'); t.eq(r.en[2], r.en[1], 'der Client kennt dieselben Gegner (' + r.en[1] + ')');
     },
   },
 ];
