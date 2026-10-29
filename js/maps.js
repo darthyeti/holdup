@@ -139,6 +139,8 @@ if(lay.stash)lay.stash={kind:lay.stash.kind,door:t2(lay.stash.door),out:t2(lay.s
 lay.sw.x=XP(lay.sw.x);lay.exit.x=XP(lay.exit.x);lay.exit.dir=-lay.exit.dir;lay.exit.tx=X(lay.exit.tx);
 lay.van.x0=XP(lay.van.x0)-128;lay.van.stop=XP(lay.van.stop)-128;lay.van.dir=-lay.van.dir;
 lay.posts.forEach(p=>{p.x=X(p.x);p.a=Math.PI-p.a;if(p.door)p.door=t2(p.door)});
+/* Parkende Autos: Mitte x spiegeln (bx und by sind die Malbasis, die Malerei laeuft ueber fl schon gespiegelt), sonst baut deriveDecor die Wagen auf der falschen Seite und im Raster bleiben v-Kacheln ohne Auto (Ticket #33) */
+if(lay.decor)lay.decor=lay.decor.map(d=>Object.assign({},d,{x:XP(d.x)}));
 lay.slots={W:lay.slots.E.map(X),E:lay.slots.W.map(X)};
 lay.theme=Object.assign({},lay.theme,{sun:Object.assign({},lay.theme.sun,{dx:-lay.theme.sun.dx})});lay.flip=true;return lay}
 /* ---- Strasse auf eine andere Seite legen (Pruefwerkzeug der freien Strasse, siehe docs/karte-und-layout.md; im Spielablauf noch ungenutzt):
