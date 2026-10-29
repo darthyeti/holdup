@@ -39,6 +39,39 @@ module.exports = [
     },
   },
   {
+    name: 'Start: alle js/*.js im Skript-Tag tragen die Build-Nummer und sind geladen',
+    async run(t) {
+      const r = await t.page.evaluate(async () => {
+        const html = await (await fetch('index.html', { cache: 'no-store' })).text();
+        const tags = [...html.matchAll(/<script src="js\/([\w-]+\.js)\?v=(\d+)"><\/script>/g)].map(m => ({ f: m[1], v: +m[2] }));
+        const loaded = { 'ui.js': typeof mkUI === 'function', 'snd.js': typeof SND === 'object' && typeof SND.init === 'function', 'flog.js': typeof mkFlog === 'function' && typeof FL_SINKS === 'object' };
+        return { tags, build: __dbg.BUILD.n, loaded, bare: (html.match(/<script src="js\/[^"?]+"/g) || []).length };
+      });
+      const files = r.tags.map(x => x.f);
+      for (const f of ['ui.js', 'snd.js', 'flog.js']) t.ok(files.includes(f), 'Skript-Tag fehlt: js/' + f);
+      for (const x of r.tags) {
+        t.eq(x.v, r.build, 'js/' + x.f + '?v=N muss die Build-Nummer tragen');
+        t.ok(r.loaded[x.f] !== false, 'js/' + x.f + ' nicht geladen');
+        t.ok(x.f in r.loaded, 'js/' + x.f + ': unbekannte Datei, Ladeprobe in 00-start ergaenzen');
+      }
+      t.eq(r.bare, 0, 'Skript-Tag js/... ohne ?v=N');
+    },
+  },
+  {
+    name: 'Start: fehlt js/snd.js oder js/flog.js, kommt eine klare Meldung',
+    async run(t) {
+      for (const f of ['snd', 'flog']) {
+        const page = await t.env.browser.newContext({ viewport: { width: 1000, height: 640 } }).then(c => c.newPage());
+        await page.route('**/js/' + f + '.js*', r => r.fulfill({ status: 404, body: '' }));
+        await page.goto(t.env.url + '/index.html');
+        await page.waitForFunction(() => !document.getElementById('err').hidden, null, { timeout: 15000 });
+        const msg = await page.evaluate(() => document.getElementById('err').textContent);
+        await page.context().close();
+        t.ok(msg.includes('js/' + f + '.js') && /fehlt/.test(msg) && /neu laden/.test(msg), f + ': Meldung: ' + msg);
+      }
+    },
+  },
+  {
     name: 'Start: alte js/ui.js im Cache gibt eine klare Meldung statt eines stillen Fehlers',
     async run(t) {
       const fs = require('fs'), path = require('path');
