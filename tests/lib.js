@@ -45,7 +45,9 @@ function findChrome() {
 // opts.root: anderer Projektordner (zum Beispiel ein alter Stand fuer tests/altneu.js), Standard ist der eigene
 async function launch(opts) {
   const { srv, url } = await serve(opts && opts.root && path.resolve(opts.root));
-  const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
+  // --disable-accelerated-2d-canvas: Chrome rastert sonst je Leinwand zur Laufzeit auf der GPU oder der CPU (Speicher, Zahl der Leinwaende), Verlaeufe, Alpha-Rechtecke und Linien sehen auf beiden Wegen
+  // verschieden aus, die Pixeltests flackerten (Ticket #6). Mit dem Flag laeuft jede 2D-Leinwand auf der CPU, das Spiel selbst bleibt unveraendert.
+  const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-accelerated-2d-canvas'] });
   return { srv, url, browser };
 }
 
