@@ -136,6 +136,31 @@ module.exports = [
     },
   },
   {
+    name: 'Koerperfund durch einen Zivilfahnder: sieht ein zweiter Zivilfahnder den bewusstlosen Koerper, gibt es nach CFG.ko.find s Alarm (ein gewoehnlicher Kunde an derselben Stelle nicht)',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const o = {}; for (const wer of ['uc', 'kunde']) { const S = (${ONE})(5, { keep: n => n.uc }), { D, g, me, uc, civ, put, free } = S, K = D.CFG.ko; const uc2 = g.npcs.find(n => n.uc && n !== uc); o.zwei = !!(uc && uc2); if (!uc2) return o;
+        put(uc, 30); uc.base = Math.atan2(uc.y - me.y, uc.x - me.x); uc.a = uc.base; civ.st = 'away'; civ.at = 1e9; D.update(1 / 30); D.koMi(uc).act(me);
+        let sp = null; for (let i = 0; i < 48 && !sp; i++) { const an = i * Math.PI / 24, x = uc.x + Math.cos(an) * 150, y = uc.y + Math.sin(an) * 150; if (free(x, y) && D.los(x, y, uc.x, uc.y)) sp = { x, y }; }
+        o.platz = !!sp; if (!sp) return o; if (wer === 'kunde') uc2.uc = 0; uc2.st = 'idle'; uc2.x = sp.x; uc2.y = sp.y; uc2.path = []; uc2.still = true; uc2.route = null; uc2.alert = 0; uc2.look = null; uc2.base = Math.atan2(uc.y - sp.y, uc.x - sp.x); uc2.a = uc2.base; me.x = D.LAY().spawn.x; me.y = D.LAY().spawn.y;
+        for (let i = 0; i < Math.round((K.find + 1) * 30); i++) D.update(1 / 30); o[wer] = D.get().phase; o[wer + 'Msg'] = D.msgs().feed.some(s => /findet einen Bewusstlosen: Alarm!/.test(s)); }
+        return o; })()`);
+      t.eq(r.zwei, true, 'Aufbau: zwei Zivilfahnder (Bank 5017, Zaehler 5)'); t.eq(r.platz, true, 'Aufbau: Platz');
+      t.eq(r.uc, 2, 'der Zivilfahnder findet den Koerper: Alarm'); t.eq(r.ucMsg, true, 'Meldung'); t.eq(r.kunde, 1, 'gewoehnlicher Kunde sieht ihn nicht als Fund');
+    },
+  },
+  {
+    name: 'Herumstehen: wer im Gebaeude kaum von der Stelle kommt und vom Zivilfahnder gesehen wird, sammelt Verweilzeit (Warnung ab loiter.warn, danach Balken); vor einem gewoehnlichen Kunden nicht',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const S = (${ONE})(3), { D, g, me, uc, civ, put } = S, o = { hat: !!uc }; if (!uc) return o; const L = D.CFG.loiter; L.warn = 3; L.after = 5; o.L = [L.warn, L.after]; civ.st = 'away'; civ.at = 1e9; D.CFG.watch.grace = 4;
+        const c = D.world().LOBBY[0]; me.x = c[0] * 32 + 16; me.y = c[1] * 32 + 16;
+        const run = (k, uck) => { put(uc, 70); uc.k = k; uc.uc = uck; D.setSus(0); me.dw = 0; me.dwT = 0; me.lw = 0; me.dx = me.x; me.dy = me.y; me.thf = 0; let mx = 0; for (let i = 0; i < 30 * 9; i++) { D.update(1 / 30); mx = Math.max(mx, me.dw); } return [mx, D.get().sus, me.lw]; };
+        o.zf = run('civ', 1); o.kunde = run('civ', 0); return o; })()`);
+      t.ok(r.hat, 'Aufbau');
+      t.ok(r.zf[0] >= r.L[1], 'Verweilzeit waechst im Blick des Zivilfahnders: ' + r.zf[0]); t.eq(r.zf[2], 1, 'Warnung'); t.ok(r.zf[1] > 0, 'nach loiter.after steigt der Balken: ' + r.zf[1]);
+      t.eq(r.kunde, [0, 0, 0], 'gewoehnlicher Kunde: nichts');
+    },
+  },
+  {
     name: 'Hinweis: Funkgeraet und Ohrstoepsel nur im Abstand CFG.uc.hint zu irgendeinem lebenden Spieler (ucHintOn), gezeichnet nur dann (ucHintN zaehlt Zeichenaufrufe), nie an gewoehnlichen Kunden',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const S = (${ONE})(3), { D, g, me, uc, civ, put } = S, H = D.CFG.uc.hint, o = { hat: !!uc, H }; if (!uc) return o; civ.st = 'away'; civ.at = 1e9;
