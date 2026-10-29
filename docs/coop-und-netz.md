@@ -181,6 +181,10 @@ Plan und Begründung in docs/coop-ausbau.md, Spur R. Gebaut ist R1 (Raum mit Mod
 - **Debug-Hook**: `__dbg.setMode`, `__dbg.roleSet`, `__dbg.chatRoom`.
 - **Tests**: `126-raum-zuerst` (acht Tests: Hub und Raum ohne Modus, Modus und Zurücknehmen, Rollenwechsel in beide Richtungen auch durch den Host, Überlauf und Sperren, Raum-Chat, Link, Lobby-only, Überlappung in allen Zuständen), Mutanten siehe docs/tests-und-messwerte.md. Angepasst: 70, 112, 118, 121, 122. Die lokalen Pixel-Schnappschüsse von `70-menues` (`golden-local`) sind mit `node run.js --update 70-menues` neu anzulegen.
 
+## Raum fehlt (#9, 29. Oktober 2026)
+
+Meldet PeerJS beim Beitritt `peer-unavailable` oder kommt binnen 15 Sekunden keine Verbindung, setzt `roomGone(code)` `NET.gone` (der Code), entfernt den Hash `#raum=` und `sLobby` in `js/ui.js` zeigt `sGone`: Hinweis "Raum XXXX gibt es nicht (mehr)" mit den Kacheln Raum erstellen (`goneHost`, Taste R) und Code eingeben (`goneJoin`, Enter), Zurück geht in den Coop-Hub. Andere Fehler (Netz weg, Version, Raum voll) bleiben die Meldung `NET.msg`. Gilt für Spieler- und Zuschauer-Link. Test `128-raum-fehlt`.
+
 ## Wettkampf-Raum (Coop-Ausbau R2, 27. Oktober 2026, `VER` 53)
 
 Plan und Begründung in docs/coop-ausbau.md, Spur R. Im Modus Coop Wettkampf wählt jeder Teilnehmer ein Team, der Host startet mit einer Übergabe, danach laufen zwei Spiele auf zwei Hosts wie in W1 bis W3 (Abschnitt Wettkampf).

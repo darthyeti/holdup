@@ -1361,7 +1361,7 @@ const live=o=>!o.dead&&!o.out&&!o.gone,actv=()=>players.filter(live),plRow=o=>o.
 /* Zaehler je Spieler fuer die Auszeichnungen im Coop-Ergebnis (zaehlt nur der Host, siehe awards()) */
 const mkSt=()=>({t:0,idle:0,dist:0,work:0,acts:0,k:0,civ:0,cap:0,sh:0,ht:0,dry:0,tk:0,dn:0,rev:0,sec:0,out:0,outT:0,gad:0,bar:0,boom:0,alarm:0,ko:0});
 const r1=v=>Math.round(v*10)/10,r2=v=>Math.round(v*100)/100;
-const NET={role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null},LOG=mkFlog(()=>time);
+const NET={role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',gone:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null},LOG=mkFlog(()=>time);
 const WPN_ORDER=['rifle','smg','pistol'],BASEKIT={w:'pistol',vest:0,helm:0,pack:0,drill:0,pick:0,radio:0,mask:0,jam:0,med:0,sm:0,dc:0,ad:0,bt:0,vh:null,hh:null,sk:{}};
 let kits=[];
 /* Ausruestung: Stufen 0 bis 3 (SESSION.own, Werte in CFG.shop.tier), Verschleiss (vh = Weste jetzt, hh = Helmtreffer uebrig, null = voll), Verbrauchsgueter als Zaehler (jam, med, sm Rauch, dc Ablenker, ad Adrenalin, bt Brettersaetze; die Blendgranate fl ist seit MRU 1 A1 gestrichen) */
@@ -2223,7 +2223,7 @@ const bcastRoster=()=>{NET.spNames=NET.specs.map(c=>c.nm);NET.t2n=NET.t2.map(c=>
 /* Zuschauer im Wettkampf (W3): Nur Zuschauer bekommen den Raumcode des Gegners (dlc, mit der Verzoegerung), Spieler nie. Der Host merkt je Zuschauer, was er zuletzt geschickt hat (c.rc), leer heisst: kein Wettkampf. */
 const duelRc=()=>{const d=NET.duel;return d&&d.link&&d.rv&&d.rv.code||''};
 function specDlc(c){const rc=duelRc();if(c.rc===rc)return;c.rc=rc;c.send({t:'dlc',c:rc,dl:rc?CFG.duel.specDelay:0})}
-function netReset(){duelClose();sp2Close();holdClose();p2Close();atLast='';specT=null;specFree=false;chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs,NET.t2),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null});spQ=[];nPl=1;
+function netReset(){duelClose();sp2Close();holdClose();p2Close();atLast='';specT=null;specFree=false;chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs,NET.t2),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',gone:'',msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null});spQ=[];nPl=1;
 for(const c of cs0){c.onclose=null;c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
 function hostRoom(tries){netReset();hostTicker(true);const code=newCode();NET.role='host';NET.code=code;NET.msg='Raum wird erstellt ...';NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';
@@ -2445,8 +2445,10 @@ else if(m.t==='lg')flogRecv(c.pid,m)
 else if(m.t==='chk')flogChk(c.pid,m)}
 function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;for(const c of NET.t2.slice())kickPlayer('t'+c.tk);if(NET.duel&&!NET.duel.jobs.length)duelEnd('Wettkampf beendet.',true);nPl=NET.roster.length;mapSeed=seedFor();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,h:SESSION.heat,q:SESSION.quiet|0});beginPlay()}
 function joinRoom(code,opt){netReset();NET.role='client';NET.spec=!!(opt&&opt.spec);NET.joinSpec=NET.spec;NET.code=code;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
-NET.srv=TR.join(code,{onOpen(c){NET.conn=c;LOG.ev('netz','verbunden mit dem Host');c.onmsg=m=>clientMsg(m,c);c.onclose=()=>connLost(c);c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0})},onError(e){NET.msg=errTxt(e);NET.fail=1}});
-setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')NET.msg='Keine Antwort. Code prüfen und erneut versuchen.'},15000)}
+NET.srv=TR.join(code,{onOpen(c){NET.conn=c;NET.gone='';LOG.ev('netz','verbunden mit dem Host');c.onmsg=m=>clientMsg(m,c);c.onclose=()=>connLost(c);c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0})},onError(e){if(e==='peer-unavailable')roomGone(code);else{NET.msg=errTxt(e);NET.fail=1}}});
+setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')roomGone(code)},15000)}
+/* Raum fehlt (#9): Der Code aus Link oder Eingabe fuehrt ins Leere (peer-unavailable oder Zeitgrenze). Die Lobby zeigt dann den Hinweis mit zwei Wegen (Raum erstellen, Code eingeben), der Hash #raum= faellt weg, damit Neuladen nicht wieder scheitert. Andere Fehler bleiben die Meldung NET.msg. */
+function roomGone(code){if(NET.role!=='client'||NET.conn||NET.code!==code)return;NET.gone=code;NET.msg='';if(/^#raum=/.test(location.hash)){try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}}
 /* Verzoegerung (Z3): Ein Zuschauer haelt Schnappschuesse, Ende und Rundenwechsel CFG.spec.delay Sekunden zurueck (Warteschlange mit Empfangszeit auf der Uhr chatClk, die in tick immer laeuft), alles andere gilt sofort. Solange die Schlange nicht leer ist, reiht sich auch bei delay 0 alles hinten an, damit die Reihenfolge stimmt. */
 const SPQ={snap:1,end:1,rst:1,go:1};
 const specDelay=()=>Math.max(CFG.spec.delay,NET.dlDelay|0);
@@ -2889,7 +2891,7 @@ case'same':sameMap=!sameMap;break;
 case'coop':openCoop();break;
 case'coopBack':scr='title';break;
 case'host':hostRoom();break;
-case'join':joinText='';NET.msg='';NET.joinSpec=false;scr='join';break;
+case'join':joinText='';NET.msg='';NET.gone='';NET.joinSpec=false;scr='join';break;
 case'mode':setMode(v);break;
 case'role':if(NET.role==='client'&&NET.conn)NET.conn.send({t:'role',v});break;
 case'roleOf':if(v)roleSet(v.who,v.to);break;
