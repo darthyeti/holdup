@@ -275,7 +275,7 @@
      "wallVE": 8
     },
     "V": {
-     "wallPct": 75,
+     "wallPct": 25,
      "wallVE": 24
     },
     "pve10": {
@@ -295,7 +295,7 @@
    },
    "Reihen": {
     "n": 13,
-    "welt": "45x30",
+    "welt": "45x31",
     "hofFlucht": [
      13,
      13,
@@ -333,7 +333,7 @@
      "wallVE": 8
     },
     "V": {
-     "wallPct": 54,
+     "wallPct": 15,
      "wallVE": 24
     },
     "pve10": {
@@ -346,14 +346,14 @@
     },
     "pve14": {
      "minE": 18,
-     "meanE": 22
+     "meanE": 23
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Ring": {
     "n": 6,
-    "welt": "46x30",
+    "welt": "46x31",
     "hofFlucht": [
      13,
      13,
@@ -391,7 +391,7 @@
      "wallVE": 8
     },
     "V": {
-     "wallPct": 50,
+     "wallPct": 17,
      "wallVE": 24
     },
     "pve10": {
@@ -404,14 +404,14 @@
     },
     "pve14": {
      "minE": 18,
-     "meanE": 22
+     "meanE": 23
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Salon": {
     "n": 8,
-    "welt": "46x30",
+    "welt": "46x31",
     "hofFlucht": [
      13,
      13,
@@ -449,7 +449,7 @@
      "wallVE": 8
     },
     "V": {
-     "wallPct": 63,
+     "wallPct": 25,
      "wallVE": 24
     },
     "pve10": {
@@ -462,7 +462,7 @@
     },
     "pve14": {
      "minE": 18,
-     "meanE": 22
+     "meanE": 23
     },
     "curOk": 100,
     "pveGleich": 100

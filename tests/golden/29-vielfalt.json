@@ -15,10 +15,10 @@
   "jewel": {
    "sc": "jewel",
    "seeds": 200,
-   "huelle": 186,
-   "groessen": 28,
-   "flucht": 127,
-   "beute": 67,
+   "huelle": 198,
+   "groessen": 52,
+   "flucht": 153,
+   "beute": 93,
    "hallen": 5,
    "hallenVerteilung": {
     "Reihen": 48,

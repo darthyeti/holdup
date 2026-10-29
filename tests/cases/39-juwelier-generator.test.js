@@ -1,5 +1,5 @@
-// Juwelier als Generator (Sprint 7 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Die Huelle kommt aus Parametern (genJewel, CFG.jewGen): Hallenbreite hw 11 bis 17 (Klassik 13, Halle x1..hw), Gebaeudetiefe hd 12 bis 13
-// (Klassik 12, die Strasse bleibt fest), Versatz der Vordertuer vx 0 bis 2 (nach links). Die Klassik-Huelle (13, 12, 0) ist mit jeder der fuenf Hallen Zeichen fuer Zeichen die Karte von vorher (Selbsttest
+// Juwelier als Generator (Sprint 7 des Plans Mehr Abwechslung, docs/archiv-gebaute-plaene.md): Die Huelle kommt aus Parametern (genJewel, CFG.jewGen): Hallenbreite hw 11 bis 17 (Klassik 13, Halle x1..hw), Gebaeudetiefe hd 12 bis 15
+// (Klassik 12, 12 bis 13 aus den alten Wuerfen, dazu CFG.jewGen.deep seit dem 29. Oktober 2026, ab 14 rueckt die Strasse mit), Versatz der Vordertuer vx 0 bis 2 (nach links). Die Klassik-Huelle (13, 12, 0) ist mit jeder der fuenf Hallen Zeichen fuer Zeichen die Karte von vorher (Selbsttest
 // 39-juwelier-basis mit CFG.jewGen.on 0). Die fuenf Hallen (JW_HALLS) sind Funktionen von hw, hd und der Tuer; jede hat minHw und minHd, jewLayout wirft Huellen weg, die darunter liegen.
 // Die Breitenpruefung im Test ist eine eigene Fassung (Kachelraster, isSol), sie benutzt validateMap nicht: Ein 2x2-Block muss von der Vordertuer (unterste Zeile, ueberlappt die Tuerkacheln) bis vor das Tresentor
 // (Block links oben (21+dx, 10)) ueber freie Kacheln rutschen koennen.
@@ -35,7 +35,7 @@ module.exports = [
         return { classic, vals, tries, nondet, hall, huellen: mapcheck.variety('jewel', 300, 1, 1, 0).huelle };
       });
       t.eq(r.nondet, 0, 'gleiche Seeds, gleiche Karten');
-      t.ok(Object.keys(r.vals.hw).length === 7 && Object.keys(r.vals.hd).length === 2 && Object.keys(r.vals.vx).length === 3, 'alle Werte kommen vor: ' + JSON.stringify(r.vals));
+      t.ok(Object.keys(r.vals.hw).length === 7 && Object.keys(r.vals.hd).length === 4 && Object.keys(r.vals.vx).length === 3, 'alle Werte kommen vor: ' + JSON.stringify(r.vals));
       t.ok(r.classic >= 60 && r.classic <= 160, 'Klassik-Huelle rund 10 % (CFG.jewGen.classic): ' + r.classic + ' von 1000');
       t.ok(Math.max(...Object.keys(r.tries).map(Number)) <= 20, 'hoechstens 20 Versuche je Karte: ' + JSON.stringify(r.tries));
       t.ok(Object.keys(r.hall).length === 5, 'alle fuenf Hallen kommen vor: ' + JSON.stringify(r.hall));
@@ -62,13 +62,13 @@ module.exports = [
     },
   },
   {
-    name: 'Juwelier eng: alle Kombinationen aus fuenf Hallen, hw 11 bis 17, hd 12 bis 13 und vx 0 bis 2 (210): was minHw und minHd zulassen, hat die 2 Kacheln breite Verbindung, keinen 1 Kachel breiten Gang zwischen Vitrinen und besteht validateMap, minHw und minHd sind nicht hoeher als noetig',
+    name: 'Juwelier eng: alle Kombinationen aus fuenf Hallen, hw 11 bis 17, hd 12 bis 15 und vx 0 bis 2 (420): was minHw und minHd zulassen, hat die 2 Kacheln breite Verbindung, keinen 1 Kachel breiten Gang zwischen Vitrinen und besteht validateMap, minHw und minHd sind nicht hoeher als noetig',
     timeout: 240000,
     async run(t) {
       await t.loadInpage('turn.js');
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, out = { halls: D.JW_HALLS.map(h => [h.n, h.minHw, h.minHd]), rows: [] };
         D.setScenario('jewel'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
-        for (let i = 0; i < D.JW_HALLS.length; i++) for (let hw = 11; hw <= 17; hw++) for (let hd = 12; hd <= 13; hd++) for (let vx = 0; vx <= 2; vx++) {
+        for (let i = 0; i < D.JW_HALLS.length; i++) for (let hw = 11; hw <= 17; hw++) for (let hd = 12; hd <= 15; hd++) for (let vx = 0; vx <= 2; vx++) {
           const lay = D.finishLay(D.genJewel(777, { hw, hd, vx, classic: false, hall: i })), rep = D.validateMap(lay);
           out.rows.push({ i, hall: lay.hall, hw, hd, vx, wide: H.wide(hw, hd, vx), narrow: H.narrow(hw, hd), err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) });
         }
@@ -82,7 +82,7 @@ module.exports = [
       t.eq(ok.filter(q => q.err.length || q.warn.length).map(q => q.hall + ' ' + q.hw + 'x' + q.hd + ' vx ' + q.vx + ' ' + q.err.concat(q.warn).join(',')), [], 'jede zugelassene Huelle besteht validateMap ohne Fehler und Warnungen');
       const zuHoch = r.halls.filter(h => h[1] > 11 || h[2] > 12).filter(h => !r.rows.some(q => q.hall === h[0] && (q.hw < h[1] || q.hd < h[2]) && (!q.wide || q.err.length || q.narrow))).map(h => h[0]);
       t.eq(zuHoch, [], 'minHw und minHd sind nicht hoeher als noetig (unterhalb gibt es wirklich eine zu enge oder ungueltige Huelle)');
-      t.note('zu eng oder ungueltig je Halle (von 42): ' + r.halls.map(h => h[0] + ' ' + r.rows.filter(q => q.hall === h[0] && (!q.wide || q.err.length || q.narrow)).length).join(', '));
+      t.note('zu eng oder ungueltig je Halle (von 84): ' + r.halls.map(h => h[0] + ' ' + r.rows.filter(q => q.hall === h[0] && (!q.wide || q.err.length || q.narrow)).length).join(', '));
     },
   },
   {

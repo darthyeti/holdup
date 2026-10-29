@@ -178,7 +178,7 @@ module.exports = [
         run('eingang-verstellt', c => c(17, 1, 'e'));
         run('feld', (c, l) => { delete l.theme; });
         run('weg-warnung', (c, l) => { D.CFG.val.pathSV = [60, 70]; });
-        D.CFG.val.pathSV = [8, 30];
+        D.CFG.val.pathSV = [8, 33];
         const sv = D.CFG.val.minW; D.CFG.val.minW = 100; run('welt', () => { }); D.CFG.val.minW = sv;
         // Zauntor der Bank (Parkplatz): ein Auto davor stellt es zu (Fehler), ein halb verstelltes Tor ist eine Warnung
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
