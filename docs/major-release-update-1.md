@@ -31,7 +31,7 @@ Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräc
 | B5 | Notfallkoffer (Taste C) | dort | klein bis mittel | gebaut |
 | B6 | Balance des Skillbaums messen und anpassen | dort | mittel | offen, nach Tills Rückmeldung |
 | C1 | Wachsamkeit der Läden, Stufe 1 (Zähler serienweit, Wachsames Personal erzwungen, Badge, Netz), dazu Lautlos-Bonus mit Abflachung und Skillpunkte lautlos 1, Überfall 2 | docs/ideen-und-planung.md, Karriere-Serie | mittel | gebaut |
-| C2 | Wachsamkeit, Stufe 2 (Sicherheitsdienst), nur falls Stufe 1 nicht reicht | dort | klein, aber das Layout hängt am Zähler | offen, bei Bedarf |
+| C2 | Wachsamkeit, Stufe 2 (Sicherheitsdienst), nur falls Stufe 1 nicht reicht | dort | klein, aber das Layout hängt am Zähler | ersetzt durch #34 (Zivile Wachen und Zivilfahnder, gebaut am 29. Oktober 2026, Stand in docs/spielsystem.md) |
 | D0 | Messung: Wie viel Platz hat jede Karte in jeder Lage für einen zweiten und einen entfernten Treffpunkt | unten, Ergebnis im Abschnitt D0 Ergebnis | klein | gebaut (Messung), Entscheidung für D1 bis D3 bei Till |
 | D1 | Gemeinsamer Treffpunkt-Mechanismus (Treffpunkt abseits im Hof der Fluchtseite, nach D0 statt eines zweiten Treffpunkts am Gebäude), Bank als erster Kunde | unten, Ergebnis im Abschnitt D1 gebaut | groß | gebaut (ungespielt) |
 | D2 | Treffpunkt abseits für die übrigen Karten (Juwelier, Tankstelle, Museum, Casino über `CFG.meet.scs`), Werte je Szenario | unten, Abschnitt D2 gebaut | mittel | gebaut (ungespielt) |
@@ -40,7 +40,7 @@ Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräc
 ## Reihenfolge
 
 Zwei Spuren, die einander kaum berühren:
-- Spur 1, Spielsystem: gebaut bis auf B6 (nach Tills Rückmeldung zum Baum) und C2 (bei Bedarf).
+- Spur 1, Spielsystem: gebaut bis auf B6 (nach Tills Rückmeldung zum Baum) und C2 (ersetzt durch #34, Zivilfahnder).
 - Spur 2, Karte und Flucht: D0 gemessen und entschieden (Treffpunkt abseits im Hof der Fluchtseite auf einer anderen Zeile, Till, 26. Oktober 2026), D1 gebaut (Mechanismus, Bank), D2 gebaut (alle fünf Gebäude-Karten), D3 gebaut (Ausweichpunkt als Ereignis, 27. Oktober 2026), damit ist Spur 2 fertig, offen bleiben die Werte nach Tills Spieltest.
 
 Entschieden (Till, 25. Oktober 2026): eine Spur nach der anderen, nicht parallel, ein Schritt wird gemergt, bevor der nächste beginnt. Damit entfallen Kollisionen in `index.html` und bei `VER` zwischen den Spuren.
