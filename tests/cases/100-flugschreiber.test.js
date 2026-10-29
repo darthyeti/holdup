@@ -19,13 +19,13 @@ module.exports = [
         return o;
       });
       t.eq(r.fmt, [1, 'holdup', r.meta.build, 'string', 'string'], 'Format 1, Spiel, Build, Datum, Zeitstempel');
-      t.eq(r.env, ['bildschirm', 'fenster', 'kerne', 'netz', 'online', 'speicher', 'sprache', 'ua'], 'Umgebung');
+      t.eq(r.env, ['bildschirm', 'fenster', 'gpu', 'kerne', 'netz', 'online', 'speicher', 'sprache', 'ua'], 'Umgebung (mit dem WebGL-Renderer als gpu, seit dem 29. Oktober 2026)');
       t.ok(r.runden >= 1 && r.runden <= 2, 'ein Kopf je Auftrag (die Debug-Seite startet selbst eine erste Runde, dann baut der Test die zweite): ' + r.runden);
       t.eq([r.meta.sz, r.meta.seed, r.meta.rolle, r.meta.sp], ['bank', 5017, 'solo', 1], 'Kopf: Szenario, Seed, Rolle, ein Spieler');
       t.eq(r.meta.kit, ['helm', 'sk', 'vest', 'w'], 'Kit des Spielers');
       t.eq(r.meta.karte, ['h', 'lage', 'strasse', 'tags', 'transporter', 'w'], 'Karte');
       t.eq(r.meta.serie, ['fahndung', 'konto', 'lautlos', 'punkte', 'runde'], 'Serie');
-      t.eq([r.spalten, r.breit], [24, true], 'Messzeilen haben alle 24 Spalten');
+      t.eq([r.spalten, r.breit], [27, true], 'Messzeilen haben alle 27 Spalten (seit dem 29. Oktober 2026 mit up, dr und drMax: mittlere Zeit von Spielschritt und Zeichnen je Bild und groesste Zeichenzeit in ms)');
       t.ok(r.zeilen >= 3 && r.zeilen <= 5, 'etwa eine Messzeile je Sekunde bei 4,3 s Spiel: ' + r.zeilen);
       t.eq(r.zT, ['t', 'gt', 'scr', 'ph'], 'Spalten beginnen mit Wandzeit und Spielzeit');
       t.ok(r.kinds.includes('phase') && r.kinds.includes('say') && r.kinds.includes('spieler') && r.kinds.includes('runde'), 'Ereignisarten: ' + JSON.stringify(r.kinds));
@@ -110,6 +110,24 @@ module.exports = [
       t.ok(r.zeilenA >= 4, 'der Host hat Messzeilen: ' + r.zeilenA);
       t.eq(r.leave, ['Test-Ende'], 'wer die Partie selbst verlässt (leaveGame), steht als verlassen im eigenen Log');
       t.eq(r.hostSieht, 1, 'der Host sieht danach die getrennte Verbindung');
+    },
+  },
+  {
+    name: 'Flugschreiber: Kosten je Bild (LOG.cost) landen als up, dr und drMax in der Messzeile (Mittel je Sekunde und Maximum, danach zurueckgesetzt), die Umgebung nennt die Grafikkarte',
+    timeout: 60000,
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, L = D.flog(), o = {}; D.sessReset(); D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.setFocus(true); D.tick(1 / 30);
+        const col = (d, k) => d.messzeilen.spalten.indexOf(k), n0 = L.dump().messzeilen.zeilen.length;
+        for (let i = 0; i < 70; i++) { L.cost(2, i === 7 ? 30 : 10); D.tick(1 / 30); }
+        const d = L.dump(), z = d.messzeilen.zeilen.slice(n0); o.zeilen = z.length; o.spalten = ['up', 'dr', 'drMax'].map(k => col(d, k)); o.erste = z[0] && [z[0][col(d, 'up')], z[0][col(d, 'dr')], z[0][col(d, 'drMax')]];
+        o.zweite = z[1] && [z[1][col(d, 'up')], z[1][col(d, 'dr')], z[1][col(d, 'drMax')]]; o.gpu = typeof d.umgebung.gpu === 'string' && d.umgebung.gpu.length > 0; o.gpuT = d.umgebung.gpu;
+        return o;
+      });
+      t.ok(r.zeilen >= 1, 'es gibt Messzeilen: ' + JSON.stringify(r)); t.eq(r.spalten, [24, 25, 26], 'die Spalten up, dr, drMax stehen am Ende');
+      // Die Seite laeuft mit ihrer eigenen Bildschleife (sie meldet ebenfalls Kosten), die Werte sind also nur nach unten und oben begrenzt
+      t.ok(r.erste && r.erste[0] > 0 && r.erste[1] > 5 && r.erste[2] >= 30, 'die erste Sekunde: Mittel von Spielschritt und Zeichnen sind groesser als 0 beziehungsweise 5 ms, das Maximum mindestens die 30 ms des einen Bildes: ' + JSON.stringify(r.erste));
+      t.ok(r.zweite && r.zweite[2] < 1000, 'die naechste Sekunde faengt neu an (das Maximum waechst nicht weiter): ' + JSON.stringify(r.zweite)); t.ok(r.gpu, 'die Umgebung nennt eine Grafikkarte (hier: ' + r.gpuT + ')');
     },
   },
 ];
