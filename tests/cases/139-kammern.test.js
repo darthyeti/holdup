@@ -353,4 +353,51 @@ module.exports = [
       t.eq(res.flatMap(r => r.bad.map(b => r.tag + ': ' + b)), [], 'Abweichungen');
     },
   },
+  {
+    name: 'Kammer in Museum und Casino: kein Beute-Stueck (LAY.goods.rc) schneidet Innenraum oder Ring (Seeds 1 bis 150), keines der parkenden Autos (LAY.decor) liegt im Gebaeude, und die Regel kammer meldet ein Beute-Stueck im Ring',
+    timeout: 120000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, C = D.CFG, keep = C.meet.p; C.meet.p = 0; const bad = [], out = { n: 0 };
+        try {
+          D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
+          for (const sc of ['museum', 'casino']) { D.setScenario(sc);
+            for (let s = 1; s <= 150; s++) { const lay = D.layoutBase(s), K = lay.stash; if (!K) continue; out.n++;
+              const X = K.cells.map(c => c[0]), Y = K.cells.map(c => c[1]), R = [(Math.min(...X) - 1) * 32, (Math.min(...Y) - 1) * 32, (Math.max(...X) + 2) * 32, (Math.max(...Y) + 2) * 32];
+              for (const g of lay.goods || []) if (g.rc && g.rc[0] < R[2] && g.rc[0] + g.rc[2] > R[0] && g.rc[1] < R[3] && g.rc[1] + g.rc[3] > R[1]) bad.push(sc + '#' + s + ' Beute ' + g.k + ' ' + g.rc);
+              const B = lay.bld; for (const d of lay.decor || []) if (d.x < (B.x1 + 1) * 32 && d.x + 64 > B.x0 * 32 && d.y < (B.y1 + 1) * 32 && d.y + 64 > B.y0 * 32) bad.push(sc + '#' + s + ' Auto im Gebaeude ' + d.x + ',' + d.y);
+            } }
+          D.setScenario('museum'); let seed = 0; for (let s = 1; s < 300 && !seed; s++) { const l = D.layoutBase(s); if (l.stash && (l.goods || []).length) seed = s; }
+          const lay = D.layoutBase(seed), K = lay.stash; lay.goods.push({ k: 'art', rc: [K.cells[0][0] * 32 + 4, K.cells[0][1] * 32 + 4, 20, 10] }); out.mut = D.validateMap(lay).err.some(e => e.r === 'kammer' && /Beute/.test(e.m));
+        } finally { C.meet.p = keep; }
+        out.bad = bad.slice(0, 6); out.nbad = bad.length; return out;
+      });
+      t.eq(r.bad, [], 'Abweichungen (' + r.nbad + ' bei ' + r.n + ' Kammern)'); t.ok(r.n >= 100, 'Kammern geprueft: ' + r.n); t.ok(r.mut, 'Regel kammer meldet ein Beute-Stueck im Innenraum');
+    },
+  },
+  {
+    name: 'Kammer in Museum und Casino: der Zugang (Kachel vor der Tuer und ihre begehbaren Nachbarn ausser der Tuer) liegt ausserhalb der echten Sicht aller Streifen (Wachen und Zusatzfiguren: Kegel in Laufrichtung, an Wegpunkten rundum, Manager, Kassierer nach Sueden, Kameras im ganzen Schwenk mal 1,25), Seeds 1 bis 150, Sichtlinie mit der echten Funktion los()',
+    timeout: 240000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, C = D.CFG, keep = C.meet.p; C.meet.p = 0; const bad = [], out = { n: 0, cells: 0 }, T = 32, angd = (a, b) => { const d = Math.abs(a - b) % (2 * Math.PI); return d > Math.PI ? 2 * Math.PI - d : d; };
+        try {
+          D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
+          for (const sc of ['museum', 'casino']) { D.setScenario(sc);
+            for (let s = 1; s <= 150; s++) { const lay0 = D.layoutBase(s); if (!lay0.stash) continue; D.buildLay(lay0); const lay = D.LAY(), K = lay.stash; out.n++;
+              const pts = [], seg = (q, rg, fov) => { if (!q) return; for (let k = 0; k < q.length; k++) { pts.push([q[k][0], q[k][1], null, rg, 0]); if (k) { const a = q[k - 1], b = q[k], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2)), an = Math.atan2(b[1] - a[1], b[0] - a[0]); for (let u = 1; u < n; u++) pts.push([a[0] + (b[0] - a[0]) * u / n, a[1] + (b[1] - a[1]) * u / n, an, rg, fov]); } } };
+              (lay.guards || []).forEach(g => seg(g.route, C.guard.rng, C.guard.fov)); if (lay.mgr) seg(lay.mgr.route, 280, 1.1); (lay.mission.extra || []).forEach(x => seg(x.route, C.guard.rng, C.guard.fov)); (lay.tellers || []).forEach(q => pts.push([q[0], q[1], Math.PI / 2, 250, 1.2]));
+              const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(v => [K.out[0] + v[0], K.out[1] + v[1]]).filter(q => !(q[0] === K.door[0] && q[1] === K.door[1]) && !D.isSol(q[0], q[1])), acc = [K.out].concat(nb);
+              for (const c of acc) { out.cells++; const tx = (c[0] + .5) * T, ty = (c[1] + .5) * T;
+                for (const p of pts) { const sx = (p[0] + .5) * T, sy = (p[1] + .5) * T, dd = Math.hypot(tx - sx, ty - sy); if (dd >= p[3]) continue; if (p[2] != null && angd(p[2], Math.atan2(ty - sy, tx - sx)) > p[4]) continue; if (D.los(sx, sy, tx, ty)) { bad.push(sc + '#' + s + ' ' + c + ' gesehen von ' + p.slice(0, 2).map(v => Math.round(v * 10) / 10)); break; } }
+                for (const m of lay.cams || []) { const dd = Math.hypot(tx - m.x, ty - m.y); if (dd >= m.rng * 1.25) continue; if (angd(m.a0, Math.atan2(ty - m.y, tx - m.x)) > m.amp + m.fov) continue; if (D.los(m.x, m.y, tx, ty)) { bad.push(sc + '#' + s + ' ' + c + ' gesehen von Kamera ' + Math.round(m.x) + ',' + Math.round(m.y)); break; } } }
+            } }
+        } finally { C.meet.p = keep; }
+        out.bad = bad.slice(0, 6); out.nbad = bad.length; return out;
+      });
+      t.eq(r.bad, [], 'Abweichungen (' + r.nbad + ' bei ' + r.n + ' Kammern, ' + r.cells + ' Zugangskacheln)'); t.ok(r.n >= 100, 'Kammern geprueft: ' + r.n);
+    },
+  },
 ];

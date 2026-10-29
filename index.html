@@ -437,6 +437,7 @@ if(OOB(ou[0],ou[1])||isSol(ou[0],ou[1])||!hs(RL,ou[0],ou[1])||cs.some(c=>!hs(RL,
 const pts=[],wps=[],seg=r=>{if(!r)return;for(let k=0;k<r.length;k++){pts.push(r[k]);wps.push(r[k]);if(k){const a=r[k-1],b=r[k],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])*2));for(let t=1;t<n;t++)pts.push([a[0]+(b[0]-a[0])*t/n,a[1]+(b[1]-a[1])*t/n])}}};
 (lay.guards||[]).forEach(g=>seg(g.route));if(lay.mgr)seg(lay.mgr.route);(lay.mission.extra||[]).forEach(x=>seg(x.route));(lay.tellers||[]).forEach(t=>{pts.push(t);wps.push(t)});
 const gp=C.gap,near=wps.find(p=>p[0]>=x0-1-gp&&p[0]<x1+2+gp&&p[1]>=y0-1-gp&&p[1]<y1+2+gp);if(near)return bad('Route oder Kassierer zu nah am Ring: '+near.map(v=>Math.round(v*10)/10));
+if((lay.goods||[]).some(g=>g.rc&&g.rc[0]<(x1+2)*T&&g.rc[0]+g.rc[2]>(x0-1)*T&&g.rc[1]<(y1+2)*T&&g.rc[1]+g.rc[3]>(y0-1)*T))return bad('Beute-Stueck im Ring oder Innenraum');
 const dp=S.deep||[];if(!dp.length||dp.some(c=>!cs.some(q=>q[0]===c[0]&&q[1]===c[1])))return bad('Versteck-Kacheln (deep) fehlen oder liegen nicht im Innenraum');
 for(const c of dp){const cx=(c[0]+.5)*T,cy=(c[1]+.5)*T;let seen=pts.some(p=>Math.hypot((p[0]+.5)*T-cx,(p[1]+.5)*T-cy)<C.sight*T&&los((p[0]+.5)*T,(p[1]+.5)*T,cx,cy));
  if(!seen)seen=(lay.cams||[]).some(m=>Math.hypot(m.x-cx,m.y-cy)<m.rng*1.25&&los(m.x,m.y,cx,cy));if(seen)return bad('Versteck-Kachel '+c+' wird eingesehen')}}
