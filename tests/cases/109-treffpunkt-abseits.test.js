@@ -177,16 +177,18 @@ module.exports = [
             D.startHeist(false, me);
             const ex = L.spots.find(q => q.ex); const opened = ex.cells.every(c => !D.world().isSol(c[0], c[1]));
             if (!opened) bad.push(tag + ' die Fluchttuer oeffnet mit dem Ueberfall nicht');
-            D.callVan(); for (let i = 0; i < 30 * 200 && !D.get().vanArr; i++) { me.hp = 1e9; me.x = L.spawn.x; me.y = L.spawn.y; D.update(1 / 30); }
+            D.callVan(); for (let i = 0; i < 30 * 200 && !D.get().vanArr; i++) { me.hp = 1e9; me.inv = 1e9; me.x = L.spawn.x; me.y = L.spawn.y; D.update(1 / 30); }
             if (!D.get().vanArr) { bad.push(tag + ' der Wagen kam nicht an'); break; }
-            for (let i = 0; i < 30 * 15 && Math.abs(D.get().vanX - ln.van.stop) > 2; i++) { me.hp = 1e9; me.x = L.spawn.x; me.y = L.spawn.y; D.update(1 / 30); }
+            for (let i = 0; i < 30 * 15 && Math.abs(D.get().vanX - ln.van.stop) > 2; i++) { me.hp = 1e9; me.inv = 1e9; me.x = L.spawn.x; me.y = L.spawn.y; D.update(1 / 30); }
             if (Math.abs(D.get().vanX - ln.van.stop) > 2) bad.push(tag + ' der Wagen steht bei ' + D.get().vanX + ' statt ' + ln.van.stop);
             // Das Ziel liegt neben dem Wagen (nicht in ihm) und ist vom Start aus zu Fuss erreichbar, auch wenn der Wagen als fester Block steht
             if (D.world().isSol(ln.exit.goal[0], ln.exit.goal[1])) bad.push(tag + ' das Ziel ' + ln.exit.goal + ' liegt im Festen');
             if (!D.pathTo(L.spawn.x, L.spawn.y, ln.exit.goal[0], ln.exit.goal[1]).length) bad.push(tag + ' kein Weg vom Start zum Ziel ' + ln.exit.goal + ' am stehenden Wagen');
+            // me.inv: Die Polizei schiesst (Streuung ueber Math.random). Jeder Treffer setzt hurt, und solange hurt > 0 ist, faengt das Einsteigen (vanBoard) von vorn an. Mit 3 Einheiten dauert es 1,95 s, bei dichtem Beschuss
+            // reichten die 6 s hier etwa in 1 von 13 Laeufen nicht (Ticket #5). Geprueft wird nur der Ort, deshalb trifft hier nichts (hitPlayer bricht bei inv > 0 ab).
             me.units = 3; me.loot = 1000;
             const outside = step === 'tuer' ? [ex.cells[0][0] - ex.iv[0], ex.cells[0][1] - ex.iv[1]] : ln.exit.goal;
-            for (let i = 0; i < 30 * 6; i++) { me.hp = 1e9; me.x = outside[0] * T + 16; me.y = outside[1] * T + 16; D.update(1 / 30); if (D.get().escaped || D.get().ended) break; }
+            for (let i = 0; i < 30 * 6; i++) { me.hp = 1e9; me.inv = 1e9; me.x = outside[0] * T + 16; me.y = outside[1] * T + 16; D.update(1 / 30); if (D.get().escaped || D.get().ended) break; }
             out[step] = { esc: D.get().escaped, ended: !!D.get().ended, secured: D.get().secured };
           }
           if (out.tuer && (out.tuer.esc > 0 || out.tuer.secured > 0)) bad.push(sc + ': an der Fluchttuer wurde gesichert: ' + JSON.stringify(out.tuer));
