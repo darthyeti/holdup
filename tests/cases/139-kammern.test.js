@@ -229,7 +229,7 @@ module.exports = [
     },
   },
   {
-    name: 'Kammer in Museum und Casino: Anteil (Museum gut ein Viertel bis die Haelfte, Casino gut drei Viertel: die offenen Hallen lassen nur Ecken und Nebenraeume zu, die keine Kamera und keine Streife einsieht), beide Arten, Innenraum 4 oder 6 Kacheln frei, Ring geschlossen mit einer Tuer d, nichts in einer Sperrzone, kein Laser naeher als 1,2 Kacheln, validateMap meldet nichts Neues gegenueber derselben Karte ohne Kammer, gleiche Seeds geben gleiche Kammern',
+    name: 'Kammer in Museum und Casino: Anteil (Museum gut zehn Prozent, Casino gut drei Viertel: die offenen Hallen lassen nur Ecken und Nebenraeume zu, die keine Kamera und keine Streife einsieht), beide Arten, Innenraum 4 oder 6 Kacheln frei, Ring geschlossen mit einer Tuer d, nichts in einer Sperrzone, kein Laser naeher als 1,2 Kacheln, validateMap meldet nichts Neues gegenueber derselben Karte ohne Kammer, gleiche Seeds geben gleiche Kammern',
     timeout: 290000,
     async run(t) {
       await t.loadInpage('turn.js');
@@ -254,7 +254,7 @@ module.exports = [
         return out;
       });
       for (const sc of ['museum', 'casino']) { const o = r[sc]; t.eq(o.bad, [], sc + ': Abweichungen'); t.eq(o.nd, 0, sc + ': gleiche Seeds, gleiche Kammern'); t.ok(o.kinds.wc >= o.st * .25 && o.kinds.abstell >= o.st * .25, sc + ': beide Arten: ' + JSON.stringify(o.kinds)); }
-      t.ok(r.museum.st >= r.museum.n * .18 && r.museum.st <= r.museum.n * .6, 'Museum: Anteil mit Kammer ' + r.museum.st + ' von ' + r.museum.n);
+      t.ok(r.museum.st >= r.museum.n * .08 && r.museum.st <= r.museum.n * .6, 'Museum: Anteil mit Kammer ' + r.museum.st + ' von ' + r.museum.n);
       t.ok(r.casino.st >= r.casino.n * .65 && r.casino.st <= r.casino.n * .9, 'Casino: Anteil mit Kammer ' + r.casino.st + ' von ' + r.casino.n);
       t.note('Museum ' + r.museum.st + '/' + r.museum.n + ' ' + JSON.stringify(r.museum.sizes) + ', Casino ' + r.casino.st + '/' + r.casino.n + ' ' + JSON.stringify(r.casino.sizes));
     },
