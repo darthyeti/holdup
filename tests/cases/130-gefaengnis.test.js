@@ -190,4 +190,64 @@ module.exports = [
       t.ok(!c.e || c.e[1] !== 'Ausbruch gescheitert', 'Tor offen: der Gefangene kann noch raus');
     },
   },
+  {
+    name: 'Gefaengnis: der Gefangene kommt zu Fuss (echte Kollision) aus der Zelle durch den Gang und die Servicetuer zum Schalter im Kontrollraum, ohne dass jemand etwas tut',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, T = 32; D.sessReset(); D.setScenario('prison'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset();
+        const g = D.get(), me = g.me; g.npcs.splice(0); const sw = g.its.find(i => i.t === 'psw'), k = D.keys;
+        const way = [[1.5, 2.5], [1.5, 3.5], [1.5, 4.5], [2.5, 5.5], [2.5, 6.5], [2.5, 7.5], [3.5, 9.5], [9.5, 10], [sw.x / T, sw.y / T]]; let n = 0;
+        for (const w of way) { for (let i = 0; i < 400; i++) { const dx = w[0] * T - me.x, dy = w[1] * T - me.y; if (Math.hypot(dx, dy) < 6) break; k.d = dx > 4; k.a = dx < -4; k.s = dy > 4; k.w = dy < -4; D.update(1 / 30); n++; } }
+        for (const q of ['a', 'd', 'w', 's']) k[q] = false;
+        return { d: Math.hypot(me.x - sw.x, me.y - sw.y), r: sw.r, ok: sw.ok(me), n };
+      });
+      t.ok(r.d < r.r && r.ok, 'der Gefangene steht am Schalter (Abstand ' + Math.round(r.d) + ' von ' + r.r + ', Schritte ' + r.n + ')');
+    },
+  },
+  {
+    name: 'Gefaengnis: Lieferung. Die Hintertuer des Kontrollraums ist zu, geht zur Lieferzeit (CFG.prison.delivery, aus dem Seed) auf Host und Client auf, nach deliveryOpen s wieder zu, im Alarm bleibt sie offen; draussen kommt man dann leise zum Schalter',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, B = H.B, o = {}, R = A.LAY().prison, C = A.CFG.prison, at = R.dl.at, d = [9, 11];
+        o.at = at; o.range = [at >= C.delivery[0], at <= C.delivery[1]];
+        const st = () => [H.cl(A, d[0], d[1]), H.cl(B, d[0], d[1])].join('');
+        const rt = () => A.get().rT, toTime = tt => { for (let i = 0; rt() < tt && i < 400; i++) H.both(0.5); }; o.rt0 = rt();
+        o.before = st(); toTime(at + 1); H.both(1); o.during = st(); toTime(at + C.deliveryOpen + 1); H.both(1); o.after = st();
+        // Weg von draussen zum Schalter bei offener Tuer (Breitensuche)
+        const bfs = (from, to) => { const seen = new Set([from.join()]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const e of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + e[0], c[1] + e[1]]; if (A.isSol(n[0], n[1]) || seen.has(n.join())) continue; seen.add(n.join()); q.push(n); } } return false; };
+        o.closedWay = bfs([28, 2], [10, 10]); A.world().setc(9, 11, 'l'); o.openWay = bfs([28, 2], [10, 10]); A.world().setc(9, 11, 'L');
+        A.startHeist(true, A.get().players[0]); H.both(1.5); o.alarm = st();
+        return o; })()`);
+      t.ok(r.range[0] && r.range[1], 'Lieferzeit liegt im Fenster: ' + r.at);
+      t.eq(r.before, 'LL', 'vor der Lieferung zu (Host, Client)');
+      t.ok(r.rt0 >= 0, 'rT lesbar: ' + r.rt0);
+      t.eq(r.during, 'll', 'zur Lieferzeit offen auf Host und Client');
+      t.eq(r.after, 'LL', 'danach wieder zu');
+      t.eq([r.closedWay, r.openWay], [false, true], 'draussen zum Schalter nur bei offener Hintertuer');
+      t.eq(r.alarm, 'll', 'im Alarm offen');
+    },
+  },
+  {
+    name: 'Gefaengnis: der Schalter oeffnet auch die Zellen der Mithaeftlinge, sie laufen los (auf Host und Client sichtbar), sind Zivilisten (Treffer wie bei Zivilisten), die Wachen schauen hin',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, B = H.B, o = {}, C = A.CFG.prison, inm = D => D.get().npcs.filter(n => n.inm);
+        o.n = [inm(A).length, inm(B).length, C.inm]; o.kind = inm(A).map(n => n.k).join(); const p0 = inm(A).map(n => [Math.round(n.x), Math.round(n.y)]);
+        o.cells = [4, 7, 10].map(x => H.cl(A, x, 3)).join(''); H.items(A, 'psw')[0].act(A.get().players[1]); H.both(5);
+        o.cellsAfter = [4, 7, 10].map(x => H.cl(A, x, 3)).join(''); o.cellsB = [4, 7, 10].map(x => H.cl(B, x, 3)).join('');
+        const moved = (D) => inm(D).filter((n, i) => Math.hypot(n.x - p0[i][0], n.y - p0[i][1]) > 40).length; o.moved = [moved(A), moved(B)];
+        o.look = A.get().npcs.filter(n => n.k === 'grd' && n.look).length;
+        return o; })()`);
+      t.eq(r.n, [3, 3, 3], 'drei Mithaeftlinge auf Host und Client (CFG.prison.inm)');
+      t.eq(r.kind, 'civ,civ,civ', 'es sind Zivilisten (Treffer-Regeln wie bei Zivilisten)');
+      t.eq([r.cells, r.cellsAfter, r.cellsB], ['LLL', 'lll', 'lll'], 'ihre Zellentueren sind vorher zu, nach dem Schalter auf beiden offen');
+      t.eq(r.moved, [3, 3], 'alle drei laufen los, auch auf dem Client');
+      t.ok(r.look >= 1, 'mindestens eine Wache schaut hin');
+    },
+  },
 ];

@@ -763,7 +763,7 @@ if(sp0)lay.spots=sp0;if(lk0)lay.lockCells=lk0;
 return lay}
 /* ---- Szenario Gefaengnis (Eilauftrag Issue 45): handgebaute Anlage, kein Generator. Mauer x0..25, y0..11 mit dem Aussentor (Tresortuer V) in der Ostmauer bei (25,5) und (25,6). Westen: Zellentrakt (vier Zellen y1..2, Gang y4..5, die Zellentuer Z zur Hofseite bei (12,4) und (12,5) ist verriegelt), darunter der Kontrollraum (y7..10) mit der Servicetuer bei (2,6) vom Gang aus. Osten: Hof x13..24.
    Der Gefangene startet in Zelle 1, die anderen draussen vor dem Tor. LAY.prison: cell (Startpunkt Gefangener, Pixel), cells (Zellen), doors (Kacheln, die der Schalter oeffnet), psw (Schalter im Kontrollraum, Pixel), gate (Kachel des Aussentors). ---- */
-const PR_ROWS=['##########################','#..#..#..#..#............#','#..#..#..#..#............#','#d##d##d##d##............#','#...........L............#','#...........L............#','##d##########............#','#...........#............#','#..mm.ee....#............#','#...........#............#','#...........#............#','##########################'];
+const PR_ROWS=['##########################','#..#..#..#..#............#','#..#..#..#..#............#','#d##L##L##L##............#','#...........L............#','#...........L............#','##d##########............#','#...........#............#','#..mm.ee....#............#','#...........#............#','#...........#............#','#########L################'];
 function prisonLayout(sd){const sn=typeof sd==='number'?sd:7,GX=25,er=5,bot=11;frameWorld(44,30,-6,-6,13);setc(37,er,'o');setc(37,er+1,'o');
 const rows=PR_ROWS.slice();rows[5]=rows[5].slice(0,25)+'V';rows[6]=rows[6].slice(0,25)+'V';asc(rows,0,0);
 [[15,3],[16,3],[22,9]].forEach(a=>setc(a[0],a[1],'b'));[[22,10],[23,10],[23,9]].forEach(a=>setc(a[0],a[1],'k'));[[14,10]].forEach(a=>setc(a[0],a[1],'q'));
@@ -773,7 +773,7 @@ const rot=Math.floor(mr()*4),gd=(p,route)=>({p:route[rot%route.length],route:rot
 const g1={p:[8,4],route:[[10,4],[10,5],[3,5],[3,4]]},guards=[g1,gd(null,[[23,2],[23,8],[14,8],[14,2]]),gd(null,[[22,3],[22,8],[18,8],[18,3]])];
 const camc=[{x:13.5*T,y:1.4*T,a0:.7,amp:.55,sp:.55,rng:330,fov:.55},{x:24.5*T,y:1.4*T,a0:2.35,amp:.55,sp:.5,rng:330,fov:.55},{x:24.5*T,y:10.4*T,a0:3.9,amp:.5,sp:.5,rng:330,fov:.55}];
 const cells=[[1,1],[4,1],[7,1],[10,1]];
-return{seed:sn,decor:decorOf([]),prison:{cell:[2*T,2*T],cells,doors:[[12,4],[12,5]],psw:{x:10.5*T,y:10.4*T},gate:[GX,er]},hall:'Gefängnis',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
+return{seed:sn,decor:decorOf([]),prison:{cell:[2*T,2*T],cells,doors:[[12,4],[12,5],[4,3],[7,3],[10,3]],dl:{cells:[[9,11]],at:P.delivery[0]+Math.floor(mr()*(P.delivery[1]-P.delivery[0]+1))},inm:cells.slice(1).map(c=>[c[0],c[1]+1]),psw:{x:10.5*T,y:10.4*T},gate:[GX,er]},hall:'Gefängnis',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
 mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot)return x>=13?'s':'m';if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>GX)return'a';return'y'},
 paintFloor(s){s.strokeStyle='rgba(255,255,255,.18)';s.lineWidth=2;s.strokeRect(14*T,2*T,10*T,8*T);s.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<5;i++)s.fillRect((GX+2.5)*T,2*T+i*T*1.6,3*T,2);
 for(const c of cells){s.fillStyle='rgba(60,70,90,.55)';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,T*1.6);s.fillStyle='#8b8f98';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,3)}},
