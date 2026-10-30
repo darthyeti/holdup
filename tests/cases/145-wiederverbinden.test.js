@@ -45,15 +45,15 @@ module.exports = [
     async run(t) {
       await SETUP(t);
       const r = await t.page.evaluate(`(() => { const o = {}, G = CT.mkLobby(2, 0), [A, C] = G.players, net = G.net, ev = ${NETEV}, code = A.NET.code; A.SESSION.wallet = 777;
-        net.signalDown(code); G.run(.1); o.runter = [A.NET.disc, A.NET.role]; const X = mkInst(net, 'x'); G.insts.push(X); X.joinRoom(code); G.run(1); o.nichtGefunden = [X.state().scr, X.NET.fail, X.NET.msg];
+        net.signalDown(code); G.run(.1); o.runter = [A.NET.disc, A.NET.role]; const X = mkInst(net, 'x'); G.insts.push(X); X.joinRoom(code); G.run(1); o.nichtGefunden = [X.state().scr, X.NET.gone === code];
         G.run(3); o.geheilt = [A.NET.disc, A.NET.recN > 0, A.SESSION.wallet, A.NET.conns.length];
         const Y = mkInst(net, 'y'); G.insts.push(Y); Y.joinRoom(code); G.run(2); o.beitritt = [Y.state().scr, Y.NET.myId > 0, A.NET.conns.length];
         A.SESSION.wallet = 555; net.signalDown(code, { hold: true }); G.run(9); o.hold = [A.NET.disc, A.NET.recN >= 4, net.pending >= 0];
-        const Z = mkInst(net, 'z'); G.insts.push(Z); Z.joinRoom(code); G.run(1); o.holdBeitritt = Z.NET.fail; net.signalUp(code); G.run(.3); o.hoch = [A.NET.disc, A.SESSION.wallet];
+        const Z = mkInst(net, 'z'); G.insts.push(Z); Z.joinRoom(code); G.run(1); o.holdBeitritt = Z.NET.gone === code; net.signalUp(code); G.run(.3); o.hoch = [A.NET.disc, A.SESSION.wallet];
         const W = mkInst(net, 'w'); G.insts.push(W); W.joinRoom(code); G.run(2); o.danach = [W.NET.myId > 0, A.NET.conns.length];
         o.ev = ev(A).filter(s => /vermittler/.test(s)); o.alteSpieler = [C.state().scr, C.NET.myId];
         return o; })()`);
-      t.eq(r.runter, [1, 'host'], 'der Host merkt, dass die Anmeldung beim Vermittler weg ist'); t.eq(r.nichtGefunden[0], 'lobby', 'ein neuer Beitritt kommt nicht zum Host'); t.ok(r.nichtGefunden[1] && /nicht gefunden/.test(r.nichtGefunden[2]), 'Meldung Raum nicht gefunden: ' + r.nichtGefunden[2]);
+      t.eq(r.runter, [1, 'host'], 'der Host merkt, dass die Anmeldung beim Vermittler weg ist'); t.eq(r.nichtGefunden[0], 'lobby', 'ein neuer Beitritt kommt nicht zum Host'); t.ok(r.nichtGefunden[1], 'der Beitritt landet im Hinweis Raum fehlt (NET.gone)');
       t.eq(r.geheilt, [0, true, 777, 1], 'nach reconnect ist der Raum wieder da, die Serie (Konto 777) und die Spieler bleiben'); t.eq(r.beitritt, ['lobby', true, 2], 'ein neuer Beitritt klappt wieder');
       t.eq(r.hold, [1, true, true], 'mit hold bleibt der Raum weg, der Host versucht es weiter (mindestens vier Versuche in 9 s)'); t.ok(r.holdBeitritt, 'solange kommt keiner hinein'); t.eq(r.hoch, [0, 555], 'signalUp: wieder da, ohne sessReset (Konto bleibt)');
       t.eq(r.danach, [true, 3], 'danach tritt wieder jemand bei'); t.ok(r.ev.length >= 2 && r.ev.some(s => /weg/.test(s)) && r.ev.some(s => /zur/.test(s)), 'Flugschreiber: vermittler weg und zurueck: ' + r.ev.join(' | '));
