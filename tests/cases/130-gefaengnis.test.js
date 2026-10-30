@@ -160,4 +160,34 @@ module.exports = [
       t.eq(l.b && l.b[0], false, 'Client: Niederlage');
     },
   },
+  {
+    name: 'Gefaengnis: die gewaehlte Kachel gilt nur fuer einen Auftrag (danach Bank), solo wird daraus die Bank',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const o = {}, G = CT.mkGame('prison', 5, 2, 60, 20), A = G.A; o.first = [A.sc(), A.getPz()];
+        A.get().players.forEach(p => { p.out = true; }); A.finish(true, 'Ausbruch', 'x'); G.run(1); A.startNext(); G.run(2.5); o.next = [A.sc(), G.clients[0].sc(), A.getPz()];
+        const D = __dbg; D.sessReset(); D.setScenario('prison'); D.newSeed(); o.solo = D.sc();
+        return o; })()`);
+      t.eq(r.first, ['prison', 1], 'die Kachel startet das Gefaengnis');
+      t.eq(r.next, ['bank', 'bank', -1], 'nach dem gewonnenen Ausbruch ist der naechste Auftrag kein Gefaengnis');
+      t.eq(r.solo, 'bank', 'solo wird aus scenario prison die Bank');
+    },
+  },
+  {
+    name: 'Gefaengnis: verlaesst der Gefangene den Raum oder sind alle draussen tot (Tor zu), endet der Auftrag als gescheitert; ist das Tor offen, laeuft er weiter',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const run = body => t.page.evaluate(`(() => { const H = ${HELP}, A = H.A, o = {}, p0 = A.get().players[0], p1 = A.get().players[1]; ${body}
+        for (let i = 0; i < 120; i++) step(H.G.insts, H.G.net, 1 / 60); const e = A.get().ended; o.e = e && [e.win, e.title]; return o; })()`);
+      const a = await run('p1.gone = true;');
+      t.eq(a.e, [false, 'Ausbruch gescheitert'], 'Gefangener weg: gescheitert');
+      const b = await run('p0.dead = true; p0.hp = 0;');
+      t.eq(b.e, [false, 'Ausbruch gescheitert'], 'draussen alle tot, Tor zu: gescheitert');
+      const c = await run('A.get().its.find(i => i.t === "vault").act(p0); p0.dead = true; p0.hp = 0;');
+      t.ok(!c.e || c.e[1] !== 'Ausbruch gescheitert', 'Tor offen: der Gefangene kann noch raus');
+    },
+  },
 ];

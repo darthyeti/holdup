@@ -1447,6 +1447,7 @@ for(const o of act){const rt=revTarget(o);if(rt){if(o.inp.e){rvd.add(rt);rt.rv+=
 for(const q of players)if(q.dn>0&&!rvd.has(q))q.rv=0;
 for(const e of en)if(e.sur&&!cpd.has(e))e.cp=0;
 for(const it of itsAll())if(!worked.has(it)&&!it.keep)it.pr=0;
+if(LAY.prison&&!ended&&!escaped&&players.length>1){const z=players[PZ];if(z&&!z.out&&(z.gone||(!vaultOpen&&!players.some(o=>o!==z&&live(o))))){finish(false,'Ausbruch gescheitert',z.gone?'Der Gefangene hat das Spiel verlassen.':'Draußen ist niemand mehr, der das Tor aufmacht.');return}}
 if(phase===1&&!LAY.truck){for(const o of act)if((o.loot>0||escaped>0)&&(o.y>(LAY.bld.y1+.7)*T||o.x>(LAY.bld.x1+.7)*T||o.x<(LAY.bld.x0-.7)*T||o.y<(LAY.bld.y0-.7)*T))secure(o);if(ended)return;act=actv()}
 else if(phase===1&&LAY.mission.panne){for(const o of act)if(o.loot>0&&LANE.exit.has(o.x,o.y))secure(o);if(ended)return;act=actv()}
 if(phase===2){tH+=dt;
