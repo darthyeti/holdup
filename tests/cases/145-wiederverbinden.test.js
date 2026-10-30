@@ -130,7 +130,7 @@ module.exports = [
         A.duelStart(); G.run(9); const Zb = R2.add({ net: G.net, A: B, insts: G.insts, run: G.run }, 'Zb', true); G.run(1);
         A.CFG.duel.len = 1; A.NET.duel.len = 1; B.NET.duel.len = 1; A.setSecured(30000); A.finish(true, 'Sieg'); B.setSecured(20000); B.finish(true, 'Sieg'); G.run(2); for (const d of [A, B, P1, M1, M2, Zb, ...sp]) { const e = d.get().ended; if (e) e.pg = 9; } G.run(.2);
         o.vorher = [st(B), B.NET.role, M1.NET.code === B.NET.code, Zb.NET.code === B.NET.code, A.NET.specs.length, B.NET.specs.length >= 1]; A.SESSION.wallet = 500;
-        MT.click(A, 'endRet'); G.run(.05); o.sperre = [A.ho() && A.ho().ph, A.setMode(''), A.duelStart(), st(A), A.NET.duel, A.NET.conns.length];
+        MT.click(A, 'endRet'); o.sofort = A.SESSION.wallet; G.run(.05); o.sperre = [A.ho() && A.ho().ph, A.setMode(''), A.duelStart(), st(A), A.NET.duel, A.NET.conns.length];
         G.run(10);
         const all = [A, P1, B, M1, M2, Zb, ...sp];
         o.alle = all.map(d => [d.NET.code === A.NET.code, st(d)]); o.rollen = [P1.NET.team, B.NET.team, M1.NET.team, M2.NET.team, Zb.NET.spec, sp[0].NET.spec, B.NET.role, M1.NET.role];
@@ -143,7 +143,7 @@ module.exports = [
       t.eq(r.alle.map(x => x[0]), r.alle.map(() => true), 'alle sind im Raum von A: ' + JSON.stringify(r.alle)); t.eq(r.alle.map(x => x[1]), r.alle.map(() => 'lobby'), 'alle in der Lobby');
       t.eq(r.rollen, [1, 2, 2, 2, true, true, 'client', 'client'], 'Rollen: Team 1 und Team 2 wie vorher, B ist wieder Client, die Zuschauer sind Zuschauer'); t.eq(r.zahlen, [2, 3, 3], 'A hat zwei Spieler, drei in Team 2 und drei Zuschauer (zwei eigene, einen von B)');
       t.eq(r.reihe, r.erwartet, 'Reihenfolge in Team 2 bleibt, B ist wieder Host 2'); t.eq(r.sp2, [null, null], 'die Zweitverbindungen der Zuschauer sind weg'); t.eq(r.duel, [null, null, 'duel', null], 'kein Duell mehr, Modus Wettkampf, Sperre geloest');
-      t.eq(r.serie, [0, 0], 'Serie zurueck wie bei der Revanche'); t.ok(r.msgA === '' || !/Zurück/.test(r.msgA), 'Meldung abgeraeumt: ' + r.msgA); t.eq(r.alteRaeume, [null, null], 'B hat nichts mehr offen');
+      t.eq(r.sofort, 0, 'A setzt die Serie sofort zurueck'); t.eq(r.serie, [0, 0], 'Serie zurueck wie bei der Revanche'); t.ok(r.msgA === '' || !/Zurück/.test(r.msgA), 'Meldung abgeraeumt: ' + r.msgA); t.eq(r.alteRaeume, [null, null], 'B hat nichts mehr offen');
       t.eq(r.neu, [null, true, 'play', 'play', 'host', 1], 'von dort startet ein neuer Wettkampf: Uebergabe, Leitung steht, beide spielen');
     },
   },
