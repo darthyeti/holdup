@@ -250,4 +250,28 @@ module.exports = [
       t.ok(r.look >= 1, 'mindestens eine Wache schaut hin');
     },
   },
+  {
+    name: 'Gefaengnis: wer waehrend der Lieferung hineingeht, kommt wieder hinaus (Hintertuer von innen mit E, das Tor auch von innen, nur nicht fuer den Gefangenen), auch wenn die Tuer sich schliesst',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, B = H.B, o = {}, R = A.LAY().prison, C = A.CFG.prison, p0 = A.get().players[0], p1 = A.get().players[1];
+        const rt = () => A.get().rT; for (let i = 0; rt() < R.dl.at + 1 && i < 400; i++) H.both(0.5);
+        p0.x = 9.5 * 32; p0.y = 10.5 * 32; o.open = H.cl(A, 9, 11);
+        for (let i = 0; rt() < R.dl.at + C.deliveryOpen + 2 && i < 400; i++) { p0.x = 9.5 * 32; p0.y = 9.5 * 32; H.both(0.5); }
+        o.closed = [H.cl(A, 9, 11), H.cl(B, 9, 11)].join('');
+        const dlx = H.items(A, 'dlx')[0]; p0.x = 9.5 * 32; p0.y = 10.5 * 32; o.ok = [dlx.ok(p0), dlx.ok(A.get().players[1]) ];
+        dlx.act(p0); H.both(1); o.reopen = [H.cl(A, 9, 11), H.cl(B, 9, 11)].join('');
+        const bfs = (from, to) => { const seen = new Set([from.join()]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const e of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + e[0], c[1] + e[1]]; if (A.isSol(n[0], n[1]) || seen.has(n.join())) continue; seen.add(n.join()); q.push(n); } } return false; };
+        o.way = bfs([5, 9], [9, 12]);
+        const gate = H.items(A, 'vault')[0]; p0.x = 20 * 32; p0.y = 5.5 * 32; p1.x = 20 * 32; p1.y = 5.5 * 32; o.gate = [gate.ok(p0), gate.ok(p1)];
+        return o; })()`);
+      t.eq(r.closed, 'LL', 'die Tuer schliesst sich auch mit einem Spieler im Kontrollraum');
+      t.eq(r.ok, [true, true], 'die Hintertuer laesst sich von innen mit E oeffnen');
+      t.eq(r.reopen, 'll', 'und ist dann auf Host und Client offen');
+      t.eq(r.way, true, 'vom Kontrollraum zum Wagen draussen gibt es dann einen Weg');
+      t.eq(r.gate, [true, false], 'das Tor geht von innen fuer Mitspieler, nicht fuer den Gefangenen');
+    },
+  },
 ];
