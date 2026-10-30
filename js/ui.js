@@ -245,6 +245,7 @@ const duT=!du?'':more?'Weiter: Shop':host?(du.fin?(du.fin==='x'?'Zurück in die 
 duAct=!du?'':(more||(host&&du.fin))?'endNext':'';
 const t=[{id:'endNext',x:730,y:468,w:190,h:58,kind:'p',nofocus:true,act:!last?'endNext':NET.spec?'':du?duAct:(NET.role==='client'&&!win)?'':'endNext',chip:'Enter',title:!last?lab(kind(pg+1)):NET.spec?'Warte auf das Team ...':du?duT:win?'Weiter: Shop':NET.role==='client'?'Der Host startet ...':'Neue Serie',tf:'bold 13px monospace'},
 {id:'endBack',x:40,y:468,w:190,h:58,nofocus:true,act:'endBack',chip:'Esc',title:NET.role==='solo'?'Zum Titel':NET.role==='host'?'Raum schließen':NET.spec?'Zuschauen beenden':'Raum verlassen',tf:'bold 13px monospace'}];
+if(last&&host&&du&&du.lead&&du.un&&du.link&&du.fin&&du.fin!=='x')t.push({id:'endRet',x:730,y:402,w:190,h:58,nofocus:true,act:'endRet',title:'Zurück in den Raum',tf:'bold 13px monospace'});
 if(pg>0)t.push({id:'endPrev',x:250,y:468,w:178,h:58,nofocus:true,act:'endPrev',chip:'←',title:lab(kind(pg-1)),tf:'bold 13px monospace'});
 if(kickList().length)t.push({id:'kick',x:40,y:420,w:190,h:40,nofocus:true,act:'ui:kick',title:kickTitle(),tf:'bold 13px monospace'});
 return{t,back:'endBack',deco:pgN>1||ended.fh?()=>{if(ended.fh&&pg===0)pageFh(ended.fh);if(pgN>1)pageDots(pgN,pg);if(kind(pg)==='aw')pageAw(aw);else if(kind(pg)==='du')pageDuel(du)}:null}}
