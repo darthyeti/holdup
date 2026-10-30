@@ -73,9 +73,47 @@ Die Bauregeln unten gelten weiter und stehen als Regeln im Generator (Wachroute 
 
 **Offen und Ideen.** Tankstelle: Kasse für den Bot nicht ansteuerbar (feste Kachel), Zapfsäulen-Brand als Fläche statt nur Knall. Museum: Oberlicht mit Glasschneider als dritter Eingang, ein weiteres Lasertor oder bewegte Laser, Hund oder Taschenlampen-Alarm der Wache. Casino: Geiseln (Gäste als Schutzschild), zweiter Tresor als zweite Etappe für das Finale, Hausdienst, der den Alarm verzögert, eigene Figuren für Sicherheitsleute (Anzüge) und Croupiers, Zweitwährung: Chips vom Cage direkt in den Fluchtwagen. Alle drei: Bot für Phase 1 (Schleichen), Spiegelung wie bei der Bank, weitere Grundrisse und Varianten der Hülle (bisher wechseln nur die Einbauten), Verzahnung mit Auftragsbörse und Rang (docs/ideen-und-planung.md).
 
-## Museum v2 (Plan v1, 30. Oktober 2026, Ticket #41, nur Plan und Messung, nichts gebaut)
+## Museum v2 (Plan v1, 30. Oktober 2026, Ticket #41, gebaut am 30. Oktober 2026, ungespielt)
 
-Tills Wunsch (Board, 30. Oktober 2026): Das Museum ist immer nachts und geschlossen, der lautlose Bruch ist der Hauptweg, Wachen und Kameras schlagen sofort Alarm, wenn sie jemanden im Gebäude sehen, das Gebäude ist groß und die Karten unterscheiden sich deutlich, der Laserbereich braucht keine Wachen, Wachen laufen nicht zu eng beieinander und Kameras stehen nicht zu dicht. Dieser Abschnitt gleicht das mit dem heutigen Museum ab (Fundstellen im Code), hält die Messung fest und schlägt Schritte vor. Alle Zahlen sind nur mit Skripten gemessen, nicht mit Menschen.
+### Stand: gebaut (Ticket #41)
+
+Entscheidungen von Till (Issue #41): (1) Alarm bleibt C, wie heute (2 bis 3 s Sicht, 4 s Gnadenfrist, `CFG.museum.seen` 56 und `CFG.watch.grace` unverändert, kein Warnzeichen). (2) Kameras zählen im ganzen Gebäude, 3 bis 5 Stück, Mindestabstand 8 Kacheln, nie über Haupteingang oder Hintertür. (3) Mäßig größer, 500 bis 650 begehbare Kacheln, neue Halle, kein vierter Flügel. (4) Wachen 1 bis 3 wie heute, getrennte Routen, mindestens 10 Kacheln Abstand, keine Wache im Laserbereich. (5) Kegel wie der Juwelier (260 px, halber Winkel 0,8).
+
+Gebaut (Plan M1 bis M5, alle Werte in `CFG.museum` und `CFG.museumGen`):
+- **Wachen** (`CFG.museum.guard`: spd 28, fov 0,8, rng 260, gap 10, near 3, hold 5, free 8; `genMuseum`, `gapHold` in `index.html`). Die Routen kommen nicht mehr aus der Halle: Wache 0 geht ein Rechteck im Westband der Westgalerie (Spalten 2 bis `xb`), Wache 1 pendelt im Atrium (Spalte `xa`, 12+dx oder 11+dx, wo frei), und `xb = xa - gap`, so liegen die beiden Routen von der Geometrie her immer mindestens 10 Kacheln auseinander. Der Startpunkt ist ein zufälliger Punkt der Strecke (Kante und Anteil aus dem Seed, damit die Ausgangslage der Wachen variiert). Die dritte Wache (Lage Sicherheitsdienst) geht den Westband in derselben Richtung eine halbe Runde versetzt, der Wachwechsel kommt als zweite Atrium-Wache (nur eine Streife) oder als weitere im Westband. Zur Sicherheit hält eine Streife an, wenn ihr nächster Schritt sie näher als `gap` an die andere der ersten beiden Streifen (oder näher als `near` an jede weitere) brächte; nach `hold` s Stillstand dreht sie um, steht sie wieder, gilt der große Abstand für `free` s nicht (`near` bleibt). Der Wachwechsel beginnt erst, wenn keine Streife näher als `near` an seinem Startpunkt steht.
+- **Kameras** (`CFG.museum.cam`: all 1, seen 26, n [3,5], minD 8, door 2,5, area 0,35, tries 12; `pickCamsFar`). Acht Kandidaten (vier Ecken der Westgalerie, Südmitte, Atrium Nordost, zwei in der Ostgalerie), keine in Reichweite 2,5 einer Außentür, die Lage Sicherheitsdienst nimmt fünf. Kameras zählen im ganzen Gebäude mit der Rate 26 je Sekunde (die Rate von Sperrzone und Stehlen), draußen und nach dem Hauptschalter nicht.
+- **Regeln** (`museumRules` in `validateMap`, Fehler `kamera-zahl`, `kamera-abstand`, `kamera-tuer`, `kamera-ost` (höchstens zwei in der Ostgalerie), `kamera-flaeche` (höchstens 35 % der begehbaren Kacheln im Kamerablick beim Schleichen), `kamera-weg` (vom Haupteingang führt ein Weg zu einem Gemälde, den keine Kamera beim Schleichen sieht), `wache-abstand` (Startpunkte), `wache-laser` (kein Routenpunkt ab Spalte 17+dx, und kein Kegel einer Wegstelle, in beide Richtungen, sieht einen Punkt ab Spalte 18+dx)). `museumLayout` würfelt je Hülle bis zu `cam.tries` Kamerasätze (`P.ct`), bevor es die Hülle verwirft; scheitert eine andere Regel als `kamera-*`, wird die Hülle gleich verworfen. Mittlere Kosten einer Museumskarte rund 36 ms (Juwelier 4,5 ms), im Test `27-kartenvertrag` dauert das Suchen von Grundrissen über 3000 Seeds entsprechend länger.
+- **Größe** (`CFG.museumGen`: ww [10,15], ew [10,15], dy [1,5], classic 0,05): Median 514 begehbare Kacheln (vorher 359), 52 Gebäudegrößen (vorher 16), 236 verschiedene Raster in 240 Seeds. Neue Halle **Kolonnade** (Säulenreihen an den Längswänden, Gemälde auch an der Ostwand), fünf Hallen. Ab `dy` 2 rücken Straße, Spawn, Parkplätze und Bodenarten um `dy - 1` Reihen nach Süden (Welt 34 + `dy - 1` Reihen hoch). Die Kabinette sind jetzt ein Kamm (beide Trennwände lassen die westlichen drei Spalten frei), damit der Westband begehbar bleibt. Die Klassik-Hülle bekommt dieselbe Kamerasuche, ihre Pflanzen an der Westwand entfallen (die Strecke der Wache).
+- **Treffpunkt abseits**: Im größeren Haus liegt der Weg vom Tresor zum Wagen bis 30 Schritte, `CFG.meet.per.museum.pveMax` 32 und `CFG.val.pathVE` [8,32] (vorher 28), sonst fanden bei `ew` 15 nur 86 von 100 Karten einen Platz.
+- **Kammern (M5)**: ohne eigene Änderung steigt der Anteil der Karten mit Kammer von 11 % auf rund 81 % (122 von 150 Karten, Test 139), weil die Kameras seltener und die Wachen getrennt sind und die Fläche größer ist.
+
+Messung vorher und nachher (240 Seeds, `tools/museum-messung.js`, Modell ohne Gnadenfrist, also strenger als das Spiel; Standardlauf = ein Gemälde der Westgalerie, 5 s stehlen, zurück zur Tür; vorher = Stand `main` vom 30. Oktober 2026):
+
+| Kennzahl | Torwert | vorher | nachher |
+|---|---|---|---|
+| Standardlauf beim Schleichen, Mittel | mindestens 30 % | 52 % (Regeln von damals: Kameras nur beim Stehlen) | 75 % (mit den neuen Regeln gerechnet, Kameras überall), nach Wachenzahl 1: 90 %, 2: 63 %, 3: 48 % |
+| Standardlauf beim Gehen, Mittel | | 36 % | 54 % |
+| Seeds mit mindestens einem Startfenster beim Schleichen | mindestens 95 % | 100 % | 100 % (Gehen 98,8 %) |
+| Weg ohne Kamerablick vom Haupteingang zu mindestens einem Gemälde | mindestens 90 % | 5 % | 99,2 % (zum Hauptschalter 86 %, vorher 6 %) |
+| Kleinster Abstand der ersten beiden Wachen | mindestens 10 Kacheln | 0,04 (Median) | 10,0 in allen 106 Seeds mit zwei und mehr Wachen (genau zwei Wachen: 52 Seeds, alle ab 10) |
+| Kleinster Abstand der Kameras | mindestens 8 Kacheln | 5,4 | 8,0 (Median 10,9, nächste Kamera im Mittel 14,1 statt 8,2) |
+| Fläche im Kamerablick beim Schleichen | höchstens 35 % | 46 % | Mittel 22 %, 90. Perzentil 29 %, ein Seed (Klassik-Rückfall) 40 %; voll (Gehen) 41,5 % statt 69 % |
+| Fläche im Wachblick beim Schleichen | | 60 % | 33 % |
+| Begehbare Kacheln | 500 bis 650 | 359 (Median) | 514 (10. bis 90. Perzentil 422 bis 590, größte 701) |
+| Einblick der Wachen in den Laserbereich (Schleichen / volle Reichweite) | keiner | 10 % / 27 % | 0 % / bis 3 % der Kacheln in 28 Seeds (nur beim Wenden der Atrium-Wache) |
+| Kleinster Abstand Wache zu Laser | | 1,0 | 6,0 |
+| Bot (Überfall, 40 Seeds, Hüllen, Standardlauf von `42-museum-generator`) | | 39 von 40 (mit Sicherheitsdienst 40 von 40) | 40 von 40 (mit Sicherheitsdienst 39 von 40) |
+
+Abweichungen vom Plan und Grenzen:
+- Weil Alarm C gilt, entfallen `CFG.museum.grace`, das Warnzeichen über der Wache und die Rate 90 für Kameras; Kameras haben die Rate 26, Wachen bleiben bei 56. Das Modell `v2` der Messung (Wachen 56, Kameras überall 26, ohne Gnadenfrist) ersetzt die Zeile "heute" der alten Tabelle.
+- **Zehn Kacheln Abstand gelten für die ersten beiden Wachen.** Drei Wachen halten zehn Kacheln paarweise nicht ein (zwei Längsstrecken im Westband und im Atrium haben nur Platz für zwei, jede weitere trifft eine der beiden): Der Sicherheitsdienst und der Wachwechsel halten `near` 3. In den 54 Seeds mit drei Wachen liegt der kleinste Abstand im Median bei 3, zweimal bei 1. Entscheidung für den Leitstand: so lassen oder der Lage Sicherheitsdienst statt der dritten Wache etwas anderes geben (zum Beispiel einen längeren Kegel).
+- Zwei Wachen sehen beim Wenden an den Enden der Atriumstrecke in einigen Karten kurz 1 bis 3 Kacheln des Laserbereichs (Wende durch Osten), die Prüfung `wache-laser` kennt nur die Blickrichtungen entlang der Strecke.
+- Die Wachen decken den Westband und das Atrium getrennt ab: Wird die Westwache ausgeschaltet, sieht die Atrium-Wache einen Körper im Westsaal nicht (Test 139 setzt den Körper deshalb auf einen Wegpunkt der anderen Streife).
+- Rund 5 % der Karten sind Klassik-Hüllen (12 in 240 Seeds); bei zweien fallen alle zwölf Kamerasätze durch, dann bleibt der erste Satz mit Regelverstoß (in einem Seed 40 % Kamerafläche).
+- Ungemessen: Schleichen mit Menschen, Coop, Bildfläche und Polizeianfahrt bei 700 Kacheln, iPhone und iPad.
+
+
+Der Rest dieses Abschnitts ist der Plan v1 mit der Ausgangsmessung (Stand vor dem Umbau, einzelne Zahlen und Fundstellen sind überholt). Tills Wunsch (Board, 30. Oktober 2026): Das Museum ist immer nachts und geschlossen, der lautlose Bruch ist der Hauptweg, Wachen und Kameras schlagen sofort Alarm, wenn sie jemanden im Gebäude sehen, das Gebäude ist groß und die Karten unterscheiden sich deutlich, der Laserbereich braucht keine Wachen, Wachen laufen nicht zu eng beieinander und Kameras stehen nicht zu dicht. Dieser Abschnitt gleicht das mit dem heutigen Museum ab (Fundstellen im Code), hält die Messung fest und schlägt Schritte vor. Alle Zahlen sind nur mit Skripten gemessen, nicht mit Menschen.
 
 ### Messung (Verfahren)
 

@@ -5,7 +5,7 @@ const SIDES = ['S', 'N', 'E', 'W', 'S+', 'N+', 'E+', 'W+'];
 const HALLS = {
   jewel: ['Klassik', 'Reihen', 'Salon', 'Ring', 'Gänge'],
   gas: ['Klassik', 'Insel', 'Wandregale', 'Gänge'],
-  museum: ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring'],
+  museum: ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring', 'Kolonnade'],
   casino: ['Klassik', 'Promenade', 'Reihen', 'Staffel'],
 };
 
@@ -125,7 +125,7 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const D = __dbg, bad = [], sum = [];
         const mk = (sc, s) => { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); return D.layoutBase(s); };
-        for (const [sc, seed] of [['jewel', 5], ['gas', 22], ['museum', 33], ['casino', 41], ['bank', 5017]]) for (const side of ['N', 'E', 'W', 'S+', 'N+', 'E+', 'W+']) {
+        for (const [sc, seed] of [['jewel', 5], ['gas', 22], ['museum', 34], ['casino', 41], ['bank', 5017]]) for (const side of ['N', 'E', 'W', 'S+', 'N+', 'E+', 'W+']) {
           // Referenz: abgeleitet am Original, dann mit der Karte gedreht. Gegenprobe: am gedrehten Original abgeleitet.
           const a = mk(sc, seed), A = D.autoPosts(a); a.posts = A.posts; a.slots = A.slots;
           const ref = D.turnLayout(a, side[0], side[1] === '+');
@@ -158,7 +158,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, T = 32, bad = [], seen = {};
-        for (const [sc, seed] of [['jewel', 5], ['gas', 22], ['museum', 33], ['casino', 41], ['bank', 5017]]) for (const side of ['S', 'N', 'E', 'W', 'E+', 'W+', 'N+']) {
+        for (const [sc, seed] of [['jewel', 5], ['gas', 22], ['museum', 34], ['casino', 41], ['bank', 5017]]) for (const side of ['S', 'N', 'E', 'W', 'E+', 'W+', 'N+']) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           let lay = D.layoutBase(seed); if (side !== 'S') lay = D.turnLayout(lay, side[0], side[1] === '+');
           D.buildLay(lay); const L = D.LAY(), v = L.vault, w = D.world(), tag = sc + ' ' + side, h = side[0] === 'E' || side[0] === 'W';

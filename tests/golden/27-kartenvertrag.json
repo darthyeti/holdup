@@ -159,31 +159,31 @@
    "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 9,
    "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 4,
    "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 8,
-   "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 7,
+   "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 6,
    "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 5,
    "Vordertür (W) | Hintertür (E) | Fluchttür (S)": 4,
-   "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 5,
+   "Vordertür (E) | Hintertür (W) | Fluchttür (S)": 2,
+   "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 4,
    "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 3,
-   "Fluchttür (N) | Hintertür (E) | Vordertür (W)": 1,
-   "Fluchttür (N) | Hintertür (W) | Vordertür (E)": 4,
-   "Vordertür (E) | Hintertür (W) | Fluchttür (S)": 1
+   "Fluchttür (N) | Hintertür (E) | Vordertür (W)": 2,
+   "Fluchttür (N) | Hintertür (W) | Vordertür (E)": 4
   },
   "range": {
    "pathSV": [
     22,
-    24
+    30
    ],
    "pathVE": [
-    14,
-    26
+    15,
+    30
    ],
    "loot": [
     174000,
     174000
    ],
    "cams": [
-    5,
-    9
+    3,
+    5
    ],
    "guards": [
     1,
@@ -195,11 +195,11 @@
    ],
    "slots": [
     7,
-    9
+    10
    ],
    "posts": [
-    15,
-    20
+    16,
+    22
    ]
   }
  },

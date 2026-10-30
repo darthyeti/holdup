@@ -21,6 +21,7 @@ let minSync=1e9,close4=0,close8=0,nS=0,minTrace=1e9;const traces=[];
 for(let i=0;i<nG;i++)traces.push(rec.map(r=>r.g[i]).filter(Boolean));
 for(const r of rec){const gs=r.g.filter(Boolean);if(gs.length<2)continue;nS++;let m=1e9;for(let i=0;i<gs.length;i++)for(let j=i+1;j<gs.length;j++)m=Math.min(m,Math.hypot(gs[i][0]-gs[j][0],gs[i][1]-gs[j][1]));minSync=Math.min(minSync,m);if(m<4*T)close4++;if(m<8*T)close8++}
 for(let i=0;i<nG;i++)for(let j=i+1;j<nG;j++)for(const a of traces[i])for(const b of traces[j])minTrace=Math.min(minTrace,Math.hypot(a[0]-b[0],a[1]-b[1]));
+let m01=1e9;for(const r of rec){const a=r.g[0],b=r.g[1];if(a&&b)m01=Math.min(m01,Math.hypot(a[0]-b[0],a[1]-b[1]))}R.gMin01=m01<1e8?m01/T:null;
 R.gMinSync=nS?minSync/T:null;R.gClose4=nS?close4/nS:null;R.gClose8=nS?close8/nS:null;R.gMinTrace=minTrace<1e8?minTrace/T:null;R.nSync=nS;
 // Wachen: Abstand zu Lasern
 let minLaser=1e9;const sd2=(x,y,l)=>{const ax=l[0]*T,ay=l[1]*T,bx=l[2]*T,by=l[3]*T,vx=bx-ax,vy=by-ay,t=Math.max(0,Math.min(1,((x-ax)*vx+(y-ay)*vy)/(vx*vx+vy*vy)));return Math.hypot(x-ax-vx*t,y-ay-vy*t)};
@@ -87,7 +88,7 @@ if(plan){R.runLen=[plan.go.d/T,plan.back.d/T];const N=rec.length;
   const seenBy=(idx,p)=>{const r=rec[idx%N];const ins=p[1]<(L.bld.y1+.7)*T&&p[1]>L.bld.y0*T;let g=false,c=false,gj=false;if(!ins)return[false,false,false,false];for(const q of r.g){if(!q)continue;if(D.canSee(q[0],q[1],q[2],q[3],q[4]*rm*sight,p[0],p[1])){g=true;if(D.canSee(q[0],q[1],q[2],Math.min(q[3],.8),260*rm*sight,p[0],p[1])){gj=true;break}}}
    for(let i=0;i<ncam;i++){const cc=camsA[i],a=cc.a0+Math.sin(r.t*cc.sp+i*1.7)*cc.amp;if(D.canSee(cc.x,cc.y,a,cc.fov,cc.rng*rm*sight,p[0],p[1])){c=true;break}}return[g,c,true,gj]};
   // Sicht je Schritt vorab (unabhaengig vom Startindex nicht moeglich, daher je Start berechnen)
-  const models={cur:{g:56,c:'hot'},jwInst:{g:1e3,c:0,j:1},jwInstCam:{g:1e3,c:1e3,j:1},jwCur:{g:56,c:'hot',j:1},gOnlyInst:{g:1e3,c:0},camInstOnly:{g:0,c:1e3},bothInst:{g:1e3,c:1e3},bothHalf:{g:200,c:200},gInstCamHot:{g:1e3,c:'hot'}};
+  const models={cur:{g:56,c:'hot'},v2:{g:56,c:26},jwInst:{g:1e3,c:0,j:1},jwInstCam:{g:1e3,c:1e3,j:1},jwCur:{g:56,c:'hot',j:1},gOnlyInst:{g:1e3,c:0},camInstOnly:{g:0,c:1e3},bothInst:{g:1e3,c:1e3},bothHalf:{g:200,c:200},gInstCamHot:{g:1e3,c:'hot'}};
   const acc={};for(const k in models)acc[k]=0;let n=0;
   const any={};for(const k in models)any[k]=0;for(let s0=0;s0<N-legs.length-1&&n<150;s0+=Math.max(1,Math.floor(N/150))){n++;const see=legs.map((p,i)=>seenBy(s0+i,p));
    for(const [k,m] of Object.entries(models)){let sus=0,fail=false;for(let i=0;i<legs.length;i++){const [g0,c,ins,gj]=see[i];const g=m.j?gj:g0;if(!ins){sus=Math.max(0,sus-9/HZ);continue}let rate=0;if(g)rate=Math.max(rate,m.g*kf);if(c){const cr=m.c==='hot'?((legs[i][2]===1||inZ(Math.floor(legs[i][0]/T),Math.floor(legs[i][1]/T)))?26*kf:0):m.c;if(cr)rate=Math.max(rate,cr)}
@@ -118,6 +119,7 @@ const same=A.filter((r,i)=>A.findIndex(s=>s.M.join('')===r.M.join(''))!==i).leng
 // Wachen
 const multi=A.filter(r=>r.nSync>0);console.log('seeds mit >=2 Wachen gleichzeitig',multi.length);
 console.log('gMinSync',st(multi.map(r=>r.gMinSync)),'gMinTrace',st(multi.map(r=>r.gMinTrace)),'gClose4',st(multi.map(r=>r.gClose4)),'gClose8',st(multi.map(r=>r.gClose8)));
+{const p=A.filter(r=>r.gMin01!=null);if(p.length)console.log('Wachen 0 und 1 (die ersten beiden):',p.length,'Seeds, Abstand <9,9:',p.filter(r=>r.gMin01<9.9).length,'(',(p.filter(r=>r.gMin01>=9.9).length/p.length*100).toFixed(0)+' % ab 9,9 ), kleinster',Math.min(...p.map(r=>r.gMin01)).toFixed(2));const e2=A.filter(r=>r.guardsMax===2&&r.nSync>0);console.log('genau zwei Wachen:',e2.length,'Seeds, Abstand <9,9:',e2.filter(r=>r.gMinSync<9.9).length)}
 console.log('multi: gMinSync<2',multi.filter(r=>r.gMinSync<2).length,'<4',multi.filter(r=>r.gMinSync<4).length,'gMinTrace<2',multi.filter(r=>r.gMinTrace<2).length,'<1',multi.filter(r=>r.gMinTrace<1).length);
 console.log('gMinLaser',st(A.map(r=>r.gMinLaser)),'laser<1.5',A.filter(r=>r.gMinLaser<1.5).length);
 console.log('cMin',st(A.map(r=>r.cMin)),'cNN',st(A.map(r=>r.cNN)),'cClose6 pairs',st(A.map(r=>r.cClose6)),'seeds with pair<6',A.filter(r=>r.cClose6>0).length);
