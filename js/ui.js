@@ -91,7 +91,7 @@ const ys=y+90+rows.length*16;g.textAlign='left';g.font='bold 11px monospace';g.f
 g.textAlign='left';g.font='10px monospace';g.fillStyle=MU;dry.forEach((l,i)=>g.fillText(l,x+12,ys+20+i*13));g.restore()}
 
 /* ---------- Seiten ---------- */
-const PRISON={k:'prison',n:'Gefängnisausbruch',i:'prison',be:1,ri:3,s:'Ein Teammitglied sitzt ein',d:['Drinnen schleicht der Gefangene zum Kontrollraum und öffnet die Tür zum Hof, draußen hält das Team das Tor auf (laut).','Dann alle in den Fluchtwagen. Keine Beute, dafür eine feste Belohnung. Wer drin sitzt, hat keine Waffe: Wachen von hinten ausschalten.']};
+const PRISON={k:'prison',n:'Gefängnisausbruch',i:'prison',be:1,ri:3,s:'Ein Teammitglied sitzt ein',d:['Drinnen hebelt der Gefangene seine Zelle auf, schaltet die Wache im Trakt aus und öffnet mit ihrer Karte das erste Gitter. Das zweite Gitter öffnet nur ein Schalter, den die Leute draußen in Wachstube oder Kontrollraum bedienen (Weg über Küche und Kantine).','Dann alle zum Abholpunkt (lautlos) oder zum Tor (laut) und in den Fluchtwagen. Keine Beute, dafür eine feste Belohnung. Wer drin sitzt, hat keine Waffe: Wachen von hinten ausschalten.']};
 const jobOf=k=>k==='random'?RANDOM:k==='prison'?PRISON:JOBS.find(j=>j.k===k)||JOBS[0];
 function sTitle(){const{SESSION,fmt,scenario}=X,r=SESSION.round;
 return{def:'serie',t:[
