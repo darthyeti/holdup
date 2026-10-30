@@ -633,7 +633,14 @@ if(BK.on&&!P.classic){const br=mulberry32((((sn)*2246822519)>>>0)^0x7b10c4e3),F=
  for(let n=0,tr=0;n<nB&&tr<BK.tries;tr++){const x=2+Math.floor(br()*(26+ox)),y=2+Math.floor(br()*(S-2)),pil=br()<BK.pil,L=pil?1:BK.len[0]+Math.floor(br()*(BK.len[1]-BK.len[0]+1)),hz=br()<.5,thick=!pil&&br()<BK.thick,cs=[];
   for(let k=0;k<L;k++){cs.push(hz?[x+k,y]:[x,y+k]);if(thick)cs.push(hz?[x+k,y+1]:[x+1,y+k])}
   if(!cs.every(q=>inReg(q[0],q[1])&&!(q[1]>=7&&q[1]<=10&&q[0]>=18+dx)&&!(q[1]>=7&&q[1]<=11&&q[0]>=c.ww-2&&q[0]<=c.ww)&&!(q[0]>=17+dx&&q[0]<=21+dx&&q[1]<=11)))continue;
-  let ok=true;for(const q of cs){for(let b=-2;b<=2&&ok;b++)for(let a=-2;a<=2&&ok;a++)if(!F(q[0]+a,q[1]+b))ok=false;if(!ok||ch(q[0],q[1],rsv)||ch(q[0],q[1],walk)){ok=false;break}}
+  let ok=true;for(const q of cs){
+   if(pil&&BK.pilGap){/* Saeule: der innere Ring (1 Kachel) bleibt frei, im aeusseren Ring darf Wand oder Saeule stehen (Luecke der Breite 1), solange mindestens zwei Seiten 2 Kacheln frei sind */
+    for(let b=-1;b<=1&&ok;b++)for(let a=-1;a<=1&&ok;a++)if(!F(q[0]+a,q[1]+b))ok=false;
+    if(ok){let free=0;for(const[dx2,dy2]of[[0,-2],[0,2],[-2,0],[2,0]]){let f=true;for(let k=-2;k<=2&&f;k++){const x2=q[0]+(dx2?dx2:k),y2=q[1]+(dy2?dy2:k);if(!F(x2,y2))f=false}if(f)free++}
+     if(free<(BK.pilFree||2))ok=false;
+     for(let b=-2;b<=2&&ok;b++)for(let a=-2;a<=2&&ok;a++){const k2=cell(q[0]+a,q[1]+b);if(k2!=='.'&&k2!=='#'&&k2!=='P')ok=false}}}
+   else for(let b=-2;b<=2&&ok;b++)for(let a=-2;a<=2&&ok;a++)if(!F(q[0]+a,q[1]+b))ok=false;
+   if(!ok||ch(q[0],q[1],rsv)||ch(q[0],q[1],walk)){ok=false;break}}
   if(!ok)continue;cs.forEach(q=>setc(q[0],q[1],pil?'P':'#'));n++}}
 const camc=[{x:1.5*T,y:1.5*T,a0:.78,amp:.6,sp:.6,rng:290,fov:.5},{x:(c.ww+.5)*T,y:1.5*T,a0:2.3,amp:.6,sp:.55,rng:290,fov:.5},{x:1.5*T,y:(S+.4)*T,a0:-.78,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.ww+.5)*T,y:(S+.4)*T,a0:-2.3,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.xc+.5)*T,y:(S+.4)*T,a0:-1.57,amp:.6,sp:.5,rng:280,fov:.5},{x:(16.5+dx)*T,y:6.5*T,a0:1.55,amp:.6,sp:.55,rng:260,fov:.5},{x:(26.4+ox)*T,y:6.5*T,a0:2.4,amp:.55,sp:.5,rng:280,fov:.5},{x:(26.4+ox)*T,y:(S+.4)*T,a0:-2.4,amp:.55,sp:.5,rng:280,fov:.5}];
 const CM=CFG.museum.cam,cr=mulberry32((((sn)*1103515245+(P.ct|0)*2654435761)>>>0)^0x2c9277b5),nCam=ms.lg.includes('sicher')?CM.n[1]:CM.n[0]+Math.floor(cr()*(CM.n[1]-CM.n[0]+1));

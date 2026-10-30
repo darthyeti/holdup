@@ -110,7 +110,7 @@ chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
 spec:{max:6,on:1,cam:420,fast:900,every:2,maxBuf:65536,msgB:6000,evMax:400,delay:0,qMax:1200},
 net:{max:15800,blKeep:60},
 duel:{len:3,maxLen:5,count:5,hb:1,pg:1,specDelay:20},
-museumGen:{on:1,classic:.05,ww:[10,15],ew:[10,15],dy:[1,5],vx:[-1,1],tries:30,block:{on:1,per:6,max:24,tries:400,len:[3,5],pil:.1,thick:.3,dItem:1,dRoute:0}},
+museumGen:{on:1,classic:.05,ww:[10,15],ew:[10,15],dy:[1,5],vx:[-1,1],tries:30,block:{on:1,per:10,max:40,tries:800,len:[3,5],pil:.8,pilGap:1,pilFree:1,thick:.3,dItem:1,dRoute:0}},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,33],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
@@ -188,6 +188,7 @@ CFG.goods={cig:{u:.5,v:1500,t1:3.5,t2:1.2},shelf:{u:.5,v:800,t1:3,t2:1},art:{u:2
 CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
 CFG.prison={reward:30000,pol:16,wb:0,drill:14,swT:2.4,pistT:1.2,pickR:48,delivery:[40,70],deliveryOpen:20,inm:3};//Gefaengnisausbruch (Issue 45): feste Belohnung, Polizei nach Alarm, Tor aufhalten (s), Schalter (s), Pistole aufheben (s), Lieferung (Fenster Start in s, aus dem Seed), Tuer offen (s)
 CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4],pathVE:32,cam:{all:1,seen:26,n:[3,5],minD:8,door:2.5,area:.35,tries:12},guard:{spd:28,fov:.8,rng:260,gap:10,near:3,hold:5,free:8}};
+CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*hGap()*(1+CFG.waveGapPer*Math.max(0,players.length-1));
 let M,TILES,LOBBY,SUNW,st,so,gone=[],stm=new Map(),vanSt=null,dcv,dc,LAY=null,LANE=null,ALT=null,vanAlt=0,altN=0,lgForce=null,turnForce=null,goal=null,goalForce=null;
 /* Lage-Tags lesen: lgOn fragt einen Tag ab, lgM bildet das Produkt, lgA die Summe eines Schluessels ueber alle aktiven Tags */
