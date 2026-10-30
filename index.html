@@ -186,7 +186,7 @@ CFG.rank={gas:0,museum:2,casino:4};
 CFG.goal={bonus:{clean:.15,fast:.1,calm:.08,full:.12,team:.1},calm:40,fast:{bank:120,jewel:220,gas:105,museum:150,casino:135},full:{bank:.75,truck:.8,jewel:.6,gas:.8,museum:.45,casino:.35}};
 CFG.goods={cig:{u:.5,v:1500,t1:3.5,t2:1.2},shelf:{u:.5,v:800,t1:3,t2:1},art:{u:2,v:20000,t1:5,t2:3},statue:{u:3,v:40000,t1:7,t2:4},relic:{u:.5,v:6000,t1:4,t2:1.5},chips:{u:.25,v:8000,t1:2,t2:1.2},slot:{u:.5,v:6000,t1:0,t2:3},vip:{u:.5,v:20000,t1:6,t2:3}};
 CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
-CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4]};
+CFG.prison={reward:30000,pol:16,wb:0,drill:14,swT:2.4,pistT:1.2,pickR:48,delivery:[40,70],deliveryOpen:20,inm:3};//Gefaengnisausbruch (Issue 45): feste Belohnung, Polizei nach Alarm, Tor aufhalten (s), Schalter (s), Pistole aufheben (s), Lieferung (Fenster Start in s, aus dem Seed), Tuer offen (s)
 CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4],pathVE:32,cam:{all:1,seen:26,n:[3,5],minD:8,door:2.5,area:.35,tries:12},guard:{spd:28,fov:.8,rng:260,gap:10,near:3,hold:5,free:8}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*hGap()*(1+CFG.waveGapPer*Math.max(0,players.length-1));
 let M,TILES,LOBBY,SUNW,st,so,gone=[],stm=new Map(),vanSt=null,dcv,dc,LAY=null,LANE=null,ALT=null,vanAlt=0,altN=0,lgForce=null,turnForce=null,goal=null,goalForce=null;
