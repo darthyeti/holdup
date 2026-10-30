@@ -15,6 +15,8 @@ const HALLS = {
 // Bekannte Abweichungen: Karte -> Regel -> Begruendung. Gilt fuer alle Seeds und Grundrisse der Karte.
 // Bekannte, von einem Menschen akzeptierte Abweichungen je Karte (Regel: Begruendung). Seit dem 22. Oktober 2026 leer: Zaun und Props auf der Strasse raeumt clearLane in layoutFor, classicLayout hat wie genLayout nur eine Hintertuer, die Museums-Hintertuer liegt frei. Neue Eintraege nur mit Begruendung, Ziel bleibt leer (Plan Mehr Abwechslung, docs/archiv-gebaute-plaene.md).
 const KNOWN = { bank: {}, jewel: {}, gas: {}, museum: {}, casino: {} };
+// Gefaengnis (Issue 45): handgebaut, nicht in der Seed-Schleife; die Anlage hat nur das Aussentor (Tresortuer) als Weg, deshalb melden eingaenge, vordertuer und beute-ziel (Test 130 prueft es).
+KNOWN.prison = { eingaenge: 'nur das Aussentor', vordertuer: 'keine Vordertuer, das Tor oeffnet erst im Spiel', 'beute-ziel': 'keine Beute, feste Belohnung CFG.prison.reward' };
 const KNOWN_CLASSIC = {};
 
 const rules = (errs, known) => Object.entries(errs).filter(([k]) => !(k in known)).map(([k, v]) => k + ' x' + v.n + ' (Seeds ' + v.seeds.join(',') + '): ' + v.ex);
