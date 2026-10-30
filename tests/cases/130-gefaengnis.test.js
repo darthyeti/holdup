@@ -274,4 +274,40 @@ module.exports = [
       t.eq(r.gate, [true, false], 'das Tor geht von innen fuer Mitspieler, nicht fuer den Gefangenen');
     },
   },
+  {
+    name: 'Gefaengnis: jedes E-Objekt im Kontrollraum (Schalter, Hauptschalter, Monitor, Notiz) hat ein sichtbares Ding: ein gezeichnetes Schaltpult (LAY.prison.panels) oder eine angrenzende Tisch- oder Monitorkachel',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, T = 32; D.setScenario('prison'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5); D.reset();
+        const lay = D.LAY(), M = D.world().M, ch = (x, y) => M[y + 6][x + 6], bad = [];
+        for (const it of D.get().its.filter(i => ['psw', 'sw', 'mon', 'note'].includes(i.t))) {
+          const tx = Math.floor(it.x / T), ty = Math.floor(it.y / T);
+          if (tx > 11 || ty < 7) { if (it.t !== 'sw') continue; }
+          let ok = false; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { if ('me'.includes(ch(tx + dx, ty + dy)) || lay.prison.panels.some(q => q[0] === tx + dx && q[1] === ty + dy)) ok = true; }
+          if (!ok) bad.push(it.t + '@' + tx + ',' + ty);
+        }
+        return { bad, n: D.get().its.filter(i => ['psw', 'sw', 'mon', 'note'].includes(i.t)).length };
+      });
+      t.eq(r.n, 4, 'die vier E-Objekte des Kontrollraums sind da');
+      t.eq(r.bad, [], 'E-Objekte ohne sichtbares Ding in der Naehe');
+    },
+  },
+  {
+    name: 'Gefaengnis: lautlose Flucht. Erreicht der Gefangene den Abholpunkt hinter der Mauer in Phase 1, ist es ein lautloser Sieg (auf Host und Client, quiet), mit Alarm geht das nicht mehr',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const run = alarm => t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, B = H.B, o = {}, pk = A.LAY().prison.pick, p1 = A.get().players[1];
+        if (${alarm}) A.startHeist(true, A.get().players[0]);
+        p1.x = (pk[0] + .5) * 32; p1.y = (pk[1] + .5) * 32; H.both(3);
+        const e = A.get().ended, f = B.get().ended; o.a = e && [e.win, e.title]; o.b = f && [f.win, f.title]; o.phase = A.get().phase; o.sec = A.get().secured; o.q = A.SESSION.quiet; return o; })()`);
+      const q = await run(false);
+      t.eq(q.a, [true, 'Lautlos ausgebrochen'], 'Host: lautloser Sieg');
+      t.eq(q.b && q.b[0], true, 'Client: Sieg');
+      t.ok(q.sec > 0 && q.q >= 1, 'Belohnung gesichert, lautlos zaehlt fuer die Serie');
+      const l = await run(true);
+      t.eq(l.a, null, 'mit Alarm: kein Ende durch den Abholpunkt (Phase 2)');
+    },
+  },
 ];
