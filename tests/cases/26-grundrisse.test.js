@@ -140,7 +140,7 @@ module.exports = [
         return { bad, cnt };
       }, [SC, FIND]);
       t.eq(r.bad, [], 'mapcheck');
-      t.ok(Object.keys(r.cnt).length === 12, 'zwoelf Grundrisse geprueft: ' + JSON.stringify(r.cnt));
+      t.ok(Object.keys(r.cnt).length === 13, 'dreizehn Grundrisse geprueft: ' + JSON.stringify(r.cnt));
     },
   },
   {
