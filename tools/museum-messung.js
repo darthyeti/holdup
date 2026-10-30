@@ -4,9 +4,10 @@
 // Je Seed 120 s Aufzeichnung mit dem Spieler ausserhalb, 5 Hz, Sichtpruefung mit canSee. Verfahren und Grenzen: docs/szenarien.md, Museum v2, Messung.
 const { launch, openGame } = require('../tests/lib');
 const fs=require('fs');
+const NOB=!!process.env.HOLDUP_NOBLOCK;
 const FN = `([sd,secs]) => {
-const D=__dbg,T=32,HZ=5,STEP=6;
-D.sessReset();D.setScenario('museum');D.setSeedMode('random');D.setLage(null);D.setTurn('S');D.buildSeed(sd);
+const D=__dbg,T=32,HZ=5,STEP=6,NOB=${NOB};
+D.sessReset();if(NOB&&D.CFG.museumGen.block)D.CFG.museumGen.block.on=0;D.setScenario('museum');D.setSeedMode('random');D.setLage(null);D.setTurn('S');D.buildSeed(sd);
 const L=D.LAY(),R={sd,hall:L.hall,q:L.q||null,lg:L.mission.lg,ev:L.mission.ev,tod:L.theme.tod,bld:L.bld,tries:L.tries||0};
 const ncam=D.get().cams.length;R.cams=ncam;R.guards0=D.get().npcs.filter(q=>q.k==='grd').length;
 const W0=D.world();R.M=[];for(let y=L.bld.y0;y<=L.bld.y1;y++)R.M.push(W0.M[y-W0.WY0].slice(L.bld.x0-W0.WX0,L.bld.x1-W0.WX0+1));
@@ -45,6 +46,11 @@ const sum=(m)=>{let g0=0,g10=0,g25=0,c0=0,c10=0,a0=0,a10=0,cz=0,nz=0,both=0,lg=0
  for(const [tx,ty] of tiles){const o=m.get(tx+','+ty);if(o.g>0)g0++;if(o.g>=.1)g10++;if(o.g>=.25)g25++;if(o.c>0)c0++;if(o.c>=.1)c10++;if(o.any>0)a0++;if(o.any>=.1)a10++;if(o.g>0&&o.c>0)both++;if(inZ(tx,ty)){nz++;if(o.c>0)cz++}if(tx>=18+dx){nl++;if(o.g>0)lg++}}
  return{g0:g0/n,g10:g10/n,g25:g25/n,c0:c0/n,c10:c10/n,any0:a0/n,any10:a10/n,both:both/n,czone:nz?cz/nz:null,lasG:nl?lg/nl:null,nl}};
 R.cov={full:sum(cv.full),sneak:sum(cv.sneak)};
+// Freie Sichtlinie: Mittel ueber Stichprobenkacheln der Galerien (jede 4. Kachel, 16 Richtungen, Strahl bis 20 Kacheln, in Schritten von 8 px gegen D.los)
+{const sg=[];let k=0;for(const [tx,ty] of tiles){if(!inZ(tx,ty)&&(tx<=(L.q?L.q.ww:9)||tx>=18+dx)&&(k++%4===0)){const cx=tx*T+16,cy=ty*T+16;let sum=0;for(let a=0;a<16;a++){const an=a*Math.PI/8;let d=0;for(;d<640;d+=16)if(!D.los(cx,cy,cx+Math.cos(an)*(d+16),cy+Math.sin(an)*(d+16)))break;sum+=d}sg.push(sum/16/T)}}
+ R.sight=sg.length?sg.reduce((a,b)=>a+b,0)/sg.length:null;
+ const big=[];k=0;for(const [tx,ty] of tiles){if(tx<=(L.q?L.q.ww:9)||tx>=18+dx){if(k++%4===0){const cx=tx*T+16,cy=ty*T+16;let m=0;for(let a=0;a<16;a++){const an=a*Math.PI/8;let d=0;for(;d<640;d+=16)if(!D.los(cx,cy,cx+Math.cos(an)*(d+16),cy+Math.sin(an)*(d+16)))break;m=Math.max(m,d)}big.push(m/T)}}}
+ R.sightMax=big.length?big.reduce((a,b)=>a+b,0)/big.length:null}
 // Wege (Dijkstra, 8er, keine Ecken schneiden). Sperren: fest (Waende), Laser, Beobachtung ueber Schwellen
 const lasers=L.lasers,laserTile=(tx,ty)=>lasers.some(l=>{const ax=l[0],ay=l[1],bx=l[2],by=l[3],vx=bx-ax,vy=by-ay,t=Math.max(0,Math.min(1,((tx+.5-ax)*vx+(ty+.5-ay)*vy)/(vx*vx+vy*vy)));return Math.hypot(tx+.5-ax-vx*t,ty+.5-ay-vy*t)<.62});
 const ok0=new Set(tiles.map(t=>t[0]+','+t[1]));
@@ -111,6 +117,7 @@ console.log('gRng/gFov',cnt(r=>r.gRng+'/'+r.gFov));
 console.log('hash distinct',new Set(A.map(r=>r.M.join('\n'))).size,'params distinct',new Set(A.map(r=>r.hall+JSON.stringify(r.q))).size,'size distinct',new Set(A.map(r=>r.bld.x1+'x'+r.bld.y1)).size);
 console.log('ww',cnt(r=>r.q?r.q.ww:9),'ew',cnt(r=>r.q?r.q.ew:9),'dy',cnt(r=>r.q?r.q.dy:0),'vx',cnt(r=>r.q?r.q.vx:0));
 console.log('size',cnt(r=>(r.bld.x1+1)+'x'+(r.bld.y1+1)));
+console.log('Sichtlinie (Mittel ueber 16 Strahlen, Kacheln)',st(A.map(r=>r.sight)),'laengster Strahl im Mittel',st(A.map(r=>r.sightMax)));
 console.log('area',st(A.map(r=>r.area)),'floor',st(A.map(r=>r.floor)));
 // Aehnlichkeit
 let diffs=[];const NP=Math.min(60,A.length);for(let i=0;i<NP;i++)for(let j=i+1;j<NP;j++){const a=A[i].M,b=A[j].M;const h=Math.min(a.length,b.length),w=Math.min(a[0].length,b[0].length);let d=0,t=0;for(let y=0;y<h;y++)for(let x=0;x<w;x++){t++;if(a[y][x]!==b[y][x])d++}diffs.push(d/t)}

@@ -110,7 +110,7 @@ chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
 spec:{max:6,on:1,cam:420,fast:900,every:2,maxBuf:65536,msgB:6000,evMax:400,delay:0,qMax:1200},
 net:{max:15800,blKeep:60},
 duel:{len:3,maxLen:5,count:5,hb:1,pg:1,specDelay:20},
-museumGen:{on:1,classic:.05,ww:[10,15],ew:[10,15],dy:[1,5],vx:[-1,1],tries:30},
+museumGen:{on:1,classic:.05,ww:[10,15],ew:[10,15],dy:[1,5],vx:[-1,1],tries:30,block:{on:1,per:6,max:24,tries:400,len:[3,5],pil:.1,thick:.3,dItem:1,dRoute:0}},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,33],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
@@ -440,6 +440,10 @@ const ok=(x,y)=>x>B.x0&&x<B.x1&&y>B.y0&&y<B.y1&&!isSol(x,y)&&!seen.has(x+','+y),
 for(let h=0;h<q.length;h++){const[x,y]=q[h];for(const[a,b]of D8){const nx=x+a,ny=y+b;if(ok(nx,ny)&&!vis.has(nx+','+ny)){vis.add(nx+','+ny);q.push([nx,ny])}}}
 const arts=(lay.goods||[]).filter(g=>g.k==='art'),reach=arts.filter(it=>{for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++){const tx=tl(it.x)+a,ty=tl(it.y)+b;if(vis.has(tx+','+ty)&&Math.hypot(tx*T+16-it.x,ty*T+16-it.y)<(it.r||44)*.9)return true}return false}).length;
 if(!reach)E('kamera-weg','Museum: vom Haupteingang fuehrt kein Weg zu einem Gemaelde, den keine Kamera beim Schleichen sieht');
+// Gaenge: in den Galerien kein Gang der Breite 1 und Laenge 3 zwischen Wand, Saeule, Stellwand oder Tresen (C # P), auch nicht durch Sichtblocker
+if(lay.q){const Bk='C#P',fr=(x,y)=>!isSol(x,y),c=(x,y)=>cell(x,y),hn=(x,y)=>fr(x,y)&&Bk.includes(c(x-1,y))&&Bk.includes(c(x+1,y)),vn=(x,y)=>fr(x,y)&&Bk.includes(c(x,y-1))&&Bk.includes(c(x,y+1));let nt=0;
+ for(const[x0,x1,y0,y1]of[[1,lay.q.ww,1,B.y1-1],[18+dx,B.x1-1,6,B.y1-1]])for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){if(y+2<=y1&&hn(x,y)&&hn(x,y+1)&&hn(x,y+2))nt++;if(x+2<=x1&&vn(x,y)&&vn(x+1,y)&&vn(x+2,y))nt++}
+ if(nt)E('gang-breite','Museum: '+nt+' Stellen mit einem Gang der Breite 1 in den Galerien')}
 // Wachen
 const gs=(lay.guards||[]);for(let i=0;i<gs.length;i++)for(let j=i+1;j<gs.length;j++){const d=Math.hypot(gs[i].p[0]-gs[j].p[0],gs[i].p[1]-gs[j].p[1]),need=i<2&&j<2?gm.gap:gm.near;if(d<need)E('wache-abstand','Museum: Wache '+i+' und '+j+' starten nur '+Math.round(d*10)/10+' Kacheln auseinander (mindestens '+need+')')}
 const rts=gs.map(g=>g.route).concat((lay.mission.extra||[]).map(x=>x.route)),lz=[];for(let ty=B.y0+1;ty<B.y1;ty++)for(let tx=18+dx;tx<B.x1;tx++)if(!isSol(tx,ty))lz.push([tx*T+16,ty*T+16]);

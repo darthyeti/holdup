@@ -109,4 +109,27 @@ module.exports = [
       t.ok(r.laser.includes('wache-laser'), 'Routenpunkt im Laserbereich: ' + JSON.stringify(r.laser));
     },
   },
+  {
+    name: 'Museum v2, Sichtblocker: in den Galerien stehen Saeulen und Stellwaende (Aussparungen und 2 Kacheln Freiraum), sie machen die Sichtlinien kuerzer, jede Karte besteht validateMap, ein Gang der Breite 1 schlaegt als Mutant an',
+    timeout: 280000,
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(`(() => { const D = __dbg, T = 32, out = { n: 0, mit: 0, bad: [], on: 0, off: 0, rays: 0, cfg: D.CFG.museumGen.block }, G = D.CFG.museumGen.block;
+        D.setScenario('museum'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.CFG.meet.p = 0; D.CFG.stash.on = 0;
+        const ray = lay => { const w = D.world(), B = lay.bld; let sum = 0, n = 0, k = 0; for (let y = 2; y < B.y1; y++) for (let x = 2; x < B.x1; x++) { if (D.isSol(x, y) || x > 14 || y < 2) continue; if (k++ % 5) continue; const cx = x * T + 16, cy = y * T + 16; for (let a = 0; a < 12; a++) { const an = a * Math.PI / 6; let d = 0; for (; d < 640; d += 16) if (!D.los(cx, cy, cx + Math.cos(an) * (d + 16), cy + Math.sin(an) * (d + 16))) break; sum += d; n++; } } return sum / n / T; };
+        for (let i = 0; i < 24; i++) { const P = { ww: 10 + i % 6, ew: 10 + (i * 2) % 6, dy: 1 + i % 5, vx: i % 3 - 1, classic: false, hall: i % 5 };
+          G.on = 0; const l0 = D.finishLay(D.genMuseum(500 + i, P)), a0 = D.world().M.slice(), r0 = ray(l0); G.on = 1; const l1 = D.finishLay(D.genMuseum(500 + i, P)), a1 = D.world().M.slice(), r1 = ray(l1);
+          out.n++; out.off += r0; out.on += r1; let nb = 0; const B = l1.bld, W = D.world();
+          for (let y = 0; y < a1.length; y++) for (let x = 0; x < a1[y].length; x++) if (a0[y][x] !== a1[y][x]) { nb++; if (!'P#'.includes(a1[y][x]) || a0[y][x] !== '.') out.bad.push(i + ' Zelle ' + x + ',' + y + ' ' + a0[y][x] + '->' + a1[y][x]); else { for (let b = -2; b <= 2; b++) for (let a = -2; a <= 2; a++) { const yy = y + b, xx = x + a; if (yy < 0 || xx < 0 || yy >= a0.length || xx >= a0[0].length) continue; if (!(a0[yy][xx] === '.' ) ) { out.bad.push(i + ' Blocker ' + xx + ',' + yy + ' nicht frei (' + a0[yy][xx] + ')'); } } } }
+          if (nb) out.mit++; const rep = D.validateMap(l1); if (rep.err.some(e => e.r !== 'kamera-weg')) out.bad.push(i + ' validateMap ' + rep.err.map(e => e.r).join()); }
+        // Mutant: eine Saeule 1 Kachel neben der Westwand erzeugt einen Gang der Breite 1 (3 Saeulen in Reihe)
+        const P = { ww: 12, ew: 12, dy: 2, vx: 0, classic: false, hall: 0 }; const lay = D.finishLay(D.genMuseum(777, P)), w = D.world(); const e0 = D.validateMap(lay).err.map(e => e.r);
+        for (const y of [2, 3, 4]) w.setc(2, y, '#'); const e1 = D.validateMap(lay).err.map(e => e.r);
+        out.mut = [e0.includes('gang-breite'), e1.includes('gang-breite')]; return out; })()`);
+      t.eq(r.bad.slice(0, 5), [], 'Blocker nur auf freiem Boden, ringsum 2 Kacheln frei, jede Karte besteht validateMap');
+      t.ok(r.mit >= r.n * .8, 'in mindestens 80 % der Huellen steht mindestens ein Blocker: ' + r.mit + ' von ' + r.n);
+      t.ok(r.on <= r.off * .95, 'die mittlere freie Sichtlinie im Westsaal wird kuerzer (mindestens 5 %): ' + (r.off / r.n).toFixed(2) + ' -> ' + (r.on / r.n).toFixed(2));
+      t.eq(r.mut, [false, true], 'Mutant: eine Stellwand 1 Kachel neben der Wand gibt gang-breite');
+    },
+  },
 ];

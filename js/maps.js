@@ -618,6 +618,22 @@ const k0=ms.rot[0]%RW.length,k2=(k0+(RW.length>>1))%RW.length;
 /* Startpunkt: ein zufaelliger Punkt der Strecke (Kante und Anteil aus dem Seed), die Route beginnt mit dem Wegpunkt davor, die Wache geht zuerst zum naechsten */
 const startOn=(rt0,e,f)=>{const rt=rt0.slice(e).concat(rt0.slice(0,e));return{route:rt,p:rt.length>1?snap([Math.round(rt[0][0]+(rt[1][0]-rt[0][0])*f),Math.round(rt[0][1]+(rt[1][1]-rt[0][1])*f)]):rt[0]}};
 for(let i=0;i<nG;i++){const rt0=i===0?rtAt(RW,k0,ms.rot[1]):i===1?rtAt(RA,ms.rot[1]?1:0,false):rtAt(RW,k2,ms.rot[1]);let g=null;for(let t=0;t<30;t++){g=startOn(rt0,Math.floor(tr()*rt0.length),tr());if(guards.every((o,j)=>Math.hypot(o.p[0]-g.p[0],o.p[1]-g.p[1])>=(i<2&&j<2?GM.gap:GM.near+1)))break}guards.push({p:g.p,route:g.route})}
+/* Sichtblocker (Museum v2, Wunsch von Till nach dem Spieltest): In den grossen Galerien setzt der Seed einzelne Saeulen (P) und kurze Stellwaende (#, 1 bis 3 Kacheln), damit die Sichtlinie nicht quer durch den ganzen Saal reicht. Jeder Blocker braucht ringsum (2 Kacheln) freien Boden, so bleiben alle Gaenge mindestens 2 Kacheln breit
+   und er klebt an keiner Pflanze, Bank, Wand oder Saeule. Ausgespart: Naehe (dItem) von Gemaelden, Statue, Vitrinen, Baenken, Tresen, die Wachstrecken (dRoute), die Durchgaenge zum Atrium und die Zeilen 7 bis 10 der Ostgalerie (Fluchtweg). Klassik-Huelle ohne Blocker. Eigener Zufallsstrom, nichts anderes verbraucht ihn. */
+const BK=CFG.museumGen.block;
+if(BK.on&&!P.classic){const br=mulberry32((((sn)*2246822519)>>>0)^0x7b10c4e3),F=(x,y)=>cell(x,y)==='.',rsv=[];
+ HT.art.forEach(a=>{const h=a[2]==='N'||a[2]==='S';rsv.push([a[0],a[1]],h?[a[0]+1,a[1]]:[a[0],a[1]+1])});
+ for(let u=0;u<2;u++)for(let v=0;v<2;v++)rsv.push([HT.st[0]+u,HT.st[1]+v]);HT.rel.forEach(a=>rsv.push([a[0],a[1]],[a[0]+1,a[1]]));HT.ben.forEach(a=>rsv.push(a));for(let u=0;u<HT.desk[2];u++)rsv.push([HT.desk[0]+u,HT.desk[1]]);
+ const walk=[];for(const R of[RW,RA])for(let k=0;k<R.length;k++){const a=R[k],b=R[(k+1)%R.length],n=Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]),1);for(let t=0;t<=n;t++)walk.push([Math.round(a[0]+(b[0]-a[0])*t/n),Math.round(a[1]+(b[1]-a[1])*t/n)])}
+ const ch=(x,y,l)=>l.some(q=>Math.max(Math.abs(q[0]-x),Math.abs(q[1]-y))<=(l===walk?BK.dRoute:BK.dItem));
+ const regs=[[2,2,c.ww-1,S-1],[19+dx,6,25+ox,S-1]],inReg=(x,y)=>regs.some(r=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3]);
+ let fl=0;for(const r of regs)for(let y=r[1];y<=r[3];y++)for(let x=r[0];x<=r[2];x++)if(F(x,y))fl++;
+ const nB=Math.min(BK.max,Math.round(fl/100*BK.per));
+ for(let n=0,tr=0;n<nB&&tr<BK.tries;tr++){const x=2+Math.floor(br()*(26+ox)),y=2+Math.floor(br()*(S-2)),pil=br()<BK.pil,L=pil?1:BK.len[0]+Math.floor(br()*(BK.len[1]-BK.len[0]+1)),hz=br()<.5,thick=!pil&&br()<BK.thick,cs=[];
+  for(let k=0;k<L;k++){cs.push(hz?[x+k,y]:[x,y+k]);if(thick)cs.push(hz?[x+k,y+1]:[x+1,y+k])}
+  if(!cs.every(q=>inReg(q[0],q[1])&&!(q[1]>=7&&q[1]<=10&&q[0]>=18+dx)&&!(q[1]>=7&&q[1]<=11&&q[0]>=c.ww-2&&q[0]<=c.ww)&&!(q[0]>=17+dx&&q[0]<=21+dx&&q[1]<=11)))continue;
+  let ok=true;for(const q of cs){for(let b=-2;b<=2&&ok;b++)for(let a=-2;a<=2&&ok;a++)if(!F(q[0]+a,q[1]+b))ok=false;if(!ok||ch(q[0],q[1],rsv)||ch(q[0],q[1],walk)){ok=false;break}}
+  if(!ok)continue;cs.forEach(q=>setc(q[0],q[1],pil?'P':'#'));n++}}
 const camc=[{x:1.5*T,y:1.5*T,a0:.78,amp:.6,sp:.6,rng:290,fov:.5},{x:(c.ww+.5)*T,y:1.5*T,a0:2.3,amp:.6,sp:.55,rng:290,fov:.5},{x:1.5*T,y:(S+.4)*T,a0:-.78,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.ww+.5)*T,y:(S+.4)*T,a0:-2.3,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.xc+.5)*T,y:(S+.4)*T,a0:-1.57,amp:.6,sp:.5,rng:280,fov:.5},{x:(16.5+dx)*T,y:6.5*T,a0:1.55,amp:.6,sp:.55,rng:260,fov:.5},{x:(26.4+ox)*T,y:6.5*T,a0:2.4,amp:.55,sp:.5,rng:280,fov:.5},{x:(26.4+ox)*T,y:(S+.4)*T,a0:-2.4,amp:.55,sp:.5,rng:280,fov:.5}];
 const CM=CFG.museum.cam,cr=mulberry32((((sn)*1103515245+(P.ct|0)*2654435761)>>>0)^0x2c9277b5),nCam=ms.lg.includes('sicher')?CM.n[1]:CM.n[0]+Math.floor(cr()*(CM.n[1]-CM.n[0]+1));
 const camsSel=pickCamsFar(cr,camc,nCam,CM.minD,[[dd,Y1],[dd+1,Y1],[13+dx,0]],CM.door);
