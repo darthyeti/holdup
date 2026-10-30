@@ -26,6 +26,10 @@ module.exports = [
         const sig = l => JSON.stringify([l.guards, l.cams.map(x => [x.x, x.y]), l.theme.tod]);
         o.det = sig(a) === sig(b); o.vary = sig(a) !== sig(c);
         o.names = D.MAP_FIELDS.map(f => f[0]); D.buildLay(a); const cl = (x, y) => D.world().M[y + 6][x + 6]; o.gate = [cl(25, 5), cl(25, 6)]; o.doors = [cl(12, 4), cl(12, 5)];
+        // Wege (Breitensuche ueber isSol, 4er-Nachbarschaft): Zelle -> Schalter, Zelle -> Hof vor dem Tor mit zu und mit offener Zellentrakt-Tuer
+        const bfs = (from, to) => { const seen = new Set([from.join()]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]]; if (D.isSol(n[0], n[1]) || seen.has(n.join())) continue; seen.add(n.join()); q.push(n); } } return false; };
+        const sw = [Math.floor(a.prison.psw.x / 32), Math.floor(a.prison.psw.y / 32)], way = { toSw: bfs([2, 2], sw), toZ: bfs([2, 2], [11, 4]) };
+        way.closed = bfs([2, 2], [24, 5]); a.prison.doors.forEach(c => D.world().setc(c[0], c[1], 'l')); way.open = bfs([2, 2], [24, 5]); way.outside = bfs([28, 2], [26, 5]); a.prison.doors.forEach(c => D.world().setc(c[0], c[1], 'L')); o.way = way;
         return o;
       });
       const bad = r.err.filter(x => !KNOWN.includes(x));
@@ -35,6 +39,7 @@ module.exports = [
       t.ok(r.det && r.vary, 'gleicher Seed gleiche Anlage, anderer Seed andere Waerterrouten oder Kameras');
       t.eq([r.gate, r.doors], [['V', 'V'], ['L', 'L']], 'Tor (V) und Zellentrakt-Tuer (L) stehen');
       t.ok(r.names.includes('prison'), 'MAP_FIELDS kennt prison');
+      t.eq(r.way, { toSw: true, toZ: true, closed: false, open: true, outside: true }, 'Wege: Zelle zum Schalter ja, zur Hoftuer bis ans Tor erst nach dem Schalter, von draussen bis ans Tor ja');
       const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'szenarien.md'), 'utf8');
       t.ok(/## Gefängnis/.test(doc), 'die Doku hat den Abschnitt Gefaengnis');
     },
@@ -75,8 +80,8 @@ module.exports = [
       const r = await t.page.evaluate(`(() => {
         const H = ${HELP}, A = H.A, B = H.B, o = {}, p0 = A.get().players[0], p1 = A.get().players[1];
         o.start = [p1.bag, p1.mag, p1.res, p0.mag > 0, A.get().phase, A.getPz()];
-        // F des Gefangenen (Client) startet nichts
-        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true })); H.both(1); o.f = [A.get().phase, B.get().phase];
+        // F des Gefangenen (Client) startet nichts: als Taste und als rohe Nachricht (der Host prueft selbst)
+        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true })); B.NET.conn.send({ t: 'f' }); H.both(1); o.f = [A.get().phase, B.get().phase];
         // Schalter: im Kontrollraum
         const sw = H.items(A, 'psw')[0]; o.swOk = [sw.ok(p1), sw.done]; o.doorBefore = [H.cl(A, 12, 4), H.cl(B, 12, 4)];
         p1.x = sw.x; p1.y = sw.y; B.keys.e = 1; H.both(CFG_T(A) + 1.5, () => { p1.x = sw.x; p1.y = sw.y; p1.vx = p1.vy = 0; }); B.keys.e = 0; H.both(1);
