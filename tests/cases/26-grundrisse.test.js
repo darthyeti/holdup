@@ -2,7 +2,7 @@
 // Der Seed waehlt ueber einen eigenen Zufallsstrom einen von vier Grundrissen (LAY.hall), Huelle, Eingaenge, Posten, Wagenplaetze, Beute und Mission bleiben gleich.
 const VAR = {
   gas: ['Klassik', 'Insel', 'Wandregale', 'Gänge'],
-  museum: ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring'],
+  museum: ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring', 'Kolonnade'],
   casino: ['Klassik', 'Promenade', 'Reihen', 'Staffel'],
 };
 const SC = Object.keys(VAR);
@@ -47,7 +47,7 @@ module.exports = [
         return out;
       }, VAR);
       for (const sc of SC) {
-        t.eq(Object.keys(r[sc].halls).sort(), VAR[sc].slice().sort(), sc + ': alle vier Grundrisse kommen vor');
+        t.eq(Object.keys(r[sc].halls).sort(), VAR[sc].slice().sort(), sc + ': alle Grundrisse kommen vor');
         t.ok(Object.values(r[sc].halls).every(n => n >= 20), sc + ': jeder Grundriss wenigstens 20 von 160: ' + JSON.stringify(r[sc].halls));
         t.eq(r[sc].comp.length, 1, sc + ': Beute, Material, Tresor und Zeiten gleich in allen Grundrissen: ' + r[sc].comp.join(' / '));
         t.eq(JSON.parse(r[sc].comp[0])[0], GOODS[sc], sc + ': Beute-Stuecke je Art');
@@ -140,7 +140,7 @@ module.exports = [
         return { bad, cnt };
       }, [SC, FIND]);
       t.eq(r.bad, [], 'mapcheck');
-      t.ok(Object.keys(r.cnt).length === 12, 'zwoelf Grundrisse geprueft: ' + JSON.stringify(r.cnt));
+      t.ok(Object.keys(r.cnt).length === 13, 'dreizehn Grundrisse geprueft: ' + JSON.stringify(r.cnt));
     },
   },
   {
@@ -189,14 +189,14 @@ module.exports = [
           D.reset(); const me = D.get().me; me.x = 13.9 * T; me.y = 15 * T;
           for (let i = 0; i < 60; i++) D.update(1 / 30); D.draw(); D.draw(); out.drawn++;
           // Kegel enden an festen Dingen
-          if (hall === 'Kabinette') cone.part = Math.round(far(D.coneRays(3.5 * T, 7.5 * T, -Math.PI / 2, .05, 330)));
+          if (hall === 'Kabinette') cone.part = Math.round(far(D.coneRays(5.5 * T, 7.5 * T, -Math.PI / 2, .05, 330)));
           if (hall === 'Ring') cone.block = Math.round(far(D.coneRays(2.5 * T, 8.5 * T, 0, .05, 330)));
           if (hall === 'Säulenhalle') cone.pillar = Math.round(far(D.coneRays(5.5 * T, 8.5 * T, 0, .05, 330)));
           if (hall === 'Klassik') cone.open = Math.round(far(D.coneRays(2.5 * T, 8.5 * T, 0, .05, 330)));
         }
         return { lasers: [...out.lasers], bad: out.bad, drawn: out.drawn, cone };
       }, [FIND]);
-      t.eq(r.drawn, 4, 'alle vier Raeume gezeichnet');
+      t.eq(r.drawn, 5, 'alle fuenf Raeume gezeichnet');
       t.eq(r.lasers.length, 1, 'die Laser sind in allen Raeumen gleich');
       t.eq(r.bad, [], 'Fluchtweg, Durchgaenge und Laser');
       t.ok(r.cone.part < 80, 'Kegel endet an der Trennwand (reicht nur ' + r.cone.part + ' px)');
@@ -257,7 +257,7 @@ module.exports = [
       t.note(Object.entries(r).map(([k, v]) => k + ' ' + v.win + '/' + v.n + ' (' + v.avg + ')').join(', '));
       for (const sc of SC) {
         const ks = Object.keys(r).filter(k => k.startsWith(sc + '/')), w = ks.reduce((s, k) => s + r[k].win, 0), n = ks.reduce((s, k) => s + r[k].n, 0);
-        t.eq(ks.length, 4, sc + ': vier Grundrisse');
+        t.eq(ks.length, VAR[sc].length, sc + ': alle Grundrisse');
         t.ok(w / n >= .8, sc + ': Siegquote ' + w + '/' + n + ' liegt unter 80 %: ' + ks.map(k => k + ' ' + JSON.stringify(r[k].lost)).join(', '));
         for (const k of ks) t.ok(r[k].win >= 2, k + ' gewinnt nur ' + r[k].win + ' von ' + r[k].n + ', verloren: ' + JSON.stringify(r[k].lost));
       }

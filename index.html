@@ -97,7 +97,7 @@ cop:{hp:100,dmg:9,rate:.5,spd:64,acc:.11},grd:{hp:100,dmg:7,rate:1.1,spd:50,acc:
 shield:{from:3,every:8,hp:110,dmg:8,rate:.55,spd:50,acc:.11,arc:1.05,pool:120,follow:.85,cover:80},
 till:{u:.5,v:2500,t:1.3},atm:{u:.5,v:12000,t:5},bundle:{u:1,v:12000,t:1.6,n:5},
 map:{a:[10,15],b:[20,23],bs:[24,28],c:[12,16],tries:40,back:'vault',gate:2,tpW:.5,tpX:4,anW:2,bw:[14,25],bws:[14,25]},
-meet:{on:1,p:.5,scs:['bank','jewel','gas','museum','casino'],minD:10,pveMin:8,pveMax:28,extra:8,anchors:2,drive:2,per:{museum:{extra:10},jewel:{anchors:1}}},
+meet:{on:1,p:.5,scs:['bank','jewel','gas','museum','casino'],minD:10,pveMin:8,pveMax:28,extra:8,anchors:2,drive:2,per:{museum:{extra:10,pveMax:32},jewel:{anchors:1}}},
 alt:{on:1,p:.4,hold:3,scs:['bank','jewel','gas','museum','casino'],drive:2,dMin:10,dMax:26,eMax:34,extra:10,free:1.3,wait:3,max:2},
 turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:.5},
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,camsFew:2,two:48}},
@@ -110,7 +110,7 @@ chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
 spec:{max:6,on:1,cam:420,fast:900,every:2,maxBuf:65536,msgB:6000,evMax:400,delay:0,qMax:1200},
 net:{max:15800,blKeep:60},
 duel:{len:3,maxLen:5,count:5,hb:1,pg:1,specDelay:20},
-museumGen:{on:1,classic:.1,ww:[7,12],ew:[9,11],dy:[0,1],vx:[-1,1],tries:30},
+museumGen:{on:1,classic:.05,ww:[10,15],ew:[10,15],dy:[1,5],vx:[-1,1],tries:30,block:{on:1,per:10,max:40,tries:800,len:[3,5],pil:.8,pilGap:1,pilFree:1,thick:.3,dItem:1,dRoute:0}},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
 val:{minW:30,minH:17,doorMin:2,doorMax:4,pathSV:[8,33],pathVE:[8,28],loot:[15000,260000],cams:10,guards:3,slotStep:5,postStep:{S:4,N:8,W:5},postGap:3,off:{S:2,N:1,W:1,E:2},danger:3.7,anchorBase:19,anchorDiv:2},
 series:{wave:.34,hp:0,at:3},
@@ -187,7 +187,7 @@ CFG.goal={bonus:{clean:.15,fast:.1,calm:.08,full:.12,team:.1},calm:40,fast:{bank
 CFG.goods={cig:{u:.5,v:1500,t1:3.5,t2:1.2},shelf:{u:.5,v:800,t1:3,t2:1},art:{u:2,v:20000,t1:5,t2:3},statue:{u:3,v:40000,t1:7,t2:4},relic:{u:.5,v:6000,t1:4,t2:1.5},chips:{u:.25,v:8000,t1:2,t2:1.2},slot:{u:.5,v:6000,t1:0,t2:3},vip:{u:.5,v:20000,t1:6,t2:3}};
 CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
 CFG.prison={reward:30000,pol:16,wb:0,drill:14,swT:2.4,pistT:1.2,pickR:48,delivery:[40,70],deliveryOpen:20,inm:3};//Gefaengnisausbruch (Issue 45): feste Belohnung, Polizei nach Alarm, Tor aufhalten (s), Schalter (s), Pistole aufheben (s), Lieferung (Fenster Start in s, aus dem Seed), Tuer offen (s)
-CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4]};
+CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4],pathVE:32,cam:{all:1,seen:26,n:[3,5],minD:8,door:2.5,area:.35,tries:12},guard:{spd:28,fov:.8,rng:260,gap:10,near:3,hold:5,free:8}};
 CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*hGap()*(1+CFG.waveGapPer*Math.max(0,players.length-1));
 let M,TILES,LOBBY,SUNW,st,so,gone=[],stm=new Map(),vanSt=null,dcv,dc,LAY=null,LANE=null,ALT=null,vanAlt=0,altN=0,lgForce=null,turnForce=null,goal=null,goalForce=null;
@@ -215,7 +215,7 @@ let decorReal=new Set();
 const DC_CLASSIC=[{x:1,y:15,row:3,sh:'B'},{x:21,y:15,row:2,sh:'B'},{x:27,y:2,row:2,sh:'C'},{x:32,y:6,row:3,sh:'C'}],
 DC_JEWEL=(dx,sy=0)=>[{x:2,y:16+sy,row:3,sh:'A'},{x:17,y:16+sy,row:2,sh:'A'},{x:27+dx,y:0,row:2,sh:'A'},{x:31+dx,y:11,row:3,sh:'A'}],
 DC_GAS=dx=>[{x:2,y:16,row:3,sh:'A'},{x:17,y:16,row:2,sh:'A'},{x:26+dx,y:0,row:2,sh:'A'},{x:29+dx,y:11,row:3,sh:'A'}],
-DC_MUSEUM=ox=>[{x:2,y:20,row:3,sh:'A'},{x:17,y:20,row:2,sh:'A'},{x:30+ox,y:0,row:2,sh:'A'},{x:32+ox,y:13,row:3,sh:'A'}],
+DC_MUSEUM=(ox,sh=0)=>[{x:2,y:20+sh,row:3,sh:'A'},{x:17,y:20+sh,row:2,sh:'A'},{x:30+ox,y:0,row:2,sh:'A'},{x:32+ox,y:13,row:3,sh:'A'}],
 DC_CASINO=(dx,dy)=>[{x:2,y:26+dy,row:3,sh:'A'},{x:23,y:26+dy,row:2,sh:'A'},{x:44+dx,y:0,row:2,sh:'A'},{x:44+dx,y:20,row:3,sh:'A'}];
 const decorOf=DC=>DC.map((d,i)=>({i,x:(d.x+2)*T,y:(d.y+1)*T,row:d.row,bx:d.x,by:d.y,sh:d.sh}));
 function decorPaint(s,L){s.fillStyle='rgba(0,0,0,.28)';
@@ -426,6 +426,32 @@ L.exit={dir:ex.dir,line:ex.line,span:ex.span,tx:ex.tx,side:xa?(ex.dir>0?'E':'W')
 // Klasse Gebaeude: alle Regeln. Klasse Strasse (Transporter): nur Welt, Start, Fluchtzone, Fluchtwagen-Weg, Wagenplaetze und Posten, der Rest setzt ein Gebaeude mit Eingaengen, Beute und Personal voraus.
 /* Regel kammer (Plan Kammern, docs/ideen-und-planung.md): LAY.stash {kind, door, out, cells}. Der Innenraum ist ein freies Rechteck mit mindestens CFG.stash.cells Kacheln, der Ring ist bis auf die Tuer (d) Wand, nichts davon (samt Kachel vor der Tuer) liegt in einer Sperrzone, die Kachel vor der Tuer ist vom Start erreichbar (und damit der Innenraum),
    kein Wegpunkt einer Wach-, Manager- oder Wachwechselroute und kein Kassierer liegt naeher als CFG.stash.gap Kacheln am Ring (die Wachen stehen an Wegpunkten still, die Strecke dazwischen darf an der Tuer vorbeiziehen), und die Versteck-Kacheln (deep, eine nichtleere Teilmenge des Innenraums, die Reihe ohne Sicht durch die Tuer) sieht kein Posten (Sichtlinie, Reichweite CFG.stash.sight Kacheln) und keine Kamera (Sichtlinie, Reichweite mal 1,25) ein. Wer einen Bewusstlosen in der Kammer loslaesst, dessen Koerper wird in die naechste Versteck-Kachel verstaut (stow). */
+/* Museum v2, Regeln der Wachen und Kameras (Ticket 41, docs/szenarien.md Museum v2): Kameras 3 bis 5 (cam.n), untereinander mindestens cam.minD Kacheln, keine nahe der Haupt- oder Hintertuer (cam.door), hoechstens zwei in der Ostgalerie, zusammen hoechstens cam.area der begehbaren Kacheln im Kamerablick (Schleichen), und vom Haupteingang fuehrt ein Weg zu mindestens einem Gemaelde,
+   den keine Kamera beim Schleichen sieht (Schwenk abgetastet, Reichweite mal .65). Wachen: Startpunkte mindestens guard.gap Kacheln voneinander, keine Routenpunkte im Laserbereich (x ab 17+dx), und kein Kegel (Reichweite, Winkel der Wache) einer Wegstelle sieht in beide Richtungen einen Punkt des Laserbereichs (x ab 18+dx). */
+function museumRules(lay,E,hs,RL){const M=CFG.museum,cm=M.cam,gm=M.guard,cams=lay.cams||[],dx=lay.q?lay.q.ww-9:0,B=lay.bld,tl=v=>Math.floor(v/T),W2=v=>v/T;
+if(cams.length<cm.n[0]||cams.length>cm.n[1])E('kamera-zahl','Museum: '+cams.length+' Kameras statt '+cm.n.join(' bis '));
+let mind=1e9;for(let i=0;i<cams.length;i++)for(let j=i+1;j<cams.length;j++)mind=Math.min(mind,Math.hypot(cams[i].x-cams[j].x,cams[i].y-cams[j].y)/T);if(mind<cm.minD)E('kamera-abstand','Museum: zwei Kameras nur '+Math.round(mind*10)/10+' Kacheln auseinander (mindestens '+cm.minD+')');
+const doors=[];for(let x=B.x0;x<=B.x1;x++)for(const y of[B.y0,B.y1]){const c=cell(x,y);if(c==='D'||c==='L')doors.push([x,y])}
+for(const c of cams)if(doors.some(d=>Math.hypot(W2(c.x)-d[0]-.5,W2(c.y)-d[1]-.5)<cm.door)){E('kamera-tuer','Museum: Kamera nahe einer Aussentuer: '+Math.round(W2(c.x)*10)/10+','+Math.round(W2(c.y)*10)/10);break}
+const east=cams.filter(c=>W2(c.x)>=18+dx).length;if(east>2)E('kamera-ost','Museum: '+east+' Kameras in der Ostgalerie (hoechstens 2)');
+// stiller Weg: Kacheln, die keine Kamera beim Schleichen je sieht
+const seen=new Set(),sg=1;for(const c of cams)for(let k=-4;k<=4;k++){const a=c.a0+c.amp*k/4;for(let ty=B.y0+1;ty<B.y1;ty++)for(let tx=B.x0+1;tx<B.x1;tx++)if(!isSol(tx,ty)&&!seen.has(tx+','+ty)&&canSee(c.x,c.y,a,c.fov,c.rng*.65*sg,tx*T+16,ty*T+16))seen.add(tx+','+ty)}
+let nf=0;for(let ty=B.y0+1;ty<B.y1;ty++)for(let tx=B.x0+1;tx<B.x1;tx++)if(!isSol(tx,ty))nf++;if(nf&&seen.size>nf*cm.area)E('kamera-flaeche','Museum: die Kameras sehen beim Schleichen '+Math.round(seen.size/nf*100)+' % der begehbaren Kacheln (hoechstens '+Math.round(cm.area*100)+' %)');
+const ok=(x,y)=>x>B.x0&&x<B.x1&&y>B.y0&&y<B.y1&&!isSol(x,y)&&!seen.has(x+','+y),dd=tl(lay.spawn.x),vis=new Set(),q=[[dd,B.y1-1],[dd+1,B.y1-1]].filter(a=>ok(a[0],a[1]));q.forEach(a=>vis.add(a+''));
+for(let h=0;h<q.length;h++){const[x,y]=q[h];for(const[a,b]of D8){const nx=x+a,ny=y+b;if(ok(nx,ny)&&!vis.has(nx+','+ny)){vis.add(nx+','+ny);q.push([nx,ny])}}}
+const arts=(lay.goods||[]).filter(g=>g.k==='art'),reach=arts.filter(it=>{for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++){const tx=tl(it.x)+a,ty=tl(it.y)+b;if(vis.has(tx+','+ty)&&Math.hypot(tx*T+16-it.x,ty*T+16-it.y)<(it.r||44)*.9)return true}return false}).length;
+if(!reach)E('kamera-weg','Museum: vom Haupteingang fuehrt kein Weg zu einem Gemaelde, den keine Kamera beim Schleichen sieht');
+// Gaenge: in den Galerien kein Gang der Breite 1 und Laenge 3 zwischen Wand, Saeule, Stellwand oder Tresen (C # P), auch nicht durch Sichtblocker
+if(lay.q){const Bk='C#P',fr=(x,y)=>!isSol(x,y),c=(x,y)=>cell(x,y),hn=(x,y)=>fr(x,y)&&Bk.includes(c(x-1,y))&&Bk.includes(c(x+1,y)),vn=(x,y)=>fr(x,y)&&Bk.includes(c(x,y-1))&&Bk.includes(c(x,y+1));let nt=0;
+ for(const[x0,x1,y0,y1]of[[1,lay.q.ww,1,B.y1-1],[18+dx,B.x1-1,6,B.y1-1]])for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){if(y+2<=y1&&hn(x,y)&&hn(x,y+1)&&hn(x,y+2))nt++;if(x+2<=x1&&vn(x,y)&&vn(x+1,y)&&vn(x+2,y))nt++}
+ if(nt)E('gang-breite','Museum: '+nt+' Stellen mit einem Gang der Breite 1 in den Galerien')}
+// Wachen
+const gs=(lay.guards||[]);for(let i=0;i<gs.length;i++)for(let j=i+1;j<gs.length;j++){const d=Math.hypot(gs[i].p[0]-gs[j].p[0],gs[i].p[1]-gs[j].p[1]),need=i<2&&j<2?gm.gap:gm.near;if(d<need)E('wache-abstand','Museum: Wache '+i+' und '+j+' starten nur '+Math.round(d*10)/10+' Kacheln auseinander (mindestens '+need+')')}
+const rts=gs.map(g=>g.route).concat((lay.mission.extra||[]).map(x=>x.route)),lz=[];for(let ty=B.y0+1;ty<B.y1;ty++)for(let tx=18+dx;tx<B.x1;tx++)if(!isSol(tx,ty))lz.push([tx*T+16,ty*T+16]);
+let pe=null;for(const r of rts){for(const p of r)if(p[0]>=17+dx){pe='Routenpunkt '+p+' im Laserbereich';break}
+ if(pe)break;for(let i=0;i<r.length&&!pe;i++){const a=r[i],b=r[(i+1)%r.length];if(a[0]===b[0]&&a[1]===b[1])continue;const pl=[[a[0]*T+16,a[1]*T+16]].concat(pathTo(a[0]*T+16,a[1]*T+16,b[0],b[1]));
+  for(let k=0;k+1<pl.length&&!pe;k++){const p0=pl[k],p1=pl[k+1],ang=Math.atan2(p1[1]-p0[1],p1[0]-p0[0]);for(const an of[ang,ang+Math.PI])if(lz.some(t=>canSee(p0[0],p0[1],an,gm.fov,gm.rng,t[0],t[1]))){pe='Wache sieht an '+Math.round(W2(p0[0])*10)/10+','+Math.round(W2(p0[1])*10)/10+' in den Laserbereich';break}}}}
+if(pe)E('wache-laser','Museum: '+pe)}
 function stashRule(lay,E,hs,RL){const S=lay.stash,C=CFG.stash,cs=S.cells||[],bad=m=>E('kammer','Kammer: '+m);
 if(S.kind!=='abstell'&&S.kind!=='wc')return bad('Art '+S.kind);
 if(cs.length<C.cells)return bad(cs.length+' Innenkacheln, mindestens '+C.cells);
@@ -512,6 +538,7 @@ const pt=(a,n)=>{if(!a)return;if(isSol(a[0],a[1])||!hs(RL,a[0],a[1]))E('route',n
 (lay.guards||[]).forEach((g,i)=>rt(g.route,'Wachroute '+i));if(lay.mgr)rt(lay.mgr.route,'Managerroute');(lay.mission.extra||[]).forEach((x,i)=>{pt(x.p,'Wachwechsel-Start');rt(x.route,'Wachwechsel-Route '+i)});
 (lay.tellers||[]).forEach(a=>pt(a,'Kassierer'));if(v&&v.bundles)v.bundles.forEach(a=>pt(a,'Tresorbuendel'));(lay.mission.bags||[]).forEach(a=>pt(a,'Geldsack'));
 for(const c of lay.cams||[])if(!near(c.x,c.y,50))E('kamera','Kamera nicht erreichbar: '+nm(c.x,c.y));
+if(lay.museum&&!lay.turned)museumRules(lay,E,hs,RL);
 if(lay.stash)stashRule(lay,E,hs,RL);
 // Lobby
 const lb=lay.lobby;let nl=0;for(let y=lb[1];y<=lb[3];y++)for(let x=lb[0];x<=lb[2];x++)if(hs(RL,x,y))nl++;rep.info.lobby=nl;if(lay.civ>0&&nl<1)E('lobby','Zivilisten ohne begehbare Lobby');else if(nl<lay.civ*2)Wn('lobby','Lobby klein: '+nl+' Kacheln fuer '+lay.civ+' Zivilisten');
@@ -521,7 +548,7 @@ let mat=0;for(const [x,y] of TILES)if(matCell(x,y,lay)&&near(x*T+16,y*T+16,46))m
 const P=(a,c)=>{const dd=new Int16Array(W*H).fill(-1),q=[a];if(OOB(a[0],a[1]))return 0;dd[at(a[0],a[1])]=0;for(let h=0;h<q.length;h++){const q0=q[h];if(q0[0]===c[0]&&q0[1]===c[1])return dd[at(q0[0],q0[1])];for(const d of D4){const nx=q0[0]+d[0],ny=q0[1]+d[1];if(OOB(nx,ny)||dd[at(nx,ny)]>=0||!(!isSol(nx,ny)||cell(nx,ny)==='L'))continue;dd[at(nx,ny)]=dd[at(q0[0],q0[1])]+1;q.push([nx,ny])}}return 0};
 if(stand){const sv=P(sp,stand),ve=P(stand,ln.exit.goal);rep.info.pathSV=sv;rep.info.pathVE=ve;
  if(!sv)Wn('weg','Kein Weg vom Start zum Tresor');else if(sv<V.pathSV[0]||sv>V.pathSV[1])Wn('weg-start-tresor','Weg Start zu Tresor '+sv+' Schritte (Richtwert '+V.pathSV.join(' bis ')+')');
- if(!ve)Wn('weg','Kein Weg vom Tresor zum Ausgang');else if(ve<V.pathVE[0]||ve>V.pathVE[1])Wn('weg-tresor-ausgang','Weg Tresor zu Ausgang '+ve+' Schritte (Richtwert '+V.pathVE.join(' bis ')+')')}
+ if(!ve)Wn('weg','Kein Weg vom Tresor zum Ausgang');else if(ve<V.pathVE[0]||ve>(lay.museum?CFG.museum.pathVE:V.pathVE[1]))Wn('weg-tresor-ausgang','Weg Tresor zu Ausgang '+ve+' Schritte (Richtwert '+V.pathVE.join(' bis ')+')')}
 if(rep.info.loot.v<V.loot[0]||rep.info.loot.v>V.loot[1])Wn('beute-summe','Beute-Summe '+rep.info.loot.v+' ausserhalb '+V.loot.join(' bis '));
 rep.info.cams=(lay.cams||[]).length;rep.info.guards=(lay.guards||[]).length;if(rep.info.cams>V.cams)Wn('kameras',rep.info.cams+' Kameras (Richtwert hoechstens '+V.cams+')');if(rep.info.guards>V.guards)Wn('wachen',rep.info.guards+' Wachen (Richtwert hoechstens '+V.guards+')')}
 rep.ok=!rep.err.length;return rep}
@@ -812,7 +839,7 @@ cams=LAY.cams.map(c=>Object.assign({},c,{k:false,alert:0,off:false}));
 npcR=mulberry32((Math.imul(LAY.seed|0,2654435761)>>>0)^0x4e50c5ed);
 if(!LAY.truck){LAY.tellers.forEach(c=>mk('tel',5,c[0],c[1],{still:true,base:Math.PI/2,spd:0,wait:99,fov:1.2,rng:250}));
 if(LAY.mgr){const mg=mk('mgr',6,LAY.mgr.p[0],LAY.mgr.p[1],{spd:34,fov:1.1,rng:280});setRoute(mg,LAY.mgr.route)}
-const GP=Object.assign({},CFG.guard,LAY.jewel?CFG.jewel.guard:null);
+const GP=Object.assign({},CFG.guard,LAY.jewel?CFG.jewel.guard:LAY.museum?CFG.museum.guard:null);
 LAY.guards.forEach(g=>{const gd=mk('grd',2,g.p[0],g.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng});setRoute(gd,g.route)});
 for(let i=0;i<LAY.civ;i++){const c=LOBBY[Math.floor(npcR()*LOBBY.length)];mk('civ',3+(i%2),c[0],c[1],{spd:32+npcR()*10,wait:npcR()*3,a:npcR()*6.28})}
 (LAY.mission.extra||[]).forEach(x=>{const n=mk('grd',2,x.p[0],x.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng,st:'away'});setRoute(n,x.route);n.at=x.at;n.msg=x.msg});
@@ -1196,7 +1223,7 @@ const lsp=o=>(o.bl>0?CFG.gren.flash.spread:0)+(o.gs>.2&&!o.mask?CFG.gren.gas.spr
 const shotSp=(o,wp)=>(wp.spread+.05*o.mv*(1-skv(o.kit,'A1','run'))+o.rec+lsp(o))*(1-skv(o.kit,'A1','spread'));
 /* Auftrags-Ereignisse (LAY.mission.ev): Wachwechsel und Geldtransport (vorab angelegte, abwesende Wachen), Stromausfall, Streife (Polizei frueher), Feiertag (mehr Zivilisten) */
 function evStep(dt){const ms=LAY.mission;let gone=false;
-for(const n of npcs)if(n.st==='away'&&rT>=n.at){say(n.msg);if(phase===1){n.st='idle';n.wait=.5;snd('found')}else{convGuard(n);n.st='dead';gone=true}}
+for(const n of npcs)if(n.st==='away'&&rT>=n.at&&!(LAY.museum&&phase===1&&gapNear(n))){say(n.msg);if(phase===1){n.st='idle';n.wait=.5;snd('found')}else{convGuard(n);n.st='dead';gone=true}}
 if(gone)npcs=npcs.filter(q=>q.st!=='dead');
 if(ms.blackoutAt!=null&&!evDone.blk&&phase===1&&rT>=ms.blackoutAt){evDone.blk=1;blk=CFG.ev.blackout;camDown=Math.max(camDown,CFG.ev.blackout);snd('ev','power');ban('Stromausfall!',2.4);say('Stromausfall: Kameras und Licht sind aus.')}
 if(blk>0){blk-=dt;if(blk<=0){blk=0;say('Der Strom ist wieder da.')}}}
@@ -1375,10 +1402,13 @@ if(NET.role==='client'&&NET.conn)NET.conn.send({t:'kit',k:curKit()});
 LOG.ev('ende',{win:!!res.win,soft:!!res.soft,titel:String(res.title||'').slice(0,60),score:Math.round(res.score||0),sp:res.sp||null,heat:SESSION.heat,quiet:SESSION.quiet|0});if(NET.role==='client')flogSend();SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines,hi:res.hi,fh}}
 function canSee(sx,sy,sa,fov,rng,tx,ty){const dx=tx-sx,dy=ty-sy,dd=Math.hypot(dx,dy);if(dd>rng)return false;if(angd(sa,Math.atan2(dy,dx))>fov)return false;return los(sx,sy,tx,ty)}
 const camAng=(c,i)=>c.a0+Math.sin(time*c.sp+i*1.7)*c.amp;
-function updNpc(n,i,dt){if(n.st==='cower'||n.st==='dead'||n.st==='away'||n.st==='hostage'||n.st==='ko')return;n.alert=Math.max(0,n.alert-dt);
+/* Wachabstand im Museum: Eine Streife bleibt stehen, wenn der naechste Schritt sie naeher als gap Kacheln an die andere der ersten beiden Streifen (Nummer 0 und 1) oder naeher als near Kacheln an jede weitere brachte (und sie damit naeher kaeme als jetzt). Zehn Kacheln zu dritt halten die Routen nicht, die dritte Wache (Sicherheitsdienst) und der Wachwechsel halten nur near. Nach hold s Stillstand dreht die Wache um und geht ihre Runde rueckwaerts (zwei Streifen auf derselben Strecke prallen so ab), steht sie binnen 4 x hold s wieder, gilt der grosse Abstand fuer sie free s lang nicht (kein Dauerstillstand, near bleibt). Die Wachwechsel-Wache (gapNear) beginnt erst, wenn keine Streife naeher als near Kacheln an ihrem Startpunkt steht. */
+function gapHold(n,nx,ny){const K=CFG.museum.guard;for(const q of npcs){if(q===n||q.k!=='grd'||!q.route||q.st!=='idle')continue;const g=(n.id<2&&q.id<2&&!(n.free>0)?K.gap:K.near)*T,d1=Math.hypot(nx-q.x,ny-q.y);if(d1<g&&d1<Math.hypot(n.x-q.x,n.y-q.y))return true}return false}
+const gapNear=n=>npcs.some(q=>q!==n&&q.k==='grd'&&q.route&&q.st==='idle'&&Math.hypot(n.x-q.x,n.y-q.y)<CFG.museum.guard.near*T);
+function updNpc(n,i,dt){if(n.free>0)n.free-=dt;if(n.st==='cower'||n.st==='dead'||n.st==='away'||n.st==='hostage'||n.st==='ko')return;n.alert=Math.max(0,n.alert-dt);
 if(n.look&&n.look.t>0){n.look.t-=dt;n.a=alerp(n.a,Math.atan2(n.look.y-n.y,n.look.x-n.x),.15);n.mvg=false;return}
 if(n.still){n.a=n.base+Math.sin(time*.45+i*2)*.7;return}
-if(n.path.length){const t=n.path[0],dx=t[0]-n.x,dy=t[1]-n.y,dd=Math.hypot(dx,dy);if(dd<3)n.path.shift();else{n.a=alerp(n.a,Math.atan2(dy,dx),.2);mv(n,dx/dd*n.spd*dt,dy/dd*n.spd*dt);n.w+=n.spd*dt/9;n.mvg=true}}
+if(n.path.length){const t=n.path[0],dx=t[0]-n.x,dy=t[1]-n.y,dd=Math.hypot(dx,dy);if(dd<3)n.path.shift();else if(LAY.museum&&n.route&&gapHold(n,n.x+dx/dd*n.spd*dt,n.y+dy/dd*n.spd*dt)){n.mvg=false;n.hold=(n.hold||0)+dt;if(n.hold>CFG.museum.guard.hold){n.hold=0;if(time-(n.flipT==null?-99:n.flipT)<CFG.museum.guard.hold*4)n.free=CFG.museum.guard.free;else{n.flipT=time;n.route=n.route.slice().reverse();n.ri=n.route.length-1-n.ri;n.path=[];n.wait=0}}}else{n.hold=0;n.a=alerp(n.a,Math.atan2(dy,dx),.2);mv(n,dx/dd*n.spd*dt,dy/dd*n.spd*dt);n.w+=n.spd*dt/9;n.mvg=true}}
 else{n.mvg=false;n.wait-=dt;if(n.wait<=0){if(n.route){n.ri=(n.ri+1)%n.route.length;const r=n.route[n.ri];n.path=pathTo(n.x,n.y,r[0],r[1]);n.wait=LAY.gAll?CFG.museum.pause[0]+n.rr()*(CFG.museum.pause[1]-CFG.museum.pause[0]):1+n.rr()*1.5}else{const c=LOBBY[Math.floor(n.rr()*LOBBY.length)];n.path=pathTo(n.x,n.y,c[0],c[1]);n.wait=2+n.rr()*5}}}}
 /* Lehnen: F halten, Waffe gezogen, Phase 2, eine Barrikade (X) in Zielrichtung in Reichweite. Gibt die Kachel zurueck oder null. Gegnerkugeln stoppen an X wie immer, nur die eigene Kugel ueberspringt dabei die erste X-Kachel (Flag ov). */
 function leanAt(o){if(!o.armed||phase!==2)return null;
@@ -1441,7 +1471,7 @@ let wr=0,wrBy=null,wrK='';const wu=(v,o,k)=>{if(v>wr){wr=v;wrBy=o;wrK=k||''}};
    Kameras ignorieren es, Wache und Angestellte finden es langsam verdaechtig (carry.grd, carry.staff, der Beobachter bleibt kurz stehen und schaut, siehe gaze). Im Museum (LAY.gAll) sehen Wachen jeden im Gebaeude mit CFG.museum.seen, draussen nicht (Fenster und Glastuer lassen Blicke durch). */
 for(const o of act){o.thf=Math.max(0,(o.thf||0)-dt);const hot=restricted(o.x,o.y)||o.thf>0,carry=o.loot>0,gIn=LAY.gAll&&inBld(o.x,o.y);if(!hot&&!carry&&!gIn)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1,W=CFG.watch;
 for(const q of npcs){if((q.k==='civ'&&!q.uc)||q.st==='dead'||q.st==='away'||q.st==='ko'||staffBlind(q))continue;const g=q.k==='grd'||!!q.uc,all=g&&gIn;if(!hot&&!carry&&!all)continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*rm*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){wu((all?CFG.museum.seen:hot?(g?48:34):(g?W.carry.grd:W.carry.staff))*kf,o,q.uc?'Zivilfahnder':g?'Wache':'Angestellter');if(!hot&&!all)gaze(q,o);if(q.alert<=.01)snd('alert');q.alert=.5}}
-cams.forEach((c,i)=>{if(hot&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*rm*lgM('sight'),o.x,o.y)){wu(26*kf,o,'Kamera');if(c.alert<=.01)snd('alert');c.alert=.5}})}
+cams.forEach((c,i)=>{if((hot||gIn&&CFG.museum.cam.all)&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*rm*lgM('sight'),o.x,o.y)){wu((hot?26:CFG.museum.cam.seen)*kf,o,'Kamera');if(c.alert<=.01)snd('alert');c.alert=.5}})}
 for(const o of act){const ins=inBld(o.x,o.y);o.dwT+=dt;if(o.dwT>=1){o.sl=Math.hypot(o.x-o.dx,o.y-o.dy)<CFG.loiter.still;o.dwT=0;o.dx=o.x;o.dy=o.y}
 let sn=false;if(ins&&o.sl)for(const q of npcs){if((q.k==='civ'&&!q.uc)||q.st==='dead'||q.st==='away'||q.st==='ko'||staffBlind(q))continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){sn=true;if(o.dw>=CFG.loiter.warn){q.alert=.5;q.look={x:o.x,y:o.y,t:.7}}}}
 if(sn)o.dw+=dt;else o.dw=Math.max(0,o.dw-(o.sl&&ins?.5:2)*dt);
