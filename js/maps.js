@@ -777,7 +777,9 @@ return{seed:sn,decor:decorOf([]),prison:{cell:[2*T,2*T],cells,doors:[[12,4],[12,
 mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot)return x>=13?'s':'m';if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>GX)return'a';return'y'},
 paintFloor(s){s.strokeStyle='rgba(255,255,255,.18)';s.lineWidth=2;s.strokeRect(14*T,2*T,10*T,8*T);s.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<5;i++)s.fillRect((GX+2.5)*T,2*T+i*T*1.6,3*T,2);
 for(const c of cells){s.fillStyle='rgba(60,70,90,.55)';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,T*1.6);s.fillStyle='#8b8f98';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,3)}},
-paintTop(s){s.strokeStyle='#2a2e34';s.lineWidth=2;for(const c of cells)for(let i=0;i<2;i++){const x=(c[0]+i)*T+16;s.beginPath();s.moveTo(x,3*T+2);s.lineTo(x,3*T+T-2);s.stroke()}},
+paintTop(s){s.strokeStyle='#2a2e34';s.lineWidth=2;for(const c of cells)for(let i=0;i<2;i++){const x=(c[0]+i)*T+16;s.beginPath();s.moveTo(x,3*T+2);s.lineTo(x,3*T+T-2);s.stroke()}
+/* Servicetuer (2,6): Stahlblatt mit Rahmen und Schild, damit man sie nicht fuer Wand haelt */
+const X=2*T,Y=6*T;s.fillStyle='#1d2026';s.fillRect(X-2,Y-3,T+4,T+6);s.fillStyle='#6b7c8f';s.fillRect(X+2,Y+1,T-4,T-2);s.fillStyle='rgba(255,255,255,.2)';s.fillRect(X+2,Y+1,T-4,3);s.fillStyle='#e0b020';s.fillRect(X+6,Y+T/2-3,T-12,6);s.fillStyle='#1d2026';s.font='bold 6px monospace';s.textAlign='center';s.fillText('SERVICE',X+T/2,Y+T/2+2);s.textAlign='left'},
 spawn:{x:28.2*T,y:2.4*T},zones:[[0,0,GX,bot]],lobby:[13,1,24,10],
 cams:camc,tellers:[],mgr:null,guards,civ:0,
 mission:{code:'0000',vault:'drill',guards:guards.length,west:false,cams:camc.length,civ:0,tags:[],ev:[],lg:[],at:{},extra:[],bags:[],blackoutAt:null},

@@ -842,7 +842,7 @@ if(LAY.mission.tags.length)fxApply('say',['Lage: '+LAY.mission.tags.join(', ')])
 for(const k of lgList()){const w=lgWarn().includes(k);fxApply('say',[LAGE[k].n+(w?' (gewarnt)':'')+': '+LAGE[k].d(w)])};
 if(LAY.prison)goal=null;else{goal={k:rollGoal(LAY.seed,scOf(LAY),nPl),fail:0,tot:its.filter(i=>LOOT_T.includes(i.t)).length};
 fxApply('say',['Nebenziel: '+GOALS[goal.k].n+' (+'+Math.round(CFG.goal.bonus[goal.k]*100)+' % Beute)']);fxApply('say',[GOALS[goal.k].d()])}
-fxApply('say',[PLACE[scOf(LAY)].say])}
+fxApply('say',[PLACE[scOf(LAY)].say]);if(LAY.prison&&me.id===PZ)fxApply('say',['Die Servicetür im Gang führt in den Kontrollraum.'])}
 function take(o,u,v){if(o.units+u>o.bag+.01){say('Tasche ist voll',o.id);ban('Tasche voll',1.4,o.id);sndTo(o,'ev','deny');return false}v=Math.round(v*lgM('loot'));o.units+=u;o.loot+=v;sndTo(o,'cash');evt('fx',[o.x,o.y-16,'+'+fmt(v),1.2]);return v}
 const isSolF=(x,y)=>isSol(x,y)&&cell(x,y)!=='X';
 function flow(){dist=Array.from({length:H},()=>Array(W).fill(999));const q=[];for(const o of actv()){const sx=clamp(Math.floor(o.x/T),WX0,WX0+W-1),sy=clamp(Math.floor(o.y/T),WY0,WY0+H-1);if(dist[sy-WY0][sx-WX0]>0){dist[sy-WY0][sx-WX0]=0;q.push([sx,sy])}}let h=0;while(h<q.length){const c=q[h++];const cd=dist[c[1]-WY0][c[0]-WX0];for(const v of D4){const nx=c[0]+v[0],ny=c[1]+v[1];if(isSolF(nx,ny))continue;const w2=cell(nx,ny)==='X'?CFG.bar.pen:1;if(dist[ny-WY0][nx-WX0]<=cd+w2)continue;dist[ny-WY0][nx-WX0]=cd+w2;q.push([nx,ny])}}}
