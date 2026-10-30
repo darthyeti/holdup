@@ -43,7 +43,7 @@ const SOLVE = `(() => {
     while (ch) { ch = false; regT = G.bfs(G.spawn, st); reg = G.bfs(G.pz, st);
       card = (G.L.guards[R.card.g].route || []).some(q => reg.has(q.join()));
       for (const l of R.locks) { if (st.open.has(l.id)) continue;
-        if (l.ops.some(o => (o.who === 'pz' ? reg : regT).has(o.at.join()) && (o.k !== 'card' || card))) { st.open.add(l.id); ch = true; } }
+        if (l.ops.some(o => (o.who === 'pz' ? reg : regT).has(o.at.join()) && (o.k !== 'card' || card) && (!o.alarm || (mode === 'laut' && st.tor)))) { st.open.add(l.id); ch = true; } }
       if (mode === 'laut' && !st.tor && regT.has([GXe + 1, er].join())) { st.tor = true; ch = true; } }
     const all = R.locks.every(l => st.open.has(l.id)), exit = mode === 'laut' ? st.tor && reg.has([GXe - 1, er].join()) : reg.has(R.pick.join());
     return { all, exit, open: [...st.open], card };
@@ -135,6 +135,8 @@ module.exports = [
         D.buildLay(D.layoutBase(5)); const G = S.make();
         // Mutanten: jede Verletzung der Regeln muss auffallen
         o.mut.noCard = S.solve(G, 'laut', R => { R.locks.find(l => l.id === 'gi').ops = []; return R; }).all;                          // Gitter I ohne Bediener: nicht loesbar
+        const nc = (mode) => S.solve(G, mode, R => { const l = R.locks.find(l => l.id === 'gi'); l.ops = l.ops.filter(q => q.k !== 'card'); return R; });
+        o.mut.noCardLaut = nc('laut').all; o.mut.noCardStill = nc('still').all;     // ohne Karte: laut ueber das Aufhebeln nach Alarm loesbar, lautlos nicht
         o.mut.noSwitch = S.solve(G, 'still', R => { R.locks.find(l => l.id === 'gii').ops = []; return R; }).all;                          // Gitter II ohne Bediener
         o.mut.readerOutside = S.rules(G, R => { const l = R.locks.find(l => l.id === 'gi'); l.ops[0].at = [14, 10]; return R; }).bad.length;     // Kartenleser auf der Gang-Seite: nicht nur von innen
         o.mut.switchInside = S.rules(G, R => { const l = R.locks.find(l => l.id === 'gii'); l.ops[0].at = [15, 18]; return R; }).bad.length; // Schalter fuer das Gitter II im Gang, vom Team nicht erreichbar
@@ -148,6 +150,7 @@ module.exports = [
       t.eq(r.bad, [], 'Gitter-Regel in 12 Seeds erfuellt');
       t.eq(r.dir, [], 'Kontrollraum nie direkt, Route fuehrt durch alle Raeume, mindestens 45 Schritte');
       t.eq([r.mut.noCard, r.mut.noSwitch, r.mut.pzSwitch], [false, false, false], 'Mutanten: ohne Bediener oder mit falschem Bediener ist die Anlage nicht loesbar');
+      t.eq([r.mut.noCardLaut, r.mut.noCardStill], [true, false], 'Mutant ohne Karte: laut loesbar (Aufhebeln nach Alarm), lautlos nicht');
       t.ok(r.mut.readerOutside > 0, 'Mutant: Kartenleser auf der Gang-Seite faellt auf');
       t.ok(r.mut.switchInside > 0, 'Mutant: Schalter fuer Gitter II im Gang faellt auf');
       t.ok(r.mut.pzOutside > 0, 'Mutant: Gefangener am Schalter ausserhalb faellt auf');
@@ -261,6 +264,37 @@ module.exports = [
     },
   },
   {
+    name: 'Gefaengnis: Alarm vor der Karte: die Trakt-Wache wird zum Gegner, trotzdem kommt der Gefangene aus dem Trakt (Karte faellt beim Tod des Gegners, Rueckfall: Gitter I nach Alarm aufhebeln, laut und lang)',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, B = H.B, o = {}, p0 = A.get().players[0], p1 = A.get().players[1], R = A.LAY().prison;
+        const crd = H.items(A, 'crd')[0], prg = H.items(A, 'prg')[0], rdr = H.items(A, 'rdr')[0];
+        o.pre = [prg.ok(p1), crd.ok(p1)]; o.long = A.CFG.prison.pryG >= 15;
+        A.startHeist(true, p0); H.both(1);
+        o.alarm = [A.get().phase, B.get().phase]; const ce = A.get().en.find(e => e.card); o.card = !!ce;
+        o.after = [prg.ok(p1), prg.ok(p0), crd.ok(p1), rdr.ok(p1)];
+        // Weg 1: der Gegner mit der Karte stirbt, die Karte liegt dort
+        ce.x = 6 * 32; ce.y = (R.tb ? 18.5 : 4.5) * 32; ce.hp = 0; for (let i = 0; i < 90; i++) { A.get().players.forEach(p => { p.hp = 1e9; p.dead = false; }); step(H.G.insts, H.G.net, 1 / 60); }
+        o.drop = [crd.ok(p1), crd.ok(p0), Math.round(crd.x), Math.round(crd.y)]; crd.act(p1); o.rd = rdr.ok(p1); rdr.act(p1); H.both(1); o.gi1 = [H.lst(A, 'gi'), H.lst(B, 'gi')];
+        return o; })()`);
+      t.eq(r.pre, [false, false], 'vor dem Alarm: kein Aufhebeln des Gitters, keine Karte ohne ausgeschaltete Wache');
+      t.ok(r.long, 'Aufhebeln des Gitters ist lang');
+      t.eq(r.alarm, [2, 2], 'Alarm auf Host und Client');
+      t.ok(r.card, 'der Gegner traegt die Karte');
+      t.eq(r.after, [true, false, false, false], 'nach dem Alarm: der Gefangene kann das Gitter aufhebeln (nur er), die Karte hat noch niemand');
+      t.eq([r.drop[0], r.drop[1]], [true, false], 'Weg 1: stirbt der Gegner, liegt die Karte da und nur der Gefangene nimmt sie');
+      t.eq(r.gi1, ['ll', 'll'], 'mit der Karte geht das Gitter I auch nach Alarm');
+      const w = await t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, B = H.B, o = {}, p0 = A.get().players[0], p1 = A.get().players[1], R = A.LAY().prison, T = 32;
+        const prg = H.items(A, 'prg')[0]; A.startHeist(true, p0); H.both(1);
+        A.CFG.prison.pryG = 1.5; B.CFG.prison.pryG = 1.5; p1.x = prg.x; p1.y = prg.y; B.keys.e = 1; H.both(3, () => { p1.x = prg.x; p1.y = prg.y; p1.vx = p1.vy = 0; }); B.keys.e = 0; H.both(1);
+        o.gi = [H.lst(A, 'gi'), H.lst(B, 'gi')]; return o; })()`);
+      t.eq(w.gi, ['ll', 'll'], 'Weg 2: Gitter I mit E halten aufgehebelt, auf Host und Client');
+    },
+  },
+  {
     name: 'Gefaengnis: C4 oeffnet das Tor von aussen und loest Alarm aus, der Gefangene hebt nach dem Ausschalten einer Wache deren Pistole auf und ist dann bewaffnet',
     timeout: 120000,
     async run(t) {
@@ -352,7 +386,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, T = 32; D.sessReset(); D.setScenario('prison'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset();
-        const g = D.get(), me = g.me, R = D.LAY().prison, k = D.keys, o = { steps: 0, seg: [] }; g.npcs.splice(0); g.cams.forEach(c => { c.off = true; });
+        const g = D.get(), me = g.me, R = D.LAY().prison, k = D.keys, o = { steps: 0, seg: [] }; g.cams.forEach(c => { c.off = true; });
         const it = tt => g.its.find(i => i.t === tt), sw = id => g.its.filter(i => i.t === 'lsw').find(i => R.sws[i.k].opens.includes(id));
         const walk = (tx, ty, name) => { const pts = D.pathTo(me.x, me.y, tx, ty); if (!pts.length) { o.seg.push(name + ': kein Weg'); return false; }
           for (const w of pts) { for (let i = 0; i < 300; i++) { const dx = w[0] - me.x, dy = w[1] - me.y; if (Math.hypot(dx, dy) < 5) break; k.d = dx > 3; k.a = dx < -3; k.s = dy > 3; k.w = dy < -3; D.update(1 / 30); o.steps++; } }
@@ -361,17 +395,20 @@ module.exports = [
         // 1. ohne Stellen: zur Kantine gibt es keinen Weg
         o.blocked = D.pathTo(me.x, me.y, 22, 18).length === 0;
         // 2. Zellentuer aufhebeln (an der Stelle der Zelle)
-        const pry = it('pry'); near(pry.x, pry.y, 'pry'); pry.act(me);
+        const cgd = g.npcs.filter(n => n.k === 'grd' && n.st !== 'away')[R.card.g]; g.npcs.splice(0);
+        const need = (item, who, name) => { if (!item.ok(who)) o.seg.push(name + ': ok(o) false'); };
+        const pry = it('pry'); near(pry.x, pry.y, 'pry'); need(pry, me, 'pry'); pry.act(me);
         // 3. zum Leser, Karte als genommen, Leser
-        const rdr = it('rdr'); it('crd').done = true; walk(Math.floor(rdr.x / T), Math.floor(rdr.y / T), 'Leser'); near(rdr.x, rdr.y, 'Leser'); rdr.act(me);
+        const rdr = it('rdr'), crd = it('crd'); o.rdrNoCard = rdr.ok(me); o.crdAlive = crd.ok(me); cgd.st = 'ko'; cgd.kt = 99; need(crd, me, 'Karte'); crd.act(me); walk(Math.floor(rdr.x / T), Math.floor(rdr.y / T), 'Leser'); near(rdr.x, rdr.y, 'Leser'); need(rdr, me, 'Leser'); rdr.act(me);
         // 4. in den Gang, vor Gitter II; ohne Schalter kein Weg in die Kantine
-        walk(15, 18, 'Gang'); o.blockedII = D.pathTo(me.x, me.y, 22, 18).length === 0; sw('gii').act(g.players[0]);
+        walk(15, 18, 'Gang'); o.blockedII = D.pathTo(me.x, me.y, 22, 18).length === 0; need(sw('gii'), g.players[0], 'Schalter II'); sw('gii').act(g.players[0]);
         // 5. durch Kantine und Waescherei in die Kueche, Serviceluke von innen, zum Abholpunkt
-        walk(22, 18, 'Kantine'); walk(34, 19, 'Waescherei'); const dlx = it('dlx'); walk(43, 22, 'Kueche'); near(dlx.x, dlx.y, 'dlx'); dlx.act(me); walk(R.pick[0], R.pick[1], 'Abholpunkt');
+        walk(22, 18, 'Kantine'); walk(34, 19, 'Waescherei'); const dlx = it('dlx'); walk(43, 22, 'Kueche'); near(dlx.x, dlx.y, 'dlx'); need(dlx, me, 'dlx'); dlx.act(me); walk(R.pick[0], R.pick[1], 'Abholpunkt');
         o.d = Math.hypot(me.x - (R.pick[0] * T + 16), me.y - (R.pick[1] * T + 16)); o.r = D.CFG.prison.pickR;
         return o;
       });
       t.ok(r.blocked, 'eingesperrt: aus der Zelle gibt es keinen Weg in die Kantine');
+      t.eq([r.rdrNoCard, r.crdAlive], [false, false], 'ohne Karte geht der Leser nicht, die Karte nur nach dem Ausschalten der Wache');
       t.ok(r.blockedII, 'im Gang vor dem Gitter II: kein Weg in die Kantine ohne Schalter');
       t.ok(r.seg.every(s => /: ok$/.test(s)), 'alle Teilstrecken gelaufen: ' + r.seg.join('; '));
       t.ok(r.d < r.r, 'der Gefangene steht am Abholpunkt (Abstand ' + Math.round(r.d) + ' von ' + r.r + ', Schritte ' + r.steps + ')');
@@ -458,7 +495,7 @@ module.exports = [
         const out = { bad: [], n: 0, mark: [] };
         for (const sd of [5, 6, 7, 8, 9]) {
           D.buildSeed(sd); D.reset(); const lay = D.LAY(), M = D.world().M, ch = (x, y) => M[y + 6][x + 6], R = lay.prison, lockCells = R.locks.reduce((a, l) => a.concat(l.cells), []);
-          for (const it of D.get().its.filter(i => ['lsw', 'sw', 'mon', 'note', 'pry', 'rdr'].includes(i.t))) {
+          for (const it of D.get().its.filter(i => ['lsw', 'sw', 'mon', 'note', 'pry', 'rdr', 'prg'].includes(i.t))) {
             const tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); out.n++;
             let ok = false;
             for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
@@ -475,7 +512,7 @@ module.exports = [
         D.draw(); out.mark.push(log.length); cc.done = true; log.length = 0; D.draw(); out.mark.push(log.length); CanvasRenderingContext2D.prototype.fillRect = f;
         return out;
       });
-      t.ok(r.n >= 6 * 5 - 2, 'E-Objekte gefunden: ' + r.n);
+      t.ok(r.n >= 7 * 5 - 2, 'E-Objekte gefunden: ' + r.n);
       t.eq(r.bad, [], 'E-Objekte ohne sichtbares Ding in der Naehe');
       t.ok(r.mark[0] >= 1 && r.mark[1] === 0, 'Kartensymbol an der Wache, nach dem Nehmen weg: ' + JSON.stringify(r.mark));
     },
