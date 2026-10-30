@@ -277,7 +277,7 @@ module.exports = [
         o.after = [prg.ok(p1), prg.ok(p0), crd.ok(p1), rdr.ok(p1)];
         // Weg 1: der Gegner mit der Karte stirbt, die Karte liegt dort
         ce.x = 6 * 32; ce.y = (R.tb ? 18.5 : 4.5) * 32; ce.hp = 0; for (let i = 0; i < 90; i++) { A.get().players.forEach(p => { p.hp = 1e9; p.dead = false; }); step(H.G.insts, H.G.net, 1 / 60); }
-        o.drop = [crd.ok(p1), crd.ok(p0), Math.round(crd.x), Math.round(crd.y)]; crd.act(p1); o.rd = rdr.ok(p1); rdr.act(p1); H.both(1); o.gi1 = [H.lst(A, 'gi'), H.lst(B, 'gi')];
+        H.both(1); const cb = H.items(B, 'crd')[0]; o.drop = [crd.ok(p1), crd.ok(p0), Math.round(crd.x), Math.round(crd.y)]; o.cl = [cb.ok(B.get().players[1]), Math.round(cb.x), Math.round(cb.y)]; crd.act(p1); o.rd = rdr.ok(p1); rdr.act(p1); H.both(1); o.gi1 = [H.lst(A, 'gi'), H.lst(B, 'gi')];
         return o; })()`);
       t.eq(r.pre, [false, false], 'vor dem Alarm: kein Aufhebeln des Gitters, keine Karte ohne ausgeschaltete Wache');
       t.ok(r.long, 'Aufhebeln des Gitters ist lang');
@@ -285,6 +285,7 @@ module.exports = [
       t.ok(r.card, 'der Gegner traegt die Karte');
       t.eq(r.after, [true, false, false, false], 'nach dem Alarm: der Gefangene kann das Gitter aufhebeln (nur er), die Karte hat noch niemand');
       t.eq([r.drop[0], r.drop[1]], [true, false], 'Weg 1: stirbt der Gegner, liegt die Karte da und nur der Gefangene nimmt sie');
+      t.eq(r.cl, [true, r.drop[2], r.drop[3]], 'Client (der Gefangene) sieht die gefallene Karte an derselben Stelle und kann sie nehmen');
       t.eq(r.gi1, ['ll', 'll'], 'mit der Karte geht das Gitter I auch nach Alarm');
       const w = await t.page.evaluate(`(() => {
         const H = ${HELP}, A = H.A, B = H.B, o = {}, p0 = A.get().players[0], p1 = A.get().players[1], R = A.LAY().prison, T = 32;

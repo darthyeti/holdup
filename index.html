@@ -1885,7 +1885,7 @@ gr:gr.map(q=>[q.id,r1(q.x),r1(q.y),['flash','gas','smoke','dec','shell'].indexOf
 cp:corp.map(c=>[r1(c.x),r1(c.y),r2(c.a),r1(c.t),c.row]),
 pk:pk.map(k=>[Math.round(k.x),Math.round(k.y),k.k]),
 it:its.reduce((m,it,i)=>{if(it.done)m[i/30|0]|=1<<(i%30);return m},Array(Math.ceil(its.length/30)).fill(0)),lo:its.reduce((a,it,i)=>{if(it.lost)a.push(i);return a},[]),ip:its.map((it,i)=>it.pr>.001?[i,r2(it.pr)]:null).filter(Boolean),
-cm:cams.map(c=>(c.k?1:0)|(c.off?2:0)|(c.alert>0?4:0)),br:bars.map(b=>[b.lv,Math.ceil(b.hp),r1(b.cd),b.st==='fuse'?2:b.tk?1:0,r1(b.fz)]),pm:(LAY.pumps||[]).map(q=>q.hp>0?1:0).join(''),pd:prLk,pe:prDl?1:0,dr:LAY.lockCells.map(q=>cell(q[0],q[1])).join(''),wn:(LAY.wins||[]).map(w=>cell(w.x,w.y)).join('')}}
+cm:cams.map(c=>(c.k?1:0)|(c.off?2:0)|(c.alert>0?4:0)),br:bars.map(b=>[b.lv,Math.ceil(b.hp),r1(b.cd),b.st==='fuse'?2:b.tk?1:0,r1(b.fz)]),pm:(LAY.pumps||[]).map(q=>q.hp>0?1:0).join(''),pd:prLk,pe:prDl?1:0,kc:prCd&&prCd.drop?[Math.round(prCd.drop.x),Math.round(prCd.drop.y)]:0,dr:LAY.lockCells.map(q=>cell(q[0],q[1])).join(''),wn:(LAY.wins||[]).map(w=>cell(w.x,w.y)).join('')}}
 function applySnap(s){if(!players.length)return;if(Math.abs(time-s.T)>.2){LOG.evl('zeit',['sprung',r2(s.T-time)],.5);time=s.T}
 const g=s.g;phase=g[0];tH=g[1];waveN=g[2];waveT=g[3];policeAt=g[4];vanAt=g[5];vanArr=!!g[6];vanCalled=!!g[7];vanX=g[8];policeShown=!!g[9];sus=g[10];secured=g[11];civKills=g[12];kills=g[13];escaped=g[14];vaultOpen=!!g[15];code=!!g[16];mon=!!g[17];camDown=g[18];rT=g[19]||0;blk=g[20]||0;if(goal)goal.fail=g[21]?1:0;vanMode=g[22]|0;vanNv=g[23]||0;alarmT=g[24]||0;hostN=g[25]|0;holdX=g[26]||0;hostK=g[27]|0;shX=g[28]||0;if(ALT&&(g[29]|0)!==vanAlt)setAlt(g[29]|0);
 for(const a of s.pl){const o=players[a[0]];if(!o)continue;const f=a[10];o.hp=a[4];o.ar=a[5];o.mag=a[6];o.res=a[7];o.units=a[8];o.loot=a[9];o.armed=!!(f&1);o.dead=!!(f&2);o.out=!!(f&4);o.gone=!!(f&8);o.ln=f&32?1:0;o.dg=f&64?1:0;o.rl=a[13];o.hurt=Math.max(o.hurt,a[12]);o.jam=a[16]|0;o.med=a[17]|0;o.mat=a[18]|0;o.dn=a[19]||0;o.rv=a[20]||0;o.bl=a[21]||0;o.gs=a[22]||0;o.chipV=a[23]||0;o.bd=a[24]||0;o.hh=a[25]|0;o.sm=a[26]|0;o.dc=a[27]|0;o.ad=a[28]|0;o.bt=a[29]|0;o.trap=a[30]|0;o.c4=a[31]|0;o.sx=a[32]|0;o.ak=a[33]|0;
@@ -1904,6 +1904,7 @@ if(s.dr&&s.dr.length===LAY.lockCells.length)LAY.lockCells.forEach((q,i)=>setc(q[
 if(s.wn&&LAY.wins&&s.wn.length===LAY.wins.length)LAY.wins.forEach((w,i)=>{if(cell(w.x,w.y)!==s.wn[i])setc(w.x,w.y,s.wn[i])})
 if(LAY.prison&&(s.pd|0)!==prLk)LAY.prison.locks.forEach((l,i)=>{if((s.pd|0)>>i&1)prisonOpen(l.id)});
 if(LAY.prison&&!!s.pe!==prDl)prisonDl(!!s.pe);
+if(LAY.prison&&prCd&&s.kc&&!prCd.drop)prCd.drop={x:s.kc[0],y:s.kc[1]};
 if(s.pm&&LAY.pumps&&s.pm.length===LAY.pumps.length){let ch=false;LAY.pumps.forEach((q,i)=>{if(s.pm[i]==='0'&&q.hp>0){q.hp=0;setc(q.x,q.y,'o');ch=true;dc.fillStyle='rgba(20,14,8,.55)';dc.beginPath();dc.arc(q.x*T+16,q.y*T+16,26,0,6.283);dc.fill()}});if(ch){paintObjs();flowT=0}}
 if(s.tk&&tk){const a=s.tk,st=['wait','drive','stopped','gone'][a[0]];if(st==='stopped'&&tk.st!=='stopped'){tk.x=a[1];tk.y=a[2]}tk.st=st;tk.tx=a[1];tk.ty=a[2];tk.v=a[3];tk.tire=a[4];tk.flat=!!a[5];if(st==='stopped'&&!tk.cells)tkStamp()}
 if(s.vh&&vh){const a=s.vh,st=['wait','drive','stopped','gone'][a[0]];if(st==='stopped'&&vh.st!=='stopped')vh.x=a[1];vh.st=st;vh.tx=a[1];vh.v=a[2];if(st==='stopped'&&!vh.cells)vhStamp()}

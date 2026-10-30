@@ -178,7 +178,7 @@ Seit v1 gleich: Mithäftlinge, sichtbare Schaltpulte, Ausgang von innen, der lau
 |---|---|---|
 | `z` | Zellentür des Gefangenen | der Gefangene von innen aufhebeln (E halten, `CFG.prison.pryT` 18 s, Objekt `pry`), oder ein Mitspieler am Schalter |
 | `zi` | die übrigen 7 Zellentüren seines Trakts | nur ein Mitspieler am Schalter (Mithäftlinge laufen los) |
-| `gi` | Gitter Trakt zum Gang | nur von innen: Karte der Trakt-Wache (liegt am ausgeschalteten Wächter, Objekt `crd`, `CFG.prison.cardT`), dann am Kartenleser (Objekt `rdr`, `rdrT`) im Trakt. Der Leser liegt auf der Trakt-Seite, vom Gang aus ist er außer Reichweite. Wird die Wache im Alarm zum Gegner, fällt die Karte dort, wo er stirbt (nur auf dem Host geführt, kein Netzfeld). Rückfall nach Alarm: das Gitter aufhebeln (Objekt `prg`, `pryG` 25 s), damit der Gefangene nie festsitzt |
+| `gi` | Gitter Trakt zum Gang | nur von innen: Karte der Trakt-Wache (liegt am ausgeschalteten Wächter, Objekt `crd`, `CFG.prison.cardT`), dann am Kartenleser (Objekt `rdr`, `rdrT`) im Trakt. Der Leser liegt auf der Trakt-Seite, vom Gang aus ist er außer Reichweite. Wird die Wache im Alarm zum Gegner, fällt die Karte dort, wo er stirbt (Position im Schnappschussfeld `kc`, so sieht sie auch der Gefangene als Client). Rückfall nach Alarm: das Gitter aufhebeln (Objekt `prg`, `pryG` 25 s), damit der Gefangene nie festsitzt |
 | `gii` | Gitter Gang zur Kantine | nur von außen: Schalter (Objekt `lsw`), den nur Mitspieler bedienen (`gateSide`) |
 Dazu die Servicetür (`dl`, Lieferung, siehe unten) und das Tor (`vault`). Die beiden Schalter (`LAY.prison.sws`, Wachstube bei (30,6) und Kontrollraum bei (34,6)) öffnen je ein Paket: `z` und `zi` zusammen oder `gii`. Wer was öffnet, würfelt der Seed.
 
