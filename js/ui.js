@@ -36,6 +36,7 @@ case'jewel':g.moveTo(6,4);g.lineTo(18,4);g.lineTo(22,10);g.lineTo(12,21);g.lineT
 case'gas':g.rect(5,4,9,17);g.moveTo(3,21);g.lineTo(16,21);g.moveTo(14,9);g.lineTo(18,9);g.lineTo(18,17);g.lineTo(21,17);g.lineTo(21,8);g.lineTo(18,5);g.moveTo(7,8);g.lineTo(12,8);g.stroke();break;
 case'truck':g.rect(2,7,13,10);g.moveTo(15,10);g.lineTo(19,10);g.lineTo(22,13);g.lineTo(22,17);g.lineTo(15,17);g.moveTo(9,18);g.arc(7,18,2,0,6.283);g.moveTo(20,18);g.arc(18,18,2,0,6.283);g.stroke();break;
 case'museum':g.rect(3,5,18,14);g.moveTo(3,16);g.lineTo(9,10);g.lineTo(13,14);g.lineTo(16,11);g.lineTo(21,16);g.moveTo(18,8.5);g.arc(16.5,8.5,1.5,0,6.283);g.stroke();break;
+case'prison':g.rect(4,3,16,18);g.moveTo(9,3);g.lineTo(9,21);g.moveTo(15,3);g.lineTo(15,21);g.moveTo(4,8);g.lineTo(20,8);g.stroke();break;
 case'casino':g.rect(4,4,16,16);g.stroke();dots([[8,8],[16,8],[12,12],[8,16],[16,16]]);break;
 case'dice':g.rect(4,4,16,16);g.stroke();g.font='bold 14px monospace';g.textAlign='center';g.fillText('?',12,17);break;
 case'coop':g.arc(8,8,3,0,6.283);g.moveTo(16+3,8);g.arc(16,8,3,0,6.283);g.moveTo(2,20);g.quadraticCurveTo(8,10,14,20);g.moveTo(10,20);g.quadraticCurveTo(16,10,22,20);g.stroke();break;
@@ -90,7 +91,8 @@ const ys=y+90+rows.length*16;g.textAlign='left';g.font='bold 11px monospace';g.f
 g.textAlign='left';g.font='10px monospace';g.fillStyle=MU;dry.forEach((l,i)=>g.fillText(l,x+12,ys+20+i*13));g.restore()}
 
 /* ---------- Seiten ---------- */
-const jobOf=k=>k==='random'?RANDOM:JOBS.find(j=>j.k===k)||JOBS[0];
+const PRISON={k:'prison',n:'Gefängnisausbruch',i:'prison',be:1,ri:3,s:'Ein Teammitglied sitzt ein',d:['Drinnen schleicht der Gefangene zum Kontrollraum und öffnet die Tür zum Hof, draußen hält das Team das Tor auf (laut).','Dann alle in den Fluchtwagen. Keine Beute, dafür eine feste Belohnung. Wer drin sitzt, hat keine Waffe: Wachen von hinten ausschalten.']};
+const jobOf=k=>k==='random'?RANDOM:k==='prison'?PRISON:JOBS.find(j=>j.k===k)||JOBS[0];
 function sTitle(){const{SESSION,fmt,scenario}=X,r=SESSION.round;
 return{def:'serie',t:[
 {id:'serie',x:60,y:176,w:510,h:236,kind:'p',act:'solo',chip:'Enter',paint(t){const{g}=X;icon('play',t.x+60,t.y+70,58,G);g.textAlign='left';g.font='bold 28px monospace';g.fillStyle=G;g.fillText(r>0?'Serie fortsetzen':'Neue Serie',t.x+110,t.y+78);
@@ -103,15 +105,15 @@ deco(){const{g,titleNote}=X;g.textAlign='center';if(titleNote){g.font='12px mono
 g.font='11px monospace';g.fillStyle=MU;g.fillText('Pfeiltasten oder Maus wählen, Enter oder Klick bestätigt, Esc geht zurück.',480,446);g.fillText('Ton: '+(SND.isMuted()?'aus':'an')+' (M)',480,466)}}}
 function sMission(){const{scenario,NET,sameMap,CFG,missionFrom,SESSION,shopNote,fmt}=X,from=missionFrom,cw=201,gap=12,rh=128,pos=[[0,0],[1,0],[2,0],[3,0],[0,1],[1,1]];
 const rk=k=>(CFG.rank[k]||0),lk=k=>X.scLocked(k)?'ab Auftrag '+(rk(k)+1):'';
-const t=JOBS.map((j,i)=>({id:'job:'+j.k,x:60+pos[i][0]*(cw+gap),y:84+pos[i][1]*(rh+12),w:cw,h:rh,act:'pick',arg:j.k,chosen:scenario===j.k,lock:lk(j.k),job:j,paint:paintJob,nochip:true}));
-t.push({id:'job:random',x:60+2*(cw+gap),y:84+rh+12,w:cw*2+gap,h:rh,act:'pick',arg:'random',chosen:scenario==='random',job:RANDOM,paint:paintRandom,nochip:true});
+const pzN=X.prisonName(),t=pzN?[{id:'job:prison',x:60,y:84,w:cw*2+gap,h:rh,act:'pick',arg:'prison',chosen:true,lock:'',job:Object.assign({},PRISON,{s:pzN+' sitzt im Gefängnis'}),paint:paintJob,nochip:true}]:JOBS.map((j,i)=>({id:'job:'+j.k,x:60+pos[i][0]*(cw+gap),y:84+pos[i][1]*(rh+12),w:cw,h:rh,act:'pick',arg:j.k,chosen:scenario===j.k,lock:lk(j.k),job:j,paint:paintJob,nochip:true}));
+if(!pzN){const dbgP=!!X.DBG;t.push({id:'job:random',x:60+2*(cw+gap),y:84+rh+12,w:dbgP?cw:cw*2+gap,h:rh,act:'pick',arg:'random',chosen:scenario==='random',job:RANDOM,paint:paintRandom,nochip:true});if(dbgP)t.push({id:'job:prison',x:60+3*(cw+gap),y:84+rh+12,w:cw,h:rh,act:'pick',arg:'prison',chosen:scenario==='prison',lock:'',job:PRISON,paint:paintJob,nochip:true})}
 t.push({id:'back',x:60,y:466,w:170,h:44,kind:'g',act:'missionBack',title:'Zurück',chip:'Esc'});
 if(NET.role!=='client')t.push({id:'same',x:246,y:466,w:340,h:44,key:'k',act:'same',title:'Gleiche Karte nochmal: '+(sameMap?'an':'aus'),chosen:sameMap});
 if(kickList().length)t.push({id:'kick',x:360,y:46,w:170,h:32,kind:'g',act:'ui:kick',title:kickTitle(),tf:'bold 12px monospace'});
 t.push({id:'start',x:620,y:466,w:280,h:44,kind:'p',act:'missionStart',title:from==='lobby'?'Übernehmen':'Auftrag starten',chip:'Enter'});
 return{def:'start',back:'missionBack',t,deco(){const{g}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('AUFTRAG WÄHLEN',60,64);
 g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'Neue Serie',900,58);fhBadge(900,76,'r');
-const ft=t.find(q=>q.id===focus&&q.job),j=(ft?ft.job:jobOf(scenario)),dl=ft&&ft.lock?[ft.job.n+' ist gesperrt: erreichbar '+ft.lock+'.','Jeder überstandene Auftrag zählt, auch beim Zufall.']:j.d;
+const ft=t.find(q=>q.id===focus&&q.job),j=pzN?PRISON:(ft?ft.job:jobOf(scenario)),dl=pzN?[pzN+' sitzt im Gefängnis. Der nächste Auftrag ist ein Gefängnisausbruch.',PRISON.d[0]]:ft&&ft.lock?[ft.job.n+' ist gesperrt: erreichbar '+ft.lock+'.','Jeder überstandene Auftrag zählt, auch beim Zufall.']:j.d;
 g.fillStyle='rgba(0,0,0,.55)';g.fillRect(60,366,840,74);g.strokeStyle='rgba(255,176,0,.3)';g.lineWidth=1;g.strokeRect(60.5,366.5,839,73);g.textAlign='left';g.font='bold 13px monospace';g.fillStyle=Y;g.fillText(j.n,74,386);
 g.font='12px monospace';g.fillStyle=TX;dl.forEach((l,i)=>g.fillText(l,74,408+i*18));
 if(shopNote.t>0){g.textAlign='center';g.font='13px monospace';g.fillStyle=Y;g.fillText(shopNote.s,480,458)}g.textAlign='left'}}}
@@ -306,9 +308,10 @@ function mDebug(){const{SESSION,CFG,fmt}=X,F=CFG.fahndung,lv=X.heatLv(SESSION.he
 {id:'dpts',half:0,act:'dbgPts',title:'Skillpunkte +5',sub:'offen: '+(SESSION.pts|0)},{id:'dresp',half:1,act:'dbgResp',title:'Baum zurücksetzen',sub:'alle Punkte kommen zurück'},
 {id:'dheat',act:'dbgHeat',title:'Fahndung: Stufe '+lv+' '+F.names[lv],sub:'Klick: nächste Stufe (0 bis '+(F.names.length-1)+')'},
 {id:'dround',half:0,act:'dbgRound',arg:-1,title:'Auftrag −1',sub:'jetzt Auftrag '+(SESSION.round+1)},{id:'dround2',half:1,act:'dbgRound',arg:1,title:'Auftrag +1',sub:'Rang schaltet Karten frei'},
-{id:'dquiet',act:'dbgQuiet',title:'Lautlose Siege in Folge: '+q,sub:q>=CFG.alert.at?'Läden gewarnt, Klick: +1 (nach '+CFG.alert.cap+' wieder 0)':'Klick: +1 (ab '+CFG.alert.at+' gewarnt)'}];
+{id:'dquiet',act:'dbgQuiet',title:'Lautlose Siege in Folge: '+q,sub:q>=CFG.alert.at?'Läden gewarnt, Klick: +1 (nach '+CFG.alert.cap+' wieder 0)':'Klick: +1 (ab '+CFG.alert.at+' gewarnt)'},
+{id:'dpz',act:'dbgPz',title:'Gefangener: '+(SESSION.pzT<0?'letzter Spieler':'Spieler '+(SESSION.pzT+1)),sub:'Gefängnisausbruch (Auftragswahl, Klick: nächster Platz)'}];
 if(X.NET.role==='solo')rows.push({id:'dshop',act:'dbgShop',title:'Shop öffnen',sub:'ohne einen Auftrag zu beenden (nur solo)'});
-const gap=8,hs=rows.map(r=>56),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
+const gap=8,hs=rows.map(r=>50),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
 let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
 t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
 return{def:'close',back:'ui:close',t,deco(){panelFrame(px,y0,pw,h,'TESTWERKZEUGE (#debug)')}}}
@@ -462,4 +465,4 @@ const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
 return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,title:t.title||'',x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus,glow:!!t.glow})):[]}}}
-mkUI.api=11;
+mkUI.api=12;

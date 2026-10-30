@@ -17,7 +17,7 @@ module.exports = [
       t.eq(r.opt, ['unlock', 'dbg'], 'Aufträge frei und Testwerkzeuge in den Optionen');
       t.eq(r.side, [true, true], 'nebeneinander');
       t.eq(r.modal, 'dbg', 'Testwerkzeuge öffnet das Fenster');
-      t.eq(r.tiles, ['dmoney', 'dmoney0', 'dpts', 'dresp', 'dheat', 'dround', 'dround2', 'dquiet', 'dshop', 'close'], 'alle Kacheln da (Shop öffnen nur solo)');
+      t.eq(r.tiles, ['dmoney', 'dmoney0', 'dpts', 'dresp', 'dheat', 'dround', 'dround2', 'dquiet', 'dpz', 'dshop', 'close'], 'alle Kacheln da (Shop öffnen nur solo)');
       t.ok(r.inside, 'alles liegt im Bild');
       t.eq(r.after, 'options', 'Esc schließt nur das Fenster, die Optionen bleiben');
     },

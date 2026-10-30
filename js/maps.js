@@ -90,13 +90,14 @@ const mkTheme=(ti,di,sty)=>{const b=THEMES[ti],t=TODS[di];return Object.assign({
 /* Optik Juwelier (Noir): schwarzer Marmor, Gold, Samt. Eigenes Thema, damit die Zufallskarten der Bank unveraendert bleiben. */
 const THEME_NOIR={n:'noir',f:{t:[22,20,27,32,29,39,12],k:[104,22,42],w:[66,44,32],m:[62,68,78],l:[38,66,42],s:[148,144,138],a:[50,52,56],y:[104,100,96]},wall:['#2b252f','#3f3745','#352d3b','#1b161e','#221c26'],glass:['#bcd0e6','#6a89ac'],counter:['#2a2226','#cfc8bb'],pillar:['#3a3340','#6a5f72'],door:['#2a2226','#6a5f72']};
 const mkThemeOf=(b,di,sty)=>{const t=TODS[di];return Object.assign({},b,{tod:t.n,tint:t.tint,dark:t.dark,sun:Object.assign({},SUN0,t.sun||{}),sty:sty|0})};
-const scOf=l=>l.truck?'truck':l.jewel?'jewel':l.gas?'gas':l.museum?'museum':l.casino?'casino':'bank';
+const scOf=l=>l.truck?'truck':l.prison?'prison':l.jewel?'jewel':l.gas?'gas':l.museum?'museum':l.casino?'casino':'bank';
 /* Texte je Ort: a = Akkusativ fuer die Polizeimeldung, say = Briefing im Feed, focus = Text im Fokus-Overlay */
 const PLACE={bank:{a:'die Bank',say:'Erkunde die Bank. Mit F ziehst du die Waffe.',focus:'Erkunde die Bank. Mit F ziehst du die Waffe und startest den Überfall.'},
 truck:{a:'den Panzerwagen',say:'Baut aus Kisten, Fässern und Autos Stück für Stück eine Sperre über alle vier Fahrspuren, bevor der Panzerwagen kommt.',focus:'Baut eine Sperre, bevor der Panzerwagen kommt. Mit F ziehst du die Waffe.'},
 jewel:{a:'den Juwelier',say:'Erkunde den Juwelier. Vitrinen schneidest du leise auf, mit F ziehst du die Waffe und schlägst sie ein.',focus:'Erkunde den Juwelier. Vitrinen leise aufschneiden, mit F startest du den Überfall.'},
 gas:{a:'die Tankstelle',say:'Erkunde die Tankstelle. Die Polizei ist schnell: Nimm mit, was du tragen kannst. Zapfsäulen explodieren, wenn man sie beschießt.',focus:'Erkunde die Tankstelle. Die Polizei ist hier schnell, mit F startest du den Überfall.'},
 museum:{a:'das Museum',say:'Nachts im Museum: Dunkel, du siehst nur im Lichtkreis um dich. Wer im Lichtkegel einer Wache steht, fällt sofort auf, wer einen Laser berührt, löst Alarm aus. Der Hauptschalter legt Laser und Kameras 50 s lahm.',focus:'Nachts im Museum. Schleichen lohnt sich, der erste Schuss ist teuer.'},
+prison:{a:'das Gefängnis',say:'Gefängnisausbruch: Der Gefangene schleicht aus dem Zellentrakt in den Kontrollraum und öffnet dort die Zellentür. Draußen hält das Team das Tor auf (E am Tor, laut). Dann alle in den Fluchtwagen. Lautlos geht es auch: durch die Hintertür des Kontrollraums (Lieferung) zum Abholpunkt hinter der Mauer.',focus:'Gefängnisausbruch. Drinnen leise zum Kontrollraum, draußen das Tor aufhalten.'},
 casino:{a:'das Casino',say:'Erkunde das Casino. Chips tauschst du im Überfall am Cage in Geld, sonst zählen sie beim Abgang nur zur Hälfte.',focus:'Erkunde das Casino. Chips tauschst du am Cage, mit F startest du den Überfall.'}};
 /* Auftragslage (LAY.mission): eigener Zufallsstrom, aendert die Geometrie nicht. CLASSICM ergibt die klassische Lage. */
 const CLASSICM={code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,noteIdx:1,rot:[0,false,0,false],ev:[],at:{},lg:[]};
@@ -110,7 +111,7 @@ nacht:{n:'Nacht',sc:'bjtgc',no:['nebel'],d:()=>{const N=CFG.lage.nacht,o=N.per[S
 wachsam:{n:'Wachsames Personal',sc:'bjgmc',no:[],d:w=>w?'Die Läden sind gewarnt (lautlose Siege in Folge): Der Verdacht steigt '+Math.round((CFG.lage.wachsam.sus-1)*100)+' % schneller, der Bonus bei lautlosem Raub sinkt auf '+Math.round(CFG.stealthBonus*CX.quietFade()*100)+' %.':'Der Verdacht steigt '+Math.round((CFG.lage.wachsam.sus-1)*100)+' % schneller, dafür '+Math.round((CFG.stealthBonus+CFG.lage.wachsam.stl)*100)+' % Bonus bei lautlosem Raub.'}};
 /* Wuerfeln mit eigenem Strom (Seed), damit Karten ohne Tag fuer denselben Seed unveraendert bleiben. lgForce ist nur fuer Tests (dbg.setLage). */
 /* Erzwungene Tags der Wachsamkeit (CFG.alert): ab dem Zaehler at, nur in Szenarien, die den Tag kennen. */
-const warnTags=()=>CFG.alert.on&&(SESSION.quiet|0)>=CFG.alert.at?[CFG.alert.tag]:[],SCL={bank:'b',jewel:'j',gas:'g',museum:'m',casino:'c',truck:'t'},
+const warnTags=()=>CFG.alert.on&&(SESSION.quiet|0)>=CFG.alert.at?[CFG.alert.tag]:[],SCL={bank:'b',jewel:'j',gas:'g',museum:'m',casino:'c',truck:'t',prison:'p'},
 /* Welche erzwungenen Tags eine Karte dieses Szenarios jetzt braeuchte (Text), reset baut die Welt neu, wenn die gebaute Karte (gleicher Seed bei Gleiche Karte) davon abweicht */
 warnFor=sc=>CX.lgForce?'':warnTags().filter(k=>LAGE[k].sc.includes(SCL[sc]||'b')).join(','),lgN=(ms,k)=>LAGE[k].n+((ms.lgw||[]).includes(k)?' (gewarnt)':'');
 function rollLage(sd,sc,nev){const r=mulberry32((((sd|0)*40503)>>>0)^0x6c4e1f27),u=r(),pool=Object.keys(LAGE).filter(k=>LAGE[k].sc.includes(sc)),res=[],fw=CX.lgForce?[]:warnTags().filter(k=>pool.includes(k));
@@ -760,6 +761,30 @@ const deep=cells.filter(q=>!seen(q[0],q[1],K.sight));if(!deep.length){undo();con
  delete lay.stash;delete lay.spots;delete lay.lockCells;undo()}
 if(sp0)lay.spots=sp0;if(lk0)lay.lockCells=lk0;
 return lay}
+/* ---- Szenario Gefaengnis (Eilauftrag Issue 45): handgebaute Anlage, kein Generator. Mauer x0..25, y0..11 mit dem Aussentor (Tresortuer V) in der Ostmauer bei (25,5) und (25,6). Westen: Zellentrakt (vier Zellen y1..2, Gang y4..5, die Zellentuer Z zur Hofseite bei (12,4) und (12,5) ist verriegelt), darunter der Kontrollraum (y7..10) mit der Servicetuer bei (2,6) vom Gang aus. Osten: Hof x13..24.
+   Der Gefangene startet in Zelle 1, die anderen draussen vor dem Tor. LAY.prison: cell (Startpunkt Gefangener, Pixel), cells (Zellen), doors (Kacheln, die der Schalter oeffnet), psw (Schalter im Kontrollraum, Pixel), gate (Kachel des Aussentors). ---- */
+const PR_ROWS=['##########################','#..#..#..#..#............#','#..#..#..#..#............#','#d##L##L##L##............#','#...........L............#','#...........L............#','##d##########............#','#...........#............#','#..mm.ee....#............#','#...........#............#','#...........#............#','#########L################'];
+function prisonLayout(sd){const sn=typeof sd==='number'?sd:7,GX=25,er=5,bot=11;frameWorld(44,30,-6,-6,13);setc(37,er,'o');setc(37,er+1,'o');
+const rows=PR_ROWS.slice();rows[5]=rows[5].slice(0,25)+'V';rows[6]=rows[6].slice(0,25)+'V';asc(rows,0,0);
+[[15,3],[16,3],[22,9]].forEach(a=>setc(a[0],a[1],'b'));[[22,10],[23,10],[23,9]].forEach(a=>setc(a[0],a[1],'k'));[[14,10]].forEach(a=>setc(a[0],a[1],'q'));
+[[28,13],[33,13]].forEach(a=>setc(a[0],a[1],'q'));[[27,20],[32,21],[7,21],[16,21]].forEach(a=>setc(a[0],a[1],'p'));
+const P=CFG.prison,mr=mulberry32((((sn)*2654435761)>>>0)^0x2d4f1c93),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593),ti=tr()<.5?2:0,di=tr()<.6?0:1;
+const rot=Math.floor(mr()*4),gd=(p,route)=>({p:route[rot%route.length],route:rotR(route,rot%route.length,mr()<.5)});
+const g1={p:[8,4],route:[[10,4],[10,5],[3,5],[3,4]]},guards=[g1,gd(null,[[23,2],[23,8],[14,8],[14,2]]),gd(null,[[22,3],[22,8],[18,8],[18,3]])];
+const camc=[{x:13.5*T,y:1.4*T,a0:.7,amp:.55,sp:.55,rng:330,fov:.55},{x:24.5*T,y:1.4*T,a0:2.35,amp:.55,sp:.5,rng:330,fov:.55},{x:24.5*T,y:10.4*T,a0:3.9,amp:.5,sp:.5,rng:330,fov:.55}];
+const cells=[[1,1],[4,1],[7,1],[10,1]];
+return{seed:sn,decor:decorOf([]),prison:{cell:[2*T,2*T],cells,doors:[[12,4],[12,5],[4,3],[7,3],[10,3]],dl:{cells:[[9,11]],at:P.delivery[0]+Math.floor(mr()*(P.delivery[1]-P.delivery[0]+1))},inm:cells.slice(1).map(c=>[c[0],c[1]+1]),psw:{x:6.5*T,y:10.4*T},gate:[GX,er],pick:[7,13],panels:[[6,10],[10,7]]},hall:'Gefängnis',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
+mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot)return x>=13?'s':'m';if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>GX)return'a';return'y'},
+paintFloor(s){s.strokeStyle='rgba(255,255,255,.18)';s.lineWidth=2;s.strokeRect(14*T,2*T,10*T,8*T);s.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<5;i++)s.fillRect((GX+2.5)*T,2*T+i*T*1.6,3*T,2);
+for(const c of cells){s.fillStyle='rgba(60,70,90,.55)';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,T*1.6);s.fillStyle='#8b8f98';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,3)}},
+paintTop(s){for(const q of [[6,10],[10,7]]){const X=q[0]*T,Y=q[1]*T;s.fillStyle='#1d2026';s.fillRect(X+1,Y+3,T-2,T-6);s.fillStyle='#5d6b7a';s.fillRect(X+3,Y+5,T-6,T-10);s.fillStyle='#d4452f';s.fillRect(X+6,Y+8,5,5);s.fillStyle='#7ee34a';s.fillRect(X+T-12,Y+8,5,5);s.fillStyle='#e0b020';s.fillRect(X+8,Y+T-12,T-16,3)}s.strokeStyle='#2a2e34';s.lineWidth=2;for(const c of cells)for(let i=0;i<2;i++){const x=(c[0]+i)*T+16;s.beginPath();s.moveTo(x,3*T+2);s.lineTo(x,3*T+T-2);s.stroke()}
+/* Servicetuer (2,6): Stahlblatt mit Rahmen und Schild, damit man sie nicht fuer Wand haelt */
+const X=2*T,Y=6*T;s.fillStyle='#1d2026';s.fillRect(X-2,Y-3,T+4,T+6);s.fillStyle='#6b7c8f';s.fillRect(X+2,Y+1,T-4,T-2);s.fillStyle='rgba(255,255,255,.2)';s.fillRect(X+2,Y+1,T-4,3);s.fillStyle='#e0b020';s.fillRect(X+6,Y+T/2-3,T-12,6);s.fillStyle='#1d2026';s.font='bold 6px monospace';s.textAlign='center';s.fillText('SERVICE',X+T/2,Y+T/2+2);s.textAlign='left'},
+spawn:{x:28.2*T,y:2.4*T},zones:[[0,0,GX,bot]],lobby:[13,1,24,10],
+cams:camc,tellers:[],mgr:null,guards,civ:0,
+mission:{code:'0000',vault:'drill',guards:guards.length,west:false,cams:camc.length,civ:0,tags:[],ev:[],lg:[],at:{},extra:[],bags:[],blackoutAt:null},
+note:[7,8],mon:[3,8],tills:[],atms:[],backDoors:[],vault:{door:[GX,er],pad:[GX+1,er+2],dir:-1,bundles:[]},sw:{x:10.5*T,y:7.6*T},
+exit:{x:(GX+1)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:GX+1},van:{y:(er+1)*T,x0:(GX+7)*T,stop:(GX+1)*T,dir:-1},flip:false,laneY:19*T,title:titleBox(),polAt:P.pol,wb:P.wb,goods:[]}}
 function finishLay(lay,sn){return placeStash(clearLane(placeMeet(fillDerived(lay))),sn)}
-return{CLASSICM,CLASSICP,CS_FLOORS,GS_SHOPS,JW_HALLS,LAGE,MU_HALLS,PLACE,SCL,casinoLayout,casinoParams,classicLayout,csTubes,finishLay,gasLayout,gasParams,gasWide,genCasino,genGas,genJewel,genLayout,genMission,genMuseum,genTruckMission,inSite,inStash,jewParams,jewWide,jewelLayout,muTubes,mulberry32,museumLayout,museumParams,scOf,truckLayout,turnLayout,validLayout,warnFor}}
+return{CLASSICM,CLASSICP,CS_FLOORS,GS_SHOPS,JW_HALLS,LAGE,MU_HALLS,PLACE,SCL,casinoLayout,casinoParams,classicLayout,csTubes,finishLay,gasLayout,gasParams,gasWide,prisonLayout,genCasino,genGas,genJewel,genLayout,genMission,genMuseum,genTruckMission,inSite,inStash,jewParams,jewWide,jewelLayout,muTubes,mulberry32,museumLayout,museumParams,scOf,truckLayout,turnLayout,validLayout,warnFor}}
 mkMaps.api=1;
