@@ -73,7 +73,7 @@ Die Felder des Vertrags stehen als Tabelle `MAP_FIELDS` in `index.html` (Name, G
 | `goods` | Erweiterung | Beute-Stücke (`LAY.goods`, Werte in `CFG.goods`) von Tankstelle, Museum, Casino | `reset` |
 | `cage` | Erweiterung | Chip-Tausch (Casino) | `reset` |
 | `pumps` | Erweiterung | Zapfsäulen (Tankstelle) | `reset`, `pumpHit`, Zeichnen |
-| `prison` | Erweiterung | Gefängnis (Issue 45): `{cell, cells, doors, psw, gate}`, Kennzeichen des Szenarios `prison` | `scOf`, `reset` (`prisonSetup`, `prisonItems`), Zeichnen, Tests |
+| `prison` | Erweiterung | Gefängnis (Issue 45 und 49): `{cell, cells, cl, tb, pc, sx, locks, open0, sws, card, rooms, dl, inm, gate, pick, panels}`, Kennzeichen des Szenarios `prison` | `scOf`, `reset` (`prisonSetup`, `prisonItems`), Zeichnen, Tests |
 | `lasers` | Erweiterung | Laser-Tore (Museum) | Host-Schritt, Zeichnen |
 | `bn` | Erweiterung | Tresorbeute abweichend von `CFG.bundle` | `reset` |
 | `polAt` | Erweiterung | Polizeizeit der Karte | `startHeist` |
