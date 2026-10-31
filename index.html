@@ -188,7 +188,7 @@ CFG.goods={cig:{u:.5,v:1500,t1:3.5,t2:1.2},shelf:{u:.5,v:800,t1:3,t2:1},art:{u:2
 CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
 CFG.prison={reward:30000,pol:16,wb:0,drill:14,swT:2.4,pistT:1.2,pickR:48,delivery:[40,70],deliveryOpen:20,inm:3};//Gefaengnisausbruch (Issue 45): feste Belohnung, Polizei nach Alarm, Tor aufhalten (s), Schalter (s), Pistole aufheben (s), Lieferung (Fenster Start in s, aus dem Seed), Tuer offen (s)
 CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4]};
-CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2}};
+CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2,free:1,p1:1,big:24000,hot:1.5}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*hGap()*(1+CFG.waveGapPer*Math.max(0,players.length-1));
 let M,TILES,LOBBY,SUNW,st,so,gone=[],stm=new Map(),vanSt=null,dcv,dc,LAY=null,LANE=null,ALT=null,vanAlt=0,altN=0,lgForce=null,turnForce=null,goal=null,goalForce=null;
 /* Lage-Tags lesen: lgOn fragt einen Tag ab, lgM bildet das Produkt, lgA die Summe eines Schluessels ueber alle aktiven Tags */
@@ -1015,8 +1015,8 @@ act(o){if(!take(o,J.u,this.v))return;this.done=true;if(phase===2){snd('ev','cras
 const GOODL={cig:['Zigaretten unauffällig einstecken','Zigaretten raffen'],shelf:['Ware unauffällig einstecken','Ware raffen'],art:['Gemälde vorsichtig abnehmen','Gemälde von der Wand reißen'],statue:['Statue vorsichtig vom Sockel heben','Statue vom Sockel reißen'],relic:['Vitrine leise öffnen','Vitrine einschlagen'],chips:['Chips unauffällig einstecken','Chips raffen'],slot:['','Spielautomat aufbrechen'],vip:['Schließfach leise öffnen','Schließfach aufbrechen']};
 function goodItem(v){const G=CFG.goods[v.k];return{t:'good',k:v.k,x:v.x,y:v.y,r:v.r||44,pr:0,done:false,rc:v.rc,fit:o=>fits(o,G.u),sn:()=>phase===2?'pry':'tick',lab:()=>GOODL[v.k][phase===2?1:0],dur:()=>phase===2?G.t2:G.t1,ok(){return !this.done&&(phase===2||G.t1>0)},
 act(o){const got=take(o,G.u,G.v);if(!got)return;this.done=true;if(v.k==='chips')o.chipV=(o.chipV||0)+got;if(phase===2){snd('ev',v.k==='slot'?'atm':'crash');evt('sp',[this.x,this.y,v.k==='slot'?14:10])}else snd('ev','latch')}}}
-function cageItem(c){return{t:'cage',x:c.x,y:c.y,r:c.r||52,pr:0,sn:()=>'tick',lab:()=>'Chips am Cage tauschen',dur:o=>Math.max(2,(o.chipV||0)/CFG.goods.chips.v*CFG.casino.chip.exT),ok(o){return phase===2&&(o.chipV||0)>0},
-act(o){const v=o.chipV;o.chipV=0;sndTo(o,'cash');evt('fx',[o.x,o.y-16,'Chips getauscht',1.4]);say((players.length>1?pn(o.id)+': ':'')+'Chips getauscht: '+fmt(v),o.id)}}}
+function cageItem(c){return{t:'cage',x:c.x,y:c.y,r:c.r||52,pr:0,sn:()=>'tick',lab:()=>'Chips am Cage tauschen',dur:o=>Math.max(2,(o.chipV||0)/CFG.goods.chips.v*CFG.casino.chip.exT),ok(o){return (phase===2||CFG.casino.chip.p1)&&(o.chipV||0)>0},
+act(o){const v=o.chipV;o.chipV=0;sndTo(o,'cash');if(phase===1&&v>CFG.casino.chip.big){o.thf=CFG.casino.chip.hot;say((players.length>1?pn(o.id)+': ':'')+'Der Kassierer wird misstrauisch',o.id);ban('Zu viele Chips auf einmal',1.6,o.id)}evt('fx',[o.x,o.y-16,'Chips getauscht',1.4]);say((players.length>1?pn(o.id)+': ':'')+'Chips getauscht: '+fmt(v),o.id)}}}
 /* Zapfsaeulen (Tile u, LAY.pumps): kugelsperrend, nehmen Treffer von allen Seiten, bei 0 Leben explodieren sie (Radius und Schaden in CFG.gas.pump), Nachbarsaeulen in Reichweite gehen mit hoch. */
 function pumpHit(tx,ty,d,own){const q=(LAY.pumps||[]).find(a=>a.x===tx&&a.y===ty);if(!q||q.hp<=0)return;q.hp-=d;if(q.hp<=0)pumpBlow(q,own)}
 function pumpBlow(q,own){q.hp=0;const po=players[own];if(po)po.st.boom++;setc(q.x,q.y,'o');paintObjs();flowT=0;blastAt(q.x*T+16,q.y*T+16,CFG.gas.pump,own,2)}
@@ -1439,7 +1439,7 @@ ucStep(act,dt);
 let wr=0,wrBy=null,wrK='';const wu=(v,o,k)=>{if(v>wr){wr=v;wrBy=o;wrK=k||''}};
 /* Beobachter (CFG.watch): hot = Sperrzone oder gerade beim Stehlen (o.thf, E gehalten an einer Beute-Stelle): da sehen alle mit der vollen Rate (Wache 48, Angestellte 34, Kamera 26). Nur Beute in der Tasche (carry):
    Kameras ignorieren es, Wache und Angestellte finden es langsam verdaechtig (carry.grd, carry.staff, der Beobachter bleibt kurz stehen und schaut, siehe gaze). Im Museum (LAY.gAll) sehen Wachen jeden im Gebaeude mit CFG.museum.seen, draussen nicht (Fenster und Glastuer lassen Blicke durch). */
-for(const o of act){o.thf=Math.max(0,(o.thf||0)-dt);const hot=restricted(o.x,o.y)||o.thf>0,carry=o.loot>0,gIn=LAY.gAll&&inBld(o.x,o.y);if(!hot&&!carry&&!gIn)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1,W=CFG.watch;
+for(const o of act){o.thf=Math.max(0,(o.thf||0)-dt);const hot=restricted(o.x,o.y)||o.thf>0,carry=(o.loot-(LAY.casino&&CFG.casino.chip.free?o.chipV||0:0))>0,gIn=LAY.gAll&&inBld(o.x,o.y);if(!hot&&!carry&&!gIn)continue;const sn=o.inp.sn,rm=sn?.65:1,kf=sn?.8:1,W=CFG.watch;
 for(const q of npcs){if((q.k==='civ'&&!q.uc)||q.st==='dead'||q.st==='away'||q.st==='ko'||staffBlind(q))continue;const g=q.k==='grd'||!!q.uc,all=g&&gIn;if(!hot&&!carry&&!all)continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*rm*(blk>0?CFG.ev.sight:1)*lgM('sight'),o.x,o.y)){wu((all?CFG.museum.seen:hot?(g?48:34):(g?W.carry.grd:W.carry.staff))*kf,o,q.uc?'Zivilfahnder':g?'Wache':'Angestellter');if(!hot&&!all)gaze(q,o);if(q.alert<=.01)snd('alert');q.alert=.5}}
 cams.forEach((c,i)=>{if(hot&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*rm*lgM('sight'),o.x,o.y)){wu(26*kf,o,'Kamera');if(c.alert<=.01)snd('alert');c.alert=.5}})}
 for(const o of act){const ins=inBld(o.x,o.y);o.dwT+=dt;if(o.dwT>=1){o.sl=Math.hypot(o.x-o.dx,o.y-o.dy)<CFG.loiter.still;o.dwT=0;o.dx=o.x;o.dy=o.y}
