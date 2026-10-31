@@ -120,7 +120,7 @@ fahndung:{on:1,max:100,step:20,drift:3,loud:10,kill:1.5,killMax:15,civ:6,civMax:
 hostage:{grabT:1.2,reach:44,pen:26,spd:135,gap:44,cap:30,snp:1,line:10,shield:80,fleeAt:.05,fleeSpd:125,fleeT:9,fleeNear:70},
 /* Folgen auf der Laufspur (Geisel und gezogener Koerper, followStep, Flugschreiber vom 28. Oktober 2026: eine Geisel steckte an einer Wagenecke fest): path Sekunden ohne Fortschritt, dann sucht der Folger mit pathTo einen Weg (hoechstens pathT s lang), tp Sekunden ohne Fortschritt, dann wird er an einen freien Platz am Spurpunkt gesetzt. */
 follow:{path:.35,pathT:2.5,tp:3},
-ko:{t:2.5,reach:36,back:1.75,wake:75,find:.6,grabT:.5,drag:.55,gap:28,spd:150,pen:60},
+ko:{t:1.2,keep:60,stand:2,standVar:1.5,reach:36,back:1.75,wake:75,find:.6,grabT:.5,drag:.55,gap:28,spd:150,pen:60},
 /* Skillbaum (Tills Idee vom 24. Oktober 2026, umgebaut als MRU 1 B1 am 25. Oktober 2026): Je gewonnenem Auftrag pts.win Punkt, dazu pts.goal fuers Nebenziel, pts.quiet fuer einen lautlosen Sieg (seit dem 25. Oktober 2026 0) und pts.loud fuer einen Sieg im Ueberfall (der Transporter ist immer laut und bekommt es nicht), so gibt der Ueberfall die schnelleren Punkte und Lautlos das Geld (SESSION.pts, die Serie endet bei Niederlage, dann sind Punkte und Baum weg). Jeder Baum hat eine Wurzel (Knoten 0, offen), zwei Pfade (1 oben und 2 unten, offen mit der Wurzel auf 3 von 3, ENTWEDER-ODER: der erste Punkt in einem Pfad sperrt den anderen) und hinter jedem Pfad einen Gegenstand (3 hinter Pfad 1, 4 hinter Pfad 2, offen mit dem Pfad auf 3 von 3). Jeder Knoten hat drei Stufen, eine Kette Wurzel, Pfad, Gegenstand kostet also 9 Punkte, ein Baum erreicht nur eine Kette. Die Gegenstaende sind seit MRU 1 B2 bis B5 alle gebaut (das Flag soon fuer einen nicht kaufbaren Platzhalter gibt es weiter, ist aber nirgends mehr gesetzt). Die Werte je Stufe sind Listen (Index Stufe minus 1), n Name, d Text mit {Schluessel} (Zahl) oder {Schluessel%} (Prozent), s eine Kurzfassung fuer den Knoten im Fenster, b ein Zusatz mit Namen bn, der erst mit Stufe 3 des Knotens wirkt (Listen [0,0,Wert]). Wirkung: skv(Kit, Knoten, Schluessel), Stellen siehe docs/spielsystem.md (Skillbaum). */
 skill:{pts:{win:1,goal:1,quiet:0,loud:1},max:3,
 trees:[{k:'A',n:'ANGRIFF',c:'#ff6a5a'},{k:'V',n:'VERTEIDIGUNG',c:'#7fe8ff'},{k:'U',n:'UNTERSTÜTZUNG',c:'#7ee34a'}],
@@ -817,7 +817,7 @@ LAY.guards.forEach(g=>{const gd=mk('grd',2,g.p[0],g.p[1],{spd:GP.spd,fov:GP.fov,
 for(let i=0;i<LAY.civ;i++){const c=LOBBY[Math.floor(npcR()*LOBBY.length)];mk('civ',3+(i%2),c[0],c[1],{spd:32+npcR()*10,wait:npcR()*3,a:npcR()*6.28})}
 (LAY.mission.extra||[]).forEach(x=>{const n=mk('grd',2,x.p[0],x.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng,st:'away'});setRoute(n,x.route);n.at=x.at;n.msg=x.msg});
 {const nu=ucCount();if(nu>0){const cv=npcs.filter(q=>q.k==='civ'),ur=mulberry32((Math.imul(LAY.seed|0,2654435761)>>>0)^0x55c0f4d3);for(let i=0;i<nu&&cv.length;i++){const q=cv.splice(Math.floor(ur()*cv.length),1)[0];q.uc=1;q.fov=GP.fov;q.rng=GP.rng}}}
-for(const n of npcs)if(n.route){n.ri=0;n.wait=.5}}else if(LAY.mission.panne)panneCrew();
+for(const n of npcs)if(n.route){n.ri=0;n.wait=CFG.ko.stand}}else if(LAY.mission.panne)panneCrew();
 const till=(tx,ty)=>({t:'till',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,lab:()=>'Kasse leeren',fit:o=>fits(o,CFG.till.u),dur:()=>CFG.till.t,ok(){return phase===2&&!this.done},act(o){if(!take(o,CFG.till.u,CFG.till.v))return;snd('ev','till');this.done=true}});
 const atm=(tx,ty)=>({t:'atm',sn:'pry',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,lab:()=>'Geldautomat aufbrechen',fit:o=>fits(o,CFG.atm.u),dur:()=>CFG.atm.t,ok(){return phase===2&&!this.done},act(o){if(!take(o,CFG.atm.u,CFG.atm.v))return;this.done=true;snd('ev','atm');evt('sp',[this.x,this.y,14])}});
 its=[];if(!LAY.truck){its=[
@@ -946,7 +946,7 @@ function relHost(o){const n=npcs.find(q=>q.st==='hostage'&&q.own===o.id);if(!n)r
    Beim Aufwachen gibt es Alarm, im Ueberfall steht er still als Zivilist auf. Ein Ueberfall macht aus Bewusstlosen keine Beamten.
    Rang (28. Oktober 2026, Flugschreiber und Messung): Beute gewinnt beim ersten Druck (Rang +CFG.ko.pen), laeuft das Halten aber schon (Fortschritt ueber 0), bleibt die Wache vorn (Rang -CFG.ko.pen). Sonst sprang E im Juwelier beim Folgen an der naechsten Vitrine auf das Schneiden um und der Fortschritt war weg (71 von 75 Abbruechen). */
 function koKind(n){return n.k==='grd'||n.k==='mgr'||n.k==='tel'||!!n.uc}
-function koMi(n){return n.kmi||(n.kmi={t:'ko',pr:0,sn:'grab',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>n.kmi.pr>0?-CFG.ko.pen:CFG.ko.pen,
+function koMi(n){return n.kmi||(n.kmi={t:'ko',pr:0,sn:'grab',get r(){return n.kmi.pr>0?CFG.ko.keep:CFG.ko.reach},get x(){return n.x},get y(){return n.y},rk:()=>n.kmi.pr>0?-CFG.ko.pen:CFG.ko.pen,
 ok(o){return phase===1&&!ended&&(!LAY.truck||LAY.mission.panne)&&koKind(n)&&n.st==='idle'&&n.alert<=0&&!(n.look&&n.look.t>0)&&live(o)&&!(o.dn>0)&&angd(n.a,Math.atan2(o.y-n.y,o.x-n.x))>CFG.ko.back},
 lab:()=>'Ausschalten',dur:()=>CFG.ko.t,act(o){koDown(n,o)}})}
 function bodyMi(n){return n.bmi||(n.bmi={t:'body',pr:0,sn:'grab',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>CFG.ko.pen,
@@ -1137,7 +1137,7 @@ en.push(mkCrew(x,y,i,y<t.y?-1.57:1.57))}}
 function panneCrew(){const M=LAY.mission,cx=M.px*T,cy=12*T,G=CFG.guard,D=tkD(),spots=[[118,-4,0,0],[-122,8,Math.PI,0],[10,-50,-1.57,1],[-30,50,1.57,0],[60,50,1.57,0],[-70,-50,-1.57,0]];
 for(let i=0;i<M.crew;i++){const o=spots[i%6],ang=D>0?o[2]:Math.PI-o[2];let x=cx+D*o[0],y=cy+o[1];if(blocked(x,y,9)){y=cy-o[1];if(blocked(x,y,9)){x=cx+D*o[0]*.7;y=cy+(o[1]<0?-34:34)}}
 let tx=Math.floor(x/T),ty=Math.floor(y/T);if(isSol(tx,ty))out:for(let r=1;r<=3;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(!isSol(tx+dx,ty+dy)&&!(ty+dy>=11&&ty+dy<=12&&tx+dx>=M.px-3&&tx+dx<=M.px+2)){tx+=dx;ty+=dy;break out}
-const e=mk('grd',2,tx,ty,{spd:G.spd,fov:G.fov,rng:G.rng,still:!o[3],base:ang,a:ang,crew:true,ci:i,drv:i===0});if(o[3]){setRoute(e,[[tx-3,ty],[tx+3,ty]]);e.ri=0;e.wait=.5}}}
+const e=mk('grd',2,tx,ty,{spd:G.spd,fov:G.fov,rng:G.rng,still:!o[3],base:ang,a:ang,crew:true,ci:i,drv:i===0});if(o[3]){setRoute(e,[[tx-3,ty],[tx+3,ty]]);e.ri=0;e.wait=CFG.ko.stand}}}
 function crewSur(e){if(!e.crew||e.sur||e.cap||e.hp>CFG.truck.surHp)return false;const others=en.filter(q=>q!==e&&q.crew&&!q.sur&&!q.cap&&q.hp>0).length;return others===0||others+1<actv().length}
 function capTarget(o){let b=null,bd=38;for(const e of en){if(!e.sur||e.cap)continue;const d=Math.hypot(e.x-o.x,e.y-o.y);if(d<bd){bd=d;b=e}}return b}
 function capture(e){e.cap=true;capt++;capd.push({x:e.x,y:e.y,a:e.a});if(e.drv){keyTaken=true;say('Fahrer überwältigt: Schlüssel erbeutet');ban('Schlüssel erbeutet',2)}else say('Wache überwältigt');snd('pick',6)}
@@ -1196,7 +1196,7 @@ const lsp=o=>(o.bl>0?CFG.gren.flash.spread:0)+(o.gs>.2&&!o.mask?CFG.gren.gas.spr
 const shotSp=(o,wp)=>(wp.spread+.05*o.mv*(1-skv(o.kit,'A1','run'))+o.rec+lsp(o))*(1-skv(o.kit,'A1','spread'));
 /* Auftrags-Ereignisse (LAY.mission.ev): Wachwechsel und Geldtransport (vorab angelegte, abwesende Wachen), Stromausfall, Streife (Polizei frueher), Feiertag (mehr Zivilisten) */
 function evStep(dt){const ms=LAY.mission;let gone=false;
-for(const n of npcs)if(n.st==='away'&&rT>=n.at){say(n.msg);if(phase===1){n.st='idle';n.wait=.5;snd('found')}else{convGuard(n);n.st='dead';gone=true}}
+for(const n of npcs)if(n.st==='away'&&rT>=n.at){say(n.msg);if(phase===1){n.st='idle';n.wait=CFG.ko.stand;snd('found')}else{convGuard(n);n.st='dead';gone=true}}
 if(gone)npcs=npcs.filter(q=>q.st!=='dead');
 if(ms.blackoutAt!=null&&!evDone.blk&&phase===1&&rT>=ms.blackoutAt){evDone.blk=1;blk=CFG.ev.blackout;camDown=Math.max(camDown,CFG.ev.blackout);snd('ev','power');ban('Stromausfall!',2.4);say('Stromausfall: Kameras und Licht sind aus.')}
 if(blk>0){blk-=dt;if(blk<=0){blk=0;say('Der Strom ist wieder da.')}}}
@@ -1379,7 +1379,7 @@ function updNpc(n,i,dt){if(n.st==='cower'||n.st==='dead'||n.st==='away'||n.st===
 if(n.look&&n.look.t>0){n.look.t-=dt;n.a=alerp(n.a,Math.atan2(n.look.y-n.y,n.look.x-n.x),.15);n.mvg=false;return}
 if(n.still){n.a=n.base+Math.sin(time*.45+i*2)*.7;return}
 if(n.path.length){const t=n.path[0],dx=t[0]-n.x,dy=t[1]-n.y,dd=Math.hypot(dx,dy);if(dd<3)n.path.shift();else{n.a=alerp(n.a,Math.atan2(dy,dx),.2);mv(n,dx/dd*n.spd*dt,dy/dd*n.spd*dt);n.w+=n.spd*dt/9;n.mvg=true}}
-else{n.mvg=false;n.wait-=dt;if(n.wait<=0){if(n.route){n.ri=(n.ri+1)%n.route.length;const r=n.route[n.ri];n.path=pathTo(n.x,n.y,r[0],r[1]);n.wait=LAY.gAll?CFG.museum.pause[0]+n.rr()*(CFG.museum.pause[1]-CFG.museum.pause[0]):1+n.rr()*1.5}else{const c=LOBBY[Math.floor(n.rr()*LOBBY.length)];n.path=pathTo(n.x,n.y,c[0],c[1]);n.wait=2+n.rr()*5}}}}
+else{n.mvg=false;n.wait-=dt;if(n.wait<=0){if(n.route){n.ri=(n.ri+1)%n.route.length;const r=n.route[n.ri];n.path=pathTo(n.x,n.y,r[0],r[1]);n.wait=LAY.gAll?CFG.museum.pause[0]+n.rr()*(CFG.museum.pause[1]-CFG.museum.pause[0]):CFG.ko.stand+n.rr()*CFG.ko.standVar}else{const c=LOBBY[Math.floor(n.rr()*LOBBY.length)];n.path=pathTo(n.x,n.y,c[0],c[1]);n.wait=2+n.rr()*5}}}}
 /* Lehnen: F halten, Waffe gezogen, Phase 2, eine Barrikade (X) in Zielrichtung in Reichweite. Gibt die Kachel zurueck oder null. Gegnerkugeln stoppen an X wie immer, nur die eigene Kugel ueberspringt dabei die erste X-Kachel (Flag ov). */
 function leanAt(o){if(!o.armed||phase!==2)return null;
 for(let d=o.r;d<=CFG.lean.reach;d+=4){const x=Math.floor((o.x+Math.cos(o.a)*d)/T),y=Math.floor((o.y+Math.sin(o.a)*d)/T);const c=cell(x,y);if(c==='X'||c==='Y')return[x,y];if(isSol(x,y))return null}return null}
