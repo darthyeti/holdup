@@ -18,6 +18,7 @@ module.exports = [
             o.code++;
             if (!na) { o.bad.push(sc + '#' + seed + ' ' + turn + ' ohne noteAt'); continue; }
             o.cnt[sc][na.k] = (o.cnt[sc][na.k] || 0) + 1;
+            if (['file', 'locker'].includes(na.k)) { const bz = D.backZones(lay); if (!bz.some(z => na.x >= z[0] && na.x <= z[2] && na.y >= z[1] && na.y <= z[3])) o.bad.push(sc + '#' + seed + ' ' + turn + ' ' + na.k + ' nicht im Hinterraum'); const zz = bz.find(z => na.x >= z[0] && na.x <= z[2] && na.y >= z[1] && na.y <= z[3]); if (zz && (lay.tellers || []).concat(lay.tills || [], lay.atms || []).some(c => c[0] >= zz[0] && c[0] <= zz[2] && c[1] >= zz[1] && c[1] <= zz[3])) o.bad.push(sc + '#' + seed + ' ' + na.k + ' hinter dem Schalter') }
             const fe = v.err.filter(e => e.r === 'fundort' || e.r === 'feld-weg'); if (fe.length) o.bad.push(sc + '#' + seed + ' ' + turn + ' ' + na.k + ': ' + fe.map(e => e.m || e.r).join('; '));
             if (turn == null && seed <= 20) { const a = D.layoutFor(seed).noteAt; if (JSON.stringify(a) !== JSON.stringify(na)) o.det = false; }
           }
@@ -27,13 +28,13 @@ module.exports = [
       }, [SC]);
       t.eq(r.bad.slice(0, 6), [], r.bad.length + ' Karten mit Fehler am Fundort');
       t.ok(r.names.includes('noteAt'), 'noteAt steht in MAP_FIELDS');
-      // Welche Orte je Szenario nie gewaehlt werden koennen (Rueckfall Schreibtisch): kein Manager auf Tankstelle und Museum, kein Spind auf dem Juwelier und der Tankstelle (siehe docs/karte-und-layout.md, Fundort des Codes)
-      const MISSING = { bank: [], jewel: ['locker'], gas: ['mgr', 'locker'], museum: ['mgr'], casino: [] };
+      t.note(SC.map(sc => sc + ' ' + JSON.stringify(r.cnt[sc])).join('; '));
+      // Welche Orte je Szenario nie gewaehlt werden koennen (Rueckfall Schreibtisch): kein Manager auf Tankstelle und Museum, kein Aktenschrank und Spind auf Juwelier und Tankstelle, weil dort kein Hinterraum frei bleibt (siehe docs/karte-und-layout.md, Fundort des Codes)
+      const MISSING = { bank: [], jewel: ['file', 'locker'], gas: ['mgr', 'file', 'locker'], museum: ['mgr'], casino: [] };
       for (const sc of SC) t.eq(r.kinds.filter(k => !(r.cnt[sc][k] > 0)), MISSING[sc], sc + ': nie gewaehlte Orte, Zaehlung ' + JSON.stringify(r.cnt[sc]));
       t.ok(r.det, 'gleicher Seed, gleicher Fundort');
       t.ok(r.drill > 0 && r.code > 0, 'es gibt Karten mit Bohrtresor (' + r.drill + ') und mit Code (' + r.code + ')');
       t.eq(r.classic, 'desk', 'Klassikkarte: Schreibtisch');
-      t.note(SC.map(sc => sc + ' ' + JSON.stringify(r.cnt[sc])).join('; '));
     },
   },
   {
@@ -139,6 +140,29 @@ module.exports = [
       }, [SC]);
       t.eq(r.bad.slice(0, 8), [], r.bad.length + ' Fehler bei ' + r.n + ' Faellen');
       t.ok(r.n >= 9, 'zu wenige Faelle: ' + r.n); t.eq(r.skip, ['gas', 'museum'], 'nur Karten ohne Manager (Tankstelle, Museum) haben nie den Manager als Fundort');
+    },
+  },
+  {
+    name: 'Fundort zeichnen: nach dem Fund bleibt am Zettel nichts gezeichnet (Schreibtisch, Monitor, Manager, auch auf dem Client), Papierkorb, Aktenschrank und Spind zeigen nur ihr Moebel ohne Papier; der Zettel am Boden ist vor dem Aufheben da',
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(() => {
+        const o = { bad: [] }, probe = __dbg, rec = () => { const c = { n: 0, img: 0, fill: 0 }; const g = new Proxy({}, { get: (_, k) => k === 'cnt' ? c : (k === 'drawImage' ? () => { c.n++; c.img++ } : typeof k === 'string' && /^(fill|stroke|fillRect|strokeRect|arc|ellipse)$/.test(k) ? () => { c.n++; c.fill++ } : () => {}), set: () => true }); return { g, c } };
+        const find = (kind, sc) => { for (let s = 1; s <= 400; s++) { probe.setTurn(null); probe.setScenario(sc); probe.setSeedMode('random'); probe.setLage([]); const l = probe.layoutFor(s); if (l.noteAt && l.noteAt.k === kind) return s } return 0 };
+        const G = CT.mkGame('bank', find('mgr', 'bank'), 2, 60, 20), A = G.A, B = G.clients[0]; o.k = A.LAY().noteAt.k;
+        const mg = A.get().npcs.find(n => n.k === 'mgr'), me = A.get().players[0]; me.hp = 1e9; mg.x = me.x + 20; mg.y = me.y; mg.a = Math.atan2(me.y - mg.y, me.x - mg.x) + 3.14; A.koMi(mg).act(me); G.run(1);
+        for (const [tag, D] of [['Host', A], ['Client', B]]) { const R = rec(); D.drawNote(R.g); o[tag + 'vor'] = R.c.n; }
+        A.get().its.find(i => i.t === 'note').act(me); G.run(1);
+        for (const [tag, D] of [['Host', A], ['Client', B]]) { const R = rec(); D.drawNote(R.g); o[tag + 'nach'] = R.c.n; o[tag + 'code'] = D.get().code; }
+        for (const kind of ['desk', 'mon']) { const s = find(kind, 'bank'); probe.setTurn(null); probe.setScenario('bank'); probe.setSeedMode('random'); probe.setLage([]); probe.buildLay(probe.layoutFor(s)); let R = rec(); probe.drawNote(R.g); o[kind + 'vor'] = R.c.n; const gm = probe.get(); gm.its.find(i => i.t === 'note').act(gm.me); R = rec(); probe.drawNote(R.g); o[kind + 'nach'] = R.c.n; }
+        for (const kind of ['bin', 'file', 'locker']) { const s = find(kind, 'bank'); probe.setTurn(null); probe.setScenario('bank'); probe.setSeedMode('random'); probe.setLage([]); probe.buildLay(probe.layoutFor(s)); let R = rec(); probe.drawNote(R.g); o[kind + 'vor'] = [R.c.n, R.c.img]; const gm = probe.get(); gm.its.find(i => i.t === 'note').act(gm.me); R = rec(); probe.drawNote(R.g); o[kind + 'nach'] = [R.c.n, R.c.img]; }
+        return o;
+      });
+      t.eq(r.k, 'mgr', 'Manager als Fundort');
+      t.ok(r.Hostvor > 0 && r.Clientvor > 0, 'Zettel am Boden wird bei Host und Client gezeichnet');
+      t.eq([r.Hostnach, r.Clientnach, r.Hostcode, r.Clientcode], [0, 0, true, true], 'nach dem Aufheben zeichnet weder Host noch Client etwas');
+      t.ok(r.deskvor > 0 && r.desknach === 0 && r.monvor > 0 && r.monnach === 0, 'Schreibtisch und Monitor: Papier weg nach dem Fund');
+      for (const k of ['bin', 'file', 'locker']) t.ok(r[k + 'vor'][0] > 0 && r[k + 'nach'][0] > 0 && r[k + 'nach'][1] === 0 && r[k + 'nach'][0] <= r[k + 'vor'][0], k + ': Moebel bleibt, Papier weg nach dem Fund');
     },
   },
   {
