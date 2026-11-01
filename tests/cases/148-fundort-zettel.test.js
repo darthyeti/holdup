@@ -37,6 +37,24 @@ module.exports = [
     },
   },
   {
+    name: 'Fundort: layoutFor(seed) ist in allen Lagen gleich turnLayout(layoutBase(seed)) auch bei noteAt (die Hashes der anderen Tests lassen noteAt aus), der Fundort dreht und spiegelt mit der Karte',
+    async run(t) {
+      await t.loadInpage('turn.js');
+      const r = await t.page.evaluate(([SC]) => {
+        const D = __dbg, bad = []; let n = 0;
+        for (const sc of SC) for (const tf of ['S', 'N', 'E', 'W', 'S+', 'N+', 'E+', 'W+']) for (let seed = 1; seed <= 25; seed++) {
+          D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn(tf); const a = D.layoutFor(seed); if (!a.noteAt) continue;
+          D.setTurn(null); const b = tf === 'S' ? D.layoutBase(seed) : D.turnLayout(D.layoutBase(seed), tf[0], tf[1] === '+'); n++;
+          if (JSON.stringify(a.noteAt) !== JSON.stringify(b.noteAt)) bad.push(sc + '#' + seed + ' ' + tf);
+          const v = D.validateMap(a); if (v.err.some(e => e.r === 'fundort')) bad.push(sc + '#' + seed + ' ' + tf + ' fundort');
+        }
+        D.setTurn(null); return { bad, n };
+      }, [SC]);
+      t.eq(r.bad.slice(0, 6), [], r.bad.length + ' Abweichungen');
+      t.ok(r.n > 400, 'zu wenige Faelle: ' + r.n);
+    },
+  },
+  {
     name: 'Fundort: Verteilung folgt den Gewichten (Bank, 400 Seeds: jeder Ort mindestens halb so oft wie erwartet, Rueckfall auf den Schreibtisch selten) und das Moebel steht auf Boden an einer Wand, fern von Tueren und Beute',
     async run(t) {
       const r = await t.page.evaluate(() => {
