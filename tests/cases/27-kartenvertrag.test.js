@@ -9,7 +9,7 @@ const N = { bank: 80, jewel: 80, gas: 80, museum: 60, casino: 50 };
 const HALLS = {
   jewel: ['Klassik', 'Reihen', 'Salon', 'Ring', 'Gänge'],
   gas: ['Klassik', 'Insel', 'Wandregale', 'Gänge'],
-  museum: ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring'],
+  museum: ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring', 'Kolonnade'],
   casino: ['Klassik', 'Promenade', 'Reihen', 'Staffel'],
 };
 // Bekannte Abweichungen: Karte -> Regel -> Begruendung. Gilt fuer alle Seeds und Grundrisse der Karte.

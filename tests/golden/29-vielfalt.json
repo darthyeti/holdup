@@ -50,16 +50,17 @@
   "museum": {
    "sc": "museum",
    "seeds": 200,
-   "huelle": 187,
-   "groessen": 32,
-   "flucht": 133,
-   "beute": 176,
-   "hallen": 4,
+   "huelle": 196,
+   "groessen": 87,
+   "flucht": 177,
+   "beute": 195,
+   "hallen": 5,
    "hallenVerteilung": {
-    "Klassik": 43,
-    "Ring": 48,
-    "Kabinette": 56,
-    "Säulenhalle": 53
+    "Kabinette": 42,
+    "Kolonnade": 33,
+    "Säulenhalle": 50,
+    "Ring": 44,
+    "Klassik": 31
    },
    "raster": 20,
    "rasterVon": 20
