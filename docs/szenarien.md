@@ -217,3 +217,49 @@ Siebtes Szenario `prison` (Eilauftrag Issue 45, 30. Oktober 2026, erste spielbar
 
 **Offen.** Spielgefühl der Wachroute im Gang, Reihenfolge Kameras, Dauer von Tor und Schalter, Höhe der Belohnung. Schalter und Zellentür liegen heute getrennt (die Zellentüren sind offen, der Schalter öffnet die Tür zum Hof), Laser, weitere Zellen und eine zweite Etappe gibt es nicht. Taste T für das Szenario gibt es in der Kachel-Auftragswahl nicht, die Kachel sitzt nur mit `#debug` daneben.
 
+
+## Notenbank (Plan v1, 1. November 2026, Ticket #44, nicht gebaut)
+
+Idee von Till (Board, 30. Oktober 2026): Endgame-Szenario. Die Notenbank wird unter Zeitdruck leergeräumt, die Polizei soll so lange wie möglich draußen bleiben (wie in "Haus des Geldes"). Die Flucht läuft über einen Geheimgang oder Tunnel. Im Kern ist es ein Verteidigungsszenario. Es wäre das achte Szenario, nach dem Gefängnis. Der Schlüssel heißt `nb`, das Flag `LAY.nb`.
+
+### Bestandsaufnahme (was es schon gibt)
+- **Vorlage Karte:** Das Gefängnis (`PR_ROWS`, `prisonLayout` in js/maps.js) ist eine handgebaute große Karte, 68x42, mit Varianten aus eigenen `mulberry32`-Strömen. Alles Eigene steckt im Unterobjekt `LAY.prison`. Die Einhängepunkte im Kern sind `prisonSetup` in `reset`, `prisonItems`, `prisonStep` in `hostStep` sowie Zweige in `checkEnd`, `secure`, beim Zeichnen und im HUD. Die Notenbank kopiert diese Struktur (`LAY.nb`, `nbSetup`, `nbItems`, `nbStep`). Das Gefängnis wird weder gedreht noch hat es einen Ausweichpunkt (nicht in `CFG.turn.scs`, `CFG.alt.scs`). Die Notenbank fängt genauso an.
+- **Registrieren:** `SCS`/`SCP`, `LF` in `layoutFor0`, `scOf`, `PLACE` und `SCL` in maps.js, `CFG.rank`, `JOBS` und Raster der Auftragswahl in js/ui.js (heute genau 6 Plätze, eine weitere Kachel braucht ein neues Raster). Dazu die Tabellen `LAGE`, `GOALS`, `CFG.goal`, der Eintrag in `MAP_FIELDS` und `KNOWN` im Kartenvertrag. Außerdem die Tests mit fester Szenario-Liste (00-start, 60-nebenziele, 88-auswahl, 33-posten-ableiten, 108-treffpunkt, 118-zuschauer).
+- **Verteidigung:** Barrikaden an allen Türen (`findSpots`, `bars`, `CFG.bar`), Fensterbretter (`Y`), Lehnen, Material aus Möbeln. Die Polizei sprengt Barrikaden (`plant`). Wellen kommen mit `spawnWave`, `waveGap` und der Eskalation (SWAT, Schild, Scharfschützen, Granaten nach dem Fall einer Barrikade). Belagerung bremst den Takt schon heute (`CFG.bar.wave`).
+- **Zeit und Beute:** Tresor mit Code, Bohrer (`keep`) und C4, Bündel, Tasche (`CFG.bag`). Als Zeitgeber dient die Lieferung im Gefängnis als Vorlage (`dl.at`, Meldungen, HUD, Schnappschussfeld).
+- **Flucht:** Den Abholpunkt der lautlosen Flucht im Gefängnis (`secure` in einer Zone) gibt es, ebenso Riegelkacheln `L`/`l`.
+- **Geiseln:** Aufschub `holdX` und Schild `shX`, gedeckelt durch `CFG.hostage.cap` (30 s je Auftrag).
+
+### Was neu ist
+- **Notenpresse:** Es gibt kein Gerät, das von selbst läuft, und keine Beute, die nachwächst.
+- **Tunnel:** Er braucht eine eigene Flucht ohne Fluchtwagen. `vanAuto`, Funk G und die Regel "nach `vanStay` sind alle weg" werden für `LAY.nb` abgeschaltet, dazu kommt ein eigener Zweig in `checkEnd`. `autoPosts` setzt Anker am Fluchtweg, für die Notenbank brauchen die Posten eigene Regeln, damit die Polizei nicht am Tunnel steht.
+- **Messung "draußen halten":** `inBld` gibt es, es wird für Beamte aber nicht ausgewertet.
+- **Bot:** `tools/bot.js` kennt nur den Ablauf Rein, Beute, Fluchtwagen. Für die Notenbank braucht er einen Verteidigungsmodus.
+
+### Entwurf (Vorschlag Leitstand, vor Tills Entscheidungen)
+Ablauf in drei Takten:
+1. **Einbruch** (Phase 1 wie überall): Erkunden ist kurz oder fällt weg, die Notenbank ist bewacht und schlägt schnell Alarm. Das wird noch entschieden.
+2. **Belagerung** (Phase 2): Das Team hält das Gebäude (Barrikaden, Fenster, Geiseln) und erledigt drinnen zwei Aufgaben gleichzeitig:
+   - **Presse:** Sie erzeugt Geld, solange sie läuft. Jemand muss sie betreuen (E, Papier nachlegen). Die Beute wächst mit der Zeit, Gier ist der Hebel.
+   - **Tunnel:** Ein Bohrer im Keller frisst sich in Richtung Kanal. Er läuft von selbst, Polizeitreffer oder Strom aus stoppen ihn, und ein Spieler muss ihn wieder anwerfen.
+3. **Flucht:** Ist der Tunnel durch, öffnet er sich (Riegel `L` wird `l`). Wer mit Beute hindurch bis zur Zone am anderen Ende kommt, ist gesichert. Wann man geht, entscheidet das Team: früh mit wenig Geld oder spät mit viel, gegen immer härtere Wellen.
+
+"Draußen halten" zählt: Eine Anzeige "Gebäude gehalten" zeigt, ob Beamte im Gebäude sind. Solange die Polizei drinnen steht, laufen Presse und Bohrer langsamer oder gar nicht. So hat die Verteidigung eine sichtbare Wirkung.
+
+Was die Leistung angeht: Lange Belagerung heißt viele Beamte. Vor dem Bau ist eine Obergrenze gleichzeitiger Beamter nötig (`CFG.nb.maxEn`), außerdem eine Messung von Bildzeit und Schnappschussgröße (`tools/messung-netz.js`, `fitSnap` kappt bei 15.800 Byte).
+
+### Schritte (je Schritt ein PR, `spielgefuehl`, Karten mit `voller-lauf`)
+- **N1 Karte und Gerüst:** handgebaute Karte (Halle, Tresor, Presse, Keller mit Tunnelstrecke, Türen und Fenster zum Halten), Registrierung, `LAY.nb`, Kartenvertrag, Freischaltung. Dazu der Ablauf ohne Presse und Tunnel: Tresor knacken, Polizei draußen halten, ein Ausgang, der nach fester Zeit aufgeht. Das ist schon spielbar.
+- **N2 Tunnel:** Bohrer mit Unterbrechung durch die Polizei, Fluchtzone, eigener Zweig in `checkEnd`, ohne Fluchtwagen. Schnappschuss und `VER`.
+- **N3 Presse:** wachsende Beute, Betreuung, Anzeige im HUD.
+- **N4 Draußen halten:** Zähler, Anzeige, Wirkung auf Presse und Bohrer, Obergrenze der Beamten, Messung Leistung und Netz.
+- **N5 Bot und Balance:** Verteidigungsmodus im Bot, Rundenlänge, Wellen und Deckel der Geiseln je Szenario.
+- Später: Varianten aus dem Seed, Polizei findet den Tunnel und kommt von hinten, Drehen und Spiegeln.
+
+### Entscheidungen für Till (Akten im Board, Präfix `nb-`)
+1. `nb-druck`: Woraus kommt der Zeitdruck? (a) Tunnel ist erst nach Zeit fertig, bis dahin halten (Empfehlung). (b) Fester Countdown, danach stürmt die Polizei endgültig. (c) Endlose Wellen, man geht, wann man will.
+2. `nb-beute`: Woher kommt die Beute? (a) Notenpresse, die betreut werden muss (Empfehlung). (b) Großer Tresor. (c) Beides.
+3. `nb-tunnel`: Wie entsteht der Tunnel? (a) Bohrer, den die Polizei unterbrechen kann (Empfehlung). (b) Er ist vorgebaut und öffnet nach Zeit. (c) Wie (a), und späte Wellen kommen durch den Tunnel von hinten (später).
+4. `nb-wer`: Für wen und ab wann? (a) Solo und Coop, frei ab Auftrag 8 (Empfehlung). (b) Nur Coop. (c) Erst nach einem Serien-Meilenstein.
+5. `nb-halten`: Was bringt "draußen halten"? (a) Sichtbare Anzeige, Polizei drinnen bremst Presse und Bohrer (Empfehlung). (b) Nur Aufschub wie bei Geiseln. (c) Nichts Eigenes.
+6. `nb-start`: Wie beginnt es? (a) Kurzes Erkunden, Alarm schnell, Kern ist die Belagerung (Empfehlung). (b) Voller lautloser Teil wie in der Bank. (c) Direkt laut, Start im Gebäude.
