@@ -61,7 +61,7 @@ Die Felder des Vertrags stehen als Tabelle `MAP_FIELDS` in `index.html` (Name, G
 | `flip` | Pflicht | `true`, wenn links und rechts getauscht sind | `draw` |
 | `vault` | optional | Tresor `{door,pad,dir,bundles,o,st}`: obere Kachel der Doppeltür `V` (bei `o` `'h'` die linke Kachel eines waagerechten Paars, sonst senkrecht), Tastenfeld, Öffnungsrichtung `dir` vom Gang zum Tresorraum (bei `'v'` in x, bei `'h'` in y), Bündel, `st` 1 vertauscht die Reihenfolge für die Standkachel (`vaultStand`, nur `turnLayout` setzt `o` und `st`) | `reset` (Items), `draw`, Bot, `validLayout` der Bank, `validateMap` |
 | `note` | optional | Kachel der Notiz mit dem Tresorcode | `reset`, `matCell` |
-| `noteAt` | optional (Spielcode tolerant) | Fundort des Tresorcodes `{k, x, y}` (Kachel), `k` aus desk, mgr, bin, file, mon, locker, nur bei Codetresor, setzt `placeNote` am Ende von `layoutFor` (fehlt es, gilt der Schreibtisch `note`) | `reset` (Item `note`), `drawNote`, `validateMap` (Regel `fundort`) |
+| `noteAt` | optional (Spielcode tolerant) | Fundort des Tresorcodes `{k, x, y}` (Kachel), `k` aus desk, mgr, bin, file, mon, locker, nur bei Codetresor, setzt `placeNote` in `layoutBase`, `mirrorLayout` und `turnLayout` drehen es wie `note` mit (fehlt es, gilt der Schreibtisch `note`) | `reset` (Item `note`), `drawNote`, `validateMap` (Regel `fundort`) |
 | `mon` | optional | Kachel der Überwachungsmonitore | `reset`, `matCell` |
 | `sw` | optional | Hauptschalter `{x,y}` in px | `reset` |
 | `tellers` | optional | Kassierer-Kacheln `[[x,y]]` | `reset` |
@@ -112,7 +112,7 @@ Beute-Ziel: Pflicht ist nicht ein bestimmtes Feld, sondern mindestens ein erreic
 
 ### Fundort des Codes (Issue 53, 1. November 2026, `VER` 61)
 
-Bei jedem Auftrag mit Codetresor (`mission.vault` `code`, Bank, Juwelier, Tankstelle, Museum, Casino) liegt der Zettel an einem Ort, den ein eigener Zufallsstrom (`mulberry32`, Seed und fester Salz-Wert) nach den Gewichten `CFG.note.w` wählt. `placeNote` läuft am Ende von `layoutFor` auf der fertigen, gedrehten Karte, deshalb braucht `noteAt` keine Umrechnung bei Drehung und Spiegelung. Die Klassikkarte bleibt beim Schreibtisch, Bohrtresor und Transporter haben kein `noteAt`.
+Bei jedem Auftrag mit Codetresor (`mission.vault` `code`, Bank, Juwelier, Tankstelle, Museum, Casino) liegt der Zettel an einem Ort, den ein eigener Zufallsstrom (`mulberry32`, Seed und fester Salz-Wert) nach den Gewichten `CFG.note.w` wählt. `placeNote` läuft in `layoutBase` auf der fertigen Basiskarte, `mirrorLayout` und `turnLayout` drehen `noteAt` wie `note` mit, damit `layoutFor(seed)` gleich `turnLayout(layoutBase(seed))` bleibt. Die Klassikkarte bleibt beim Schreibtisch, Bohrtresor und Transporter haben kein `noteAt`.
 
 | Ort | Gewicht | Dauer (`CFG.note.t`) | Ort auf der Karte | Sichtbares Gegenstück |
 |---|---|---|---|---|
