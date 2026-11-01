@@ -3,7 +3,7 @@
 // Klassik-Huelle mit jeder Halle Zeichen fuer Zeichen diese Karte ergeben: Der Test schaltet den Generator ab, sobald es ihn gibt (CFG.museumGen.on 0), Vorbild ist 39-juwelier-basis.
 // Der Hash-Teil (Raster und Felder) ist auf jeder Maschine gleich und eingecheckt, die Pixel haengen an der Maschine (Schrift, Gradienten) und liegen nur lokal (golden-local, wird beim ersten Lauf angelegt).
 // Wer die Pixel als Beweis braucht, nimmt sie vor dem Umbau auf (ein Lauf dieses Tests auf dem alten Stand) und vergleicht danach auf derselben Maschine.
-const HALLS = ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring'];
+const HALLS = ['Klassik', 'Kabinette', 'Säulenhalle', 'Ring', 'Kolonnade'];
 
 module.exports = [
   {
