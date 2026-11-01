@@ -174,4 +174,15 @@ module.exports = [
       t.eq(r.nb.slice(0, 2), r.bank.slice(0, 2), 'Sieg und gesicherte Summe wie in der Bank: ' + JSON.stringify(r));
     },
   },
+  {
+    name: 'Notenbank: Fundort des Zettels (placeNote) ist gesetzt, gueltig und liegt nie im Tunnel oder in der Fluchtzone (30 Seeds)',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, o = { n: 0, none: [], tunnel: [], kinds: {} }; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
+        for (let sd = 1; sd <= 30; sd++) { const l = D.layoutFor(sd), na = l.noteAt; o.n++; if (!na) { o.none.push(sd); continue; } o.kinds[na.k] = (o.kinds[na.k] || 0) + 1; if (na.x >= 7 && na.x <= 13 && na.y >= 2 && na.y <= 3) o.tunnel.push([sd, na.k, na.x, na.y]); }
+        return o;
+      });
+      t.eq([r.none, r.tunnel], [[], []], 'Fundort immer da, nie im Tunnel: ' + JSON.stringify(r));
+    },
+  },
 ];
