@@ -131,4 +131,30 @@ module.exports = [
       t.eq(r.win, true, 'gewonnen');
     },
   },
+  {
+    name: 'Notenbank: Funk G ruft keinen Wagen (auch nach vanLock), vanCalled bleibt aus',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const H = ${SOLO}, D = H.D; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.startHeist(true, H.me); H.step(D.CFG.vanLock + 2);
+        const g = D.get(); const before = [g.vanCalled, g.vanArr]; D.callVan(); return { before, after: [D.get().vanCalled, D.get().vanAt > 1e6] }; })()`);
+      t.eq(r.after, [false, true], 'G ruft nichts: ' + JSON.stringify(r));
+    },
+  },
+  {
+    name: 'Notenbank: Auftragswahl hat die Kachel Notenbank und (mit #debug) den Knopf Gefaengnis, beide per Maus und Tastatur erreichbar und waehlbar',
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('menu.js');
+      const r = await t.page.evaluate(() => {
+        const d = MT.solo(null, 's'), o = {}; d.sessReset(); d.SESSION.round = 8; MT.click(d, 'serie'); if (d.state().scr !== 'shop') { /* Runde 0 direkt Auftragswahl */ } 
+        MT.click(d, 'next'); o.scr = d.state().scr; const ids = d.ui().tiles().map(q => q.id); o.ids = ids.filter(i => /^job:/.test(i));
+        MT.click(d, 'job:nb'); o.nb = d.scen(); MT.click(d, 'job:prison'); o.pr = d.scen();
+        const press = (...ks) => { for (const key of ks) MT.k(d, key); return d.ui().focus(); };
+        o.keyPr = press('ArrowUp'); o.keyRnd = press('ArrowUp'); o.keyNb = press('ArrowLeft'); o.keyBack = press('ArrowRight');
+        return o;
+      });
+      t.ok(r.ids.includes('job:nb') && r.ids.includes('job:prison'), 'Kacheln da: ' + r.ids);
+      t.eq([r.nb, r.pr], ['nb', 'prison'], 'per Klick waehlbar: ' + JSON.stringify(r));
+      t.eq([r.keyPr, r.keyRnd, r.keyNb, r.keyBack], ['job:prison', 'job:random', 'job:nb', 'job:random'], 'per Tastatur erreichbar (hoch, hoch, links, rechts vom Knopf Start aus)');
+    },
+  },
 ];
