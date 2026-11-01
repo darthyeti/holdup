@@ -41,6 +41,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 - **Menüablauf und HUD**: Serie fortsetzen führt ab Auftrag 2 zuerst in den Shop (dort Kachel Optionen, O, solo Testwerkzeug `Shop öffnen`). Die HUD-Spalte unten links (Gadgets, Material, Helm) und die Meldungen oben rechts überlappen nichts mehr.
 - **Fahrzeuge als Deckung**: Wirken Streifenwagen, Wracks und Fluchtwagen für beide Seiten als Deckung, bleiben Wege frei? Coop: Sehen alle dieselben Autos und den Abbau-Fortschritt?
 - **Coop, Tab schließen**: Kommt die Browser-Abfrage beim Schließen oder Neuladen als Host mit Mitspielern (ohne Mitspieler und als Client nicht)?
+- **Debug-Karten** (Issue #57): Mit `#debug` (auch in den Vorschauen) gibt es jetzt zufällige Karten wie im normalen Spiel. Die feste Klassikkarte schaltet die Testwerkzeug-Kachel `Karte: fest/zufällig` ein.
 
 ## Offene Entscheidungen (Till)
 
