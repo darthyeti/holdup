@@ -15,7 +15,7 @@ const SETUP = `(sd) => { const D = __dbg; D.sessReset(); D.setScenario('museum')
 
 module.exports = [
   {
-    name: 'Museum: die Nachtwaechter stehen an den Wegpunkten CFG.museum.pause s (2 bis 4), auf den anderen Karten bleibt es bei 1 bis 2,5 s',
+    name: 'Museum: die Nachtwaechter stehen an den Wegpunkten CFG.museum.pause s (2 bis 4), auf den anderen Karten gilt CFG.ko.stand plus bis standVar (seit #51 2 bis 3,5 s)',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const o = {}, walk = (sc, sd) => { const D = __dbg; D.sessReset(); D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(sd); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; const g = D.get(), me = g.me, L = D.LAY(); for (const c of g.cams) c.off = true;
@@ -26,7 +26,7 @@ module.exports = [
       t.ok(r.museum && r.museum.n >= 6, 'Aufbau: die Wache geht ihre Runde: ' + JSON.stringify(r.museum)); t.eq(r.museum.phase, 1, 'es gab keinen Alarm');
       t.ok(r.museum.min >= r.P[0] - .15 && r.museum.max <= r.P[1] + .3, 'im Museum steht sie ' + r.P[0] + ' bis ' + r.P[1] + ' s: ' + JSON.stringify(r.museum));
       t.ok(r.museum.max - r.museum.min > .4, 'die Pausen streuen: ' + JSON.stringify(r.museum));
-      for (const k of ['jewel', 'bank']) if (r[k]) t.ok(r[k].min >= .85 && r[k].max <= 2.8, k + ': unveraendert 1 bis 2,5 s: ' + JSON.stringify(r[k]));
+      for (const k of ['jewel', 'bank']) if (r[k]) t.ok(r[k].min >= 1.85 && r[k].max <= 3.8, k + ': 2 bis 3,5 s (CFG.ko.stand): ' + JSON.stringify(r[k]));
     },
   },
   {

@@ -14,7 +14,7 @@ module.exports = [
       t.ok(r.bank.huelle >= 150, 'Bank: mindestens 150 verschiedene Huellen in 200 Seeds: ' + r.bank.huelle);
       t.eq(r.bank.raster, r.bank.rasterVon, 'Bank: jedes der gebauten Raster ist verschieden');
       // Jede Hallen-Karte zeigt alle ihre Varianten
-      t.eq([r.jewel.hallen, r.gas.hallen, r.museum.hallen, r.casino.hallen], [5, 4, 4, 4], 'Hallen je Karte');
+      t.eq([r.jewel.hallen, r.gas.hallen, r.museum.hallen, r.casino.hallen], [5, 4, 5, 4], 'Hallen je Karte');
       for (const sc of SC) t.ok(r[sc].seeds === 200 && r[sc].huelle >= 1 && r[sc].raster >= 1, sc + ': Bericht vollstaendig: ' + JSON.stringify(r[sc]));
       await t.snapshot('vielfalt', r);
     },

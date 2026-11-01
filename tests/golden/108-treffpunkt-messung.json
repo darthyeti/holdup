@@ -704,8 +704,8 @@
   },
   "museum": {
    "Kabinette": {
-    "n": 8,
-    "welt": "47x34",
+    "n": 7,
+    "welt": "51x36",
     "hofFlucht": [
      9,
      9,
@@ -717,9 +717,9 @@
      5
     ],
     "pveJetzt": [
-     14,
-     14,
-     16
+     15,
+     16,
+     19
     ],
     "d1D": [
      6,
@@ -729,9 +729,9 @@
     "A2D": {
      "pct": 100,
      "dMax": [
+      10,
       13,
-      15,
-      15
+      14
      ]
     },
     "B": {
@@ -743,27 +743,85 @@
      "wallVE": 22
     },
     "V": {
-     "wallPct": 63,
-     "wallVE": 23
+     "wallPct": 0,
+     "wallVE": null
     },
     "pve10": {
-     "minE": 23,
-     "meanE": 23
-    },
-    "pve12": {
      "minE": 25,
      "meanE": 25
     },
-    "pve14": {
+    "pve12": {
      "minE": 27,
      "meanE": 27
+    },
+    "pve14": {
+     "minE": 29,
+     "meanE": 29
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Klassik": {
-    "n": 11,
-    "welt": "45x34",
+    "n": 8,
+    "welt": "50x36",
+    "hofFlucht": [
+     9,
+     9,
+     9
+    ],
+    "hofGegen": [
+     5,
+     5,
+     5
+    ],
+    "pveJetzt": [
+     15,
+     17,
+     19
+    ],
+    "d1D": [
+     6,
+     6,
+     6
+    ],
+    "A2D": {
+     "pct": 100,
+     "dMax": [
+      10,
+      13,
+      14
+     ]
+    },
+    "B": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "R": {
+     "wallPct": 100,
+     "wallVE": 22
+    },
+    "V": {
+     "wallPct": 0,
+     "wallVE": null
+    },
+    "pve10": {
+     "minE": 26,
+     "meanE": 26
+    },
+    "pve12": {
+     "minE": 28,
+     "meanE": 28
+    },
+    "pve14": {
+     "minE": 30,
+     "meanE": 30
+    },
+    "curOk": 100,
+    "pveGleich": 100
+   },
+   "Kolonnade": {
+    "n": 9,
+    "welt": "49x36",
     "hofFlucht": [
      9,
      9,
@@ -776,8 +834,8 @@
     ],
     "pveJetzt": [
      14,
-     14,
-     16
+     17,
+     19
     ],
     "d1D": [
      6,
@@ -787,8 +845,8 @@
     "A2D": {
      "pct": 100,
      "dMax": [
-      13,
-      15,
+      10,
+      12,
       15
      ]
     },
@@ -801,27 +859,27 @@
      "wallVE": 22
     },
     "V": {
-     "wallPct": 73,
+     "wallPct": 11,
      "wallVE": 23
     },
     "pve10": {
-     "minE": 23,
-     "meanE": 23
+     "minE": 26,
+     "meanE": 26
     },
     "pve12": {
-     "minE": 25,
-     "meanE": 25
+     "minE": 28,
+     "meanE": 28
     },
     "pve14": {
-     "minE": 27,
-     "meanE": 27
+     "minE": 30,
+     "meanE": 30
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Ring": {
-    "n": 10,
-    "welt": "45x34",
+    "n": 8,
+    "welt": "51x37",
     "hofFlucht": [
      9,
      9,
@@ -833,9 +891,9 @@
      5
     ],
     "pveJetzt": [
-     14,
      15,
-     16
+     18,
+     20
     ],
     "d1D": [
      6,
@@ -843,11 +901,11 @@
      6
     ],
     "A2D": {
-     "pct": 100,
+     "pct": 88,
      "dMax": [
-      13,
-      14,
-      15
+      0,
+      12,
+      14
      ]
     },
     "B": {
@@ -859,27 +917,27 @@
      "wallVE": 22
     },
     "V": {
-     "wallPct": 40,
-     "wallVE": 23
+     "wallPct": 0,
+     "wallVE": null
     },
     "pve10": {
-     "minE": 24,
-     "meanE": 24
+     "minE": 27,
+     "meanE": 27
     },
     "pve12": {
-     "minE": 26,
-     "meanE": 26
+     "minE": 29,
+     "meanE": 29
     },
     "pve14": {
-     "minE": 28,
-     "meanE": 28
+     "minE": 31,
+     "meanE": 31
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Säulenhalle": {
-    "n": 11,
-    "welt": "46x34",
+    "n": 8,
+    "welt": "51x35",
     "hofFlucht": [
      9,
      9,
@@ -891,9 +949,9 @@
      5
     ],
     "pveJetzt": [
-     14,
-     15,
-     16
+     16,
+     19,
+     20
     ],
     "d1D": [
      6,
@@ -901,11 +959,11 @@
      6
     ],
     "A2D": {
-     "pct": 100,
+     "pct": 75,
      "dMax": [
-      13,
-      14,
-      15
+      0,
+      12,
+      13
      ]
     },
     "B": {
@@ -917,20 +975,20 @@
      "wallVE": 22
     },
     "V": {
-     "wallPct": 64,
-     "wallVE": 24
+     "wallPct": 0,
+     "wallVE": null
     },
     "pve10": {
-     "minE": 24,
-     "meanE": 24
-    },
-    "pve12": {
-     "minE": 26,
-     "meanE": 26
-    },
-    "pve14": {
      "minE": 28,
      "meanE": 28
+    },
+    "pve12": {
+     "minE": 30,
+     "meanE": 30
+    },
+    "pve14": {
+     "minE": 32,
+     "meanE": 32
     },
     "curOk": 100,
     "pveGleich": 100

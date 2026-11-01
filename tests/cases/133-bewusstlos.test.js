@@ -47,12 +47,12 @@ module.exports = [
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const S = (${SETUP})(5017), { D, me, n, behind } = S, o = {}, K = D.CFG.ko, keys = D.keys; behind(30);
-        keys.e = true; for (let i = 0; i < 30; i++) { D.update(1 / 30); behind(30); } o.mitte = [n.st, +D.koMi(n).pr.toFixed(2), me.thf > 0];
+        keys.e = true; for (let i = 0; i < Math.round(.4 * K.t * 30); i++) { D.update(1 / 30); behind(30); } o.mitte = [n.st, +D.koMi(n).pr.toFixed(2), me.thf > 0];
         n.base += Math.PI; n.a = n.base; D.update(1 / 30); o.unterbrochen = [n.st, D.koMi(n).pr]; behind(30); n.alert = 0;
         for (let i = 0; i < 30 * (K.t + .8); i++) { D.update(1 / 30); if (n.st !== 'ko') behind(30); } keys.e = false;
         o.danach = [n.st, Math.round(n.kt), n.mvg, n.alert, D.get().phase, me.st.ko]; o.msg = D.msgs().feed.some(s => /schaltest eine Wache aus: bewusstlos für [0-9]+ s/.test(s)); o.K = K;
         return o; })()`);
-      t.eq(r.mitte[0], 'idle', 'nach einer Sekunde ist noch nichts passiert'); t.ok(r.mitte[1] > .2 && r.mitte[1] < .6, 'der Fortschritt laeuft: ' + r.mitte[1]); t.ok(r.mitte[2], 'waehrend des Haltens ist der Spieler fuers Verdachtssystem beim Stehlen (thf)');
+      t.eq(r.mitte[0], 'idle', 'nach 40 % der Haltezeit ist noch nichts passiert'); t.ok(r.mitte[1] > .2 && r.mitte[1] < .6, 'der Fortschritt laeuft: ' + r.mitte[1]); t.ok(r.mitte[2], 'waehrend des Haltens ist der Spieler fuers Verdachtssystem beim Stehlen (thf)');
       t.eq(r.unterbrochen[1], 0, 'schaut die Wache um, ist der Fortschritt weg'); t.eq(r.danach[0], 'ko', 'nach der Haltezeit ist sie bewusstlos');
       t.ok(r.danach[1] > r.K.wake - 4 && r.danach[1] <= r.K.wake, 'der Wecker steht bei CFG.ko.wake: ' + r.danach[1]); t.eq([r.danach[2], r.danach[3], r.danach[4], r.danach[5]], [false, 0, 1, 1], 'sie steht still, ist nicht aufgeregt, es ist noch Phase 1, die Kennzahl zaehlt'); t.ok(r.msg, 'eine Meldung nennt das Ausschalten');
     },
@@ -177,6 +177,49 @@ module.exports = [
       t.ok(r.vorher.includes('Ausschalten') && r.vorher.includes('von hinten'), 'vor dem Schlag steht Ausschalten (von hinten): ' + JSON.stringify(r.vorher.filter(x => /Ausschalten|hinten/.test(x))));
       t.ok(r.ko.includes('Körper ziehen'), 'danach steht Körper ziehen'); t.ok(r.ko.some(x => /^Zzz \d+ s$/.test(x)), 'der Wecker steht als Zzz mit Sekunden: ' + JSON.stringify(r.ko.filter(x => /Zzz/.test(x))));
       t.eq(r.dg, 1, 'Aufbau: er wird gezogen'); t.ok(r.zug.includes('H: Körper loslassen'), 'beim Ziehen steht H: Körper loslassen');
+    },
+  },
+  {
+    // Ticket #51 (Till, 31. Oktober 2026): Ausschalten war zu fummelig. Messung tests/stand-messung.js: Wachen und Manager standen frueher mindestens 1,0 s, Museum 2,0 s. Regel: Haltezeit hoechstens 60 % der kuerzesten Standzeit.
+    name: 'Bewusstlos: Haltezeit hoechstens 60 % der kuerzesten Standzeit an Routenpunkten (CFG.ko.t gegen CFG.ko.stand und Museumspause), gemessen ueber alle Szenarien mit Streife',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const D = __dbg, o = { min: {}, cfg: { ...D.CFG.ko, pause: D.CFG.museum.pause } };
+        for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino']) { let mn = 1e9, cnt = 0;
+          for (const seed of [11, 18, 25]) { D.sessReset(); D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.buildSeed(seed); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
+            const g = D.get(), me = g.me, npcs = g.npcs; for (const c of g.cams) c.off = true; const st = new Map();
+            for (let i = 0; i < 90 * 30; i++) { me.x = -300; me.y = -300; D.update(1 / 30);
+              for (const n of npcs) { if (n.still || n.st !== 'idle' || !n.route) { st.delete(n.id); continue; } const stand = !n.mvg && !(n.path && n.path.length) && !(n.look && n.look.t > 0);
+                if (stand) st.set(n.id, (st.get(n.id) || 0) + 1 / 30); else if (st.has(n.id)) { const d = st.get(n.id); st.delete(n.id); if (d > .2 && i > 60) { mn = Math.min(mn, d); cnt++; } } } } }
+          o.min[sc] = [cnt, +mn.toFixed(2)]; }
+        return o; })()`);
+      for (const [sc, [cnt, mn]] of Object.entries(r.min)) { t.ok(cnt > 5, sc + ': genug Pausen gemessen (' + cnt + ')'); t.ok(r.cfg.t <= .6 * mn + 1e-9, sc + ': Haltezeit ' + r.cfg.t + ' s ist hoechstens 60 % der kuerzesten Standzeit ' + mn + ' s'); }
+      t.ok(r.cfg.t <= .6 * r.cfg.stand + 1e-9 && r.cfg.t <= .6 * r.cfg.pause[0] + 1e-9, 'auch gegen die Sollwerte (stand, Museumspause)');
+    },
+  },
+  {
+    name: 'Bewusstlos: der Fortschritt bleibt, solange der Spieler innerhalb von CFG.ko.keep bleibt (auch jenseits von reach); ausserhalb bricht das Halten ab; beginnen geht nur innerhalb von reach; wer der laufenden Wache mit E folgt, schaltet sie aus',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const S = (${SETUP})(5017), { D, me, n, behind } = S, o = {}, K = D.CFG.ko, keys = D.keys; const it = D.koMi(n);
+        const away = d => { const an = Math.atan2(me.y - n.y, me.x - n.x); me.x = n.x + Math.cos(an) * d; me.y = n.y + Math.sin(an) * d; };
+        behind(30); o.platz = true; keys.e = true; for (let i = 0; i < 10; i++) D.update(1 / 30); o.start = +it.pr.toFixed(2);
+        const mid = (K.reach + K.keep) / 2; away(mid); D.update(1 / 30); const p0 = it.pr; for (let i = 0; i < 5; i++) { away(mid); D.update(1 / 30); } o.mitte = [mid, p0 > 0, it.pr > p0];
+        away(K.keep + 12); D.update(1 / 30); o.weg = it.pr;
+        behind(mid); D.update(1 / 30); o.neuAussen = it.pr; keys.e = false; D.update(1 / 30);
+        behind(30); keys.e = true; D.update(1 / 30); o.neuInnen = it.pr > 0; keys.e = false; D.update(1 / 30); o.cfg = K;
+        // Mitgehen: die Wache laeuft los, der Spieler folgt mit echten Tasten und E
+        const S2 = (${SETUP})(5017), n2 = S2.n, me2 = S2.me; n2.still = false; n2.route = [[Math.floor(n2.x / 32), Math.floor(n2.y / 32)], null]; n2.route = null; n2.spd = 40; S2.behind(28); keys.e = false;
+        const L = D.LAY(); let tx = null, ty = null; for (let tries = 0; tries < 60 && tx === null; tries++) { const an = tries * .45, dd = 70 + tries * 2, x = n2.x + Math.cos(an) * dd, y = n2.y + Math.sin(an) * dd; if (S2.free(x, y) && D.pathTo(n2.x, n2.y, Math.floor(x / 32), Math.floor(y / 32)).length > 3) { tx = Math.floor(x / 32); ty = Math.floor(y / 32); } }
+        o.ziel = tx !== null; n2.path = D.pathTo(n2.x, n2.y, tx, ty); n2.wait = 99; n2.look = null; let walked = 0, maxPr = 0, resets = 0, prev = 0;
+        for (let i = 0; i < 12 * 30 && n2.st !== 'ko'; i++) { const bx = n2.x + Math.cos(n2.a + Math.PI) * 28, by = n2.y + Math.sin(n2.a + Math.PI) * 28, dx = bx - me2.x, dy = by - me2.y;
+          keys.d = dx > 4; keys.a = dx < -4; keys.s = dy > 4; keys.w = dy < -4; keys.e = true; D.update(1 / 30); if (n2.mvg) walked++; const pr = D.koMi(n2).pr; maxPr = Math.max(maxPr, pr); if (prev > .2 && pr === 0) resets++; prev = pr;
+          if (!n2.path.length && n2.st !== 'ko') { n2.look = null; } }
+        keys.e = keys.d = keys.a = keys.s = keys.w = false; o.folgen = [n2.st, walked > 20, +maxPr.toFixed(2), resets]; return o; })()`);
+      t.ok(r.start > 0, 'Aufbau: das Halten laeuft'); t.eq(r.mitte, [r.mitte[0], true, true], 'zwischen reach und keep laeuft der Fortschritt weiter: ' + JSON.stringify(r.mitte));
+      t.ok(r.mitte[0] > r.cfg.reach && r.mitte[0] < r.cfg.keep, 'Aufbau: die Mitte liegt jenseits von reach und innerhalb von keep'); t.eq(r.weg, 0, 'ausserhalb von keep ist der Fortschritt weg');
+      t.eq(r.neuAussen, 0, 'ohne Fortschritt beginnt das Halten nicht jenseits von reach'); t.ok(r.neuInnen, 'innerhalb von reach beginnt es');
+      t.ok(r.ziel && r.folgen[1], 'Aufbau: die Wache lief'); t.eq(r.folgen[0], 'ko', 'wer der laufenden Wache folgt, schaltet sie aus: ' + JSON.stringify(r.folgen));
     },
   },
 ];
