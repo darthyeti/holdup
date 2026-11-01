@@ -157,4 +157,21 @@ module.exports = [
       t.eq([r.keyPr, r.keyRnd, r.keyNb, r.keyBack], ['job:prison', 'job:random', 'job:nb', 'job:random'], 'per Tastatur erreichbar (hoch, hoch, links, rechts vom Knopf Start aus)');
     },
   },
+  {
+    name: 'Notenbank: wer ohne Beute die offene Zone erreicht, bekommt dasselbe Ergebnis wie in der Bank, wer ohne Beute im Fluchtwagen sitzt (Sieg Entkommen, gesichert 0)',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const out = {};
+        { const H = ${SOLO}, D = H.D, me = H.me, T = H.T; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.startHeist(true, me); H.step(D.CFG.nb.open + 2);
+          const z = D.LAY().nb.zone; me.loot = 0; me.x = (z[0] + 1) * T; me.y = (z[1] + .5) * T; H.step(1); const e = D.get().ended; out.nb = e && [e.win, D.get().secured, e.title]; }
+        { const D = __dbg, T = 32; D.sessReset(); D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(5); D.reset(); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
+          const g = D.get(), me = g.me; g.npcs.splice(0); D.startHeist(true, me); me.loot = 0; const L = D.LAY();
+          for (let i = 0; i < 30 * 200 && !D.get().ended; i++) { me.hp = 1e9; me.dead = false; if (D.get().vanArr) { me.x = L.exit.x + T; me.y = (L.exit.y0 + L.exit.y1) / 2; } D.update(1 / 30); }
+          const e = D.get().ended; out.bank = e && [e.win, D.get().secured, e.title]; }
+        return out; })()`);
+      t.ok(r.bank && r.nb, 'beide Laeufe enden: ' + JSON.stringify(r));
+      t.eq(r.nb.slice(0, 2), r.bank.slice(0, 2), 'Sieg und gesicherte Summe wie in der Bank: ' + JSON.stringify(r));
+    },
+  },
 ];

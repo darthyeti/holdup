@@ -187,7 +187,7 @@ CFG.goal={bonus:{clean:.15,fast:.1,calm:.08,full:.12,team:.1},calm:40,fast:{bank
 CFG.goods={cig:{u:.5,v:1500,t1:3.5,t2:1.2},shelf:{u:.5,v:800,t1:3,t2:1},art:{u:2,v:20000,t1:5,t2:3},statue:{u:3,v:40000,t1:7,t2:4},relic:{u:.5,v:6000,t1:4,t2:1.5},chips:{u:.25,v:8000,t1:2,t2:1.2},slot:{u:.5,v:6000,t1:0,t2:3},vip:{u:.5,v:20000,t1:6,t2:3}};
 CFG.gas={pol:28,wb:-1,bn:{n:2,v:7500,u:1,t:1.6},pump:{hp:60,r:100,dmg:90}};
 CFG.prison={reward:30000,pol:16,wb:0,drill:14,swT:2.4,pistT:1.2,pickR:48,delivery:[40,70],deliveryOpen:20,inm:3};//Gefaengnisausbruch (Issue 45): feste Belohnung, Polizei nach Alarm, Tor aufhalten (s), Schalter (s), Pistole aufheben (s), Lieferung (Fenster Start in s, aus dem Seed), Tuer offen (s)
-CFG.nb={open:150,alarmAt:45,pol:12,wb:2,hcap:60,maxEn:14,cams:6,postD:8};//Notenbank (Ticket 61, N1): Tunnel oeffnet open s nach dem Alarm, der Alarm geht nach alarmAt s Erkunden von selbst los, wb Wellenbonus, hcap Deckel Geiseln (s), maxEn Obergrenze gleichzeitig lebender Beamter, cams Kameras je Karte, postD Mindestabstand der Polizei-Posten zur Fluchtzone (Kacheln)
+CFG.nb={open:150,alarmAt:45,pol:12,wb:2,hcap:60,maxEn:14,cams:6,postD:8,warn:15,banT:3};//Notenbank (Ticket 61, N1): Tunnel oeffnet open s nach dem Alarm, der Alarm geht nach alarmAt s Erkunden von selbst los, wb Wellenbonus, hcap Deckel Geiseln (s), maxEn Obergrenze gleichzeitig lebender Beamter, cams Kameras je Karte, postD Mindestabstand der Polizei-Posten zur Fluchtzone (Kacheln), warn Vorwarnung vor der Oeffnung (s), banT Dauer des Banners (s)
 CFG.museum={pol:30,wb:0,stl:1,bn:{n:2,v:15000,u:1,t:2},laser:{r:8},seen:56,pause:[2,4],pathVE:32,cam:{all:1,seen:26,n:[3,5],minD:8,door:2.5,area:.35,tries:12},guard:{spd:28,fov:.8,rng:260,gap:10,near:3,hold:5,free:8}};
 CFG.casino={pol:50,wb:2,bn:{n:5,v:16000,u:1,t:1.8},chip:{pen:.5,exT:1.2,free:1,p1:1,big:24000,hot:1.5}};
 const waveGap=n=>Math.max(CFG.waveGapMin,CFG.waveGap-CFG.waveGapStep*(n-1))*lgM('gap')*hGap()*(1+CFG.waveGapPer*Math.max(0,players.length-1));
@@ -830,8 +830,8 @@ function nbDoor(on){nbOpen=on;const d=LAY.nb.door;setc(d[0],d[1],on?'l':'L');flo
 function nbStep(){const R=LAY.nb,C=CFG.nb;if(!R||ended)return;
 if(phase===1&&rT>=C.alarmAt){say('Die Zentrale hat euch bemerkt: Alarm!');startHeist(true,null,false);return}
 if(phase!==2)return;
-if(!nbOpen&&tH>=C.open){nbDoor(true);snd('ev','latch');say('Der Tunnel ist offen: Mit der Beute durch die Tür im Keller. Wer bleibt, holt mehr, die Polizei wird härter.');ban('Tunnel offen!',3)}
-else if(!nbOpen&&!R.warned&&tH>=C.open-15){R.warned=1;say('Tunnel in 15 s offen')}
+if(!nbOpen&&tH>=C.open){nbDoor(true);snd('ev','latch');say('Der Tunnel ist offen: Mit der Beute durch die Tür im Keller. Wer bleibt, holt mehr, die Polizei wird härter.');ban('Tunnel offen!',C.banT)}
+else if(!nbOpen&&!R.warned&&tH>=C.open-C.warn){R.warned=1;say('Tunnel in '+C.warn+' s offen')}
 if(nbOpen)for(const o of actv())if(nbIn(o)){secure(o);if(ended)return}}
 function nbSetup(){const R=LAY.nb;R.warned=0;nbOpen=false;nbDoor(false)}
 function nbItems(){}
