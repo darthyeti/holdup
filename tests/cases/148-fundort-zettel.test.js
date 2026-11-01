@@ -27,8 +27,9 @@ module.exports = [
       }, [SC]);
       t.eq(r.bad.slice(0, 6), [], r.bad.length + ' Karten mit Fehler am Fundort');
       t.ok(r.names.includes('noteAt'), 'noteAt steht in MAP_FIELDS');
-      // Der Juwelier hat keinen Platz fuer einen Spind (kleine Halle, die Personaltuer liegt neben Monitor und Tresor): dort faellt die Wahl nie auf locker, der Rueckfall ist der Schreibtisch
-      for (const sc of SC) t.eq(r.kinds.filter(k => !(r.cnt[sc][k] > 0)), sc === 'jewel' ? ['locker'] : [], sc + ': diese Fundorte kamen nie vor: ' + JSON.stringify(r.cnt[sc]));
+      // Welche Orte je Szenario nie gewaehlt werden koennen (Rueckfall Schreibtisch): kein Manager auf Tankstelle und Museum, kein Spind auf dem Juwelier und der Tankstelle (siehe docs/karte-und-layout.md, Fundort des Codes)
+      const MISSING = { bank: [], jewel: ['locker'], gas: ['mgr', 'locker'], museum: ['mgr'], casino: [] };
+      for (const sc of SC) t.eq(r.kinds.filter(k => !(r.cnt[sc][k] > 0)), MISSING[sc], sc + ': nie gewaehlte Orte, Zaehlung ' + JSON.stringify(r.cnt[sc]));
       t.ok(r.det, 'gleicher Seed, gleicher Fundort');
       t.ok(r.drill > 0 && r.code > 0, 'es gibt Karten mit Bohrtresor (' + r.drill + ') und mit Code (' + r.code + ')');
       t.eq(r.classic, 'desk', 'Klassikkarte: Schreibtisch');
