@@ -1,16 +1,18 @@
 {
  "museum-basis": {
   "hash": {
-   "Klassik": "59e92425",
-   "Ring": "89a97502",
-   "Kabinette": "285413c2",
-   "Säulenhalle": "54a4f004"
+   "Kabinette": "1ae0d99d",
+   "Klassik": "a3de2f2a",
+   "Kolonnade": "b0270e5f",
+   "Säulenhalle": "4fdb1326",
+   "Ring": "6fcc5bd1"
   },
   "n": {
-   "Klassik": 57,
-   "Ring": 46,
-   "Kabinette": 55,
-   "Säulenhalle": 42
+   "Kabinette": 44,
+   "Klassik": 46,
+   "Kolonnade": 40,
+   "Säulenhalle": 38,
+   "Ring": 32
   }
  }
 }

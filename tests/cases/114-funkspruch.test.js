@@ -102,7 +102,7 @@ module.exports = [
         G.run(F.same + .1); P[1].dead = true; P[1].dn = 0; o.tot = A.radHost(P[1], 0); P[1].dn = 12; o.boden = A.radHost(P[1], 0); P[1].dead = false;
         G.run(F.cool + .1); P[2].out = true; o.entkommen = A.radHost(P[2], 0); P[2].out = false; P[2].gone = true; o.weg = A.radHost(P[2], 0); P[2].gone = false;
         o.fremd = A.radHost(undefined, 0);
-        const n0 = A.msgs().feed.length; for (const m of [{ t: 'rad' }, { t: 'rad', c: 'x' }, { t: 'rad', c: 9 }, { t: 'rad', c: null }, { t: 'rad', c: 1.2 }]) c.onmsg(m); G.run(.3); o.kaputt = A.msgs().feed.length - n0;
+        const f0 = A.msgs().feed.join('|'); for (const m of [{ t: 'rad' }, { t: 'rad', c: 'x' }, { t: 'rad', c: 9 }, { t: 'rad', c: null }, { t: 'rad', c: 1.2 }]) c.onmsg(m); o.kaputt = A.msgs().feed.join('|') === f0 ? 0 : 1;
         const L = mkInst(G.net, 'lobby'); L.hostRoom(); G.insts.push(L); G.run(.3); o.lobby = L.radHost(L.get().players[0], 0);
         return o; })()`);
       t.eq(r.bad, [false, false, false, false, false, false, false], 'Platz ausserhalb, nicht ganzzahlig, Text, null, undefined, NaN: abgelehnt');
