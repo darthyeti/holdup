@@ -135,7 +135,7 @@ lay.mat=(x,y)=>om(X(x),y);lay.paintFloor=fl(pf);lay.paintTop=fl(pt);
 lay.spawn.x=XP(lay.spawn.x);lay.zones=lay.zones.map(z=>[X(z[2]),z[1],X(z[0]),z[3]]);lay.lobby=[X(lay.lobby[2]),lay.lobby[1],X(lay.lobby[0]),lay.lobby[3]];
 lay.cams.forEach(c=>{c.x=XP(c.x);c.a0=Math.PI-c.a0});
 lay.tellers=lay.tellers.map(t2);lay.mgr.p=t2(lay.mgr.p);lay.mgr.route=lay.mgr.route.map(t2);lay.guards.forEach(g=>{g.p=t2(g.p);g.route=g.route.map(t2)});
-lay.note=t2(lay.note);lay.mon=t2(lay.mon);lay.vault.door=t2(lay.vault.door);lay.vault.pad=t2(lay.vault.pad);lay.vault.bundles=lay.vault.bundles.map(t2);lay.vault.dir=-1;
+lay.note=t2(lay.note);if(lay.noteAt){const a=t2([lay.noteAt.x,lay.noteAt.y]);lay.noteAt=Object.assign({},lay.noteAt,{x:a[0],y:a[1]})}lay.mon=t2(lay.mon);lay.vault.door=t2(lay.vault.door);lay.vault.pad=t2(lay.vault.pad);lay.vault.bundles=lay.vault.bundles.map(t2);lay.vault.dir=-1;
 lay.mission.extra.forEach(x=>{x.p=t2(x.p);x.route=x.route.map(t2)});lay.mission.bags=lay.mission.bags.map(t2);lay.tills=lay.tills.map(t2);lay.atms=lay.atms.map(t2);lay.backDoors=lay.backDoors.map(t2);
 if(lay.stash)lay.stash={kind:lay.stash.kind,door:t2(lay.stash.door),out:t2(lay.stash.out),cells:lay.stash.cells.map(t2),deep:lay.stash.deep.map(t2)};
 lay.sw.x=XP(lay.sw.x);lay.exit.x=XP(lay.exit.x);lay.exit.dir=-lay.exit.dir;lay.exit.tx=X(lay.exit.tx);
@@ -173,7 +173,7 @@ lay.spawn=pp(lay.spawn);lay.zones=lay.zones.map(rect);lay.lobby=rect(lay.lobby);
 lay.cams=(lay.cams||[]).map(c=>Object.assign(pp(c),{a0:ang(c.a0)}));
 lay.tellers=pl(lay.tellers);if(lay.mgr)lay.mgr=Object.assign({},lay.mgr,{p:tl(lay.mgr.p),route:pl(lay.mgr.route)});
 lay.guards=(lay.guards||[]).map(g=>Object.assign({},g,{p:tl(g.p),route:pl(g.route)}));
-lay.note=tl(lay.note);lay.mon=tl(lay.mon);lay.tills=pl(lay.tills);lay.atms=pl(lay.atms);lay.backDoors=pl(lay.backDoors);if(lay.sw)lay.sw=pp(lay.sw);
+lay.note=tl(lay.note);if(lay.noteAt){const a=tl([lay.noteAt.x,lay.noteAt.y]);lay.noteAt=Object.assign({},lay.noteAt,{x:a[0],y:a[1]})}lay.mon=tl(lay.mon);lay.tills=pl(lay.tills);lay.atms=pl(lay.atms);lay.backDoors=pl(lay.backDoors);if(lay.sw)lay.sw=pp(lay.sw);
 if(lay.stash)lay.stash={kind:lay.stash.kind,door:tl(lay.stash.door),out:tl(lay.stash.out),cells:pl(lay.stash.cells),deep:pl(lay.stash.deep)};
 {const mi=lay.mission;lay.mission=Object.assign({},mi,{extra:(mi.extra||[]).map(x=>Object.assign({},x,{p:tl(x.p),route:pl(x.route)})),bags:pl(mi.bags||[])})}
 if(lay.vault){const v=lay.vault,pr=[tile(v.door[0],v.door[1]),tile(v.door[0],v.door[1]+1)],h=pr[0][1]===pr[1][1],door=h?(pr[0][0]<pr[1][0]?pr[0]:pr[1]):(pr[0][1]<pr[1][1]?pr[0]:pr[1]);
