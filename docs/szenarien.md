@@ -212,7 +212,7 @@ Siebtes Szenario `prison` (Eilauftrag Issue 45, 30. Oktober 2026, erste spielbar
 - **Wachen** (7, im Seed gedreht): je eine im Trakt A und B, im Gang, in Hof 2, Wachstube mit Flur, Kantine und Hof 1. **Kameras** (6): Hof 1 dreimal, Gang, Flur, Kantine. Weitere Maße und Wachrouten: `prisonLayout`.
 Seit v1 gleich: Mithäftlinge, sichtbare Schaltpulte, Ausgang von innen, der lautlose Abholpunkt (jetzt bei (41,25) vor der Servicetür), `CFG.prison`. Hauptschalter für die Kameras (`sw`), Monitor und Notiz sitzen im Kontrollraum.
 
-**Verriegelte Stellen** (`LAY.prison.locks`, je `{id, kind, cells, ops}`, Operator `{k, who, at}` mit `who` `pz` (der Gefangene) oder `team`, `at` die Kachel, an der man steht; Schnappschussfeld `pd` ist die Bitmaske der offenen Stellen, `VER` 60):
+**Verriegelte Stellen** (`LAY.prison.locks`, je `{id, kind, cells, ops}`, Operator `{k, who, at}` mit `who` `pz` (der Gefangene) oder `team`, `at` die Kachel, an der man steht; Schnappschussfeld `pd` ist die Bitmaske der offenen Stellen, `VER` 64 mit allem vom Merge):
 | id | Stelle | Wer, wie |
 |---|---|---|
 | `z` | Zellentür des Gefangenen | der Gefangene von innen aufhebeln (E halten, `CFG.prison.pryT` 18 s, Objekt `pry`), oder ein Mitspieler am Schalter |
