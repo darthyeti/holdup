@@ -48,6 +48,9 @@ async function launch(opts) {
   // --disable-accelerated-2d-canvas: Chrome rastert sonst je Leinwand zur Laufzeit auf der GPU oder der CPU (Speicher, Zahl der Leinwaende), Verlaeufe, Alpha-Rechtecke und Linien sehen auf beiden Wegen
   // verschieden aus, die Pixeltests flackerten (Ticket #6). Mit dem Flag laeuft jede 2D-Leinwand auf der CPU, das Spiel selbst bleibt unveraendert.
   const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-accelerated-2d-canvas'] });
+  // Mit #debug allein wuerfelt das Spiel zufaellige Karten. Die Tests brauchen die feste Klassikkarte und setzen sie hier ausdruecklich, fuer jeden Kontext (auch die eigenen Seiten einzelner Tests)
+  const newCtx = browser.newContext.bind(browser);
+  browser.newContext = async (o) => { const c = await newCtx(o); await c.addInitScript(() => { window.__holdupSeed = 'classic'; }); return c; };
   return { srv, url, browser };
 }
 
@@ -57,6 +60,8 @@ async function openGame(env, opts) {
   const ctx = await env.browser.newContext({ viewport: { width: 1000, height: 640 } });
   // Mit opts.det ersetzt ein Init-Skript Math.random durch einen festen Zahlenstrom (fuer Pixelvergleiche, vor dem ersten Skript der Seite)
   if (opts.det) await ctx.addInitScript(() => { let a = 0x9e3779b9; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
+  // Jeder Kontext bekommt die feste Klassikkarte schon in launch (siehe dort); opts.random nimmt sie zurueck, dann wuerfelt das Spiel wie im Browser
+  if (opts.random) await ctx.addInitScript(() => { delete window.__holdupSeed; });
   const page = await ctx.newPage();
   page.errors = [];
   page.on('pageerror', e => page.errors.push(String(e && e.stack || e)));
