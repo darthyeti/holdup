@@ -105,14 +105,14 @@ g.font='13px monospace';g.fillStyle=Y;g.fillText((r>0?'Erst der Shop, dann: ':'N
 {id:'opt',x:590,y:340,w:310,h:72,key:'o',act:'ui:options',icon:'opt',title:'Optionen',sub:'Ton, Bild, Name, Serie'}],
 deco(){const{g,titleNote}=X;g.textAlign='center';if(titleNote){g.font='12px monospace';g.fillStyle=RD;g.fillText(titleNote.s,480,160)}
 g.font='11px monospace';g.fillStyle=MU;g.fillText('Pfeiltasten oder Maus wählen, Enter oder Klick bestätigt, Esc geht zurück.',480,446);g.fillText('Ton: '+(SND.isMuted()?'aus':'an')+' (M)',480,466)}}}
-function sMission(){const{scenario,NET,sameMap,CFG,missionFrom,SESSION,shopNote,fmt}=X,from=missionFrom,cw=201,gap=12,rh=116,pos=[[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1]];
+function sMission(){const{scenario,NET,sameMap,CFG,missionFrom,SESSION,shopNote,fmt}=X,from=missionFrom,cw=201,gap=12,rh=128,pos=[[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1]];
 const rk=k=>(CFG.rank[k]||0),lk=k=>X.scLocked(k)?'ab Auftrag '+(rk(k)+1):'';
-const pzN=X.prisonName(),t=pzN?[{id:'job:prison',x:60,y:84,w:cw*2+gap,h:rh,act:'pick',arg:'prison',chosen:true,lock:'',job:Object.assign({},PRISON,{s:pzN+' sitzt im Gefängnis'}),paint:paintJob,nochip:true}]:JOBS.map((j,i)=>({id:'job:'+j.k,x:60+pos[i][0]*(cw+gap),y:84+pos[i][1]*(rh+12),w:cw,h:rh,act:'pick',arg:j.k,chosen:scenario===j.k,lock:lk(j.k),job:j,paint:paintJob,nochip:true}));
+const by=X.DBG&&!X.prisonName()?500:466,pzN=X.prisonName(),t=pzN?[{id:'job:prison',x:60,y:84,w:cw*2+gap,h:rh,act:'pick',arg:'prison',chosen:true,lock:'',job:Object.assign({},PRISON,{s:pzN+' sitzt im Gefängnis'}),paint:paintJob,nochip:true}]:JOBS.map((j,i)=>({id:'job:'+j.k,x:60+pos[i][0]*(cw+gap),y:84+pos[i][1]*(rh+12),w:cw,h:rh,act:'pick',arg:j.k,chosen:scenario===j.k,lock:lk(j.k),job:j,paint:paintJob,nochip:true}));
 if(!pzN){const dbgP=!!X.DBG;t.push({id:'job:random',x:60+3*(cw+gap),y:84+rh+12,w:cw,h:rh,act:'pick',arg:'random',chosen:scenario==='random',job:RANDOM,paint:paintRandom,nochip:true});if(dbgP)t.push({id:'job:prison',x:60,y:84+2*(rh+12),w:cw,h:rh,act:'pick',arg:'prison',chosen:scenario==='prison',lock:'',job:PRISON,paint:paintJob,nochip:true})}
-t.push({id:'back',x:60,y:466,w:170,h:44,kind:'g',act:'missionBack',title:'Zurück',chip:'Esc'});
-if(NET.role!=='client')t.push({id:'same',x:246,y:466,w:340,h:44,key:'k',act:'same',title:'Gleiche Karte nochmal: '+(sameMap?'an':'aus'),chosen:sameMap});
+t.push({id:'back',x:60,y:by,w:170,h:44,kind:'g',act:'missionBack',title:'Zurück',chip:'Esc'});
+if(NET.role!=='client')t.push({id:'same',x:246,y:by,w:340,h:44,key:'k',act:'same',title:'Gleiche Karte nochmal: '+(sameMap?'an':'aus'),chosen:sameMap});
 if(kickList().length)t.push({id:'kick',x:360,y:46,w:170,h:32,kind:'g',act:'ui:kick',title:kickTitle(),tf:'bold 12px monospace'});
-t.push({id:'start',x:620,y:466,w:280,h:44,kind:'p',act:'missionStart',title:from==='lobby'?'Übernehmen':'Auftrag starten',chip:'Enter'});
+t.push({id:'start',x:620,y:by,w:280,h:44,kind:'p',act:'missionStart',title:from==='lobby'?'Übernehmen':'Auftrag starten',chip:'Enter'});
 return{def:'start',back:'missionBack',t,deco(){const{g}=X;g.textAlign='left';g.font='bold 30px monospace';g.fillStyle=A;g.fillText('AUFTRAG WÄHLEN',60,64);
 g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(SESSION.round>0?'Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet):'Neue Serie',900,58);fhBadge(900,76,'r');
 const ft=t.find(q=>q.id===focus&&q.job),j=pzN?PRISON:(ft?ft.job:jobOf(scenario)),dl=pzN?[pzN+' sitzt im Gefängnis. Der nächste Auftrag ist ein Gefängnisausbruch.',PRISON.d[0]]:ft&&ft.lock?[ft.job.n+' ist gesperrt: erreichbar '+ft.lock+'.','Jeder überstandene Auftrag zählt, auch beim Zufall.']:j.d;

@@ -1,5 +1,5 @@
 // Nebenziele: Auswahl aus dem Seed, Auswertung je Ziel, Bonus im Ergebnis, Fehlschlag im Coop beim Client sichtbar, HUD zeichnet.
-const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb'];
+const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino'];
 const money = s => +String(s).replace(/[^0-9]/g, '');
 
 module.exports = [
