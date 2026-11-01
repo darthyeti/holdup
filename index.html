@@ -36,7 +36,7 @@ canvas:focus-visible{border-color:var(--accent)}
 <script>
 const BUILD={n:211,d:'2026-10-29'};//BUILD
 const MAPS_API=1;//Vertrag mit js/maps.js (mkMaps.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkMaps aendern
-const UI_API=12;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
+const UI_API=13;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
    Vollbild gilt fuer die ganze Seite (nicht fuers Canvas: object-fit dehnt es dort, dann stimmt das Zielen nicht mehr). Alles ist CSS ueber html[data-view] und html[data-fs],
@@ -1345,8 +1345,8 @@ function vanBoard(act,dt){const F=CFG.van,open=vanMode===0&&vanAtStop()&&vanNv==
 for(const o of act){if(open&&LANE.exit.has(o.x,o.y)&&!(o.hurt>0)){o.bd=Math.min(1,o.bd+dt/(F.bt+F.bu*o.units));if(o.bd>=1){o.bd=0;secure(o)}}else o.bd=0}}
 function callVan(){if(phase!==2||vanCalled||vanArr||ended||tH<CFG.vanLock)return;const vt=vanT();vanCalled=true;snd('radio');vanAt=Math.min(vanAt,tH+vt);ban('Fluchtwagen unterwegs: '+vt+' s',2.4);say('Fahrer alarmiert. Ankunft in '+vt+' s')}
 const DBG=location.hash==='#debug';try{localStorage.removeItem('holdup.save')}catch(e){}
-/* Kartenseed: Debug und Tests nutzen die klassische Bank, sonst wuerfelt der Host pro Auftrag neu. #seed=N erzwingt die erste Karte, sameMap haelt sie. */
-const rndSeed=()=>1+Math.floor(Math.random()*999999);let seedMode=DBG?'classic':'random',firstSeed=(/seed=(\d+)/.exec(location.hash)||[])[1],mapSeed=null,sameMap=false,scenario='bank',jobSc='bank';
+/* Kartenseed: Mit #debug wuerfelt auch der Host zufaellig, nur die Tests setzen window.__holdupSeed='classic' (tests/lib.js, Kachel Karte in den Testwerkzeugen schaltet um), sonst wuerfelt der Host pro Auftrag neu. #seed=N erzwingt die erste Karte, sameMap haelt sie. */
+const rndSeed=()=>1+Math.floor(Math.random()*999999);let seedMode=DBG&&window.__holdupSeed==='classic'?'classic':'random',firstSeed=(/seed=(\d+)/.exec(location.hash)||[])[1],mapSeed=null,sameMap=false,scenario='bank',jobSc='bank';
 if(!DBG)try{const v=localStorage.getItem('holdup.sc');if(v==='random'||['bank','truck','jewel','gas','museum','casino'].includes(v))scenario=v}catch(e){}
 const SCS=['bank','truck','jewel','gas','museum','casino','prison'],SCP=SCS.filter(k=>k!=='prison');let PZ=-1;//SCP: Pool fuer Zufall und Wettkampf, das Gefaengnis kommt nur nach einem Coop-Sieg mit Zurueckgebliebenem oder per Test
 function newSeed(){if(sameMap&&LAY)return LAY.seed;jobSc=scenario==='random'?(pool=>pool[Math.floor(Math.random()*pool.length)])(SCP.filter(k=>SESSION.round>=(CFG.rank[k]||0))):scenario;PZ=-1;if(SESSION.pz>=0&&nPl>1&&SESSION.pz<nPl){jobSc='prison';PZ=SESSION.pz}else if(jobSc==='prison'){scenario='bank';if(DBG&&nPl>1)PZ=SESSION.pzT>=0?Math.min(SESSION.pzT,nPl-1):nPl-1;else jobSc='bank'}if(firstSeed){const v=+firstSeed;firstSeed=null;return v}return seedMode==='random'?rndSeed():seedMode}
@@ -2262,7 +2262,7 @@ get ended(){return ended},get errTxt(){return errTxt},get fmt(){return fmt},get 
 get myName(){return myName},get funkMode(){return funkMode},get chatShow(){return chatShow},get chat(){return chat},get chatOpen(){return chatOpen},get chatBuf(){return chatBuf},get chatWho(){return chatWho},get chatCol(){return chatCol},get chatOk(){return chatOk},get chatClk(){return chatClk},get nameEdit(){return nameEdit},get NET(){return NET},get paused(){return paused},get PC(){return PC},get pn(){return pn},
 get roomLink(){return roomLink},get S0(){return S0},get warned(){return warned},get skOk(){return skOk},get skNeed(){return skNeed},get skBlock(){return skBlock},get skCanSell(){return skCanSell},get sameMap(){return sameMap},get scenario(){return scenario},get scLocked(){return scLocked},get prisonName(){return prisonName},get scr(){return scr},
 get SESSION(){return SESSION},get SHOPKEYS(){return SHOPKEYS},get shopNote(){return shopNote},get shopState(){return shopState},get itemPrice(){return itemPrice},get repCost(){return repCost},get so(){return so},get st(){return st},
-get T(){return T},get time(){return time},get titleNote(){return titleNote},get unlockAll(){return unlockAll},get VH(){return VH},get VW(){return VW},
+get T(){return T},get time(){return time},get titleNote(){return titleNote},get unlockAll(){return unlockAll},get seedMode(){return seedMode},get VH(){return VH},get VW(){return VW},
 get W1(){return W1},get WX0(){return WX0},get WY0(){return WY0}}),{drawMenu,drawPause,drawEnded,fhBadge}=UI;
 let shopNote={s:'',t:0},shopConf=-9,missionFrom='title',unlockAll=false;
 const SHOPKEYS='1234567890-';
@@ -2322,7 +2322,7 @@ case'dbgMoney':SESSION.wallet+=50000;break;case'dbgMoney0':SESSION.wallet=0;brea
 case'dbgResp':{let n=0;for(const id of SKID)n+=SESSION.sk[id]|0;SESSION.pts+=n;SESSION.sk={};SESSION.sk0=null;break}
 case'dbgHeat':SESSION.heat=heatClamp(((heatLv(SESSION.heat)+1)%CFG.fahndung.names.length)*CFG.fahndung.step);break;
 case'dbgRound':SESSION.round=Math.max(0,SESSION.round+(+v||0));break;
-case'dbgPz':SESSION.pzT=SESSION.pzT>=3?-1:SESSION.pzT+1;break;
+case'dbgMap':seedMode=seedMode==='classic'?'random':'classic';break;case'dbgPz':SESSION.pzT=SESSION.pzT>=3?-1:SESSION.pzT+1;break;
 case'dbgQuiet':SESSION.quiet=(SESSION.quiet|0)>=CFG.alert.cap?0:(SESSION.quiet|0)+1;break;
 case'endNext':endNext();break;case'endPrev':endPage(ended.pg-1);break;
 case'endBack':if(NET.role==='solo')toTitle();else leaveGame('');break}}
@@ -2416,7 +2416,7 @@ if(live(me)&&!ended&&!me.ln&&en.length&&leanAt(me))drawPrompt({i:'lean',c:'g',v:
 if(LAY.prison&&phase===1&&!ended&&!prDl&&rT<LAY.prison.dl.at){g.textAlign='right';g.font='11px monospace';g.fillStyle='#ffd27a';g.fillText('Lieferung in '+Math.ceil(LAY.prison.dl.at-rT)+' s',VW-12,VH-78);g.textAlign='left'}
 if(phase===1&&alarmT>0&&!ended){const cd='ENTDECKT! Alarm in '+alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(banner&&!paused){g.globalAlpha=Math.min(1,banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(banner.s,482,154);g.fillStyle=phase===2?'#ff8a6a':'#ffd27a';g.fillText(banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
-mapSeed=DBG?'classic':rndSeed();buildWorld(layoutFor(mapSeed));reset();
+mapSeed=seedMode==='classic'?'classic':rndSeed();buildWorld(layoutFor(mapSeed));reset();
 let last=performance.now(),hostWk=null;
 function stepReal(){const n=performance.now(),raw=(n-last)/1000,dt=Math.min(.033,raw);last=n;if(raw>.1&&scr==='play')LOG.evl('ruckler',Math.round(raw*1000),.5);LOG.fr(raw*1000);tick(dt)}
 /* Flugschreiber im Spiel (LOG, mkFlog): flogMeta ist der Kopf je Auftrag, logStep misst im Spiel (je Sekunde eine Zeile, 5 Bilder je Sekunde mit Positionen) und schreibt Zustandswechsel als Ereignisse (Phase, Welle, Polizei, Fluchtwagen, Spieler tot, am Boden, entkommen, weg), flogMark (F8) markiert, flogSave (F9) speichert. */

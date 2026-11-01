@@ -309,9 +309,10 @@ function mDebug(){const{SESSION,CFG,fmt}=X,F=CFG.fahndung,lv=X.heatLv(SESSION.he
 {id:'dheat',act:'dbgHeat',title:'Fahndung: Stufe '+lv+' '+F.names[lv],sub:'Klick: nächste Stufe (0 bis '+(F.names.length-1)+')'},
 {id:'dround',half:0,act:'dbgRound',arg:-1,title:'Auftrag −1',sub:'jetzt Auftrag '+(SESSION.round+1)},{id:'dround2',half:1,act:'dbgRound',arg:1,title:'Auftrag +1',sub:'Rang schaltet Karten frei'},
 {id:'dquiet',act:'dbgQuiet',title:'Lautlose Siege in Folge: '+q,sub:q>=CFG.alert.at?'Läden gewarnt, Klick: +1 (nach '+CFG.alert.cap+' wieder 0)':'Klick: +1 (ab '+CFG.alert.at+' gewarnt)'},
+{id:'dmap',act:'dbgMap',title:'Karte: '+(X.seedMode==='classic'?'fest (Klassikbank)':'zufällig'),sub:'Klick: umschalten, gilt ab dem nächsten Auftrag'},
 {id:'dpz',act:'dbgPz',title:'Gefangener: '+(SESSION.pzT<0?'letzter Spieler':'Spieler '+(SESSION.pzT+1)),sub:'Gefängnisausbruch (Auftragswahl, Klick: nächster Platz)'}];
 if(X.NET.role==='solo')rows.push({id:'dshop',act:'dbgShop',title:'Shop öffnen',sub:'ohne einen Auftrag zu beenden (nur solo)'});
-const gap=8,hs=rows.map(r=>50),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
+const gap=8,hs=rows.map(r=>42),h=70+hs.reduce((a,b,i)=>a+(rows[i].half===1?0:b+gap),0)+56,y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
 let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
 t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
 return{def:'close',back:'ui:close',t,deco(){panelFrame(px,y0,pw,h,'TESTWERKZEUGE (#debug)')}}}
@@ -465,4 +466,4 @@ const v=g.createRadialGradient(480,272,200,480,272,640);v.addColorStop(0,'rgba(0
 if(small)return;g.textAlign='center';g.font='bold 76px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText('HOLDUP',484,112);g.fillStyle='#ffb000';g.fillText('HOLDUP',480,108);
 g.font='15px monospace';g.fillStyle='#c9d4de';g.fillText('Rein, raus, reich.',480,140)}
 return{drawMenu,drawPause,drawEnded,fhBadge,key,down,up,move,active,JOBS,modal:()=>modal?modal.k:null,focus:()=>{cur();return focus},tiles:()=>{const c=cur();return c?c.t.map(t=>({id:t.id,title:t.title||'',x:t.x,y:t.y,w:t.w,h:t.h,lock:t.lock||'',chosen:!!t.chosen,nofocus:!!t.nofocus,glow:!!t.glow})):[]}}}
-mkUI.api=12;
+mkUI.api=13;
