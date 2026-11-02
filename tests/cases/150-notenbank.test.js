@@ -22,7 +22,7 @@ module.exports = [
         o.names = D.MAP_FIELDS.map(f => f[0]);
         D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6]; o.size = [w.W, w.H]; o.door = cl(17, 2); o.stair = cl(16, 6);
         const bfs = (from, to, ok) => { const seen = new Set([from.join()]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = n.join(); if (!seen.has(k) && ok(n[0], n[1])) { seen.add(k); q.push(n); } } } return false; };
-        let open = false; const walk = (x, y) => { if (open && x >= 17 && x <= 18 && y >= 2 && y <= 3) return true; const ch = cl(x, y); return ch !== '#' && ch !== 'W' && ch !== 'Y' && ch !== 'L' && ch !== 'V' && ch !== 'C' && !'ekqPpbAmrfX'.includes(ch) && ch !== undefined; };
+        let open = false; const walk = (x, y) => { if (open && x >= 17 && x <= 18 && y >= 2 && y <= 3) return true; const ch = cl(x, y); return ch !== '#' && ch !== 'W' && ch !== 'Y' && ch !== 'L' && ch !== 'V' && ch !== 'C' && !'ekqPpbAmrfXN'.includes(ch) && ch !== undefined; };
         const z = a.nb.zone; o.way = { keller: bfs([14, 30], [20, 3], walk), zoneClosed: bfs([14, 30], [z[0], z[1]], walk) };
         open = true; o.way.zoneOpen = bfs([14, 30], [z[0], z[1]], walk);
         o.pressIn = a.nb.pcand.some(p => p[0] === a.nb.press[0] && p[1] === a.nb.press[1]);
@@ -34,7 +34,7 @@ module.exports = [
       t.ok(r.det && r.vary >= 3, 'gleicher Seed gleiche Anlage, andere Seeds andere Wachen, Kameras, Presse oder Code (' + r.vary + ' von 8)');
       t.ok(r.size[0] <= 64 && r.size[1] <= 64, 'Welt hoechstens 64x64: ' + r.size);
       t.ok(r.names.includes('nb'), 'MAP_FIELDS kennt nb');
-      t.eq([r.door, r.stair], ['m', 'd'], 'der Bohrer steht solide im Keller (m) und die Kellertreppe (d) steht');
+      t.eq([r.door, r.stair], ['N', 'd'], 'der Bohrer steht solide im Keller (N) und die Kellertreppe (d) steht');
       t.eq(r.way, { keller: true, zoneClosed: false, zoneOpen: true }, 'Wege: der Keller ist von draussen erreichbar, die Fluchtzone erst bei offener Tunneltuer');
       t.ok(r.pressIn, 'der Platz der Presse ist einer der Kandidaten');
     },
@@ -65,7 +65,7 @@ module.exports = [
         function CFG_VANTEST() { return D.CFG.vanAuto + D.CFG.vanStay + 20; }
         return o; })()`);
       t.eq([r.p1, r.p2], [1, 2], 'Phase 1 vor alarmAt, danach Alarm (Phase 2)');
-      t.eq([r.before, r.after], ['m', '.'], 'ohne Bohrer bleibt der Boden zu (300 s), nbHole(true) macht das Loch auf');
+      t.eq([r.before, r.after], ['N', '.'], 'ohne Bohrer bleibt der Boden zu (300 s), nbHole(true) macht das Loch auf');
       t.eq(r.van1, [false, false], 'auch weit nach vanAuto und vanStay kommt kein Fluchtwagen und das Spiel ist nicht vorbei');
     },
   },
@@ -125,7 +125,7 @@ module.exports = [
         return o; })()`);
       t.eq(r.sc, ['nb', 'nb'], 'Szenario auf Host und Client');
       t.eq(r.map, [], 'Karte, Items und Welt gleich');
-      t.eq(r.closed, ['m', 'm'], 'Bohrer steht auf beiden: ' + JSON.stringify(r.tH));
+      t.eq(r.closed, ['N', 'N'], 'Bohrer steht auf beiden: ' + JSON.stringify(r.tH));
       t.eq(r.open, ['.', '.'], 'Loch offen auf beiden (Schnappschussfeld nbo)');
       t.eq(r.end, [true, true], 'Sieg endet auf beiden');
       t.eq(r.win, true, 'gewonnen');
@@ -191,7 +191,7 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {}; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
         const a = D.layoutBase(5), G = a.nb.gates; D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6];
-        const SOL = '#WYwCVXfvekqPpbAmrfu', key = c => c.join();
+        const SOL = '#WYwCVXfvekqPpbAmrfuN', key = c => c.join();
         const reach = (from, to, blocked, tunnelOpen) => { const bl = new Set((blocked || []).map(key)), seen = new Set([key(from)]), q = [from];
           for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = key(n), ch = cl(n[0], n[1]); const rigc = n[0] >= 17 && n[0] <= 18 && n[1] >= 2 && n[1] <= 3; if (seen.has(k) || bl.has(k) || ch === undefined || (SOL.includes(ch) && !(rigc && tunnelOpen))) continue; seen.add(k); q.push(n); } } return false; };
         const out = [14, 30], flat = g => [].concat(...g);

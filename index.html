@@ -204,7 +204,7 @@ const setc=(x,y,c)=>{M[y-WY0][x-WX0]=c};
 const fill=(x0,y0,x1,y1,c)=>{for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)setc(x,y,c)};
 function newGrid(w,h,x0,y0){stm.clear();gone=[];vanSt=null;W=w;H=h;WX0=x0;WY0=y0;WPX=W*T;WPY=H*T;M=[];for(let y=0;y<H;y++){const r=[];for(let x=0;x<W;x++)r.push('o');M.push(r)}TILES=[];for(let y=WY0;y<WY0+H;y++)for(let x=WX0;x<WX0+W;x++)TILES.push([x,y])}
 let vaultOpen=false;
-const SOLID='#WCPpbAremkqfLvXwYu';
+const SOLID='#WCPpbAremkqfLvXwYuN';
 const isSol=(x,y)=>{if(OOB(x,y))return true;const c=cell(x,y);if(c==='V')return !vaultOpen;return SOLID.indexOf(c)>=0};
 const isOpq=(x,y)=>{if(OOB(x,y))return true;const c=cell(x,y);return c==='#'||c==='P'||(c==='V'&&!vaultOpen)};
 const isBul=(x,y)=>{if(OOB(x,y))return true;const c=cell(x,y);return c==='#'||c==='W'||c==='P'||c==='k'||c==='q'||c==='v'||c==='X'||c==='Y'||c==='u'||(c==='V'&&!vaultOpen)};
@@ -855,7 +855,7 @@ for(const gd of npcs.filter(n=>n.k==='grd'&&n.st!=='away'))its.push({t:'pist',ge
 /* Notenbank (Ticket 61 bis 65, docs/szenarien.md): Der Alarm geht nach CFG.nb.alarmAt s Erkunden von selbst los. Der Bohrer im Keller (LAY.nb.rig, 2x2, solide) wird mit E gestartet und gräbt; bei 100 % verschwindet er (nbHole), das Loch im Boden (LAY.nb.zone) ist der Ausstieg: wer mit Beute hineingeht, ist gesichert. Kein Fluchtwagen (vanAt sehr gross). Einhaengepunkte fuer die Presse (N3) und die Anzeige gehalten (N4): nbStep, nbItems. */
 let nbOpen=false,nbd={st:0,p:0,c:0,fa:[]};//Bohrer (N2): st 0 aus, 1 laeuft, 2 steht, 3 fertig; p Fortschritt 0..1; c Ursache des Stillstands 1 Beschuss, 2 Beamter im Keller, 3 Defekt nach Zeit; fa offene Defekte (Fortschritt, aufsteigend)
 const nbIn=o=>{const z=LAY.nb.zone;return o.x>=z[0]*T&&o.x<(z[2]+1)*T&&o.y>=z[1]*T&&o.y<(z[3]+1)*T},nbRig=()=>{const r=LAY.nb.rig;return[(r[0]+1)*T,(r[1]+1)*T]},NB_C=['','Beschuss','Beamter im Keller','Defekt'];
-function nbHole(on){nbOpen=on;const r=LAY.nb.rig;for(let y=0;y<2;y++)for(let x=0;x<2;x++)setc(r[0]+x,r[1]+y,on?'.':'m');paintObjs();flowT=0}
+function nbHole(on){nbOpen=on;const r=LAY.nb.rig;for(let y=0;y<2;y++)for(let x=0;x<2;x++)setc(r[0]+x,r[1]+y,on?'.':'N');paintObjs();flowT=0}
 function nbStop(c,msg){nbd.st=2;nbd.c=c;snd('ev','latch');say(msg);ban('Bohrer steht: '+NB_C[c],2)}
 function nbStep(dt){const R=LAY.nb,C=CFG.nb;if(!R||ended)return;
 if(phase===1&&rT>=C.alarmAt){say('Die Zentrale hat euch bemerkt: Alarm!');startHeist(true,null,false);return}
@@ -868,15 +868,15 @@ else if(nbd.fa.length&&nbd.p>=nbd.fa[0]){nbd.fa.shift();nbStop(3,'Der Bohrer hat
 if(nbOpen)for(const o of actv())if(nbIn(o)){secure(o);if(ended)return}}
 /* Zeichnen des Bohrers (N2b): Gestell mit Motor, senkrechte Bohrstange mit Krone (dreht sich beim Laufen, wird mit dem Fortschritt kuerzer, weil sie in den Boden geht), Staub, wachsende Risse und ein dunkler Ring im Boden. Bei 100 % ist die Maschine weg, zurueck bleibt das Loch. Zustand: Lampe gruen laeuft, rot steht, gelb aus. */
 function nbDraw(g){const R=LAY.nb,rr=R.rig,X=rr[0]*T,Y=rr[1]*T,cx=X+T,cy=Y+T,p=nbd.p,C=CFG.nb,st=nbd.st;
-if(st===3||nbOpen){g.fillStyle='#0c0a09';g.beginPath();g.ellipse(cx,cy,T*.95,T*.85,0,0,6.283);g.fill();g.strokeStyle='#5b5246';g.lineWidth=3;g.stroke();g.fillStyle='#17130f';g.beginPath();g.ellipse(cx,cy+3,T*.65,T*.55,0,0,6.283);g.fill();
+if(st===3||nbOpen){g.fillStyle='#0c0a09';g.beginPath();g.ellipse(cx,cy,T*.95,T*.85,0,0,6.283);g.fill();g.strokeStyle='#6b6152';g.lineWidth=3;g.stroke();g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=1.5;g.beginPath();g.ellipse(cx,cy-1,T*.9,T*.8,0,3.6,5.6);g.stroke();g.fillStyle='#17130f';g.beginPath();g.ellipse(cx,cy+3,T*.65,T*.55,0,0,6.283);g.fill();
 g.strokeStyle='rgba(20,16,12,.8)';g.lineWidth=2;for(let i=0;i<9;i++){const a=i*.7+.3,l=T*(1.05+.35*((i*37)%5)/5);g.beginPath();g.moveTo(cx+Math.cos(a)*T*.9,cy+Math.sin(a)*T*.8);g.lineTo(cx+Math.cos(a)*l,cy+Math.sin(a)*l*.9);g.stroke()}return}
-if(p>0){g.fillStyle='rgba(12,10,9,'+(.25+.5*p)+')';g.beginPath();g.ellipse(cx,cy+T*.55,T*(.25+.6*p),T*(.18+.4*p),0,0,6.283);g.fill();g.strokeStyle='rgba(20,16,12,.75)';g.lineWidth=2;const n=Math.ceil(p*9);for(let i=0;i<n;i++){const a=i*.7+.3,l=T*(.5+.55*p*(.6+.4*((i*37)%5)/5));g.beginPath();g.moveTo(cx+Math.cos(a)*T*.3*(.5+p),cy+T*.55+Math.sin(a)*T*.2*(.5+p));g.lineTo(cx+Math.cos(a)*l,cy+T*.55+Math.sin(a)*l*.8);g.stroke()}}
-g.fillStyle='#2a2e34';g.fillRect(X+2,Y+T+8,2*T-4,T-10);g.fillStyle='#e0b020';for(let i=0;i<8;i++){g.fillRect(X+4+i*8,Y+2*T-6,4,4)}g.fillStyle='#59616c';g.fillRect(X+4,Y+8,7,2*T-14);g.fillRect(X+2*T-11,Y+8,7,2*T-14);g.fillStyle='#8f97a2';g.fillRect(X+4,Y+8,2*T-8,10);
-const col=st===1?'#7ee34a':st===2?'#d4452f':'#e0b020';g.fillStyle='#3a3f48';g.fillRect(cx-14,Y+14,28,18);g.fillStyle='#1d2026';g.fillRect(cx-14,Y+14,28,4);g.fillStyle=col;g.fillRect(cx+6,Y+20,6,6);
-const len=T*.95*(1-.8*p),top=Y+32,ang=time*C.rpm*6.283*(st===1?1:0);g.fillStyle='#b9bec6';g.fillRect(cx-4,top,8,len);if(st===1){g.strokeStyle='#6b7480';g.lineWidth=2;for(let i=0;i<5;i++){const yy=top+((i*8+time*40)%Math.max(8,len));g.beginPath();g.moveTo(cx-4,yy);g.lineTo(cx+4,yy+4);g.stroke()}}
-const by=top+len;g.fillStyle='#d8dce2';g.beginPath();g.moveTo(cx-11,by);g.lineTo(cx+11,by);g.lineTo(cx,by+13);g.closePath();g.fill();g.fillStyle='#e0b020';for(let i=0;i<4;i++){const a=ang+i*1.571;g.fillRect(cx+Math.cos(a)*9-1.5,by+1+Math.abs(Math.sin(a))*3,3,3)}
-if(st===1){for(let i=0;i<C.dustN;i++){const u=(time*1.3+i/C.dustN)%1,a=i*2.4;g.fillStyle='rgba(170,155,130,'+(.55*(1-u))+')';g.beginPath();g.arc(cx+Math.cos(a)*(8+u*22),by+8-u*18,2+u*3,0,6.283);g.fill()}}
-g.fillStyle='#1d2026';g.fillRect(X+8,Y+2*T-3,2*T-16,5);g.fillStyle=col;g.fillRect(X+8,Y+2*T-3,(2*T-16)*p,5);g.fillStyle='#e8e4d8';g.font='bold 6px monospace';g.textAlign='center';g.fillText('BOHRER',cx,Y+5);g.textAlign='left'}
+const bx=X+T,by=Y+39;
+if(p>0){g.fillStyle='rgba(12,10,9,'+(.25+.5*p)+')';g.beginPath();g.ellipse(bx,by+3,T*(.3+.55*p),T*(.22+.4*p),0,0,6.283);g.fill();g.strokeStyle='rgba(20,16,12,.75)';g.lineWidth=2;const n=Math.ceil(p*9);for(let i=0;i<n;i++){const a=i*.7+.3,l=T*(.5+.55*p*(.6+.4*((i*37)%5)/5));g.beginPath();g.moveTo(bx+Math.cos(a)*T*.3*(.5+p),by+3+Math.sin(a)*T*.2*(.5+p));g.lineTo(bx+Math.cos(a)*l,by+3+Math.sin(a)*l*.8);g.stroke()}}
+g.drawImage(p2,0,64,128,128,X,Y,2*T,2*T);
+const sc=1-.45*p,ph=st===1?Math.floor(time*C.rpm*4)&3:0;g.drawImage(p2,128+ph*32,64,32,32,bx-16*sc,by-16*sc,32*sc,32*sc);
+if(st===1){for(let i=0;i<C.dustN;i++){const u=(time*1.3+i/C.dustN)%1,a=i*2.4;g.fillStyle='rgba(170,155,130,'+(.55*(1-u))+')';g.beginPath();g.arc(bx+Math.cos(a)*(8+u*22),by+4-u*14,2+u*3,0,6.283);g.fill()}}
+const col=st===1?'#7ee34a':st===2?'#d4452f':'#e0b020',on=st===1?Math.sin(time*8)>-.4:true;g.fillStyle=col;g.globalAlpha=on?1:.35;g.beginPath();g.arc(X+49,Y+26,2.4,0,6.283);g.fill();g.globalAlpha=1;g.fillStyle='#14161a';g.beginPath();g.arc(X+53,Y+26,2.4,0,6.283);g.fill();
+g.fillStyle='#1d2026';g.fillRect(X+10,Y+2*T-3,2*T-20,3);g.fillStyle=col;g.fillRect(X+10,Y+2*T-3,(2*T-20)*p,3)}
 function nbSetup(){const R=LAY.nb,C=CFG.nb,fr=mulberry32((Math.imul(LAY.seed|0,2654435761)>>>0)^0x6e62647c);nbd={st:0,p:0,c:0,fa:Array.from({length:C.faultN},()=>C.faultMin+fr()*(C.faultMax-C.faultMin)).sort((a,b)=>a-b)};nbOpen=false;nbHole(false)}
 function nbItems(){const pz=LAY.nb.press,rg=nbRig(),C=CFG.nb,go=()=>{nbd.st=1;nbd.c=0;snd('ev','latch')};its.push({t:'nbd0',x:rg[0],y:rg[1]+T+10,r:46,pr:0,sn:()=>'tick',lab:()=>'Bohrer starten',dur:()=>C.startT,ok:()=>phase===2&&nbd.st===0,act(){go();say('Der Bohrer läuft: Er bohrt ein Loch in den Kellerboden. Halten, bis er durch ist.');ban('Bohrer gestartet',2)}},{t:'nbd1',x:rg[0],y:rg[1]+T+10,r:46,pr:0,sn:()=>'tick',lab:()=>'Bohrer wieder anwerfen',dur:()=>C.restartT,ok:()=>phase===2&&nbd.st===2,act(){go();say('Der Bohrer läuft wieder, der Fortschritt bleibt.');ban('Bohrer läuft',1.6)}});its.push({t:'nbp',x:(pz[0]+1.5)*T,y:(pz[1]+2)*T+10,r:46,pr:0,sn:()=>'latch',lab:()=>'Notenpresse: noch nicht in Betrieb',dur:()=>.4,ok:()=>true,act(){say('Die Notenpresse ist noch nicht in Betrieb.');ban('Noch nicht in Betrieb',1.6)}})}
 function reset(){selIt=-1;spwOn=false;specT=null;specFree=false;for(const c of NET.specs){c.evBuf=[];c.sk=CFG.spec.every}SESSION.sk0=null;
