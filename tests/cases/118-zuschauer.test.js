@@ -153,7 +153,7 @@ module.exports = [
     name: 'Zuschauer zeichnen ohne Fehler in allen Szenarien: Erkunden, Ueberfall, Ergebnis, Pause, Funk und Chat der anderen, mit der Platzhalter-Figur als me (kein JS-Fehler, p folgt einem Spieler)',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
-      const r = await t.page.evaluate(`(() => { const res = []; for (const sc of ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino']) { const G = CT.mkLobby(2, 1), [A, B] = G.players, [S] = G.specs, errs = {};
+      const r = await t.page.evaluate(`(() => { const res = []; for (const sc of ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb']) { const G = CT.mkLobby(2, 1), [A, B] = G.players, [S] = G.specs, errs = {};
         A.setScenario(sc); A.setSeedMode(321); const note = (w, e) => { const k = w + ': ' + String(e && e.message || e); errs[k] = (errs[k] || 0) + 1; };
         const dr = w => { try { S.draw(); } catch (e) { note(w, e); } }; A.startCoop(); G.run(2);
         for (let i = 0; i < 6; i++) { G.run(1); dr('erkunden'); } A.radHost(A.get().players[0], 3, 400, 300); ${KEY('A', 'f')}; for (let i = 0; i < 20; i++) { G.run(1); dr('ueberfall'); }
