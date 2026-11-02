@@ -1004,18 +1004,20 @@
   "n": 20,
   "ok": 20,
   "err": {},
-  "warn": {},
+  "warn": {
+   "weg-tresor-ausgang": 20
+  },
   "entries": {
    "Westtür (W) | Fluchttür (E) | Vordertür (S)": 20
   },
   "range": {
    "pathSV": [
-    11,
-    11
+    26,
+    26
    ],
    "pathVE": [
-    19,
-    19
+    37,
+    37
    ],
    "loot": [
     91500,
@@ -1030,16 +1032,16 @@
     2
    ],
    "mat": [
-    8,
-    8
+    10,
+    10
    ],
    "slots": [
-    9,
-    9
+    10,
+    10
    ],
    "posts": [
-    14,
-    14
+    17,
+    17
    ]
   }
  }
