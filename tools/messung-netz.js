@@ -1,14 +1,15 @@
 // Messungen zum Coop-Ausbau (docs/coop-ausbau.md): Groesse der Schnappschuesse, Streuung gleicher Seeds, Kosten eines Bildes.
 // Aufruf (im Ordner tests/ steht playwright-core, die Hilfen kommen aus tests/lib.js):
-//   node tools/messung-netz.js snap   [szenario] [seed]          Schnappschuss-Groesse bei 4 Spielern ueber 240 s Dauergefecht (Spieler unverwundbar)
+//   node tools/messung-netz.js snap   [szenario] [seed] [stufe]  Schnappschuss-Groesse (Notenbank: stufe = Druckstufe) bei 4 Spielern ueber 240 s Dauergefecht (Spieler unverwundbar)
 //   node tools/messung-netz.js gleich [szenario] [seed] [laeufe]  gleiche Karte, gleiche Lage, gleiches Verhalten: was ist gleich, was streut?
 //   node tools/messung-netz.js draw   [szenario ...]              Kosten von draw() und tick() (im Headless-Chromium ohne GPU, auf dem Mac mit GPU deutlich weniger)
 const lib = require('../tests/lib.js');
 
-const SNAP = (sc, seed) => `(async () => {
+const SNAP = (sc, seed, stufe = 0) => `(async () => {
   const G = CT.mkGame(${JSON.stringify(sc)}, ${seed}, 4, 40, 10), A = G.A, out = { rows: [] };
   for (const o of A.get().players) { o.hp = 1e6; o.ar = 0; }
   A.CFG.policeAt = 3; A.CFG.policeForced = 3;
+  if (${stufe | 0} && A.nbp) A.nbp().n = ${stufe | 0} * A.CFG.nb.escN;   // Notenbank: hohe Druckstufe (gedruckte Buendel)
   G.clients[0].cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }));
   const c = A.NET.conns[0], send0 = c.send.bind(c), st = { snap: [], other: 0, otherN: 0 };
   c.send = m => { const b = JSON.stringify(m).length; if (m.t === 'snap') st.snap.push(b); else { st.other += b; st.otherN++; } send0(m); };
@@ -58,7 +59,7 @@ async function inPage(env, fn) {
   const [mode = 'snap', ...rest] = process.argv.slice(2), env = await lib.launch();
   try {
     if (mode === 'snap') {
-      const sc = rest[0] || 'bank', seed = +rest[1] || 321, r = await inPage(env, SNAP(sc, seed));
+      const sc = rest[0] || 'bank', seed = +rest[1] || 321, r = await inPage(env, SNAP(sc, seed, +rest[2] || 0));
       console.log(`Schnappschuss, ${sc} Seed ${seed}, 4 Spieler, Spieler unverwundbar (Gegner sammeln sich an)`);
       for (const w of r.rows) console.log(`  t=${w.t} Welle ${w.wave} Gegner ${w.en} Kugeln ${w.bl}: ${w.bytes} Byte`);
       console.log('  gesendet an einen Client:', JSON.stringify(r.sent), '| andere Nachrichten:', JSON.stringify(r.other), '| Nachrichten ab 16.300 Byte:', r.big);
