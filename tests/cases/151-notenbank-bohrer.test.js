@@ -112,6 +112,7 @@ module.exports = [
       t.eq(r.early, [false, false, 0], 'vor 100 % bringt nichts etwas');
       t.eq(r.cells, ['.', '.'], 'die Maschine ist weg, der Boden begehbar');
       t.eq(r.end && r.end[0], true, 'Sieg ueber das Loch');
+      t.eq(r.end && r.end[1], 'Durch das Loch entkommen', 'Titel nennt das Loch, nicht den Tunnel');
       t.ok(r.sec >= 777, 'Beute gesichert: ' + r.sec);
     },
   },
@@ -137,6 +138,22 @@ module.exports = [
       t.eq([r.afterE[0], r.afterE[1]], [1, 1], 'der Client haelt E (Eingabe ueber die Test-Leitung), der Host hat den Bohrer wieder laufen: ' + JSON.stringify(r.afterE));
       t.ok(r.stop[1][0] === 2 && r.stop[2] === 1, 'Stillstand und Ursache kommen beim Client an: ' + JSON.stringify(r.stop));
       t.eq([r.done[0][0], r.done[1][0], r.done[2], r.done[3]], [3, 3, '.', '.'], 'fertig und Loch offen auf beiden: ' + JSON.stringify(r.done));
+    },
+  },
+  {
+    name: 'Loch im Boden: Die statische Objektebene ist nach dem Durchbruch neu gemalt (kein m-Sprite und kein Schatten am Loch), auf dem Host und auf dem Client',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const G = CT.mkGame('nb', 5, 2, 60, 20), A = G.A, B = G.clients[0], o = {};
+        const reg = D => { const w = D.world(), rg = D.LAY().nb.rig, c = D.objCv(), x = 2 * (rg[0] * 32 - w.WX0 * 32) + 8, y = 2 * (rg[1] * 32 - w.WY0 * 32) + 8, W = 2 * 64 - 16, H = 2 * 64 - 16, d = c.getContext('2d').getImageData(x, y, W, H).data; let a = 0, h = 2166136261; for (let i = 3; i < d.length; i += 4) { a += d[i]; h = Math.imul(h ^ d[i], 16777619); } return [a, h >>> 0]; };
+        o.closed = [reg(A), reg(B)]; A.startHeist(true, A.get().me); G.run(1); A.nbHole(true); G.run(1.5);
+        o.open = [reg(A), reg(B)]; A.paintObjs(); B.paintObjs(); o.again = [reg(A), reg(B)];
+        return o; })()`);
+      t.ok(r.closed[0][0] > 0 && r.closed[1][0] > 0, 'zu: die Maschinenkacheln sind gemalt: ' + JSON.stringify(r.closed));
+      t.eq([r.open[0][0], r.open[1][0]], [0, 0], 'offen: im Bereich des Lochs ist die Objektebene leer, auf Host und Client: ' + JSON.stringify(r.open));
+      t.eq(r.again, r.open, 'ein erneutes Malen aendert nichts (nbHole hat schon gemalt)');
     },
   },
 ];

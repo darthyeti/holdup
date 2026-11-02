@@ -75,7 +75,7 @@ Die Felder des Vertrags stehen als Tabelle `MAP_FIELDS` in `index.html` (Name, G
 | `cage` | Erweiterung | Chip-Tausch (Casino) | `reset` |
 | `pumps` | Erweiterung | Zapfsäulen (Tankstelle) | `reset`, `pumpHit`, Zeichnen |
 | `prison` | Erweiterung | Gefängnis (Issue 45): `{cell, cells, doors, psw, gate}`, Kennzeichen des Szenarios `prison` | `scOf`, `reset` (`prisonSetup`, `prisonItems`), Zeichnen, Tests |
-| `nb` | Erweiterung | Notenbank (Ticket 61): `{door, zone, press, pcand, stair}`, Kennzeichen des Szenarios `nb` (Tunneltür, Fluchtzone in Kacheln, Platz der Presse, Kandidaten, Kellertreppe) | `scOf`, `reset` (`nbSetup`, `nbItems`), `nbStep`, `finishLay` (Posten), Zeichnen, Tests |
+| `nb` | Erweiterung | Notenbank (Ticket 61): `{zone, rig, keller, press, pcand, stair, gates}`, Kennzeichen des Szenarios `nb` (Loch im Keller als Fluchtzone in Kacheln, Bohrer 2x2, Kellerraum, Platz der Presse, Kandidaten, Kellertreppe, Engstellen der vier Ringe) | `scOf`, `reset` (`nbSetup`, `nbItems`), `nbStep`, `finishLay` (Posten), Zeichnen, Tests |
 | `lasers` | Erweiterung | Laser-Tore (Museum) | Host-Schritt, Zeichnen |
 | `bn` | Erweiterung | Tresorbeute abweichend von `CFG.bundle` | `reset` |
 | `polAt` | Erweiterung | Polizeizeit der Karte | `startHeist` |
