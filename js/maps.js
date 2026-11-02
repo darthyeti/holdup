@@ -835,7 +835,7 @@ exit:{x:(GX+1)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:GX+1},van:{y:(er+1)*T,x0:(GX+7
    LAY.nb: zone [x0,y0,x1,y1] in Kacheln (das Loch im Boden, Ring 4), rig (Bohrer 2x2), press (Kachel links oben der Notenpresse, 3x2, solide), pcand (Kandidaten), stair (Kellertreppe), gates (Engstellen je Ring: haupt, seite, hinten, schleuse, panzer, treppe als Kachellisten, fuer Tests und Doku). ---- */
 function nbLayout(sd){const sn=typeof sd==='number'?sd:7,GX=27,bot=28;frameWorld(52,48,-6,-6,30);setc(45,25,'o');setc(45,26,'o');
 fill(0,0,GX,bot,'#');
-fill(14,1,24,5,'.');setc(16,6,'d');fill(17,2,18,3,'m');
+fill(14,1,24,5,'.');setc(16,6,'d');fill(17,2,18,3,'N');
 fill(1,7,9,14,'.');fill(10,7,10,14,'#');setc(10,9,'V');setc(10,10,'V');
 fill(11,7,19,14,'.');fill(20,7,20,14,'#');setc(20,10,'d');fill(21,7,26,14,'.');
 setc(15,15,'d');setc(16,15,'d');

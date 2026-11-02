@@ -254,6 +254,7 @@ Nach Tills Spieltest ("Bohrer und Presse sehen nicht danach aus, was sie sind; e
 - **Loch:** Bei 100 % wird die Maschine (2x2 Kacheln `m`) zu Boden (`nbHole`, Raster wieder frei), zurück bleibt das Loch (Bild: dunkle Öffnung mit Rand und Rissen, Beschriftung AUSSTIEG). `LAY.nb.zone` ist das Loch (17..18, 2..3) und liegt im Keller. Wer mit Beute hineingeht, ist gesichert, Coop wie bisher in der Fluchtzone. Die Polizei erreicht das Loch nur durch das Gebäude (die Ringe der Reihe nach).
 - **Entfallen:** Tunnelstrecke, Kanalschacht, Gullydeckel, Schild KANAL, Tunneltür `L` und `LAY.nb.door`. Der Schnappschuss bleibt (`nbo`, `nbd`), `VER` 66 wegen des geänderten Spielverhaltens.
 - **Tests:** `150` und `151` auf das Loch umgestellt (Maschine solide bis 100 %, Boden danach begehbar, Loch Fluchtzone, von außen nicht erreichbar, Zone im Keller).
+- **Optik N2c** (Tills Spieltest test-67, Ticket 65): Der Bohrer ist ein Sprite im Stil der übrigen Gegenstände (`props2.png`, Zeile 2, Gestell mit Querholm, Motor, Staendern, Warnstreifen und Bohrloch-Kragen, vier Phasen der Bohrkrone, die beim Laufen dreht und mit dem Fortschritt kleiner wird, weil sie in den Boden geht). Die Maschine steht auf eigenen Kacheln `N` (solide, ohne Möbel und ohne zerlegbares Material), nicht mehr auf Monitortischen `m`. Bilder vorher und nachher: `docs/bilder/`.
 
 ### Stand N3 (Ticket 66, `VER` 67)
 Die Notenpresse im Pressenraum (Ring 3) druckt nach dem Alarm Geld, solange sie betreut wird, und die Beute wird im Keller abgegeben.

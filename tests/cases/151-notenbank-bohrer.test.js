@@ -34,8 +34,8 @@ module.exports = [
         const H = ${SOLO}, D = H.D, o = {}, C = D.CFG.nb; D.CFG.nb.drillT = 40; D.nbd().st = 1;
         H.step(20); o.half = [H.st(), H.cl(H.door[0], H.door[1])]; H.step(18); o.late = [H.st(), H.cl(H.door[0], H.door[1])]; H.step(3); o.end = [H.st(), H.cl(H.door[0], H.door[1])];
         return o; })()`);
-      t.ok(Math.abs(r.half[0][1] - .5) < .03 && r.half[0][0] === 1 && r.half[1] === 'm', 'bei der Haelfte etwa 50 %, Maschine steht: ' + JSON.stringify(r.half));
-      t.ok(r.late[0][1] < 1 && r.late[1] === 'm', 'kurz vor Schluss noch zu: ' + JSON.stringify(r.late));
+      t.ok(Math.abs(r.half[0][1] - .5) < .03 && r.half[0][0] === 1 && r.half[1] === 'N', 'bei der Haelfte etwa 50 %, Maschine steht: ' + JSON.stringify(r.half));
+      t.ok(r.late[0][1] < 1 && r.late[1] === 'N', 'kurz vor Schluss noch zu: ' + JSON.stringify(r.late));
       t.eq([r.end[0][0], r.end[0][1], r.end[1]], [3, 1, '.'], 'bei 100 % fertig, die Maschine ist weg (Boden begehbar)');
     },
   },
@@ -84,7 +84,7 @@ module.exports = [
         const D = __dbg, o = {}; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
         const a = D.layoutBase(5), G = a.nb.gates, z = a.nb.zone, K = a.nb.keller; D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6];
         o.inKeller = z[0] >= K[0] && z[2] <= K[2] && z[1] >= K[1] && z[3] <= K[3]; o.noOld = [a.nb.door === undefined, cl(0, 2), cl(0, 3), cl(13, 3), cl(-1, 2), cl(10, 3)];
-        const SOL = '#WYwCVXfvekqPpbAmrfu', key = c => c.join(); let open = false;
+        const SOL = '#WYwCVXfvekqPpbAmrfuN', key = c => c.join(); let open = false;
         const reach = (from, to, blocked) => { const bl = new Set((blocked || []).map(key)), seen = new Set([key(from)]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = key(n), ch = cl(n[0], n[1]), rigc = n[0] >= 17 && n[0] <= 18 && n[1] >= 2 && n[1] <= 3; if (seen.has(k) || bl.has(k) || ch === undefined || (SOL.includes(ch) && !(rigc && open))) continue; seen.add(k); q.push(n); } } return false; };
         const flat = g => [].concat(...g), zc = [z[0], z[1]], all = flat([G.haupt, G.seite, G.hinten]);
         o.solid = [cl(17, 2), cl(18, 2), cl(17, 3), cl(18, 3)]; o.closed = reach([14, 30], zc, []); open = true; o.open = reach([14, 30], zc, []); o.noEntry = reach([14, 30], zc, all);
@@ -95,7 +95,7 @@ module.exports = [
       });
       t.ok(r.inKeller, 'die Fluchtzone liegt im Keller');
       t.eq(r.noOld, [true, '#', '#', '#', 'o', '#'], 'keine Tunneltuer, kein Durchbruch in der Westmauer, keine Strecke im Fels');
-      t.eq(r.solid, ['m', 'm', 'm', 'm'], 'vor 100 % ist die Maschine solide');
+      t.eq(r.solid, ['N', 'N', 'N', 'N'], 'vor 100 % ist die Maschine solide (eigene Kachel N, kein Moebel)');
       t.eq([r.closed, r.open, r.noEntry], [false, true, false], 'Loch: zu unerreichbar, offen von der Strasse nur durch das Gebaeude, ohne die drei Eingaenge gar nicht');
       t.eq(r.lawn, [false, false, false], 'von aussen (Rasen, Norden, Ostseite) kommt man nicht hinein');
       t.ok(r.posts[0] >= 8 && r.posts[1] === 0, 'kein Posten am Loch: ' + JSON.stringify(r.posts));
@@ -141,7 +141,7 @@ module.exports = [
     },
   },
   {
-    name: 'Loch im Boden: Die statische Objektebene ist nach dem Durchbruch neu gemalt (kein m-Sprite und kein Schatten am Loch), auf dem Host und auf dem Client',
+    name: 'Loch im Boden: Die statische Objektebene ist unter dem Bohrer und nach dem Durchbruch am Loch leer (kein Moebel-Sprite, kein Schatten), auf dem Host und auf dem Client',
     timeout: 120000,
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
@@ -151,9 +151,21 @@ module.exports = [
         o.closed = [reg(A), reg(B)]; A.startHeist(true, A.get().me); G.run(1); A.nbHole(true); G.run(1.5);
         o.open = [reg(A), reg(B)]; A.paintObjs(); B.paintObjs(); o.again = [reg(A), reg(B)];
         return o; })()`);
-      t.ok(r.closed[0][0] > 0 && r.closed[1][0] > 0, 'zu: die Maschinenkacheln sind gemalt: ' + JSON.stringify(r.closed));
+      t.eq([r.closed[0][0], r.closed[1][0]], [0, 0], 'zu: die Objektebene zeigt unter dem Bohrer nichts (kein Moebel, kein Schatten, die Maschine ist ein Sprite): ' + JSON.stringify(r.closed));
       t.eq([r.open[0][0], r.open[1][0]], [0, 0], 'offen: im Bereich des Lochs ist die Objektebene leer, auf Host und Client: ' + JSON.stringify(r.open));
       t.eq(r.again, r.open, 'ein erneutes Malen aendert nichts (nbHole hat schon gemalt)');
+    },
+  },
+  {
+    name: 'Bohrer: Unter dem Bohrer liegen keine fremden Objekte (kein Moebel m, kein zerlegbares Material), die Maschine ist trotzdem solide, das Sprite steht in props2 und ist breit genug',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const H = ${SOLO}, D = H.D, T = H.T, rg = H.rig, o = {}; o.cells = []; for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) o.cells.push(H.cl(rg[0] + x, rg[1] + y));
+        o.mat = D.get().its.filter(i => i.t === 'mat' && i.x >= rg[0] * T && i.x < (rg[0] + 2) * T && i.y >= rg[1] * T && i.y < (rg[1] + 2) * T).length;
+        o.sol = [D.isSol(rg[0], rg[1]), D.isSol(rg[0] + 1, rg[1] + 1)]; return o; })()`);
+      t.eq(r.cells, ['N', 'N', 'N', 'N'], 'nur die Maschinenkachel N');
+      t.eq(r.mat, 0, 'kein zerlegbares Teil unter dem Bohrer');
+      t.eq(r.sol, [true, true], 'Kollision bleibt');
     },
   },
 ];
