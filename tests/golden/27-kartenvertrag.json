@@ -999,5 +999,50 @@
     ]
    }
   ]
+ },
+ "sweep-nb": {
+  "n": 20,
+  "ok": 20,
+  "err": {},
+  "warn": {
+   "weg-tresor-ausgang": 20
+  },
+  "entries": {
+   "Westtür (W) | Fluchttür (E) | Vordertür (S)": 20
+  },
+  "range": {
+   "pathSV": [
+    26,
+    26
+   ],
+   "pathVE": [
+    37,
+    37
+   ],
+   "loot": [
+    91500,
+    91500
+   ],
+   "cams": [
+    6,
+    6
+   ],
+   "guards": [
+    2,
+    2
+   ],
+   "mat": [
+    10,
+    10
+   ],
+   "slots": [
+    10,
+    10
+   ],
+   "posts": [
+    17,
+    17
+   ]
+  }
  }
 }

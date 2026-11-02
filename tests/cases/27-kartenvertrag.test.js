@@ -3,8 +3,8 @@
 // Jede neue, nicht eingetragene Abweichung laesst den Test scheitern; ein Schnappschuss (golden/27-kartenvertrag.json) haelt Zahlen und Warnungen fest.
 const fs = require('fs');
 const path = require('path');
-const SC = ['bank', 'jewel', 'gas', 'museum', 'casino'];
-const N = { bank: 80, jewel: 80, gas: 80, museum: 60, casino: 50 };
+const SC = ['bank', 'jewel', 'gas', 'museum', 'casino', 'nb'];
+const N = { bank: 80, jewel: 80, gas: 80, museum: 60, casino: 50, nb: 20 };
 // Grundrisse je Karte (LAY.hall), die Bank hat keine Hallen sondern Zufallskarten
 const HALLS = {
   jewel: ['Klassik', 'Reihen', 'Salon', 'Ring', 'Gänge'],
@@ -14,7 +14,7 @@ const HALLS = {
 };
 // Bekannte Abweichungen: Karte -> Regel -> Begruendung. Gilt fuer alle Seeds und Grundrisse der Karte.
 // Bekannte, von einem Menschen akzeptierte Abweichungen je Karte (Regel: Begruendung). Seit dem 22. Oktober 2026 leer: Zaun und Props auf der Strasse raeumt clearLane in layoutFor, classicLayout hat wie genLayout nur eine Hintertuer, die Museums-Hintertuer liegt frei. Neue Eintraege nur mit Begruendung, Ziel bleibt leer (Plan Mehr Abwechslung, docs/archiv-gebaute-plaene.md).
-const KNOWN = { bank: {}, jewel: {}, gas: {}, museum: {}, casino: {} };
+const KNOWN = { bank: {}, jewel: {}, gas: {}, museum: {}, casino: {}, nb: {} };
 // Gefaengnis (Issue 45): handgebaut, nicht in der Seed-Schleife; die Anlage hat nur das Aussentor (Tresortuer) als Weg, deshalb melden eingaenge, vordertuer und beute-ziel (Test 130 prueft es).
 KNOWN.prison = { eingaenge: 'nur das Aussentor', vordertuer: 'keine Vordertuer, das Tor oeffnet erst im Spiel', 'beute-ziel': 'keine Beute, feste Belohnung CFG.prison.reward' };
 const KNOWN_CLASSIC = {};
@@ -29,7 +29,7 @@ module.exports = [
         const D = __dbg, F = D.MAP_FIELDS, out = { dup: [], badGroup: [], missing: {}, unknown: [], names: F.map(f => f[0]) };
         const seen = new Set(); for (const f of F) { if (seen.has(f[0])) out.dup.push(f[0]); seen.add(f[0]); if (!'POEA'.includes(f[1])) out.badGroup.push(f[0]); }
         const keys = new Set();
-        for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino', 'truck']) {
+        for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino', 'nb', 'truck']) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage(null);
           const lay = D.layoutBase(5); Object.keys(lay).forEach(k => keys.add(k));
           const miss = F.filter(f => f[1] === 'P' && lay[f[0]] == null).map(f => f[0]); if (miss.length) out.missing[sc] = miss;
@@ -206,7 +206,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, T = 32, bad = [], seen = { flip: 0, plain: 0 };
-        for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino', 'truck']) {
+        for (const sc of ['bank', 'jewel', 'gas', 'museum', 'casino', 'nb', 'truck']) {
           D.setScenario(sc); D.setSeedMode('random'); D.setLage([]);
           for (let s = 1; s < (sc === 'bank' ? 60 : 8); s += 3) {
             const lay = D.layoutBase(s), ln = D.laneOf(lay), tag = sc + '#' + s;
