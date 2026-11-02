@@ -25,7 +25,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(`(() => {
         const H = ${SOLO}, D = H.D, o = {}; H.step(1); o.leer = [D.nbh().D, D.nbh().c.join()];
-        H.put(0); H.step(.5); o.draussen = D.nbh().D; const dead = H.put(2, 1e9); dead.hp = 0; H.step(.5); o.tot = D.nbh().D;
+        H.put(0); H.step(.5); o.draussen = D.nbh().D; const dead = H.put(2, 1e9); dead.hp = 0; D.nbHold(0); o.tot = D.nbh().D;
         H.clear(); H.put(1); H.put(1); H.step(.5); o.r1 = [D.nbh().D, D.nbh().c.join()];
         H.put(2); H.step(.5); o.r2 = [D.nbh().D, D.nbh().c.join()]; H.put(3); H.step(.5); o.r3 = [D.nbh().D, D.nbh().c.join()]; H.put(4); H.step(.5); o.r4 = [D.nbh().D, D.nbh().c.join()];
         H.clear(); H.step(.5); o.frei = [D.nbh().D, D.nbh().c.join()]; return o; })()`);
