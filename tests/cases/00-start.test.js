@@ -1,5 +1,5 @@
 // Grundprobe: Seite laedt, Debug-Hook steht, alle sechs Szenarien lassen sich bauen und ein paar Sekunden simulieren.
-const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino'];
+const SC = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb'];
 
 module.exports = [
   {
