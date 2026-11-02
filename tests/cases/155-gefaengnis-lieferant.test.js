@@ -65,4 +65,30 @@ module.exports = [
       t.ok(r.clientGot, 'der Gefangene als Client hebt sie auf');
     },
   },
+  {
+    name: 'Gefaengnis-Lieferant: von hinten bewusstlos auszuschalten (wie Angestellte), ein Koerper im Blick einer Wache gibt Alarm; er selbst sieht Bewaffnete und meldet sie (Verdacht steigt), anders als Kunden',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const H = ${HELP}, A = H.A, o = {}, R = A.LAY().prison, K = A.CFG.ko, d = R.dl.cells[0], g = A.get(), p0 = g.players[0];
+        const place = () => { const n = g.npcs.find(q => q.dlv); n.st = 'idle'; n.still = true; n.path = []; n.base = Math.PI / 2; n.a = n.base; n.x = d[0] * H.T + 16; n.y = (d[1] - 3) * H.T + 16; n.alert = 0; n.look = null; return n; };
+        let n = place();
+        // Bewaffnete im Blick: Verdacht steigt (Kunden sehen das nicht, Angestellte schon)
+        p0.x = n.x; p0.y = n.y + 90; const sus0 = A.get().sus; let mx = 0;
+        for (let i = 0; i < 90; i++) { p0.thf = .6; H.both(1 / 30); mx = Math.max(mx, A.get().sus); } o.sus = [Math.round(sus0), Math.round(mx), n.alert > 0 || A.get().phase === 2];
+        // Ausschalten von hinten
+        n = place(); o.phSus = A.get().phase; p0.x = n.x; p0.y = n.y - 28; p0.thf = 0; const it = A.koMi(n); o.okBehind = it.ok(p0); p0.y = n.y + 28; o.okFront = it.ok(p0);
+        p0.y = n.y - 28; it.act(p0); o.ko = n.st; o.bodyMi = A.bodyMi(n).ok(p0);
+        // Wache sieht den Koerper: Alarm nach CFG.ko.find s
+        const gd = g.npcs.find(q => q.k === 'grd' && q.st !== 'away'); gd.st = 'idle'; gd.still = true; gd.route = null; gd.path = []; gd.x = n.x; gd.y = n.y - 90; gd.base = Math.PI / 2; gd.a = gd.base; gd.alert = 0;
+        p0.x = 3 * H.T; p0.y = 3 * H.T; o.ph0 = A.get().phase; for (let i = 0; i < Math.round((K.find + 1.5) * 30); i++) { gd.base = Math.PI / 2; gd.x = n.x; gd.y = n.y - 90; H.both(1 / 30); } o.ph1 = A.get().phase;
+        return o; })()`);
+      t.ok(r.sus[1] > r.sus[0], 'der Lieferant sieht die Bewaffneten und der Verdacht steigt: ' + r.sus);
+      t.eq([r.okBehind, r.okFront], [true, false], 'Ausschalten nur von hinten');
+      t.eq(r.ko, 'ko', 'er ist bewusstlos');
+      t.ok(r.bodyMi, 'der Koerper laesst sich greifen und ziehen');
+      t.eq([r.ph0, r.ph1], [1, 2], 'eine Wache, die den Koerper sieht, schlaegt Alarm');
+    },
+  },
 ];
