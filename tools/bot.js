@@ -165,7 +165,7 @@ function nb(o){o=Object.assign({sigma:.09,react:.35,maxT:900,kit:'old',cons:{},r
  D.reset();const L=D.LAY(),NB=L.nb,C=D.CFG.nb,BN=L.bn||D.CFG.bundle;k.a=k.d=k.w=k.s=k[' ']=k.e=k.f=0;
  const bunV=BN.v*BN.n/S().its.filter(i=>i.t==='bundle').length,R={res:null,t:0,holeT:null,secured:0,vault:0,press:0,dep:0,printed:0,lvl:0,maxD:0,hold:0,dstop:{beschuss:0,beamter:0,defekt:0},pstop:{papier:0,stau:0,unbetreut:0,voll:0},kills:0,waves:0,hp:0,minHp:100,trace:[]};
  let seen=new Map(),jit=0,jt=0,task=null,taskN=0,lastD=0,lastP=0,dsum=0,vd=0;
- const reach=(it,flt)=>{const p=S().p;let best=null,bd=1e9;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const tx=Math.floor(it.x/32)+dx,ty=Math.floor(it.y/32)+dy;if(D.isSol(tx,ty)||(flt&&!flt(tx,ty)))continue;const d=Math.hypot(tx*32+16-it.x,ty*32+16-it.y);if(d>=(it.r||44)*.8)continue;const pl=D.pathTo(p.x,p.y,tx,ty).length;if(!pl&&!(tileOf(p)[0]===tx&&tileOf(p)[1]===ty))continue;const sc=pl+d*.05;if(sc<bd){bd=sc;best=[tx,ty]}}return best};
+ const reach=(it,flt)=>{const p=S().p;let best=null,bd=1e9;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const tx=Math.floor(it.x/32)+dx,ty=Math.floor(it.y/32)+dy;if(D.isSol(tx,ty)||(flt&&!flt(tx,ty)))continue;const d=Math.hypot(tx*32+16-it.x,ty*32+16-it.y),dr=Math.hypot(Math.max(tx*32-it.x,0,it.x-(tx+1)*32),Math.max(ty*32-it.y,0,it.y-(ty+1)*32));if(d>=(it.r||44)*.8&&!(it.t==='nbb'&&dr<=(it.r||44)-8))continue;const pl=D.pathTo(p.x,p.y,tx,ty).length;if(!pl&&!(tileOf(p)[0]===tx&&tileOf(p)[1]===ty))continue;const sc=pl+d*.05;if(sc<bd){bd=sc;best=[tx,ty]}}return best};
  const hittable=(x0,y0,x1,y1)=>{const W=D.world(),n=Math.ceil(Math.hypot(x1-x0,y1-y0)/8);for(let i=1;i<n;i++){const tx=Math.floor((x0+(x1-x0)*i/n)/32),ty=Math.floor((y0+(y1-y0)*i/n)/32);if(D.isSol(tx,ty)){const c=W.cell(tx,ty);if(c!=='X'&&c!=='Y')return false}}return true};
  // Sperre an der Engstelle: bar 'treppe' (Keller zu) oder 'panzer' (innerer Bereich zu), Stufen barLv (Standard 1); drinnen ist der Ring hinter der Engstelle
  const GK=o.bar==='panzer'?'panzer':'treppe',GR=NB.rings[GK==='panzer'?2:3],BLV=o.bar?(o.barLv||1):0;
@@ -208,7 +208,7 @@ function nb(o){o=Object.assign({sigma:.09,react:.35,maxT:900,kit:'old',cons:{},r
    if(!task||task.tag==='exit'||taskN>900||(task.it&&!avail(task.it,p))||n%20===0){const t2=pick(s,p);if(!t2||!task||t2.tag!==task.tag||t2.it!==task.it){task=t2;taskN=0;if(task&&task.it)task.at=task.stand||reach(task.it,task.flt)}}
    R.busy=!!task&&task.tag!=='abgabe';
    if(task){taskN++;if(task.tag==='exit'){const z=zone();steer(z[0],z[1])}
-    else if(task.at){const there=steerC(task.at[0],task.at[1]);if(there||Math.hypot(task.it.x-p.x,task.it.y-p.y)<(task.it.r||44)*.7)k.e=1}}
+    else if(task.at){const there=steerC(task.at[0],task.at[1]);if(there&&task.it.t==='nbb'){const dx=task.it.x-p.x,dy=task.it.y-p.y;if(dx>3)k.d=1;if(dx<-3)k.a=1;if(dy>3)k.s=1;if(dy<-3)k.w=1}if(there||Math.hypot(task.it.x-p.x,task.it.y-p.y)<(task.it.r||44)*.7)k.e=1}}
    else{const q=post();if(q)steerC(q[0],q[1])}}
   if(o.trace&&n%(o.trace>1?o.trace:150)===0&&(!o.traceFrom||s.tH>=o.traceFrom))R.trace.push([+s.tH.toFixed(1),tileOf(p).join(','),Math.round(p.hp),s.en.length,'D'+nbh.D,'bohr'+nbd.st+':'+Math.round(nbd.p*100),'presse'+nbp.st+':'+nbp.n,'u'+s.units,task?task.tag:'-',k.e?'E':'',tgt?'T'+tgt.kind+Math.round(bd):'',s.en.filter(e=>e.hp>0).map(e=>e.kind[0]+Math.round(e.x/32)+','+Math.round(e.y/32)).join(' ')].join(' '));
   if(o.god){p.hp=1e5;p.ar=Math.max(p.ar||0,100)}
