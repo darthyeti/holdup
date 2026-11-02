@@ -1,4 +1,4 @@
-// Notenbank N1 (Ticket 61, docs/szenarien.md, Abschnitt Notenbank): achtes Szenario `nb`, handgebaut, nicht gedreht, ohne Ausweichpunkt. Alarm nach CFG.nb.alarmAt s Erkunden, die Tunneltuer (L) geht CFG.nb.open s nach dem Alarm auf, kein Fluchtwagen, Sieg ueber die Fluchtzone am Tunnelende mit Beute.
+// Notenbank N1 (Ticket 61, docs/szenarien.md, Abschnitt Notenbank): achtes Szenario `nb`, handgebaut, nicht gedreht, ohne Ausweichpunkt. Alarm nach CFG.nb.alarmAt s Erkunden, die Tunneltuer (L) oeffnet der Bohrer (N2, Test 151), kein Fluchtwagen, Sieg ueber die Fluchtzone am Tunnelende mit Beute.
 // validateMap muss ohne Abweichung bestehen (KNOWN leer)
 const KNOWN = [];
 const SOLO = `(() => {
@@ -59,13 +59,13 @@ module.exports = [
         const H = ${SOLO}, D = H.D, g = H.g, C = D.CFG.nb, o = {}; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
         H.step(C.alarmAt - 3); o.p1 = D.get().phase; H.step(5); o.p2 = D.get().phase;
         o.van0 = [D.get().vanArr, D.get().vanAt > 1e6];
-        const d = D.LAY().nb.door; H.step(C.open - 5); o.before = H.cl(d[0], d[1]); o.cd = D.get().tH;
-        const say0 = D.get().feed ? D.get().feed.length : 0; H.step(8); o.after = H.cl(d[0], d[1]);
+        const d = D.LAY().nb.door; H.step(300); o.before = H.cl(d[0], d[1]); o.cd = D.get().tH;
+        D.nbDoor(true); H.step(1); o.after = H.cl(d[0], d[1]);
         H.step(CFG_VANTEST()); o.van1 = [D.get().vanArr, !!D.get().ended];
         function CFG_VANTEST() { return D.CFG.vanAuto + D.CFG.vanStay + 20; }
         return o; })()`);
       t.eq([r.p1, r.p2], [1, 2], 'Phase 1 vor alarmAt, danach Alarm (Phase 2)');
-      t.eq([r.before, r.after], ['L', 'l'], 'Tunneltuer zu bis kurz vor open, danach offen');
+      t.eq([r.before, r.after], ['L', 'l'], 'Tunneltuer bleibt ohne Bohrer zu (300 s), nbDoor(true) oeffnet sie');
       t.eq(r.van1, [false, false], 'auch weit nach vanAuto und vanStay kommt kein Fluchtwagen und das Spiel ist nicht vorbei');
     },
   },
@@ -77,7 +77,7 @@ module.exports = [
         const H = ${SOLO}, D = H.D, g = H.g, me = H.me, T = H.T, C = D.CFG.nb, o = {}; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.get().players[0].loot = 1234;
         D.startHeist(true, me); const z = D.LAY().nb.zone;
         me.x = (z[0] + 1) * T; me.y = (z[1] + .5) * T; H.step(2); o.early = [!!D.get().ended, me.out];
-        me.x = 12 * T; me.y = 14.5 * T; H.step(C.open + 2); o.mid = [!!D.get().ended, me.out];
+        me.x = 12 * T; me.y = 14.5 * T; H.step(40); D.nbDoor(true); o.mid = [!!D.get().ended, me.out];
         me.x = (z[0] + 1) * T; me.y = (z[1] + .5) * T; H.step(1);
         const e = D.get().ended; o.end = e && { win: e.win, title: e.title }; o.sec = D.get().secured;
         return o; })()`);
@@ -93,7 +93,7 @@ module.exports = [
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
-        const H = ${SOLO}, D = H.D, T = H.T, o = {}; D.CFG.policeAt = 1e6; D.CFG.policeForced = 2; D.CFG.nb.maxEn = 5; D.CFG.nb.open = 1e6; D.CFG.nb.alarmAt = 1e6;
+        const H = ${SOLO}, D = H.D, T = H.T, o = {}; D.CFG.policeAt = 1e6; D.CFG.policeForced = 2; D.CFG.nb.maxEn = 5; D.CFG.nb.alarmAt = 1e6;
         D.startHeist(true, H.me); D.CFG.waveGap = 4; D.CFG.waveGapMin = 4; D.CFG.waveGapStep = 0;
         let mx = 0; H.step(120, () => { const n = D.get().en.filter(e => e.hp > 0 && (e.kind === 'cop' || e.kind === 'swat' || e.kind === 'shield')).length; if (n > mx) mx = n; }); o.max = mx; o.wave = D.get().waveN;
         o.cap = D.holdCap ? D.holdCap() : -1; o.hcap = D.CFG.nb.hcap;
@@ -118,8 +118,8 @@ module.exports = [
         A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6; B.CFG.policeAt = 1e6; B.CFG.policeForced = 1e6;
         A.startHeist(true, A.get().me); G.run(1);
         const d = A.LAY().nb.door, cl = (D) => D.world().M[d[1] + 6][d[0] + 6];
-        both(C.open - 6); o.closed = [cl(A), cl(B)]; o.tH = [Math.round(A.get().tH), Math.round(B.get().tH)];
-        both(8); G.run(1); o.open = [cl(A), cl(B)];
+        both(5); o.closed = [cl(A), cl(B)]; o.tH = [Math.round(A.get().tH), Math.round(B.get().tH)];
+        A.nbDoor(true); both(2); G.run(1); o.open = [cl(A), cl(B)];
         const z = A.LAY().nb.zone; A.get().players.forEach(p => { p.x = (z[0] + 1) * T; p.y = (z[1] + .5) * T; p.loot = 500; }); both(2); G.run(1);
         o.end = [!!A.get().ended, !!B.get().ended]; o.win = A.get().ended && A.get().ended.win;
         return o; })()`);
@@ -163,7 +163,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(`(() => {
         const out = {};
-        { const H = ${SOLO}, D = H.D, me = H.me, T = H.T; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.startHeist(true, me); H.step(D.CFG.nb.open + 2);
+        { const H = ${SOLO}, D = H.D, me = H.me, T = H.T; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.startHeist(true, me); D.nbDoor(true);
           const z = D.LAY().nb.zone; me.loot = 0; me.x = (z[0] + 1) * T; me.y = (z[1] + .5) * T; H.step(1); const e = D.get().ended; out.nb = e && [e.win, D.get().secured, e.title]; }
         { const D = __dbg, T = 32; D.sessReset(); D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(5); D.reset(); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
           const g = D.get(), me = g.me; g.npcs.splice(0); D.startHeist(true, me); me.loot = 0; const L = D.LAY();
@@ -179,7 +179,7 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = { n: 0, none: [], tunnel: [], kinds: {} }; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
-        for (let sd = 1; sd <= 30; sd++) { const l = D.layoutFor(sd), na = l.noteAt; o.n++; if (!na) { o.none.push(sd); continue; } o.kinds[na.k] = (o.kinds[na.k] || 0) + 1; if (na.x >= 7 && na.x <= 13 && na.y >= 2 && na.y <= 3) o.tunnel.push([sd, na.k, na.x, na.y]); }
+        for (let sd = 1; sd <= 30; sd++) { const l = D.layoutFor(sd), na = l.noteAt; o.n++; if (!na) { o.none.push(sd); continue; } o.kinds[na.k] = (o.kinds[na.k] || 0) + 1; if (na.x >= -2 && na.x <= 13 && na.y >= 2 && na.y <= 3) o.tunnel.push([sd, na.k, na.x, na.y]); }
         return o;
       });
       t.eq([r.none, r.tunnel], [[], []], 'Fundort immer da, nie im Tunnel: ' + JSON.stringify(r));

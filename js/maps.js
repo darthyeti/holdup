@@ -872,7 +872,7 @@ exit:{x:(GX+1)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:GX+1},van:{y:(er+1)*T,x0:(GX+7
    LAY.nb: door (Tunneltuer), zone [x0,y0,x1,y1] in Kacheln, press (Kachel links oben der Notenpresse, 3x2, solide), pcand (Kandidaten), stair (Kellertreppe), gates (Engstellen je Ring: haupt, seite, hinten, schleuse, panzer, treppe als Kachellisten, fuer Tests und Doku). ---- */
 function nbLayout(sd){const sn=typeof sd==='number'?sd:7,GX=27,bot=28;frameWorld(52,48,-6,-6,30);setc(45,25,'o');setc(45,26,'o');
 fill(0,0,GX,bot,'#');
-fill(14,1,24,5,'.');setc(16,6,'d');fill(7,2,12,3,'.');setc(13,3,'L');
+fill(14,1,24,5,'.');setc(16,6,'d');fill(-2,2,12,3,'.');fill(-2,1,-1,1,'#');fill(-2,4,-1,4,'#');setc(13,3,'L');fill(17,2,18,3,'m');
 fill(1,7,9,14,'.');fill(10,7,10,14,'#');setc(10,9,'V');setc(10,10,'V');
 fill(11,7,19,14,'.');fill(20,7,20,14,'#');setc(20,10,'d');fill(21,7,26,14,'.');
 setc(15,15,'d');setc(16,15,'d');
@@ -880,7 +880,7 @@ fill(1,16,6,18,'.');fill(1,19,6,19,'#');fill(1,20,6,22,'.');fill(7,16,7,22,'#');
 fill(8,19,26,22,'.');fill(12,16,12,18,'#');fill(13,16,26,17,'.');fill(14,18,26,18,'C');setc(13,18,'g');fill(8,16,11,18,'.');
 setc(13,23,'d');setc(14,23,'d');
 fill(1,24,26,27,'.');[[13,bot],[14,bot],[GX,25],[GX,26]].forEach(a=>setc(a[0],a[1],'D'));setc(0,25,'L');
-[3,5,8,10,17,19,22,24].forEach(x=>setc(x,bot,'W'));[20,22,24].forEach(y=>setc(GX,y,'W'));[17,21,26].forEach(y=>setc(0,y,'W'));[1,2].forEach(y=>setc(0,y,'#'));
+[3,5,8,10,17,19,22,24].forEach(x=>setc(x,bot,'W'));[20,22,24].forEach(y=>setc(GX,y,'W'));[17,21,26].forEach(y=>setc(0,y,'W'));setc(0,1,'#');
 [[4,27],[8,27],[19,27],[23,27]].forEach(a=>setc(a[0],a[1],'P'));[[12,21],[20,21]].forEach(a=>setc(a[0],a[1],'P'));
 [[2,17],[3,17],[4,17]].forEach(a=>setc(a[0],a[1],'e'));[[2,21],[3,21],[4,21]].forEach(a=>setc(a[0],a[1],'m'));
 [[16,17],[19,17],[22,17]].forEach(a=>setc(a[0],a[1],'r'));[[10,21],[9,21],[9,20]].forEach(a=>setc(a[0],a[1],'b'));[[8,24],[9,24]].forEach(a=>setc(a[0],a[1],'A'));
@@ -894,14 +894,14 @@ const rot=Math.floor(mr()*4),rev=mr()<.5,gd=(route)=>({p:route[rot%route.length]
 const guards=[gd([[6,25],[20,25],[14,24],[14,22],[22,21],[10,22],[13,22],[13,24]]),{p:[16,2],route:[[16,2],[22,2],[22,4],[16,4]]}];
 const camc=[{x:2.5*T,y:24.5*T,a0:.4,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:24.5*T,a0:2.7,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:19.5*T,a0:2.4,amp:.55,sp:.55,rng:280,fov:.5},{x:8.5*T,y:19.5*T,a0:.7,amp:.5,sp:.5,rng:280,fov:.5},{x:15.5*T,y:7.5*T,a0:1.2,amp:.7,sp:.7,rng:220,fov:.55},{x:14.5*T,y:1.5*T,a0:.5,amp:.5,sp:.5,rng:280,fov:.5},{x:7.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.5,rng:300,fov:.5},{x:20.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.45,rng:300,fov:.5}];
 const cams=pickCams(mr,camc,P.cams),code=String(1000+Math.floor(mr()*9000)),gates={haupt:[[13,bot],[14,bot]],seite:[[GX,25],[GX,26]],hinten:[[0,25]],schleuse:[[13,23],[14,23]],panzer:[[15,15],[16,15]],treppe:[[16,6]]};
-const nbo={door:[13,3],zone:[7,2,9,3],press,pcand,stair:[16,6],gates};
+const nbo={door:[13,3],zone:[-2,2,-1,3],rig:[17,2],keller:[14,1,24,5],press,pcand,stair:[16,6],gates};
 return{seed:sn,decor:decorOf([]),nb:nbo,hall:'Notenbank',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
-mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=21?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
+mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=21?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if((y===2||y===3)&&x>=-2&&x<=12)return'a';if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
 paintFloor(s){const N=nbo,pz=N.press;s.fillStyle='rgba(90,70,40,.35)';s.fillRect(10*T,24*T+4,8*T,3);s.fillRect(10*T,27*T-6,8*T,3);s.strokeStyle='rgba(224,182,40,.55)';s.lineWidth=3;s.beginPath();s.arc(13.5*T+16,25.6*T,22,0,6.283);s.stroke();s.fillStyle='rgba(224,182,40,.55)';s.font='bold 12px monospace';s.textAlign='center';s.fillText('NOTENBANK',14*T,25.6*T+4);s.textAlign='left';
 for(let i=0;i<5;i++){s.fillStyle=i%2?'#9a9a94':'#b2b2ab';s.fillRect(11*T+i*5,(bot+1)*T+i*10,6*T-i*10,10)}
-s.fillStyle='rgba(60,45,30,.5)';s.fillRect(7*T,2*T,6*T,2*T);s.fillStyle='rgba(224,182,40,.55)';for(let i=0;i<6;i++)s.fillRect((7+i)*T+4,3*T-1,T-8,2);
+s.fillStyle='rgba(60,45,30,.5)';s.fillRect(-2*T,2*T,15*T,2*T);s.fillStyle='rgba(224,182,40,.55)';for(let i=-2;i<13;i++)s.fillRect(i*T+4,3*T-1,T-8,2);
 s.fillStyle='rgba(126,227,74,.16)';s.fillRect(N.zone[0]*T,N.zone[1]*T,(N.zone[2]-N.zone[0]+1)*T,(N.zone[3]-N.zone[1]+1)*T)},
-paintTop(s){const N=nbo,q=N.stair;for(let i=0;i<4;i++){s.fillStyle=i%2?'#4a4f57':'#5b616b';s.fillRect(q[0]*T+4,q[1]*T+i*8,T-8,7)}s.fillStyle='#e0b020';s.font='bold 7px monospace';s.textAlign='center';s.fillText('KELLER',q[0]*T+T/2,q[1]*T-2);
+paintTop(s){const N=nbo,q=N.stair;s.fillStyle='rgba(20,14,8,.38)';s.fillRect(0,2*T,7*T,2*T);s.strokeStyle='rgba(224,182,40,.7)';s.lineWidth=2;s.setLineDash([5,4]);s.strokeRect(2,2*T+2,6*T+T-4,2*T-4);s.setLineDash([]);s.fillStyle='#e0b020';s.font='bold 7px monospace';s.textAlign='center';s.fillText('UNTER DER MAUER',3.5*T,2*T-3);s.fillStyle='#2a2e34';s.beginPath();s.arc(-1*T,3*T,24,0,6.283);s.fill();s.strokeStyle='#8f97a2';s.lineWidth=3;s.stroke();for(let i=-1;i<=1;i++){s.beginPath();s.moveTo(-1*T-16,3*T+i*8);s.lineTo(-1*T+16,3*T+i*8);s.stroke()}s.fillStyle='#e0b020';s.fillText('KANAL',-1*T,2*T-3);s.textAlign='left';for(let i=0;i<4;i++){s.fillStyle=i%2?'#4a4f57':'#5b616b';s.fillRect(q[0]*T+4,q[1]*T+i*8,T-8,7)}s.fillStyle='#e0b020';s.font='bold 7px monospace';s.textAlign='center';s.fillText('KELLER',q[0]*T+T/2,q[1]*T-2);
 for(const g of [N.gates.panzer,N.gates.schleuse]){const X=g[0][0]*T,Y=g[0][1]*T,W=g.length*T;s.fillStyle='#1d2026';s.fillRect(X-2,Y-2,W+4,T+4);s.fillStyle=g===N.gates.panzer?'#6b7c8f':'#3a3f48';s.fillRect(X+2,Y+2,W-4,T-4);s.fillStyle='rgba(255,255,255,.2)';s.fillRect(X+2,Y+2,W-4,3);if(g===N.gates.schleuse){s.fillStyle='#1d2026';for(let i=1;i<7;i++)s.fillRect(X+2+i*(W-4)/7-1,Y+2,2,T-4)}else{s.fillStyle='#e0b020';s.fillRect(X+W/2-8,Y+T/2-3,16,6)}s.fillStyle='#e8e4d8';s.font='bold 6px monospace';s.fillText(g===N.gates.panzer?'PANZERTÜR':'SCHLEUSE',X+W/2,Y+T/2+2)}
 s.textAlign='left'},
 spawn:{x:13.9*T,y:30.6*T},zones:[[13,16,26,17],[1,7,9,14],[1,16,6,18],[1,20,6,22],[11,7,26,14],[14,1,24,5],[7,2,12,3],[28,-99,99,bot]],lobby:[8,19,26,22],
