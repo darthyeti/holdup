@@ -20,11 +20,11 @@ module.exports = [
         const sig = l => JSON.stringify([l.guards, l.cams.map(x => [x.x, x.y]), l.theme.tod, l.nb.press, l.mission.code]);
         o.det = sig(a) === sig(b); o.vary = [5, 6, 7, 8, 9, 10, 11, 12].map(s => sig(D.layoutBase(s))).filter((x, i, A) => A.indexOf(x) === i).length;
         o.names = D.MAP_FIELDS.map(f => f[0]);
-        D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6]; o.size = [w.W, w.H]; o.door = cl(13, 3); o.stair = cl(20, 6);
+        D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6]; o.size = [w.W, w.H]; o.door = cl(13, 3); o.stair = cl(16, 6);
         const bfs = (from, to, ok) => { const seen = new Set([from.join()]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = n.join(); if (!seen.has(k) && ok(n[0], n[1])) { seen.add(k); q.push(n); } } } return false; };
         let open = false; const walk = (x, y) => { if (open && x === 13 && y === 3) return true; const ch = cl(x, y); return ch !== '#' && ch !== 'W' && ch !== 'Y' && ch !== 'L' && ch !== 'V' && ch !== 'C' && !'ekqPpbAmrfX'.includes(ch) && ch !== undefined; };
-        const z = a.nb.zone; o.way = { keller: bfs([16, 19], [20, 3], walk), zoneClosed: bfs([16, 19], [z[0], z[1]], walk) };
-        open = true; o.way.zoneOpen = bfs([16, 19], [z[0], z[1]], walk);
+        const z = a.nb.zone; o.way = { keller: bfs([14, 30], [20, 3], walk), zoneClosed: bfs([14, 30], [z[0], z[1]], walk) };
+        open = true; o.way.zoneOpen = bfs([14, 30], [z[0], z[1]], walk);
         o.pressIn = a.nb.pcand.some(p => p[0] === a.nb.press[0] && p[1] === a.nb.press[1]);
         return o;
       });
@@ -183,6 +183,41 @@ module.exports = [
         return o;
       });
       t.eq([r.none, r.tunnel], [[], []], 'Fundort immer da, nie im Tunnel: ' + JSON.stringify(r));
+    },
+  },
+  {
+    name: 'Notenbank: vier Verteidigungsringe, jede Engstelle ist die einzige Verbindung zum Ring dahinter (Flutfuellung mit der Engstelle als Wand), Ring 1 hat genau drei Eingaenge, der Tunnel bleibt erreichbar',
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, o = {}; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
+        const a = D.layoutBase(5), G = a.nb.gates; D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6];
+        const SOL = '#WYwCVXfvekqPpbAmrfu', key = c => c.join();
+        const reach = (from, to, blocked, tunnelOpen) => { const bl = new Set((blocked || []).map(key)), seen = new Set([key(from)]), q = [from];
+          for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = key(n), ch = cl(n[0], n[1]); if (seen.has(k) || bl.has(k) || ch === undefined || SOL.includes(ch)) continue; if (ch === 'L' && n[0] === 13 && n[1] === 3 && !tunnelOpen) continue; seen.add(k); q.push(n); } } return false; };
+        const out = [14, 30], flat = g => [].concat(...g);
+        o.s = [reach(out, [14, 21], G.schleuse), reach(out, [14, 21], []), reach(out, [16, 10], G.panzer), reach(out, [16, 10], []), reach(out, [20, 3], G.treppe), reach(out, [20, 3], []), reach([14, 21], [16, 10], G.panzer), reach([16, 10], [20, 3], G.treppe)];
+        o.r1 = [reach(out, [14, 26], flat([G.haupt, G.seite, G.hinten])), reach(out, [14, 26], flat([G.seite, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.seite]))];
+        o.tun = [reach(out, [8, 2], [], false), reach(out, [8, 2], [], true)];
+        o.gatesOk = G.haupt.concat(G.seite, G.hinten, G.schleuse, G.panzer, G.treppe).every(c => cl(c[0], c[1]) !== '#' && cl(c[0], c[1]) !== 'W');
+        o.len = [G.schleuse.length, G.panzer.length, G.treppe.length, G.haupt.length];
+        return o;
+      });
+      t.eq(r.s, [false, true, false, true, false, true, false, false], 'Schleuse, Panzertuer und Treppe trennen je ihren Ring, offen ist er erreichbar (auch von innen nach aussen nicht ohne die Engstelle): ' + JSON.stringify(r.s));
+      t.eq(r.r1, [false, true, true, true], 'Ring 1 ist nur ueber Haupttuer, Seitentuer und Hintertuer erreichbar, jede reicht allein');
+      t.eq(r.tun, [false, true], 'Tunnel: zu unerreichbar, offen erreichbar');
+      t.ok(r.gatesOk && r.len.every(n => n >= 1 && n <= 2), 'Engstellen sind Oeffnungen und hoechstens 2 Kacheln breit: ' + JSON.stringify(r.len));
+    },
+  },
+  {
+    name: 'Notenbank: die Notenpresse ist eine solide Maschine (3x2 Kacheln), E zeigt Noch nicht in Betrieb und aendert nichts',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const H = ${SOLO}, D = H.D, T = H.T, pz = D.LAY().nb.press, o = {};
+        o.solid = []; for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) o.solid.push(H.cl(pz[0] + x, pz[1] + y));
+        const it = D.get().its.find(i => i.t === 'nbp'); o.it = !!it; if (it) { o.lab = it.lab(); o.ok = it.ok(H.me); const s0 = [D.get().secured, D.get().phase]; it.act(); o.same = JSON.stringify(s0) === JSON.stringify([D.get().secured, D.get().phase]); o.done = !!it.done; }
+        return o; })()`);
+      t.eq(r.solid, ['m', 'm', 'm', 'm', 'm', 'm'], 'sechs solide Kacheln');
+      t.ok(r.it && /noch nicht in Betrieb/.test(r.lab) && r.ok && r.same && !r.done, 'E-Hinweis, keine halbe Interaktion: ' + JSON.stringify(r));
     },
   },
 ];
