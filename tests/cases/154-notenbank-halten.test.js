@@ -81,4 +81,44 @@ module.exports = [
       t.ok(/Gebäude gehalten/.test(r.line[0]) && r.line[0] === r.line[1], 'Ergebnis nennt die Zeit auf beiden: ' + JSON.stringify(r.line));
     },
   },
+  {
+    name: 'Halten: Die Ringe kommen aus der Karte (LAY.nb.rings, aus den Engstellen abgeleitet): jede Gebaeudekachel liegt in genau einem Ring, ohne die Engstellen kommt man aus keinem Ring heraus und in jedem Ring zu allen Bodenkacheln (8 Seeds), nbRingAt liest nur die Karte',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(() => {
+        const D = __dbg, T = 32, bad = []; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
+        for (let sd = 1; sd <= 8; sd++) {
+          D.buildSeed(sd); D.reset(); const L = D.LAY(), B = L.bld, w = D.world(), cl = (x, y) => w.M[y + 6][x + 6]; if (!L.nb.rings || L.nb.rings.length !== 4) { bad.push('Seed ' + sd + ' keine vier Ringe'); continue; }
+          const ringOf = (x, y) => { const k = []; L.nb.rings.forEach((rs, i) => { if (rs.some(q => x >= q[0] && x <= q[2] && y >= q[1] && y <= q[3])) k.push(i + 1); }); return k; };
+          let miss = 0; for (let y = B.y0 + 1; y < B.y1; y++) for (let x = B.x0 + 1; x < B.x1; x++) { const k = ringOf(x, y); if (k.length !== 1) miss++; if (k.length === 1 && D.nbRingAt(x * T + 16, y * T + 16) !== k[0]) miss++; }
+          if (miss) bad.push('Seed ' + sd + ' Kacheln ohne genau einen Ring: ' + miss);
+          const SOL = '#WYwCVXfvekqPpbAmrfuNL', walk = (x, y) => { const c = cl(x, y); return c !== undefined && (!SOL.includes(c) || c === 'V'); };   // Tresortuer V zaehlt als Durchgang im Ring 3
+          const G = L.nb.gates, gate = new Set([].concat(G.schleuse, G.panzer, G.treppe).map(c => c.join()));
+          for (let k = 1; k <= 4; k++) {
+            const cells = []; for (let y = B.y0 + 1; y < B.y1; y++) for (let x = B.x0 + 1; x < B.x1; x++) if (ringOf(x, y)[0] === k && walk(x, y) && !gate.has(x + ',' + y)) cells.push([x, y]);
+            if (!cells.length) { bad.push('Seed ' + sd + ' Ring ' + k + ' leer'); continue; }
+            const seen = new Set([cells[0] + '']), q = [cells[0]], leak = [];
+            for (let h = 0; h < q.length; h++) for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [q[h][0] + d[0], q[h][1] + d[1]]; if (seen.has(n + '') || !walk(n[0], n[1]) || gate.has(n + '')) continue; const inB = n[0] > B.x0 && n[0] < B.x1 && n[1] > B.y0 && n[1] < B.y1; if (inB && ringOf(n[0], n[1])[0] !== k) { leak.push(n + ''); continue; } if (!inB) continue; seen.add(n + ''); q.push(n); }
+            if (leak.length) bad.push('Seed ' + sd + ' Ring ' + k + ' leckt ohne Engstelle: ' + leak.slice(0, 2));
+            const unreached = cells.filter(c => !seen.has(c + '')); if (unreached.length) bad.push('Seed ' + sd + ' Ring ' + k + ' zerfaellt (' + unreached.length + ' Kacheln nicht erreichbar)');
+          }
+        }
+        return bad; });
+      t.eq(r, [], 'Ringe aus der Karte: ' + JSON.stringify(r.slice(0, 4)));
+    },
+  },
+  {
+    name: 'Halten: Meldungen entprellt. Ein pendelnder Beamter an der Tuer gibt hoechstens eine Meldung je holdMsgT (auch beim Wechsel auf 0), ein schneller Wechsel von Ring 2 nach 3 wird nach Ablauf nachgemeldet, die Anzeige (D) wechselt sofort',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const o = {}, H = ${SOLO}, D = H.D, C = H.C; C.holdMsgT = 2; const c = H.put(1); let n0 = D.nbh().n | 0;
+        H.step(8, i => { c.ring = (Math.floor(i / 9) % 2) ? 0 : 1; }); o.pend = (D.nbh().n | 0) - n0; o.pendRep = D.nbh().rep;
+        H.clear(); H.step(3); const d = H.put(2); H.step(.2); const n1 = D.nbh().n; o.first = D.nbh().last; d.ring = 3; H.step(.3); o.dNow = D.nbh().D; o.msgNow = D.nbh().last; H.step(2.5); o.msgLater = D.nbh().last; o.nLater = D.nbh().n - n1; return o; })()`);
+      t.ok(r.pend >= 1 && r.pend <= 5, 'pendelnder Beamter (8 s, 0 und 1 im Wechsel alle 0,3 s): hoechstens eine Meldung je 2 s (vier bis fuenf): ' + r.pend);
+      t.ok(/Kassenhalle/.test(r.first), 'erste Meldung nennt den Ring: ' + r.first);
+      t.eq(r.dNow, 3, 'die Anzeige wechselt sofort auf Ring 3');
+      t.ok(/Pressenraum/.test(r.msgLater) && r.nLater >= 1, 'der schnelle Wechsel von 2 nach 3 wird nach Ablauf nachgemeldet: ' + JSON.stringify([r.msgNow, r.msgLater, r.nLater]));
+    },
+  },
 ];
