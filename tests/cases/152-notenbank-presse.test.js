@@ -155,16 +155,16 @@ module.exports = [
     },
   },
   {
-    name: 'Presse Optik: Presse, Foerderband, Ausgabetisch und Abgabetisch stehen auf eigenen Kacheln N (solide, keine Moebel oder zerlegbaren Teile darunter), die sechs Ablageplaetze liegen auf dem Ausgabetisch, die Abgabe stapelt sichtbar (dv)',
+    name: 'Presse Optik: Presse, Foerderband, Ausgabetisch (3x2) und Abgabetisch stehen auf eigenen Kacheln N (solide, keine Moebel oder zerlegbaren Teile darunter), die sechs Ablageplaetze liegen auf dem Ausgabetisch, die Abgabe stapelt sichtbar (dv)',
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
         const H = ${SOLO}, D = H.D, T = H.T, L = D.LAY().nb, o = {}, cells = [];
         for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) cells.push([L.press[0] + x, L.press[1] + y]); cells.push([L.belt[0], L.press[1]], [L.belt[0], L.press[1] + 1]);
-        for (let y = 0; y < 3; y++) for (let x = 0; x < 2; x++) cells.push([L.tab[0] + x, L.tab[1] + y]); cells.push([L.dep[0], L.dep[1]], [L.dep[0] + 1, L.dep[1]]);
+        for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) cells.push([L.tab[0] + x, L.tab[1] + y]); cells.push([L.dep[0], L.dep[1]], [L.dep[0] + 1, L.dep[1]]);
         o.chars = cells.map(c => H.cl(c[0], c[1])).join(''); o.sol = cells.every(c => D.isSol(c[0], c[1]));
         o.mat = D.get().its.filter(i => i.t === 'mat' && cells.some(c => i.x >= c[0] * T && i.x < (c[0] + 1) * T && i.y >= c[1] * T && i.y < (c[1] + 1) * T)).length;
-        const b = D.get().its.filter(i => i.t === 'nbb'); o.slots = b.length; o.onTable = b.every(i => i.x >= L.tab[0] * T && i.x < (L.tab[0] + 2) * T && i.y >= L.tab[1] * T && i.y < (L.tab[1] + 3) * T);
+        const b = D.get().its.filter(i => i.t === 'nbb'); o.slots = b.length; o.onTable = b.every(i => i.x >= L.tab[0] * T && i.x < (L.tab[0] + 3) * T && i.y >= L.tab[1] * T && i.y < (L.tab[1] + 2) * T);
         o.cand = L.pcand.every(p => [0, 1, 2].every(k => D.world().M[p[1] + 6 + (k === 2 ? 2 : 0)] !== undefined));
         H.heist(); const me = H.me; me.loot = 7000; const v0 = D.nbp().dv; D.get().its.find(i => i.t === 'nbdep').act(me); o.dv = D.nbp().dv - v0; return o; })()`);
       t.eq(r.chars, 'N'.repeat(r.chars.length), 'alle Maschinen- und Tischkacheln sind N: ' + r.chars);

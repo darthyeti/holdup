@@ -4,7 +4,7 @@
 eingecheckten props2.png, schreibt assets/props2.png neu, deterministisch, Blatt 736x384). Layout der neuen Bereiche (Pixel im Blatt, 2 Pixel je Welt-Pixel):
   (0,64) 128x128 Bohrgestell (2x2 Kacheln, Bohrloch-Kragen bei (64,78)), (128,64) vier 32x32 Bohrkronen (0, 22,5, 45, 67,5 Grad),
   (256,64) 192x128 Presse (3x2 Kacheln), (448,64) drei 32x32 Walzenphasen, (544,64) 64x32 Foerderband (Muster mit 16 Pixel Periode),
-  (0,192) 128x192 Ausgabetisch (2x3 Kacheln), (128,192) 128x64 Abgabetisch (2x1 Kacheln)."""
+  (0,192) 192x128 Ausgabetisch (3x2 Kacheln), (192,192) 128x64 Abgabetisch (2x1 Kacheln)."""
 from PIL import Image, ImageDraw, ImageFilter
 import math, os, sys
 S = 4
@@ -130,8 +130,8 @@ def extra_parts(sheet):
     sheet.alpha_composite(press(), (256, 64))
     for i in range(3): sheet.alpha_composite(roller(i), (448 + i * 32, 64))
     sheet.alpha_composite(belt(), (544, 64))
-    sheet.alpha_composite(table(128, 192, '#8a5a2c', '#2f6b34'), (0, 192))    # Ausgabetisch 2x3 Kacheln (Zellen der sechs Buendel)
-    sheet.alpha_composite(table(128, 64, '#8a5a2c', '#7b3b2f'), (128, 192))   # Abgabetisch 2x1 Kacheln
+    sheet.alpha_composite(table(192, 128, '#8a5a2c', '#2f6b34'), (0, 192))    # Ausgabetisch 3x2 Kacheln (Zellen der sechs Buendel)
+    sheet.alpha_composite(table(128, 64, '#8a5a2c', '#7b3b2f'), (192, 192))   # Abgabetisch 2x1 Kacheln
 
 def build(root):
     src = Image.open(os.path.join(root, 'assets', 'props2.png')).convert('RGBA').crop((0, 0, 704, 64))
