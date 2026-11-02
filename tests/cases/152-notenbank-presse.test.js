@@ -3,10 +3,10 @@ const SOLO = `(() => {
   const D = __dbg, T = 32; D.sessReset(); D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(5); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.nb.alarmAt = 1e6; D.reset();
   const g = D.get(), me = g.me; g.npcs.splice(0); const C = D.CFG.nb, pz = D.LAY().nb.press;
   const heist = () => { D.startHeist(true, me); D.nbd().fa.length = 0; D.nbp().nj = 1e9; };
-  const step = (sec, f) => { for (let i = 0; i < Math.round(sec * 30); i++) { me.hp = 1e9; me.dead = false; if (f) f(i); D.update(1 / 30); } };
+  const cl = (x, y) => D.world().M[y + 6][x + 6], step = (sec, f) => { for (let i = 0; i < Math.round(sec * 30); i++) { me.hp = 1e9; me.dead = false; if (f) f(i); D.update(1 / 30); } };
   const item = t => D.get().its.find(i => i.t === t), near = () => { me.x = (pz[0] + 1.5) * T; me.y = (pz[1] + 2) * T + 10; }, far = () => { me.x = 15.5 * T; me.y = 3.5 * T; };
   const st = () => { const b = D.nbp(); return [b.st, b.n, Math.round(b.paper * 100) / 100, Math.round(b.care * 100) / 100]; };
-  return { D, g, me, T, C, step, item, near, far, st, heist, pz };
+  return { D, g, me, T, C, cl, step, item, near, far, st, heist, pz };
 })()`;
 
 module.exports = [
@@ -98,13 +98,14 @@ module.exports = [
         B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })); both(A.CFG.nb.startPT + 1); B.cv.dispatchEvent(new KeyboardEvent('keyup', { key: 'e', bubbles: true })); both(8); G.run(1);
         o.run = [A.nbp().st, B.nbp().st, A.nbp().n, B.nbp().n];
         A.CFG.nb.printT = 1e6; both(1); G.run(1); const ba = A.get().its.filter(i => i.t === 'nbb'); o.pre = [A.nbp().m & 1, B.nbp().m & 1]; ba[0].act(pa); both(1); G.run(1); o.taken = [A.nbp().m & 1, B.nbp().m & 1];
-        pa.loot = 9000; const s0 = A.get().secured; A.get().its.find(i => i.t === 'nbdep').act(pa); both(1); G.run(1); o.dep = [A.get().secured - s0, B.get().secured - s0];
+        pa.loot = 9000; const s0 = A.get().secured; A.get().its.find(i => i.t === 'nbdep').act(pa); both(1); G.run(1); o.dep = [A.get().secured - s0, B.get().secured - s0]; o.dvs = [A.nbp().dv, B.nbp().dv];
         return o; })()`);
       t.eq(r.map, [], 'gleiche Welt');
       t.eq(r.before, [0, 0], 'vor dem Anwerfen steht sie auf beiden');
       t.ok(r.run[0] === 1 && r.run[1] === 1 && r.run[2] >= 3 && Math.abs(r.run[2] - r.run[3]) <= 1, 'Client hat sie per E angeworfen, laeuft und druckt auf beiden: ' + JSON.stringify(r.run));
       t.eq([r.pre, r.taken], [[1, 1], [0, 0]], 'das Buendel lag auf beiden und ist nach dem Einpacken auf beiden weg');
       t.eq(r.dep[0], r.dep[1], 'die Abgabe zaehlt als gesichert auf Host und Client gleich: ' + JSON.stringify(r.dep));
+      t.eq(r.dvs[0], r.dvs[1], 'der Stapel auf dem Abgabetisch (dv) ist auf Host und Client gleich: ' + JSON.stringify(r.dvs));
       t.ok(r.dep[0] >= 9000, 'mindestens die abgegebene Beute: ' + JSON.stringify(r.dep));
     },
   },
@@ -151,6 +152,26 @@ module.exports = [
       t.eq(r.a.at.length, 5, 'fuenf Staus beobachtet: ' + JSON.stringify(r.a));
       const [mn, vr] = r.a.C; let ok = r.a.at[0] >= mn; for (let i = 1; i < r.a.at.length; i++) { const d = r.a.at[i] - r.a.at[i - 1]; if (d < mn || d > mn + vr) ok = false; }
       t.ok(ok, 'Abstaende zwischen jamMin und jamMin+jamVar: ' + JSON.stringify(r.a.at));
+    },
+  },
+  {
+    name: 'Presse Optik: Presse, Foerderband, Ausgabetisch und Abgabetisch stehen auf eigenen Kacheln N (solide, keine Moebel oder zerlegbaren Teile darunter), die sechs Ablageplaetze liegen auf dem Ausgabetisch, die Abgabe stapelt sichtbar (dv)',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const H = ${SOLO}, D = H.D, T = H.T, L = D.LAY().nb, o = {}, cells = [];
+        for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) cells.push([L.press[0] + x, L.press[1] + y]); cells.push([L.belt[0], L.press[1]], [L.belt[0], L.press[1] + 1]);
+        for (let y = 0; y < 3; y++) for (let x = 0; x < 2; x++) cells.push([L.tab[0] + x, L.tab[1] + y]); cells.push([L.dep[0], L.dep[1]], [L.dep[0] + 1, L.dep[1]]);
+        o.chars = cells.map(c => H.cl(c[0], c[1])).join(''); o.sol = cells.every(c => D.isSol(c[0], c[1]));
+        o.mat = D.get().its.filter(i => i.t === 'mat' && cells.some(c => i.x >= c[0] * T && i.x < (c[0] + 1) * T && i.y >= c[1] * T && i.y < (c[1] + 1) * T)).length;
+        const b = D.get().its.filter(i => i.t === 'nbb'); o.slots = b.length; o.onTable = b.every(i => i.x >= L.tab[0] * T && i.x < (L.tab[0] + 2) * T && i.y >= L.tab[1] * T && i.y < (L.tab[1] + 3) * T);
+        o.cand = L.pcand.every(p => [0, 1, 2].every(k => D.world().M[p[1] + 6 + (k === 2 ? 2 : 0)] !== undefined));
+        H.heist(); const me = H.me; me.loot = 7000; const v0 = D.nbp().dv; D.get().its.find(i => i.t === 'nbdep').act(me); o.dv = D.nbp().dv - v0; return o; })()`);
+      t.eq(r.chars, 'N'.repeat(r.chars.length), 'alle Maschinen- und Tischkacheln sind N: ' + r.chars);
+      t.ok(r.chars.length === 6 + 2 + 6 + 2 && r.sol, 'Kollision bleibt, 16 Kacheln');
+      t.eq(r.mat, 0, 'kein zerlegbares Teil unter den Maschinen und Tischen');
+      t.ok(r.slots === 6 && r.onTable, 'die sechs Ablageplaetze liegen auf dem Ausgabetisch');
+      t.eq(r.dv, 7000, 'die Abgabe zaehlt in dv (Stapel auf dem Abgabetisch)');
     },
   },
 ];

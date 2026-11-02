@@ -23,7 +23,7 @@ module.exports = [
         D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6]; o.size = [w.W, w.H]; o.door = cl(17, 2); o.stair = cl(16, 6);
         const bfs = (from, to, ok) => { const seen = new Set([from.join()]), q = [from]; for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = n.join(); if (!seen.has(k) && ok(n[0], n[1])) { seen.add(k); q.push(n); } } } return false; };
         let open = false; const walk = (x, y) => { if (open && x >= 17 && x <= 18 && y >= 2 && y <= 3) return true; const ch = cl(x, y); return ch !== '#' && ch !== 'W' && ch !== 'Y' && ch !== 'L' && ch !== 'V' && ch !== 'C' && !'ekqPpbAmrfXN'.includes(ch) && ch !== undefined; };
-        const z = a.nb.zone; o.way = { keller: bfs([14, 30], [20, 3], walk), zoneClosed: bfs([14, 30], [z[0], z[1]], walk) };
+        const z = a.nb.zone; o.way = { keller: bfs([14, 30], [19, 3], walk), zoneClosed: bfs([14, 30], [z[0], z[1]], walk) };
         open = true; o.way.zoneOpen = bfs([14, 30], [z[0], z[1]], walk);
         o.pressIn = a.nb.pcand.some(p => p[0] === a.nb.press[0] && p[1] === a.nb.press[1]);
         return o;
@@ -195,7 +195,7 @@ module.exports = [
         const reach = (from, to, blocked, tunnelOpen) => { const bl = new Set((blocked || []).map(key)), seen = new Set([key(from)]), q = [from];
           for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = key(n), ch = cl(n[0], n[1]); const rigc = n[0] >= 17 && n[0] <= 18 && n[1] >= 2 && n[1] <= 3; if (seen.has(k) || bl.has(k) || ch === undefined || (SOL.includes(ch) && !(rigc && tunnelOpen))) continue; seen.add(k); q.push(n); } } return false; };
         const out = [14, 30], flat = g => [].concat(...g);
-        o.s = [reach(out, [14, 21], G.schleuse), reach(out, [14, 21], []), reach(out, [16, 10], G.panzer), reach(out, [16, 10], []), reach(out, [20, 3], G.treppe), reach(out, [20, 3], []), reach([14, 21], [16, 10], G.panzer), reach([16, 10], [20, 3], G.treppe)];
+        o.s = [reach(out, [14, 21], G.schleuse), reach(out, [14, 21], []), reach(out, [16, 10], G.panzer), reach(out, [16, 10], []), reach(out, [19, 3], G.treppe), reach(out, [19, 3], []), reach([14, 21], [16, 10], G.panzer), reach([16, 10], [19, 3], G.treppe)];
         o.r1 = [reach(out, [14, 26], flat([G.haupt, G.seite, G.hinten])), reach(out, [14, 26], flat([G.seite, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.seite]))];
         o.tun = [reach(out, [17, 2], [], false), reach(out, [17, 2], [], true)];
         o.gatesOk = G.haupt.concat(G.seite, G.hinten, G.schleuse, G.panzer, G.treppe).every(c => cl(c[0], c[1]) !== '#' && cl(c[0], c[1]) !== 'W');
@@ -216,7 +216,7 @@ module.exports = [
         o.solid = []; for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) o.solid.push(H.cl(pz[0] + x, pz[1] + y));
         o.its = ['nbp0', 'nbp1', 'nbp2', 'nbdep'].map(k => !!D.get().its.find(i => i.t === k)); o.bun = D.get().its.filter(i => i.t === 'nbb').length;
         return o; })()`);
-      t.eq(r.solid, ['m', 'm', 'm', 'm', 'm', 'm'], 'sechs solide Kacheln');
+      t.eq(r.solid, ['N', 'N', 'N', 'N', 'N', 'N'], 'sechs solide Kacheln (eigene Kachel N, kein Moebel)');
       t.eq(r.its, [true, true, true, true], 'Objekte: anwerfen, Papier, Stau, Abgabe');
       t.eq(r.bun, 6, 'die Ablage an der Ausgabe hat sechs Plaetze (feste Objekte)');
     },

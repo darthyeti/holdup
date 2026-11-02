@@ -852,12 +852,12 @@ fill(1,24,26,27,'.');[[13,bot],[14,bot],[GX,25],[GX,26]].forEach(a=>setc(a[0],a[
 [[14,5],[24,5],[24,1],[14,1]].forEach(a=>setc(a[0],a[1],'k'));setc(23,1,'q');setc(19,5,'P');
 [[30,2],[31,2],[40,12],[41,12]].forEach(a=>setc(a[0],a[1],'k'));[[32,8],[38,3]].forEach(a=>setc(a[0],a[1],'q'));[[30,12],[30,5],[-2,8],[-2,14]].forEach(a=>setc(a[0],a[1],'p'));
 const P=CFG.nb,h0=(((sn)*2654435761)>>>0),mr=mulberry32(h0^0x3a91c7d5),tr=mulberry32((((sn)*40503)>>>0)^0x6b43a9b5),pr=mulberry32(h0^0x51e7a2f1),ti=tr()<.5?2:0,di=tr()<.6?0:1;
-const pcand=[[22,8],[22,12],[23,10]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'m');
+const pcand=[[21,8],[21,11],[21,12]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'N');setc(24,press[1],'N');setc(24,press[1]+1,'N');fill(25,press[1],26,press[1]+2,'N');fill(20,3,21,3,'N');
 const rot=Math.floor(mr()*4),rev=mr()<.5,gd=(route)=>({p:route[rot%route.length],route:rotR(route,rot%route.length,rev)});
 const guards=[gd([[6,25],[20,25],[14,24],[14,22],[22,21],[10,22],[13,22],[13,24]]),{p:[16,2],route:[[16,2],[22,2],[22,4],[16,4]]}];
 const camc=[{x:2.5*T,y:24.5*T,a0:.4,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:24.5*T,a0:2.7,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:19.5*T,a0:2.4,amp:.55,sp:.55,rng:280,fov:.5},{x:8.5*T,y:19.5*T,a0:.7,amp:.5,sp:.5,rng:280,fov:.5},{x:15.5*T,y:7.5*T,a0:1.2,amp:.7,sp:.7,rng:220,fov:.55},{x:14.5*T,y:1.5*T,a0:.5,amp:.5,sp:.5,rng:280,fov:.5},{x:7.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.5,rng:300,fov:.5},{x:20.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.45,rng:300,fov:.5}];
 const cams=pickCams(mr,camc,P.cams),code=String(1000+Math.floor(mr()*9000)),gates={haupt:[[13,bot],[14,bot]],seite:[[GX,25],[GX,26]],hinten:[[0,25]],schleuse:[[13,23],[14,23]],panzer:[[15,15],[16,15]],treppe:[[16,6]]};
-const nbo={zone:[17,2,18,3],rig:[17,2],keller:[14,1,24,5],press,pcand,stair:[16,6],gates};
+const nbo={zone:[17,2,18,3],rig:[17,2],keller:[14,1,24,5],press,pcand,belt:[24,press[1]],tab:[25,press[1]],dep:[20,3],stair:[16,6],gates};
 return{seed:sn,decor:decorOf([]),nb:nbo,hall:'Notenbank',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
 mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=21?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
 paintFloor(s){const N=nbo;s.fillStyle='rgba(90,70,40,.35)';s.fillRect(10*T,24*T+4,8*T,3);s.fillRect(10*T,27*T-6,8*T,3);s.strokeStyle='rgba(224,182,40,.55)';s.lineWidth=3;s.beginPath();s.arc(13.5*T+16,25.6*T,22,0,6.283);s.stroke();s.fillStyle='rgba(224,182,40,.55)';s.font='bold 12px monospace';s.textAlign='center';s.fillText('NOTENBANK',14*T,25.6*T+4);s.textAlign='left';
