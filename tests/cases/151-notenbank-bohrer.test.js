@@ -102,7 +102,7 @@ module.exports = [
     },
   },
   {
-    name: 'Bohrer Coop: Host und Client sehen Zustand und Fortschritt (Schnappschuss nbd), das Wiederanwerfen auf dem Client geht, die Tunneltuer oeffnet auf beiden bei 100 %',
+    name: 'Bohrer Coop: Host und Client sehen Zustand und Fortschritt (Schnappschuss nbd), das Wiederanwerfen auf dem Client geht (E gehalten auf dem Client, Host laeuft wieder), die Tunneltuer oeffnet auf beiden bei 100 %',
     timeout: 180000,
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
@@ -113,10 +113,14 @@ module.exports = [
         o.map = CT.diff(CT.sig(A), CT.sig(B)); A.startHeist(true, A.get().me); G.run(1); A.nbd().fa.length = 0; A.nbd().st = 1; both(10); G.run(1);
         const s = D => [D.nbd().st, Math.round(D.nbd().p * 10) / 10]; o.run = [s(A), s(B)];
         A.nbd().st = 2; A.nbd().c = 1; both(1); G.run(1); o.stop = [s(A), s(B), B.nbd().c];
-        A.nbd().st = 1; both(32); G.run(1); const d = A.LAY().nb.door; o.done = [s(A), s(B), A.world().M[d[1] + 6][d[0] + 6], B.world().M[d[1] + 6][d[0] + 6]];
+        const bid = B.get().me.id, pa = A.get().players[bid], rg = A.LAY().nb.rig; for (const p of [pa, B.get().me]) { p.x = (rg[0] + 1) * T; p.y = (rg[1] + 2) * T + 10; } A.nbd().st = 2; A.nbd().c = 3; both(1.5); o.beforeE = [A.nbd().st, B.nbd().st];
+        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })); both(A.CFG.nb.restartT + 1.5); B.cv.dispatchEvent(new KeyboardEvent('keyup', { key: 'e', bubbles: true })); G.run(.5); o.afterE = [A.nbd().st, B.nbd().st, Math.round(A.nbd().p * 100) / 100];
+        both(32); G.run(1); const d = A.LAY().nb.door; o.done = [s(A), s(B), A.world().M[d[1] + 6][d[0] + 6], B.world().M[d[1] + 6][d[0] + 6]];
         return o; })()`);
       t.eq(r.map, [], 'gleiche Welt');
       t.ok(r.run[0][0] === 1 && r.run[1][0] === 1 && Math.abs(r.run[0][1] - r.run[1][1]) <= .1 && r.run[1][1] > 0, 'laeuft auf beiden mit gleichem Fortschritt: ' + JSON.stringify(r.run));
+      t.eq(r.beforeE, [2, 2], 'vor E steht er auf beiden');
+      t.eq([r.afterE[0], r.afterE[1]], [1, 1], 'der Client haelt E (Eingabe ueber die Test-Leitung), der Host hat den Bohrer wieder laufen: ' + JSON.stringify(r.afterE));
       t.ok(r.stop[1][0] === 2 && r.stop[2] === 1, 'Stillstand und Ursache kommen beim Client an: ' + JSON.stringify(r.stop));
       t.eq([r.done[0][0], r.done[1][0], r.done[2], r.done[3]], [3, 3, 'l', 'l'], 'fertig und Tuer offen auf beiden: ' + JSON.stringify(r.done));
     },
