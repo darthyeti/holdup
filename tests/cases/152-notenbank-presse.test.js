@@ -130,10 +130,12 @@ module.exports = [
       const r = await t.page.evaluate(`(() => {
         const o = {}, run = n => { const H = ${SOLO}, D = H.D, C = H.C; D.CFG.policeForced = 2; H.heist(); C.maxEn = 5; C.maxEnCap = 20; C.escN = 5; C.escMax = 1; C.escWave = 1; C.escGap = .06; D.CFG.policeForced = 2; D.CFG.waveGap = 10; D.CFG.waveGapMin = 10; D.CFG.waveGapStep = 0; D.nbp().n = n;
           let mx = 0; H.step(70, () => { const k = D.get().en.filter(e => e.hp > 0 && (e.kind === 'cop' || e.kind === 'swat' || e.kind === 'shield')).length; if (k > mx) mx = k; }); return { lvl: D.nbLvl(), cap: D.nbMaxEn(), mx, waves: D.get().waveN }; };
-        o.a = run(0); o.b = run(30); return o; })()`);
+        const first = n => { const H = ${SOLO}, D = H.D, C = H.C; D.CFG.policeForced = 2; H.heist(); C.maxEn = 60; C.maxEnCap = 60; C.escN = 5; C.escWave = 1; D.nbp().n = n; H.step(2.4); const g = D.get(); return g.waveN * 1000 + g.en.filter(e => e.hp > 0 && (e.kind === 'cop' || e.kind === 'swat' || e.kind === 'shield')).length + g.cars.reduce((m, c) => m + (c.crew ? c.crew.length : 0), 0) + g.fps.reduce((m, f) => m + f.crew.length, 0); };
+        o.a = run(0); o.b = run(30); o.w0 = first(0); o.w6 = first(30); return o; })()`);
       t.eq([r.a.lvl, r.b.lvl], [0, 6], 'Stufe aus der Zahl gedruckter Buendel');
       t.eq([r.a.cap, r.b.cap], [5, 11], 'maxEn steigt je Stufe bis maxEnCap');
       t.ok(r.a.mx <= 5 && r.b.mx > r.a.mx && r.b.mx <= 11, 'mehr Beamte gleichzeitig auf hoeherer Stufe: ' + JSON.stringify([r.a.mx, r.b.mx]));
+      t.ok(r.w0 % 1000 > 0 && r.w6 % 1000 - r.w0 % 1000 === 6 && Math.floor(r.w0 / 1000) === 1, 'die erste Welle ist auf Stufe 6 um 6 Beamte (escWave je Stufe) groesser: ' + JSON.stringify([r.w0, r.w6]));
       t.ok(r.b.waves > r.a.waves, 'kuerzere Wellenpause, mehr Wellen in gleicher Zeit: ' + JSON.stringify([r.a.waves, r.b.waves]));
     },
   },
