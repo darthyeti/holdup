@@ -218,7 +218,7 @@ module.exports = [
         return o; })()`);
       t.eq(r.solid, ['m', 'm', 'm', 'm', 'm', 'm'], 'sechs solide Kacheln');
       t.eq(r.its, [true, true, true, true], 'Objekte: anwerfen, Papier, Stau, Abgabe');
-      t.eq(r.bun, 18, 'Buendel liegen als feste Objekte bereit');
+      t.eq(r.bun, 6, 'die Ablage an der Ausgabe hat sechs Plaetze (feste Objekte)');
     },
   },
 ];

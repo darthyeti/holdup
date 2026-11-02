@@ -2,7 +2,7 @@
 const SOLO = `(() => {
   const D = __dbg, T = 32; D.sessReset(); D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(5); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.nb.alarmAt = 1e6; D.reset();
   const g = D.get(), me = g.me; g.npcs.splice(0); const C = D.CFG.nb, pz = D.LAY().nb.press;
-  const heist = () => { D.startHeist(true, me); D.nbd().fa.length = 0; D.nbp().jam.length = 0; };
+  const heist = () => { D.startHeist(true, me); D.nbd().fa.length = 0; D.nbp().nj = 1e9; };
   const step = (sec, f) => { for (let i = 0; i < Math.round(sec * 30); i++) { me.hp = 1e9; me.dead = false; if (f) f(i); D.update(1 / 30); } };
   const item = t => D.get().its.find(i => i.t === t), near = () => { me.x = (pz[0] + 1.5) * T; me.y = (pz[1] + 2) * T + 10; }, far = () => { me.x = 15.5 * T; me.y = 3.5 * T; };
   const st = () => { const b = D.nbp(); return [b.st, b.n, Math.round(b.paper * 100) / 100, Math.round(b.care * 100) / 100]; };
@@ -31,7 +31,7 @@ module.exports = [
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
-        const H = ${SOLO}, D = H.D, C = H.C, o = {}; H.heist(); C.printT = 2; C.careT = 6; C.paperT = 1e6; D.nbp().st = 1;
+        const H = ${SOLO}, D = H.D, C = H.C, o = {}; H.heist(); C.printT = 2; C.careT = 6; C.paperT = 1e6; C.slots = 20; D.nbp().st = 1;
         H.near(); H.step(10); o.near = H.st(); H.far(); H.step(4); o.part = H.st(); H.step(4); o.stopped = H.st(); const n0 = o.stopped[1]; H.step(8); o.still = H.st();
         o.ok = [H.item('nbp0').ok(), H.item('nbp0').lab()]; H.item('nbp0').act(); H.near(); H.step(5); o.again = H.st();
         return o; })()`);
@@ -51,7 +51,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => {
         const H = ${SOLO}, D = H.D, C = H.C, o = {}; H.heist(); C.printT = 100; C.paperT = 10; D.nbp().st = 1; H.near(); H.step(2); o.p0 = H.item('nbp1').ok(); H.step(3); o.half = H.st(); o.p1 = H.item('nbp1').ok(); H.step(6); o.empty = H.st();
         o.p1b = H.item('nbp1').ok(); H.item('nbp1').act(); o.fed = H.st();
-        D.nbp().st = 1; D.nbp().paper = 1; D.nbp().n = 0; D.nbp().jam.push(2); C.printT = 1; C.paperT = 1e6; H.step(4); o.jam = H.st(); o.fixOk = [H.item('nbp2').ok(), H.item('nbp1').ok()]; const n = o.jam[1]; H.step(3); o.jamStill = H.st()[1] === n;
+        D.nbp().st = 1; D.nbp().paper = 1; D.nbp().n = 0; D.nbp().nj = 2; C.printT = 1; C.paperT = 1e6; H.step(4); o.jam = H.st(); o.fixOk = [H.item('nbp2').ok(), H.item('nbp1').ok()]; const n = o.jam[1]; H.step(3); o.jamStill = H.st()[1] === n;
         H.item('nbp2').act(); o.fixed = H.st(); H.step(3); o.after = H.st();
         return o; })()`);
       t.ok(r.half[0] === 1 && Math.abs(r.half[2] - .5) < .06 && !r.p0 && r.p1, 'Papier sinkt mit der Zeit, bei 80 % noch kein Nachlegen, bei 50 % ja: ' + JSON.stringify(r.half));
@@ -68,15 +68,15 @@ module.exports = [
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
-        const H = ${SOLO}, D = H.D, C = H.C, me = H.me, o = {}; H.heist(); D.nbp().n = 4; D.nbp().st = 5;
-        const b = D.get().its.filter(i => i.t === 'nbb'); o.ok = [b[0].ok(), b[3].ok(), b[4].ok()]; const l0 = me.loot, u0 = me.units; b[0].act(me); o.took = [me.loot - l0, me.units - u0, b[0].done, b[0].ok()];
-        me.units = me.bag; o.full = [b[1].fit(me), (b[1].act(me), b[1].done)]; me.units = u0 + C.bundleU;
+        const H = ${SOLO}, D = H.D, C = H.C, me = H.me, o = {}; H.heist(); D.nbp().m = 15; D.nbp().st = 1;
+        const b = D.get().its.filter(i => i.t === 'nbb'); o.ok = [b[0].ok(), b[3].ok(), b[4].ok()]; const l0 = me.loot, u0 = me.units; b[0].act(me); o.took = [me.loot - l0, me.units - u0, D.nbp().m, b[0].ok()];
+        me.units = me.bag; o.full = [b[1].fit(me), (b[1].act(me), D.nbp().m >> 1 & 1)]; me.units = u0 + C.bundleU;
         const dep = H.item('nbdep'); o.depOk = [dep.ok(me), (me.loot = 0, dep.ok(me))]; me.loot = 12000; me.units = 2; const s0 = D.get().secured; dep.act(me); o.dep = [D.get().secured - s0, me.loot, me.units, me.out];
         me.loot = 3000; me.dead = true; D.finish(false, 'Test', 'x'); const e = D.get().ended, ln = e && e.lines.find(l => /^Ergebnis:/.test(l)); o.end = e && [e.win, ln, e.lines.find(l => /^Beute:/.test(l))];
         return o; })()`);
       t.eq(r.ok, [true, true, false], 'nur gedruckte Buendel sind einpackbar');
-      t.eq(r.took, [5000, .5, true, false], 'ein Buendel bringt bundleV und braucht bundleU Platz: ' + JSON.stringify(r.took));
-      t.eq(r.full, [false, false], 'bei voller Tasche passt es nicht (fit) und bleibt liegen');
+      t.eq(r.took, [5000, .5, 14, false], 'ein Buendel bringt bundleV und braucht bundleU Platz: ' + JSON.stringify(r.took));
+      t.eq(r.full, [false, 1], 'bei voller Tasche passt es nicht (fit) und bleibt liegen');
       t.eq(r.depOk, [true, false], 'Abgabe nur mit Beute');
       t.eq(r.dep, [12000, 0, 0, false], 'Abgabe: sofort gesichert, Tasche leer, der Spieler bleibt im Spiel: ' + JSON.stringify(r.dep));
       const num = s => +String(s).replace(/[^0-9]/g, '');
@@ -92,20 +92,63 @@ module.exports = [
         const G = CT.mkGame('nb', 5, 2, 60, 20), A = G.A, B = G.clients[0], o = {}, T = 32;
         const both = (sec, f) => { for (let i = 0; i < Math.round(sec * 60); i++) { A.get().players.forEach(p => { p.hp = 1e9; p.dead = false; }); if (f) f(i); G.run(1 / 60); } };
         for (const D of [A, B]) { D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.nb.alarmAt = 1e6; D.CFG.nb.printT = 2; }
-        o.map = CT.diff(CT.sig(A), CT.sig(B)); A.startHeist(true, A.get().me); G.run(1); A.nbp().jam.length = 0;
+        o.map = CT.diff(CT.sig(A), CT.sig(B)); A.startHeist(true, A.get().me); G.run(1); A.nbp().nj = 1e9;
         const bid = B.get().me.id, pa = A.get().players[bid], pz = A.LAY().nb.press; for (const p of [pa, B.get().me]) { p.x = (pz[0] + 1.5) * T; p.y = (pz[1] + 2) * T + 10; }
         both(1); o.before = [A.nbp().st, B.nbp().st];
         B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true })); both(A.CFG.nb.startPT + 1); B.cv.dispatchEvent(new KeyboardEvent('keyup', { key: 'e', bubbles: true })); both(8); G.run(1);
         o.run = [A.nbp().st, B.nbp().st, A.nbp().n, B.nbp().n];
-        const ba = A.get().its.filter(i => i.t === 'nbb'), bb = B.get().its.filter(i => i.t === 'nbb'); ba[0].act(pa); both(1); G.run(1); o.taken = [ba[0].done, bb[0].done];
+        A.CFG.nb.printT = 1e6; both(1); G.run(1); const ba = A.get().its.filter(i => i.t === 'nbb'); o.pre = [A.nbp().m & 1, B.nbp().m & 1]; ba[0].act(pa); both(1); G.run(1); o.taken = [A.nbp().m & 1, B.nbp().m & 1];
         pa.loot = 9000; const s0 = A.get().secured; A.get().its.find(i => i.t === 'nbdep').act(pa); both(1); G.run(1); o.dep = [A.get().secured - s0, B.get().secured - s0];
         return o; })()`);
       t.eq(r.map, [], 'gleiche Welt');
       t.eq(r.before, [0, 0], 'vor dem Anwerfen steht sie auf beiden');
       t.ok(r.run[0] === 1 && r.run[1] === 1 && r.run[2] >= 3 && Math.abs(r.run[2] - r.run[3]) <= 1, 'Client hat sie per E angeworfen, laeuft und druckt auf beiden: ' + JSON.stringify(r.run));
-      t.eq(r.taken, [true, true], 'das eingepackte Buendel ist auf beiden weg');
+      t.eq([r.pre, r.taken], [[1, 1], [0, 0]], 'das Buendel lag auf beiden und ist nach dem Einpacken auf beiden weg');
       t.eq(r.dep[0], r.dep[1], 'die Abgabe zaehlt als gesichert auf Host und Client gleich: ' + JSON.stringify(r.dep));
       t.ok(r.dep[0] >= 9000, 'mindestens die abgegebene Beute: ' + JSON.stringify(r.dep));
+    },
+  },
+  {
+    name: 'Presse: Sie druckt endlos solange betreut, die Ablage hat slots Plaetze, ist sie voll haelt die Presse an (Ablage voll) und laeuft von selbst weiter, sobald ein Buendel weg ist; die Zahl der Buendel ist nicht gedeckelt',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const H = ${SOLO}, D = H.D, C = H.C, me = H.me, o = {}; H.heist(); C.printT = 1; C.paperT = 1e6; C.slots = 6; D.nbp().st = 1; H.near(); me.bag = 1e6; H.step(12); o.full = H.st().concat(D.nbp().m); const n0 = D.nbp().n; H.step(5); o.still = [D.nbp().n === n0, D.nbp().st];
+        const b = D.get().its.filter(i => i.t === 'nbb'); b[2].act(me); H.step(2.5); o.resumed = [D.nbp().n - n0, D.nbp().m];
+        for (let i = 0; i < 40; i++) { for (const k of b) if (k.ok()) k.act(me); H.step(1.5); } o.many = D.nbp().n; o.loot = me.loot;
+        return o; })()`);
+      t.eq([r.full[0], r.full[1], r.full[4]], [6, 6, 63], 'Ablage voll: Presse steht (6), sechs Buendel liegen: ' + JSON.stringify(r.full));
+      t.eq(r.still[0], true, 'bei voller Ablage druckt sie nichts');
+      t.ok(r.resumed[0] === 1 && r.resumed[1] === 63, 'ein Buendel weg, sie druckt von selbst genau eins nach und fuellt die Ablage wieder, ohne Wiederanwerfen: ' + JSON.stringify(r.resumed));
+      t.ok(r.many > 30, 'keine feste Kappe: ueber 30 Buendel gedruckt (' + r.many + '), Beute ' + r.loot);
+    },
+  },
+  {
+    name: 'Presse: Druckstufe. Je escN gedruckte Buendel eine Stufe: groessere Wellen, hoeheres maxEn (bis maxEnCap) und kuerzere Wellenpause, nur in der Notenbank; ohne gedruckte Buendel bleibt es bei Stufe 0',
+    timeout: 180000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const o = {}, run = n => { const H = ${SOLO}, D = H.D, C = H.C; D.CFG.policeForced = 2; H.heist(); C.maxEn = 5; C.maxEnCap = 20; C.escN = 5; C.escMax = 1; C.escWave = 1; C.escGap = .06; D.CFG.policeForced = 2; D.CFG.waveGap = 10; D.CFG.waveGapMin = 10; D.CFG.waveGapStep = 0; D.nbp().n = n;
+          let mx = 0; H.step(70, () => { const k = D.get().en.filter(e => e.hp > 0 && (e.kind === 'cop' || e.kind === 'swat' || e.kind === 'shield')).length; if (k > mx) mx = k; }); return { lvl: D.nbLvl(), cap: D.nbMaxEn(), mx, waves: D.get().waveN }; };
+        o.a = run(0); o.b = run(30); return o; })()`);
+      t.eq([r.a.lvl, r.b.lvl], [0, 6], 'Stufe aus der Zahl gedruckter Buendel');
+      t.eq([r.a.cap, r.b.cap], [5, 11], 'maxEn steigt je Stufe bis maxEnCap');
+      t.ok(r.a.mx <= 5 && r.b.mx > r.a.mx && r.b.mx <= 11, 'mehr Beamte gleichzeitig auf hoeherer Stufe: ' + JSON.stringify([r.a.mx, r.b.mx]));
+      t.ok(r.b.waves > r.a.waves, 'kuerzere Wellenpause, mehr Wellen in gleicher Zeit: ' + JSON.stringify([r.a.waves, r.b.waves]));
+    },
+  },
+  {
+    name: 'Presse: Die Staus kommen aus dem Seed und liegen nach jamMin bis jamMin+jamVar gedruckten Buendeln auseinander (nie zwei kurz hintereinander), gleicher Seed gleiche Folge',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const seq = () => { const H = ${SOLO}, D = H.D, C = H.C; D.startHeist(true, H.me); D.nbd().fa.length = 0; const nj0 = D.nbp().nj; C.printT = .2; C.paperT = 1e6; C.slots = 6; D.nbp().st = 1; H.near(); H.me.bag = 1e6; const at = [];
+          for (let i = 0; i < 400 && at.length < 5; i++) { H.step(.2); for (const k of D.get().its) if (k.t === 'nbb' && k.ok()) k.act(H.me); if (D.nbp().st === 3) { at.push(D.nbp().n); H.item('nbp2').act(); } } return { nj0, at, C: [C.jamMin, C.jamVar] }; };
+        return { a: seq(), b: seq() }; })()`);
+      t.eq(r.a.at, r.b.at, 'gleicher Seed, gleiche Staus');
+      t.eq(r.a.at.length, 5, 'fuenf Staus beobachtet: ' + JSON.stringify(r.a));
+      const [mn, vr] = r.a.C; let ok = r.a.at[0] >= mn; for (let i = 1; i < r.a.at.length; i++) { const d = r.a.at[i] - r.a.at[i - 1]; if (d < mn || d > mn + vr) ok = false; }
+      t.ok(ok, 'Abstaende zwischen jamMin und jamMin+jamVar: ' + JSON.stringify(r.a.at));
     },
   },
 ];
