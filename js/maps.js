@@ -867,14 +867,14 @@ exit:{x:(GX+1)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:GX+1},van:{y:(er+1)*T,x0:(GX+7
 /* ---- Szenario Notenbank (Ticket 61, N1, docs/szenarien.md): handgebaut, kein Generator, nicht gedreht, ohne Ausweichpunkt. Vier Verteidigungsringe von der Strasse (Sueden) nach innen (Norden), jeder mit einer klaren Engstelle:
    Ring 1 Vorhalle (y24..27) mit Haupttuer (13..14,28), Seitentuer Ost (27,25..26) und Hintertuer West L (0,25), dazu Fenster. Engstelle zu Ring 2: die Schleuse (13..14,23).
    Ring 2 Kassenhalle (y19..22, Theke mit Schalterbereich y16..17) mit Buero und Sicherheitsraum im Westen, Fenster erlaubt. Engstelle zu Ring 3: die Panzertuer (15..16,15).
-   Ring 3 innerer Bereich (y7..14): Tresorraum (West, V bei (10,9..10)), Verteiler (x11..19) und Pressenraum (Ost, Tuer (20,10)). Engstelle zu Ring 4: die Kellertreppe (16,6).
+   Ring 3 innerer Bereich (y7..14): Tresorraum (West, V bei (10,9..10)), Verteiler (x11..16) und Pressenraum (Ost, x18..26, Tuer (17,10), um Presse, Band und Tisch bleibt ein Gang). Engstelle zu Ring 4: die Kellertreppe (16,6).
    Ring 4 Keller (x14..24, y1..5) mit dem Bohrer (nb.rig, 2x2): bei 100 % verschwindet er, das Loch im Boden (nb.zone) ist der Ausstieg und die Fluchtzone.
    LAY.nb: zone [x0,y0,x1,y1] in Kacheln (das Loch im Boden, Ring 4), rig (Bohrer 2x2), press (Kachel links oben der Notenpresse, 3x2, solide), pcand (Kandidaten), stair (Kellertreppe), gates (Engstellen je Ring: haupt, seite, hinten, schleuse, panzer, treppe als Kachellisten, fuer Tests und Doku). ---- */
 function nbLayout(sd){const sn=typeof sd==='number'?sd:7,GX=27,bot=28;frameWorld(52,48,-6,-6,30);setc(45,25,'o');setc(45,26,'o');
 fill(0,0,GX,bot,'#');
 fill(14,1,24,5,'.');setc(16,6,'d');fill(17,2,18,3,'N');
 fill(1,7,9,14,'.');fill(10,7,10,14,'#');setc(10,9,'V');setc(10,10,'V');
-fill(11,7,19,14,'.');fill(20,7,20,14,'#');setc(20,10,'d');fill(21,7,26,14,'.');
+fill(11,7,16,14,'.');fill(17,7,17,14,'#');setc(17,10,'d');fill(18,7,26,14,'.');
 setc(15,15,'d');setc(16,15,'d');
 fill(1,16,6,18,'.');fill(1,19,6,19,'#');fill(1,20,6,22,'.');fill(7,16,7,22,'#');setc(7,17,'d');setc(7,21,'d');
 fill(8,19,26,22,'.');fill(12,16,12,18,'#');fill(13,16,26,17,'.');fill(14,18,26,18,'C');setc(13,18,'g');fill(8,16,11,18,'.');
@@ -885,18 +885,18 @@ fill(1,24,26,27,'.');[[13,bot],[14,bot],[GX,25],[GX,26]].forEach(a=>setc(a[0],a[
 [[2,17],[3,17],[4,17]].forEach(a=>setc(a[0],a[1],'e'));[[2,21],[3,21],[4,21]].forEach(a=>setc(a[0],a[1],'m'));
 [[16,17],[19,17],[22,17]].forEach(a=>setc(a[0],a[1],'r'));[[10,21],[9,21],[9,20]].forEach(a=>setc(a[0],a[1],'b'));[[8,24],[9,24]].forEach(a=>setc(a[0],a[1],'A'));
 [[24,26],[3,26],[26,20],[1,24]].forEach(a=>setc(a[0],a[1],'p'));
-[[13,13],[18,13],[12,8]].forEach(a=>setc(a[0],a[1],'k'));
+[[13,13],[15,13],[12,8]].forEach(a=>setc(a[0],a[1],'k'));
 [[14,5],[24,5],[24,1],[14,1]].forEach(a=>setc(a[0],a[1],'k'));setc(23,1,'q');setc(19,5,'P');
 [[30,2],[31,2],[40,12],[41,12]].forEach(a=>setc(a[0],a[1],'k'));[[32,8],[38,3]].forEach(a=>setc(a[0],a[1],'q'));[[30,12],[30,5],[-2,8],[-2,14]].forEach(a=>setc(a[0],a[1],'p'));
 const P=CFG.nb,h0=(((sn)*2654435761)>>>0),mr=mulberry32(h0^0x3a91c7d5),tr=mulberry32((((sn)*40503)>>>0)^0x6b43a9b5),pr=mulberry32(h0^0x51e7a2f1),ti=tr()<.5?2:0,di=tr()<.6?0:1;
-const pcand=[[22,8],[22,12],[23,10]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'m');
+const pcand=[[19,8],[19,10],[19,12]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'N');setc(22,press[1],'N');setc(22,press[1]+1,'N');fill(23,press[1],25,press[1]+1,'N');fill(20,3,21,3,'N');
 const rot=Math.floor(mr()*4),rev=mr()<.5,gd=(route)=>({p:route[rot%route.length],route:rotR(route,rot%route.length,rev)});
 const guards=[gd([[6,25],[20,25],[14,24],[14,22],[22,21],[10,22],[13,22],[13,24]]),{p:[16,2],route:[[16,2],[22,2],[22,4],[16,4]]}];
 const camc=[{x:2.5*T,y:24.5*T,a0:.4,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:24.5*T,a0:2.7,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:19.5*T,a0:2.4,amp:.55,sp:.55,rng:280,fov:.5},{x:8.5*T,y:19.5*T,a0:.7,amp:.5,sp:.5,rng:280,fov:.5},{x:15.5*T,y:7.5*T,a0:1.2,amp:.7,sp:.7,rng:220,fov:.55},{x:14.5*T,y:1.5*T,a0:.5,amp:.5,sp:.5,rng:280,fov:.5},{x:7.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.5,rng:300,fov:.5},{x:20.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.45,rng:300,fov:.5}];
 const cams=pickCams(mr,camc,P.cams),code=String(1000+Math.floor(mr()*9000)),gates={haupt:[[13,bot],[14,bot]],seite:[[GX,25],[GX,26]],hinten:[[0,25]],schleuse:[[13,23],[14,23]],panzer:[[15,15],[16,15]],treppe:[[16,6]]};
-const nbo={zone:[17,2,18,3],rig:[17,2],keller:[14,1,24,5],press,pcand,stair:[16,6],gates};
+const nbo={zone:[17,2,18,3],rig:[17,2],keller:[14,1,24,5],press,pcand,belt:[22,press[1]],tab:[23,press[1]],dep:[20,3],stair:[16,6],gates};
 return{seed:sn,decor:decorOf([]),nb:nbo,hall:'Notenbank',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
-mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=21?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
+mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=18?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
 paintFloor(s){const N=nbo;s.fillStyle='rgba(90,70,40,.35)';s.fillRect(10*T,24*T+4,8*T,3);s.fillRect(10*T,27*T-6,8*T,3);s.strokeStyle='rgba(224,182,40,.55)';s.lineWidth=3;s.beginPath();s.arc(13.5*T+16,25.6*T,22,0,6.283);s.stroke();s.fillStyle='rgba(224,182,40,.55)';s.font='bold 12px monospace';s.textAlign='center';s.fillText('NOTENBANK',14*T,25.6*T+4);s.textAlign='left';
 for(let i=0;i<5;i++){s.fillStyle=i%2?'#9a9a94':'#b2b2ab';s.fillRect(11*T+i*5,(bot+1)*T+i*10,6*T-i*10,10)}
 s.fillStyle='rgba(120,100,60,.22)';s.fillRect(N.zone[0]*T-4,N.zone[1]*T-4,(N.zone[2]-N.zone[0]+1)*T+8,(N.zone[3]-N.zone[1]+1)*T+8)},
