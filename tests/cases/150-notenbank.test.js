@@ -52,7 +52,7 @@ module.exports = [
     },
   },
   {
-    name: 'Notenbank: Alarm von selbst nach alarmAt s (nicht frueher), die Tunneltuer bleibt bis open s nach dem Alarm zu und geht dann auf, Meldung und Countdown, kein Fluchtwagen',
+    name: 'Notenbank: Alarm von selbst nach alarmAt s (nicht frueher), der Boden am Bohrer bleibt ohne Bohrer zu und das Loch geht erst mit nbHole auf, kein Fluchtwagen',
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
@@ -70,7 +70,7 @@ module.exports = [
     },
   },
   {
-    name: 'Notenbank: Sieg nur ueber die Fluchtzone bei offener Tunneltuer; vorher bringt die Zone nichts, ein Sieg im Keller ohne Zone gibt es nicht; Beute zaehlt',
+    name: 'Notenbank: Sieg nur ueber die Fluchtzone bei offenem Loch; vorher bringt die Zone nichts, ein Sieg im Keller ohne Zone gibt es nicht; Beute zaehlt',
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
@@ -82,14 +82,14 @@ module.exports = [
         const e = D.get().ended; o.end = e && { win: e.win, title: e.title }; o.sec = D.get().secured;
         return o; })()`);
       t.eq(r.early, [false, false], 'vor der Oeffnung bringt die Zone nichts');
-      t.eq(r.mid, [false, false], 'offene Tunneltuer allein sichert niemanden');
+      t.eq(r.mid, [false, false], 'ein offenes Loch allein sichert niemanden');
       t.eq(r.end && r.end.win, true, 'Sieg ueber die Zone: ' + JSON.stringify(r.end));
-      t.eq(r.end && r.end.title, 'Durch den Tunnel entkommen', 'Titel');
+      t.eq(r.end && r.end.title, 'Durch das Loch entkommen', 'Titel');
       t.ok(r.sec >= 1234, 'Beute gesichert: ' + r.sec);
     },
   },
   {
-    name: 'Notenbank: Obergrenze gleichzeitiger Beamter (CFG.nb.maxEn) und Geiseldeckel hcap; Polizei-Posten stehen nicht am Tunnel',
+    name: 'Notenbank: Obergrenze gleichzeitiger Beamter (CFG.nb.maxEn) und Geiseldeckel hcap; Polizei-Posten stehen nicht am Loch',
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
@@ -103,11 +103,11 @@ module.exports = [
       t.ok(r.max <= 5, 'nie mehr als maxEn Beamte gleichzeitig: ' + r.max);
       t.eq(r.cap, r.hcap, 'Geiseldeckel gilt: ' + r.cap);
       t.ok(r.nposts >= 8, 'es bleiben genug Posten: ' + r.nposts);
-      t.eq(r.nearTunnel, 0, 'kein Polizeiposten am Tunnel');
+      t.eq(r.nearTunnel, 0, 'kein Polizeiposten am Loch');
     },
   },
   {
-    name: 'Notenbank: Coop. Host und Client sehen Tunneltuer und Countdown (Schnappschuss), gleiche Karte, Sieg ueber die Zone endet auf beiden',
+    name: 'Notenbank: Coop. Host und Client sehen das Loch (Schnappschuss), gleiche Karte, Sieg ueber die Zone endet auf beiden',
     timeout: 180000,
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
