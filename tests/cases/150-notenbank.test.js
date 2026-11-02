@@ -209,15 +209,16 @@ module.exports = [
     },
   },
   {
-    name: 'Notenbank: die Notenpresse ist eine solide Maschine (3x2 Kacheln), E zeigt Noch nicht in Betrieb und aendert nichts',
+    name: 'Notenbank: die Notenpresse ist eine solide Maschine (3x2 Kacheln) mit den Betreuungsobjekten (anwerfen, Papier, Stau), Details in Test 152',
     async run(t) {
       const r = await t.page.evaluate(`(() => {
-        const H = ${SOLO}, D = H.D, T = H.T, pz = D.LAY().nb.press, o = {};
+        const H = ${SOLO}, D = H.D, pz = D.LAY().nb.press, o = {};
         o.solid = []; for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) o.solid.push(H.cl(pz[0] + x, pz[1] + y));
-        const it = D.get().its.find(i => i.t === 'nbp'); o.it = !!it; if (it) { o.lab = it.lab(); o.ok = it.ok(H.me); const s0 = [D.get().secured, D.get().phase]; it.act(); o.same = JSON.stringify(s0) === JSON.stringify([D.get().secured, D.get().phase]); o.done = !!it.done; }
+        o.its = ['nbp0', 'nbp1', 'nbp2', 'nbdep'].map(k => !!D.get().its.find(i => i.t === k)); o.bun = D.get().its.filter(i => i.t === 'nbb').length;
         return o; })()`);
       t.eq(r.solid, ['m', 'm', 'm', 'm', 'm', 'm'], 'sechs solide Kacheln');
-      t.ok(r.it && /noch nicht in Betrieb/.test(r.lab) && r.ok && r.same && !r.done, 'E-Hinweis, keine halbe Interaktion: ' + JSON.stringify(r));
+      t.eq(r.its, [true, true, true, true], 'Objekte: anwerfen, Papier, Stau, Abgabe');
+      t.eq(r.bun, 18, 'Buendel liegen als feste Objekte bereit');
     },
   },
 ];
