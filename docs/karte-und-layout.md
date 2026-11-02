@@ -75,7 +75,7 @@ Die Felder des Vertrags stehen als Tabelle `MAP_FIELDS` in `index.html` (Name, G
 | `cage` | Erweiterung | Chip-Tausch (Casino) | `reset` |
 | `pumps` | Erweiterung | Zapfsäulen (Tankstelle) | `reset`, `pumpHit`, Zeichnen |
 | `prison` | Erweiterung | Gefängnis (Issue 45 und 49): `{cell, cells, cl, tb, pc, sx, locks, open0, sws, card, rally, rooms, dl, inm, gate, pick, panels}`, Kennzeichen des Szenarios `prison` | `scOf`, `reset` (`prisonSetup`, `prisonItems`), Zeichnen, Tests |
-| `nb` | Erweiterung | Notenbank (Ticket 61): `{zone, rig, keller, press, pcand, belt, tab, dep, stair, gates, rings}`, Kennzeichen des Szenarios `nb` (Loch im Keller als Fluchtzone in Kacheln, Bohrer 2x2, Kellerraum, Platz der Presse, Kandidaten, Kellertreppe, Engstellen der vier Ringe, Rechtecke je Ring aus den Engstellen) | `scOf`, `reset` (`nbSetup`, `nbItems`), `nbStep`, `finishLay` (Posten), Zeichnen, Tests |
+| `nb` | Erweiterung | Notenbank (Ticket 61): `{zone, rig, keller, press, pcand, belt, tab, dep, stair, gates, rings, vspots}`, Kennzeichen des Szenarios `nb` (Loch im Keller als Fluchtzone in Kacheln, Bohrer 2x2, Kellerraum, Platz der Presse, Kandidaten, Kellertreppe, Engstellen der vier Ringe, Rechtecke je Ring aus den Engstellen, `vspots` Kacheln der Regalspalten im Tresor für die Bündel) | `scOf`, `reset` (`nbSetup`, `nbItems`), `nbStep`, `finishLay` (Posten), Zeichnen, Tests |
 | `lasers` | Erweiterung | Laser-Tore (Museum) | Host-Schritt, Zeichnen |
 | `bn` | Erweiterung | Tresorbeute abweichend von `CFG.bundle` | `reset` |
 | `polAt` | Erweiterung | Polizeizeit der Karte | `startHeist` |
