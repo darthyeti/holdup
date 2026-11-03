@@ -55,4 +55,26 @@ module.exports = [
       t.ok(r.wave >= 1, 'eine Welle kommt trotz Sturm-Beamten (zaehlen nicht gegen maxEn): ' + r.wave);
     },
   },
+  {
+    name: 'Sturm: Aussenrichtung und Weg. Die Notenbank hat eine feste Ausrichtung (auch mit erzwungener Lage der Strasse bleibt LAY.nb unveraendert: wuerde man sie einmal drehen, schlaegt das hier an und nbSquad muss neu geprueft werden); fuer 12 Seeds erscheint der erste Trupp ausserhalb des Gebaeudes auf begehbaren Kacheln mit Weg zum Haltepunkt; ohne Weg (Treppe zugestellt) entsteht kein Sturm-Beamter, sondern ein gewoehnlicher Stuermer, der nicht gegen stormMax zaehlt',
+    timeout: 300000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => {
+        const D = __dbg, o = { bad: [], gates: new Set(), noPath: null }; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
+        for (const tn of [null, 'E']) { D.setTurn(tn); o.gates.add(D.layoutFor(5).nb.gates.haupt[0].join(',') + '|' + D.layoutFor(5).nb.rig.join(',')); } D.setTurn(null);
+        for (let sd = 1; sd <= 12; sd++) {
+          D.sessReset(); D.buildSeed(sd); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.nb.alarmAt = 1e6; D.reset(); D.startHeist(false); D.nbS().t0 = D.get().tH;
+          const n = D.nbSquad(1), q = D.get().en.filter(e => e.stm), W = D.world();
+          if (n !== 3 || q.length !== 3) o.bad.push(sd + ': Trupp ' + n + '/' + q.length);
+          for (const e of q) { if (D.nbRingAt(e.x, e.y) !== 0) o.bad.push(sd + ': im Gebaeude'); if (D.isSol(Math.floor(e.x / 32), Math.floor(e.y / 32))) o.bad.push(sd + ': in fester Kachel'); if (e.mode !== 'run' || !e.path.length) o.bad.push(sd + ': kein Weg'); }
+        }
+        D.sessReset(); D.buildSeed(5); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.nb.alarmAt = 1e6; D.reset(); D.startHeist(false);
+        const st = D.LAY().nb.gates.treppe[0]; D.world().setc(st[0], st[1], 'X'); const en0 = D.get().en.length; const n = D.nbSquad(4);
+        const add = D.get().en.slice(en0); o.noPath = { n, add: add.length, stm: add.filter(e => e.stm).length, mode: [...new Set(add.map(e => e.mode))] };
+        return { bad: o.bad, gates: [...o.gates], noPath: o.noPath }; })()`);
+      t.eq(r.gates.length, 1, 'LAY.nb bleibt auch bei erzwungener Lage der Strasse gleich: ' + JSON.stringify(r.gates));
+      t.eq(r.bad, [], 'erster Trupp: drei Beamte ausserhalb, auf begehbaren Kacheln, mit Weg: ' + JSON.stringify(r.bad.slice(0, 4)));
+      t.eq([r.noPath.add, r.noPath.stm, r.noPath.mode], [3, 0, ['push']], 'Treppe zugestellt: drei gewoehnliche Stuermer ohne Sturm-Kennzeichen (zaehlen nicht gegen stormMax): ' + JSON.stringify(r.noPath));
+    },
+  },
 ];
