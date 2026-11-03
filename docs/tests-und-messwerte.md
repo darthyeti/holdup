@@ -148,7 +148,7 @@ Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Der Debug-Hook und der Serv
 
 Offene Frage aus N2 (gehen Beamte gezielt zum Bohrer?): Der Bohrer steht durch "Beamter im Keller" nur 1 von 40 Läufen früh, solange die Treppe gesperrt ist; ohne Sperre öfter (28 Stillstände in 12 Läufen, Bot in der Kellerecke neben der Treppe, 12 Seeds). Keine Richtung nötig, kein Ticket.
 
-**Hebel zur Rundenlänge** (Till, Akte nb-balance, Antwort A): `drillT` 180 senkt die Siegquote stark (faultN 2: 8 %, faultN 1: 18 %, faultN 0: 28 %, 40 Seeds), weil die Wellen nach 130 s den Bot überrollen. Mit `faultN` 1 und dazu `wb` 0: 15 %, `maxEn` 10: 48 %, beide: 73 %, `pol` 8: 20 %. Gewählt: `drillT` 180, `faultN` 1, `wb` 0, `maxEn` 10.
+**Hebel zur Rundenlänge** (Till, Akte nb-balance, Antwort A): `drillT` 180 senkt die Siegquote stark (faultN 2: 8 %, faultN 1: 18 %, faultN 0: 28 %, 40 Seeds), weil die Wellen nach 130 s den Bot überrollen. Mit `faultN` 1 und dazu `wb` 0: 15 %, `maxEn` 10: 48 %, beide: 73 %, `pol` 8: 20 %. Gewählt: `drillT` 180, `faultN` 1 und für Solo `wb` 0 (`soloWb`), `maxEn` 10 (`soloMaxEn`); im Coop bleiben `wb` 2 und `maxEn` 14 (Leitstand nach Tills Spieltest: die Polizei darf im Coop nicht schwächer werden). Alle Messungen dieses Abschnitts sind Solo.
 
 **Nachher** (neue Startwerte: `drillT` 180, `faultN` 1, `wb` 0, `maxEn` 10, `pressF[3]` 0,3, `printT` 5), 40 Seeds ab 7000 (zweiter Lauf der Treppen-Strategie 65 %, der erste 73 %: Streuung des Bots):
 

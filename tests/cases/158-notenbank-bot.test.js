@@ -22,9 +22,27 @@ module.exports = [
     timeout: 240000,
     async run(t) {
       await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
-      const r = await t.page.evaluate(`(() => { const o = ${STRAT}; const a = bot.nb(Object.assign({ seed: 7003 }, o)); const b = bot.nb(Object.assign({ seed: 7003 }, o, { gier: 1e9, stay: 40 })); return { a: [a.res, a.t, a.holeT], b: [b.res, b.t, b.holeT] }; })()`);
+      const r = await t.page.evaluate(`(() => { const o = ${STRAT}; const a = bot.nb(Object.assign({ seed: 7003 }, o)); const b = bot.nb(Object.assign({ seed: 7003 }, o, { gier: 1e9, stay: 40, fleeHp: -1 })); return { a: [a.res, a.t, a.holeT], b: [b.res, b.t, b.holeT] }; })()`);
       t.ok(r.a[2] > 0, 'der Bohrer ist durch (Loch offen) bei Seed 7003: ' + JSON.stringify(r.a));
       t.ok(r.b[2] > 0 && (r.b[0] !== 'WIN' || r.b[1] >= r.b[2] + 39), 'mit grosser Gier und stay 40 geht er fruehestens 40 s nach Loch offen (oder faellt vorher): ' + JSON.stringify(r.b));
+    },
+  },
+  {
+    name: 'Notenbank-Balance: die schwaecheren Wellen (soloWb, soloMaxEn) gelten nur solo, im Coop (zwei Spieler) gelten wb 2 und maxEn 14 wie vor N5, Bohrer 180 s und Presse 30 % im inneren Bereich fuer alle',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const wave = D => { D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.get().en.length = 0; D.spawnWave(); const g = D.get(); return g.en.length + g.pcs.reduce((m, c) => m + (c.crew ? c.crew.length : 0), 0) + g.fps.reduce((m, f) => m + f.crew.length, 0); };
+        const D1 = __dbg; D1.sessReset(); D1.setScenario('nb'); D1.setSeedMode('random'); D1.setLage([]); D1.buildSeed(5); D1.reset(); D1.startHeist(false);
+        const solo = { max: D1.nbMaxEn(), n: wave(D1), drillT: D1.CFG.nb.drillT, pf3: D1.CFG.nb.pressF[3] };
+        const G = CT.mkGame('nb', 5, 2, 60, 20), A = G.A; A.startHeist(false);
+        const coop = { max: A.nbMaxEn(), n: wave(A), drillT: A.CFG.nb.drillT, pf3: A.CFG.nb.pressF[3], wb: A.LAY().wb };
+        return { solo, coop, cfg: [D1.CFG.nb.wb, D1.CFG.nb.soloWb, D1.CFG.nb.maxEn, D1.CFG.nb.soloMaxEn] }; })()`);
+      t.eq([r.solo.max, r.coop.max], [10, 14], 'maxEn solo 10, Coop 14: ' + JSON.stringify([r.solo.max, r.coop.max]));
+      t.ok(r.coop.n - r.solo.n >= 3, 'die erste Welle ist im Coop deutlich groesser (wb 2 und perPlayer): ' + JSON.stringify([r.solo.n, r.coop.n]));
+      t.eq(r.cfg, [2, 0, 14, 10], 'CFG.nb: wb 2, soloWb 0, maxEn 14, soloMaxEn 10');
+      t.ok(r.solo.drillT === 180 && r.coop.drillT === 180 && r.solo.pf3 === .3 && r.coop.pf3 === .3, 'Bohrer 180 s und pressF[3] 0,3 fuer alle: ' + JSON.stringify([r.solo, r.coop]));
     },
   },
 ];
