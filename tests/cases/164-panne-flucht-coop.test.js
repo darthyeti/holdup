@@ -37,4 +37,21 @@ module.exports = [
       t.eq(r.client, [true, 'Lautlos entkommen'], 'auch der Client sieht den Sieg');
     },
   },
+  {
+    name: 'Panne Coop: ohne Beute und ohne Entkommenen passiert in der Fluchtzone nichts, die Runde laeuft weiter',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => {
+        const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]);
+        let sd = 0; for (let s = 1; s < 800 && !sd; s++) if (D.genTruckMission(s).panne) sd = s;
+        const G = CT.mkGame('truck', sd, 2, 60, 20, null, 'S'), A = G.A, o = {};
+        A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
+        const run = sec => { for (let i = 0; i < Math.round(sec * 60); i++) { A.get().players.forEach(p => { p.hp = 1e9; p.dead = false; }); step(G.insts, G.net, 1 / 60); } };
+        const z = A.LANE().exit.cells.filter(c => !A.isSol(c[0], c[1])), p1 = A.get().players[1];
+        p1.x = z[0][0] * 32 + 16; p1.y = z[0][1] * 32 + 16; run(3);
+        o.v = [p1.loot, A.get().escaped, p1.out, A.get().ended ? 1 : 0, A.get().phase]; return o; })()`);
+      t.eq(r.v, [0, 0, false, 0, 1], 'Spieler ohne Beute in der Zone bleibt drin, nichts endet');
+    },
+  },
 ];
