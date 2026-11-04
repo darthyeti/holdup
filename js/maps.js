@@ -97,8 +97,8 @@ truck:{a:'den Panzerwagen',say:'Baut aus Kisten, Fässern und Autos Stück für 
 jewel:{a:'den Juwelier',say:'Erkunde den Juwelier. Vitrinen schneidest du leise auf, mit F ziehst du die Waffe und schlägst sie ein.',focus:'Erkunde den Juwelier. Vitrinen leise aufschneiden, mit F startest du den Überfall.'},
 gas:{a:'die Tankstelle',say:'Erkunde die Tankstelle. Die Polizei ist schnell: Nimm mit, was du tragen kannst. Zapfsäulen explodieren, wenn man sie beschießt.',focus:'Erkunde die Tankstelle. Die Polizei ist hier schnell, mit F startest du den Überfall.'},
 museum:{a:'das Museum',say:'Nachts im Museum: Dunkel, du siehst nur im Lichtkreis um dich. Wer im Lichtkegel einer Wache steht, fällt sofort auf, wer einen Laser berührt, löst Alarm aus. Der Hauptschalter legt Laser und Kameras 50 s lahm.',focus:'Nachts im Museum. Schleichen lohnt sich, der erste Schuss ist teuer.'},
-prison:{a:'das Gefängnis',say:'Gefängnisausbruch: Der Gefangene schleicht aus dem Zellentrakt in den Kontrollraum und öffnet dort die Zellentür. Draußen hält das Team das Tor auf (E am Tor, laut). Dann alle in den Fluchtwagen. Lautlos geht es auch: durch die Hintertür des Kontrollraums (Lieferung) zum Abholpunkt hinter der Mauer.',focus:'Gefängnisausbruch. Drinnen leise zum Kontrollraum, draußen das Tor aufhalten.'},
-nb:{a:'die Notenbank',say:'Die Notenbank: Kurz umsehen, der Alarm kommt schnell. Dann haltet ihr das Gebäude, bis sich im Keller der Tunnel öffnet. Beute aus dem Tresor, Flucht durch den Tunnel, kein Fluchtwagen.',focus:'Die Notenbank. Der Alarm kommt schnell, dann gilt es zu halten, bis der Tunnel offen ist.'},
+prison:{a:'das Gefängnis',say:'Gefängnisausbruch: Der Gefangene hebelt seine Zelle auf, nimmt der Trakt-Wache die Schlüsselkarte ab und öffnet das erste Gitter. Das zweite Gitter öffnet nur ein Schalter, den ihr drinnen bedient: Ihr kommt über die Küche (Lieferung) und die Kantine zur Wachstube und zum Kontrollraum. Das Tor ist der laute Weg. Lautlos geht es durch die Servicetür der Küche zum Abholpunkt.',focus:'Gefängnisausbruch. Drinnen Karte und Gitter, draußen die Schalter, am Ende das Tor oder die Servicetür.'},
+nb:{a:'die Notenbank',say:'Die Notenbank: Kurz umsehen, der Alarm kommt schnell. Dann haltet ihr das Gebäude Ring für Ring. Im Keller bohrt der Bohrer ein Loch, das ist der Ausstieg. Beute aus dem Tresor oder von der Presse, kein Fluchtwagen.',focus:'Die Notenbank. Der Alarm kommt schnell, dann gilt es zu halten, bis der Bohrer im Keller durch ist.'},
 casino:{a:'das Casino',say:'Erkunde das Casino. Chips tauschst du im Überfall am Cage in Geld, sonst zählen sie beim Abgang nur zur Hälfte.',focus:'Erkunde das Casino. Chips tauschst du am Cage, mit F startest du den Überfall.'}};
 /* Auftragslage (LAY.mission): eigener Zufallsstrom, aendert die Geometrie nicht. CLASSICM ergibt die klassische Lage. */
 const CLASSICM={code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,noteIdx:1,rot:[0,false,0,false],ev:[],at:{},lg:[]};
@@ -803,41 +803,78 @@ const deep=cells.filter(q=>!seen(q[0],q[1],K.sight));if(!deep.length){undo();con
  delete lay.stash;delete lay.spots;delete lay.lockCells;undo()}
 if(sp0)lay.spots=sp0;if(lk0)lay.lockCells=lk0;
 return lay}
-/* ---- Szenario Gefaengnis (Eilauftrag Issue 45): handgebaute Anlage, kein Generator. Mauer x0..25, y0..11 mit dem Aussentor (Tresortuer V) in der Ostmauer bei (25,5) und (25,6). Westen: Zellentrakt (vier Zellen y1..2, Gang y4..5, die Zellentuer Z zur Hofseite bei (12,4) und (12,5) ist verriegelt), darunter der Kontrollraum (y7..10) mit der Servicetuer bei (2,6) vom Gang aus. Osten: Hof x13..24.
-   Der Gefangene startet in Zelle 1, die anderen draussen vor dem Tor. LAY.prison: cell (Startpunkt Gefangener, Pixel), cells (Zellen), doors (Kacheln, die der Schalter oeffnet), psw (Schalter im Kontrollraum, Pixel), gate (Kachel des Aussentors). ---- */
-const PR_ROWS=['##########################','#..#..#..#..#............#','#..#..#..#..#............#','#d##L##L##L##............#','#...........L............#','#...........L............#','##d##########............#','#...........#............#','#..mm.ee....#............#','#...........#............#','#...........#............#','#########L################'];
-function prisonLayout(sd){const sn=typeof sd==='number'?sd:7,GX=25,er=5,bot=11;frameWorld(44,30,-6,-6,13);setc(37,er,'o');setc(37,er+1,'o');
-const rows=PR_ROWS.slice();rows[5]=rows[5].slice(0,25)+'V';rows[6]=rows[6].slice(0,25)+'V';asc(rows,0,0);
-[[15,3],[16,3],[22,9]].forEach(a=>setc(a[0],a[1],'b'));[[22,10],[23,10],[23,9]].forEach(a=>setc(a[0],a[1],'k'));[[14,10]].forEach(a=>setc(a[0],a[1],'q'));
-[[28,13],[33,13]].forEach(a=>setc(a[0],a[1],'q'));[[27,20],[32,21],[7,21],[16,21]].forEach(a=>setc(a[0],a[1],'p'));
-const P=CFG.prison,mr=mulberry32((((sn)*2654435761)>>>0)^0x2d4f1c93),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593),ti=tr()<.5?2:0,di=tr()<.6?0:1;
-const rot=Math.floor(mr()*4),gd=(p,route)=>({p:route[rot%route.length],route:rotR(route,rot%route.length,mr()<.5)});
-const g1={p:[8,4],route:[[10,4],[10,5],[3,5],[3,4]]},guards=[g1,gd(null,[[23,2],[23,8],[14,8],[14,2]]),gd(null,[[22,3],[22,8],[18,8],[18,3]])];
-const camc=[{x:13.5*T,y:1.4*T,a0:.7,amp:.55,sp:.55,rng:330,fov:.55},{x:24.5*T,y:1.4*T,a0:2.35,amp:.55,sp:.5,rng:330,fov:.55},{x:24.5*T,y:10.4*T,a0:3.9,amp:.5,sp:.5,rng:330,fov:.55}];
-const cells=[[1,1],[4,1],[7,1],[10,1]];
-return{seed:sn,decor:decorOf([]),prison:{cell:[2*T,2*T],cells,doors:[[12,4],[12,5],[4,3],[7,3],[10,3]],dl:{cells:[[9,11]],at:P.delivery[0]+Math.floor(mr()*(P.delivery[1]-P.delivery[0]+1))},inm:cells.slice(1).map(c=>[c[0],c[1]+1]),psw:{x:6.5*T,y:10.4*T},gate:[GX,er],pick:[7,13],panels:[[6,10],[10,7]]},hall:'Gefängnis',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
-mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot)return x>=13?'s':'m';if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>GX)return'a';return'y'},
-paintFloor(s){s.strokeStyle='rgba(255,255,255,.18)';s.lineWidth=2;s.strokeRect(14*T,2*T,10*T,8*T);s.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<5;i++)s.fillRect((GX+2.5)*T,2*T+i*T*1.6,3*T,2);
-for(const c of cells){s.fillStyle='rgba(60,70,90,.55)';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,T*1.6);s.fillStyle='#8b8f98';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,3)}},
-paintTop(s){for(const q of [[6,10],[10,7]]){const X=q[0]*T,Y=q[1]*T;s.fillStyle='#1d2026';s.fillRect(X+1,Y+3,T-2,T-6);s.fillStyle='#5d6b7a';s.fillRect(X+3,Y+5,T-6,T-10);s.fillStyle='#d4452f';s.fillRect(X+6,Y+8,5,5);s.fillStyle='#7ee34a';s.fillRect(X+T-12,Y+8,5,5);s.fillStyle='#e0b020';s.fillRect(X+8,Y+T-12,T-16,3)}s.strokeStyle='#2a2e34';s.lineWidth=2;for(const c of cells)for(let i=0;i<2;i++){const x=(c[0]+i)*T+16;s.beginPath();s.moveTo(x,3*T+2);s.lineTo(x,3*T+T-2);s.stroke()}
-/* Servicetuer (2,6): Stahlblatt mit Rahmen und Schild, damit man sie nicht fuer Wand haelt */
-const X=2*T,Y=6*T;s.fillStyle='#1d2026';s.fillRect(X-2,Y-3,T+4,T+6);s.fillStyle='#6b7c8f';s.fillRect(X+2,Y+1,T-4,T-2);s.fillStyle='rgba(255,255,255,.2)';s.fillRect(X+2,Y+1,T-4,3);s.fillStyle='#e0b020';s.fillRect(X+6,Y+T/2-3,T-12,6);s.fillStyle='#1d2026';s.font='bold 6px monospace';s.textAlign='center';s.fillText('SERVICE',X+T/2,Y+T/2+2);s.textAlign='left'},
-spawn:{x:28.2*T,y:2.4*T},zones:[[0,0,GX,bot]],lobby:[13,1,24,10],
+/* ---- Szenario Gefaengnis v2 (Issue 49, Nachfolger von Issue 45): handgebaute Anlage mit Varianten aus dem Seed, kein Generator. Mauer x0..49, y0..23, das Aussentor (Tresortuer V) in der Ostmauer bei (49,6) und (49,7).
+   Zonen: INNEN (Zellentrakt A y1..8 und B y15..22, Gang x14..15, Krankenstation, Hof 2) und AUSSEN (Hof 1, Mittelflur, Wachstube, Kontrollraum, Kantine, Waescherei, Kueche mit Serviceeingang bei (43,23)). Zwischen INNEN und AUSSEN liegt nur das Gitter II bei (16,18) und (16,19).
+   Verriegelte Stellen (LAY.prison.locks): z (Zellentuer des Gefangenen: von innen aufhebeln oder Schalter), zi (alle anderen Zellentueren des Trakts: Schalter), gi (Gitter Trakt zum Gang: nur von innen mit der Schluesselkarte der Trakt-Wache), gii (Gitter Gang zur Kantine: nur von aussen per Schalter in Wachstube oder Kontrollraum). Welcher der beiden Schalter was oeffnet (sx), welcher Trakt (tb) und welche Zelle (pc) der Gefangene bekommt, wuerfelt der Seed. ---- */
+const PR_ROWS=['##################################################',
+'#..#..#..#..##..#.......#......#.....#...........#',
+'#..#..#..#..##..#.......#.ee.m.#.mme.#...........#',
+'#L##L##L##L###..#..bb...#......#.....#..bb.......#',
+'#............L..d.......#......d.....#...........#',
+'#............L..#.......#......#.....#...........#',
+'#L##L##L##L###..#....b..#......#....e#...........V',
+'#..#..#..#..##..#.......#......#.....#...........V',
+'#..#..#..#..##..#.......#......#.....#...........#',
+'##############..###########d##########...........#',
+'#............#..#....................#...........#',
+'#.bb..bb..bb.d..#....................d..........k#',
+'#............#..#....................#.......bbkk#',
+'#............#..#....................#.q..k......#',
+'##############..#######d##############...........#',
+'#..#..#..#..##..#.............#......#############',
+'#..#..#..#..##..#..CCCCCCC....#.kk...#...........#',
+'#L##L##L##L###..#.b...........#......#.........kk#',
+'#............L..L.............#......#..eeee....k#',
+'#............L..L..eee....ee..d......d...........#',
+'#L##L##L##L###..#.............#......#..ee.......#',
+'#..#..#..#..##..#....ee...ee..#.q..k.#.........q.#',
+'#..#..#..#..##..#.............#......#...........#',
+'###########################################L######'];
+function prisonLayout(sd){const sn=typeof sd==='number'?sd:7,GX=49,er=6,bot=23;frameWorld(68,42,-6,-6,bot+2);setc(GX+12,er,'o');setc(GX+12,er+1,'o');
+asc(PR_ROWS,0,0);
+[[GX+2,bot+9],[GX+7,bot+10],[7,bot+10],[16,bot+10],[30,bot+10]].forEach(a=>setc(a[0],a[1],'p'));
+const P=CFG.prison,mr=mulberry32((((sn)*2654435761)>>>0)^0x2d4f1c93),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593),vr=mulberry32((((sn)*374761393)>>>0)^0x6a09e667),ti=tr()<.5?2:0,di=tr()<.6?0:1;
+/* Varianten aus dem Seed (eigener Strom vr): tb Trakt des Gefangenen (0 A oben, 1 B unten), pc seine Zelle (0..7), sx Schalter getauscht (Wachstube/Kontrollraum oeffnen jeweils das andere). */
+const tb=vr()<.5?0:1,pc=Math.floor(vr()*8),sx=vr()<.5?0:1,cxs=[1,4,7,10],mkCells=y0=>cxs.map(x=>({t:[x,y0],d:[x,y0+2],s:[x,y0+1]})).concat(cxs.map(x=>({t:[x,y0+6],d:[x,y0+5],s:[x,y0+6]})));
+const y0=tb?15:1,yo=tb?1:15,cl8=mkCells(y0),pcell=cl8[pc],allCells=mkCells(1).concat(mkCells(15)).map(c=>c.t);
+const gi=[[13,y0+3],[13,y0+4]];[[13,yo+3],[13,yo+4]].forEach(c=>setc(c[0],c[1],'l'));
+const swW={at:[30,6],opens:sx?['gii']:['z','zi']},swK={at:[34,6],opens:sx?['z','zi']:['gii']},swOf=id=>swW.opens.includes(id)?'wach':'kon';
+const locks=[{id:'z',kind:'door',cells:[pcell.d],ops:[{k:'pry',who:'pz',at:pcell.s},{k:'sw',who:'team',sw:swOf('z'),at:(swOf('z')==='wach'?swW:swK).at}]},
+{id:'zi',kind:'door',cells:cl8.filter((c,i)=>i!==pc).map(c=>c.d),ops:[{k:'sw',who:'team',sw:swOf('zi'),at:(swOf('zi')==='wach'?swW:swK).at}]},
+{id:'gi',kind:'grille',cells:gi,ops:[{k:'card',who:'pz',at:[12,y0+3]},{k:'pry',who:'pz',at:[12,y0+3],alarm:1}]},
+{id:'gii',kind:'grille',cells:[[16,18],[16,19]],ops:[{k:'sw',who:'team',sw:swOf('gii'),at:(swOf('gii')==='wach'?swW:swK).at}]}];
+const rot=()=>Math.floor(mr()*4),gd=route=>{const k=rot()%route.length;return{p:route[k],route:rotR(route,k,mr()<.5)}};
+const guards=[gd([[2,4],[11,4],[11,5],[2,5]]),gd([[2,18],[11,18],[11,19],[2,19]]),gd([[14,2],[14,20],[15,20],[15,2]]),gd([[18,2],[22,2],[22,7],[18,7]]),gd([[26,4],[29,6],[27,8],[27,11],[19,11],[35,11],[27,11],[27,8]]),gd([[19,18],[28,18],[28,20],[19,20]]),gd([[39,2],[47,2],[47,10],[39,10]])];
+const camc=[{x:38.5*T,y:1.4*T,a0:.75,amp:.55,sp:.55,rng:330,fov:.55},{x:48.5*T,y:1.4*T,a0:2.4,amp:.55,sp:.5,rng:330,fov:.55},{x:48.5*T,y:13.4*T,a0:3.9,amp:.5,sp:.5,rng:330,fov:.55},{x:14.5*T,y:10.5*T,a0:1.57,amp:.45,sp:.5,rng:330,fov:.5},{x:36.5*T,y:10.5*T,a0:3.14,amp:.4,sp:.5,rng:330,fov:.5},{x:29.5*T,y:15.4*T,a0:2.35,amp:.5,sp:.5,rng:330,fov:.55}];
+const rooms={trA:[1,1,12,8],trB:[1,15,12,22],gang:[14,1,15,22],kran:[1,10,12,13],hof2:[17,1,23,8],wach:[25,1,30,8],kon:[32,1,36,8],flur:[17,10,36,13],kan:[17,15,29,22],wasch:[31,15,36,22],kue:[38,16,48,22],hof1:[38,1,48,14]};
+const inR=(r,x,y)=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3],pan=[swW.at,swK.at,[36,3]];
+return{seed:sn,decor:decorOf([]),prison:{cell:[(pcell.t[0]+1)*T,(pcell.t[1]+1)*T],cells:allCells,cl:pcell,tb,pc,sx,locks,open0:[[13,yo+3],[13,yo+4]],sws:{wach:swW,kon:swK},card:{g:tb},rally:[[43,7],[22,18],[14,10],[6,tb?18:4]],rooms,
+dl:{cells:[[43,bot]],at:P.delivery[0]+Math.floor(mr()*(P.delivery[1]-P.delivery[0]+1))},inm:[1,3,5,7].map(k=>{const c=cl8[(pc+k)%8].t;return[c[0],c[1]+1]}),gate:[GX,er],pick:[41,bot+2],panels:pan},hall:'Gefängnis',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
+mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot)return inR(rooms.hof1,x,y)||inR(rooms.hof2,x,y)?'s':'m';if(y>=bot+11)return'l';if(y>=bot+9)return's';if(y>=bot+5)return'a';if(y>=bot+3)return's';if(x>GX)return'a';return'y'},
+paintFloor(s){s.strokeStyle='rgba(255,255,255,.18)';s.lineWidth=2;s.strokeRect(39*T,2*T,9*T,11*T);s.strokeRect(18*T,2*T,5*T,6*T);s.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<5;i++)s.fillRect((GX+2.5)*T,2*T+i*T*1.6,3*T,2);
+s.fillStyle='rgba(255,255,255,.07)';for(let y=16;y<=22;y++)for(let x=38;x<=48;x++)if((x+y)%2)s.fillRect(x*T,y*T,T,T);
+s.fillStyle='rgba(120,200,150,.35)';s.fillRect(6.2*T,10.4*T,T*.6,T*2.2);s.fillRect(5.4*T,11.2*T,T*2.2,T*.6);
+for(const c of allCells){s.fillStyle='rgba(60,70,90,.55)';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,T*1.6);s.fillStyle='#8b8f98';s.fillRect(c[0]*T+3,c[1]*T+4,T*.8,3)}
+s.fillStyle='rgba(20,24,30,.38)';s.font='bold 11px monospace';s.textAlign='center';[['ZELLENTRAKT A',6.5,5.4],['ZELLENTRAKT B',6.5,19.4],['KRANKENSTATION',6.5,13.1],['GANG',15,9.4],['HOF 2',20.5,5],['WACHSTUBE',27.5,7.2],['KONTROLLRAUM',34,7.4],['FLUR',27,12.2],['KANTINE',23,21.5],['WÄSCHEREI',34,18],['KÜCHE',43.5,21.5],['HOF 1',43.5,13.4]].forEach(q=>s.fillText(q[0],q[1]*T,q[2]*T));s.textAlign='left'},
+paintTop(s){for(const q of pan){const X=q[0]*T,Y=q[1]*T;s.fillStyle='#1d2026';s.fillRect(X+1,Y+3,T-2,T-6);s.fillStyle='#5d6b7a';s.fillRect(X+3,Y+5,T-6,T-10);s.fillStyle='#d4452f';s.fillRect(X+6,Y+8,5,5);s.fillStyle='#7ee34a';s.fillRect(X+T-12,Y+8,5,5);s.fillStyle='#e0b020';s.fillRect(X+8,Y+T-12,T-16,3)}
+/* Serviceeingang (43,23): Stahlblatt mit Rahmen und Schild, damit man ihn nicht fuer Wand haelt */
+const X=43*T,Y=bot*T;s.fillStyle='#1d2026';s.fillRect(X-2,Y-3,T+4,T+6);s.fillStyle='#6b7c8f';s.fillRect(X+2,Y+1,T-4,T-2);s.fillStyle='rgba(255,255,255,.2)';s.fillRect(X+2,Y+1,T-4,3);s.fillStyle='#e0b020';s.fillRect(X+6,Y+T/2-3,T-12,6);s.fillStyle='#1d2026';s.font='bold 6px monospace';s.textAlign='center';s.fillText('SERVICE',X+T/2,Y+T/2+2);s.textAlign='left'},
+spawn:{x:(GX+3.2)*T,y:2.4*T},zones:[[0,0,GX,bot]],lobby:[38,1,48,14],
 cams:camc,tellers:[],mgr:null,guards,civ:0,
 mission:{code:'0000',vault:'drill',guards:guards.length,west:false,cams:camc.length,civ:0,tags:[],ev:[],lg:[],at:{},extra:[],bags:[],blackoutAt:null},
-note:[7,8],mon:[3,8],tills:[],atms:[],backDoors:[],vault:{door:[GX,er],pad:[GX+1,er+2],dir:-1,bundles:[]},sw:{x:10.5*T,y:7.6*T},
-exit:{x:(GX+1)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:GX+1},van:{y:(er+1)*T,x0:(GX+7)*T,stop:(GX+1)*T,dir:-1},flip:false,laneY:19*T,title:titleBox(),polAt:P.pol,wb:P.wb,goods:[]}}
+note:[35,2],mon:[33,2],tills:[],atms:[],backDoors:[],vault:{door:[GX,er],pad:[GX+1,er+2],dir:-1,bundles:[]},sw:{x:36.5*T,y:3.6*T},
+exit:{x:(GX+1)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:GX+1},van:{y:(er+1)*T,x0:(GX+7)*T,stop:(GX+1)*T,dir:-1},flip:false,laneY:(bot+8)*T,title:titleBox(),polAt:P.pol,wb:P.wb,goods:[]}}
 /* ---- Szenario Notenbank (Ticket 61, N1, docs/szenarien.md): handgebaut, kein Generator, nicht gedreht, ohne Ausweichpunkt. Vier Verteidigungsringe von der Strasse (Sueden) nach innen (Norden), jeder mit einer klaren Engstelle:
    Ring 1 Vorhalle (y24..27) mit Haupttuer (13..14,28), Seitentuer Ost (27,25..26) und Hintertuer West L (0,25), dazu Fenster. Engstelle zu Ring 2: die Schleuse (13..14,23).
    Ring 2 Kassenhalle (y19..22, Theke mit Schalterbereich y16..17) mit Buero und Sicherheitsraum im Westen, Fenster erlaubt. Engstelle zu Ring 3: die Panzertuer (15..16,15).
-   Ring 3 innerer Bereich (y7..14): Tresorraum (West, V bei (10,9..10)), Verteiler (x11..19) und Pressenraum (Ost, Tuer (20,10)). Engstelle zu Ring 4: die Kellertreppe (16,6).
-   Ring 4 Keller (x14..24, y1..5) mit der Tunneltuer L (13,3), die Strecke (x7..12, y2..3) ist von Waenden umschlossen, ihr Ende (nb.zone) ist die Fluchtzone.
-   LAY.nb: door (Tunneltuer), zone [x0,y0,x1,y1] in Kacheln, press (Kachel links oben der Notenpresse, 3x2, solide), pcand (Kandidaten), stair (Kellertreppe), gates (Engstellen je Ring: haupt, seite, hinten, schleuse, panzer, treppe als Kachellisten, fuer Tests und Doku). ---- */
+   Ring 3 innerer Bereich (y7..14): Tresorraum (West, V bei (10,9..10)), Verteiler (x11..16) und Pressenraum (Ost, x18..26, Tuer (17,10), um Presse, Band und Tisch bleibt ein Gang). Engstelle zu Ring 4: die Kellertreppe (16,6).
+   Ring 4 Keller (x14..24, y1..5) mit dem Bohrer (nb.rig, 2x2): bei 100 % verschwindet er, das Loch im Boden (nb.zone) ist der Ausstieg und die Fluchtzone.
+   LAY.nb: zone [x0,y0,x1,y1] in Kacheln (das Loch im Boden, Ring 4), rig (Bohrer 2x2), press (Kachel links oben der Notenpresse, 3x2, solide), pcand (Kandidaten), stair (Kellertreppe), gates (Engstellen je Ring: haupt, seite, hinten, schleuse, panzer, treppe als Kachellisten, fuer Tests und Doku). ---- */
 function nbLayout(sd){const sn=typeof sd==='number'?sd:7,GX=27,bot=28;frameWorld(52,48,-6,-6,30);setc(45,25,'o');setc(45,26,'o');
 fill(0,0,GX,bot,'#');
-fill(14,1,24,5,'.');setc(16,6,'d');fill(-2,2,12,3,'.');fill(-2,1,-1,1,'#');fill(-2,4,-1,4,'#');setc(13,3,'L');fill(17,2,18,3,'m');
+fill(14,1,24,5,'.');setc(16,6,'d');fill(17,2,18,3,'N');
 fill(1,7,9,14,'.');fill(10,7,10,14,'#');setc(10,9,'V');setc(10,10,'V');
-fill(11,7,19,14,'.');fill(20,7,20,14,'#');setc(20,10,'d');fill(21,7,26,14,'.');
+fill(11,7,16,14,'.');fill(17,7,17,14,'#');setc(17,10,'d');fill(18,7,26,14,'.');
 setc(15,15,'d');setc(16,15,'d');
 fill(1,16,6,18,'.');fill(1,19,6,19,'#');fill(1,20,6,22,'.');fill(7,16,7,22,'#');setc(7,17,'d');setc(7,21,'d');
 fill(8,19,26,22,'.');fill(12,16,12,18,'#');fill(13,16,26,17,'.');fill(14,18,26,18,'C');setc(13,18,'g');fill(8,16,11,18,'.');
@@ -848,32 +885,33 @@ fill(1,24,26,27,'.');[[13,bot],[14,bot],[GX,25],[GX,26]].forEach(a=>setc(a[0],a[
 [[2,17],[3,17],[4,17]].forEach(a=>setc(a[0],a[1],'e'));[[2,21],[3,21],[4,21]].forEach(a=>setc(a[0],a[1],'m'));
 [[16,17],[19,17],[22,17]].forEach(a=>setc(a[0],a[1],'r'));[[10,21],[9,21],[9,20]].forEach(a=>setc(a[0],a[1],'b'));[[8,24],[9,24]].forEach(a=>setc(a[0],a[1],'A'));
 [[24,26],[3,26],[26,20],[1,24]].forEach(a=>setc(a[0],a[1],'p'));
-[[13,13],[18,13],[12,8]].forEach(a=>setc(a[0],a[1],'k'));
+[[13,13],[15,13],[12,8]].forEach(a=>setc(a[0],a[1],'k'));
 [[14,5],[24,5],[24,1],[14,1]].forEach(a=>setc(a[0],a[1],'k'));setc(23,1,'q');setc(19,5,'P');
 [[30,2],[31,2],[40,12],[41,12]].forEach(a=>setc(a[0],a[1],'k'));[[32,8],[38,3]].forEach(a=>setc(a[0],a[1],'q'));[[30,12],[30,5],[-2,8],[-2,14]].forEach(a=>setc(a[0],a[1],'p'));
 const P=CFG.nb,h0=(((sn)*2654435761)>>>0),mr=mulberry32(h0^0x3a91c7d5),tr=mulberry32((((sn)*40503)>>>0)^0x6b43a9b5),pr=mulberry32(h0^0x51e7a2f1),ti=tr()<.5?2:0,di=tr()<.6?0:1;
-const pcand=[[22,8],[22,12],[23,10]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'m');
+const pcand=[[19,8],[19,10],[19,12]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'N');setc(22,press[1],'N');setc(22,press[1]+1,'N');fill(23,press[1],25,press[1]+1,'N');fill(20,3,21,3,'N');
 const rot=Math.floor(mr()*4),rev=mr()<.5,gd=(route)=>({p:route[rot%route.length],route:rotR(route,rot%route.length,rev)});
 const guards=[gd([[6,25],[20,25],[14,24],[14,22],[22,21],[10,22],[13,22],[13,24]]),{p:[16,2],route:[[16,2],[22,2],[22,4],[16,4]]}];
 const camc=[{x:2.5*T,y:24.5*T,a0:.4,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:24.5*T,a0:2.7,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:19.5*T,a0:2.4,amp:.55,sp:.55,rng:280,fov:.5},{x:8.5*T,y:19.5*T,a0:.7,amp:.5,sp:.5,rng:280,fov:.5},{x:15.5*T,y:7.5*T,a0:1.2,amp:.7,sp:.7,rng:220,fov:.55},{x:14.5*T,y:1.5*T,a0:.5,amp:.5,sp:.5,rng:280,fov:.5},{x:7.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.5,rng:300,fov:.5},{x:20.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.45,rng:300,fov:.5}];
 const cams=pickCams(mr,camc,P.cams),code=String(1000+Math.floor(mr()*9000)),gates={haupt:[[13,bot],[14,bot]],seite:[[GX,25],[GX,26]],hinten:[[0,25]],schleuse:[[13,23],[14,23]],panzer:[[15,15],[16,15]],treppe:[[16,6]]};
-const nbo={door:[13,3],zone:[-2,2,-1,3],rig:[17,2],keller:[14,1,24,5],press,pcand,stair:[16,6],gates};
+const sy=gates.schleuse[0][1],py=gates.panzer[0][1],ty=gates.treppe[0][1],rings=[[[0,sy+1,GX,bot]],[[0,py+1,GX,sy]],[[0,ty+1,GX,py]],[[0,0,GX,ty]]];
+const vspots=[];for(let y=7;y<=14;y++)for(const x of [1,2,4,5,7,8])vspots.push([x,y]);
+const nbo={rings,vspots,zone:[17,2,18,3],rig:[17,2],keller:[14,1,24,5],press,pcand,belt:[22,press[1]],tab:[23,press[1]],dep:[20,3],stair:[16,6],gates};
 return{seed:sn,decor:decorOf([]),nb:nbo,hall:'Notenbank',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
-mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=21?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if((y===2||y===3)&&x>=-2&&x<=12)return'a';if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
-paintFloor(s){const N=nbo,pz=N.press;s.fillStyle='rgba(90,70,40,.35)';s.fillRect(10*T,24*T+4,8*T,3);s.fillRect(10*T,27*T-6,8*T,3);s.strokeStyle='rgba(224,182,40,.55)';s.lineWidth=3;s.beginPath();s.arc(13.5*T+16,25.6*T,22,0,6.283);s.stroke();s.fillStyle='rgba(224,182,40,.55)';s.font='bold 12px monospace';s.textAlign='center';s.fillText('NOTENBANK',14*T,25.6*T+4);s.textAlign='left';
+mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot){if(y<=5)return x>=14?'s':'a';if(y<=14){if(x<=9)return'm';return x>=18?'s':'k'}if(x<=6&&y<=22)return'w';if(y>=24||(y>=19&&x>=8))return'm';if(y>=16&&x>=13)return'k';return't'}if(y>=36)return'l';if(y===35)return's';if(y>=31)return'a';if(y>=29)return's';if(x>GX)return'a';if(x<0)return'l';return'y'},
+paintFloor(s){const N=nbo;s.fillStyle='rgba(90,70,40,.35)';s.fillRect(10*T,24*T+4,8*T,3);s.fillRect(10*T,27*T-6,8*T,3);s.strokeStyle='rgba(224,182,40,.55)';s.lineWidth=3;s.beginPath();s.arc(13.5*T+16,25.6*T,22,0,6.283);s.stroke();s.fillStyle='rgba(224,182,40,.55)';s.font='bold 12px monospace';s.textAlign='center';s.fillText('NOTENBANK',14*T,25.6*T+4);s.textAlign='left';
 for(let i=0;i<5;i++){s.fillStyle=i%2?'#9a9a94':'#b2b2ab';s.fillRect(11*T+i*5,(bot+1)*T+i*10,6*T-i*10,10)}
-s.fillStyle='rgba(60,45,30,.5)';s.fillRect(-2*T,2*T,15*T,2*T);s.fillStyle='rgba(224,182,40,.55)';for(let i=-2;i<13;i++)s.fillRect(i*T+4,3*T-1,T-8,2);
-s.fillStyle='rgba(126,227,74,.16)';s.fillRect(N.zone[0]*T,N.zone[1]*T,(N.zone[2]-N.zone[0]+1)*T,(N.zone[3]-N.zone[1]+1)*T)},
-paintTop(s){const N=nbo,q=N.stair;s.fillStyle='rgba(20,14,8,.38)';s.fillRect(0,2*T,7*T,2*T);s.strokeStyle='rgba(224,182,40,.7)';s.lineWidth=2;s.setLineDash([5,4]);s.strokeRect(2,2*T+2,6*T+T-4,2*T-4);s.setLineDash([]);s.fillStyle='#e0b020';s.font='bold 7px monospace';s.textAlign='center';s.fillText('UNTER DER MAUER',3.5*T,2*T-3);s.fillStyle='#2a2e34';s.beginPath();s.arc(-1*T,3*T,24,0,6.283);s.fill();s.strokeStyle='#8f97a2';s.lineWidth=3;s.stroke();for(let i=-1;i<=1;i++){s.beginPath();s.moveTo(-1*T-16,3*T+i*8);s.lineTo(-1*T+16,3*T+i*8);s.stroke()}s.fillStyle='#e0b020';s.fillText('KANAL',-1*T,2*T-3);s.textAlign='left';for(let i=0;i<4;i++){s.fillStyle=i%2?'#4a4f57':'#5b616b';s.fillRect(q[0]*T+4,q[1]*T+i*8,T-8,7)}s.fillStyle='#e0b020';s.font='bold 7px monospace';s.textAlign='center';s.fillText('KELLER',q[0]*T+T/2,q[1]*T-2);
+s.fillStyle='rgba(120,100,60,.22)';s.fillRect(N.zone[0]*T-4,N.zone[1]*T-4,(N.zone[2]-N.zone[0]+1)*T+8,(N.zone[3]-N.zone[1]+1)*T+8)},
+paintTop(s){const N=nbo,q=N.stair;for(let i=0;i<4;i++){s.fillStyle=i%2?'#4a4f57':'#5b616b';s.fillRect(q[0]*T+4,q[1]*T+i*8,T-8,7)}s.fillStyle='#e0b020';s.font='bold 7px monospace';s.textAlign='center';s.fillText('KELLER',q[0]*T+T/2,q[1]*T-2);
 for(const g of [N.gates.panzer,N.gates.schleuse]){const X=g[0][0]*T,Y=g[0][1]*T,W=g.length*T;s.fillStyle='#1d2026';s.fillRect(X-2,Y-2,W+4,T+4);s.fillStyle=g===N.gates.panzer?'#6b7c8f':'#3a3f48';s.fillRect(X+2,Y+2,W-4,T-4);s.fillStyle='rgba(255,255,255,.2)';s.fillRect(X+2,Y+2,W-4,3);if(g===N.gates.schleuse){s.fillStyle='#1d2026';for(let i=1;i<7;i++)s.fillRect(X+2+i*(W-4)/7-1,Y+2,2,T-4)}else{s.fillStyle='#e0b020';s.fillRect(X+W/2-8,Y+T/2-3,16,6)}s.fillStyle='#e8e4d8';s.font='bold 6px monospace';s.fillText(g===N.gates.panzer?'PANZERTÜR':'SCHLEUSE',X+W/2,Y+T/2+2)}
 s.textAlign='left'},
-spawn:{x:13.9*T,y:30.6*T},zones:[[13,16,26,17],[1,7,9,14],[1,16,6,18],[1,20,6,22],[11,7,26,14],[14,1,24,5],[7,2,12,3],[28,-99,99,bot]],lobby:[8,19,26,22],
+spawn:{x:13.9*T,y:30.6*T},zones:[[13,16,26,17],[1,7,9,14],[1,16,6,18],[1,20,6,22],[11,7,26,14],[14,1,24,5],[28,-99,99,bot]],lobby:[8,19,26,22],
 cams,tellers:[[16,16],[19,16],[22,16]],mgr:{p:[3,16],route:[[3,16],[5,18],[7,17],[10,20],[20,20],[10,22],[5,17]]},guards,civ:6,
 mission:{code,vault:'code',guards:guards.length,west:true,cams:cams.length,civ:6,tags:[],ev:[],lg:[],at:{},extra:[],bags:[],blackoutAt:null},
 note:[3,17],mon:[3,21],tills:[[16,17],[19,17],[22,17]],atms:[[8,24],[9,24]],backDoors:[[0,25]],
 vault:{door:[10,9],pad:[11,10],dir:-1,bundles:[[2,8],[4,8],[6,8],[8,8],[2,13],[4,13],[6,13],[8,13]]},sw:{x:1*T+16,y:21*T+22},
 exit:{x:(GX+1)*T,y0:24*T,y1:28*T,dir:1,tx:GX+1},van:{y:26*T,x0:34*T,stop:(GX+1)*T,dir:-1},flip:false,laneY:(bot+6)*T,title:titleBox(),polAt:P.pol,wb:P.wb,goods:[]}}
-/* Notenbank: Die Polizei-Posten stehen nicht am Tunnel (CFG.nb.postD Kacheln um die Fluchtzone), die Ankerposten an der Strasse bleiben. */
+/* Notenbank: Die Polizei-Posten stehen nicht am Loch (CFG.nb.postD Kacheln um die Fluchtzone), die Ankerposten an der Strasse bleiben. */
 function finishLay(lay,sn){const r=placeStash(clearLane(placeMeet(fillDerived(lay))),sn);if(r.nb&&r.posts){const z=r.nb.zone,cx=(z[0]+z[2]+1)/2,cy=(z[1]+z[3]+1)/2;r.posts=r.posts.filter(q=>q.anchor||Math.hypot(q.x+.5-cx,q.y+.5-cy)>=CFG.nb.postD)}return r}
 return{CLASSICM,CLASSICP,CS_FLOORS,GS_SHOPS,JW_HALLS,LAGE,MU_HALLS,PLACE,SCL,casinoLayout,casinoParams,classicLayout,csTubes,finishLay,gasLayout,gasParams,gasWide,prisonLayout,nbLayout,genCasino,genGas,genJewel,genLayout,genMission,genMuseum,genTruckMission,inSite,inStash,jewParams,jewWide,jewelLayout,muTubes,mulberry32,museumLayout,museumParams,scOf,truckLayout,turnLayout,validLayout,warnFor}}
 mkMaps.api=1;
