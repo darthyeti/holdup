@@ -79,23 +79,23 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {}, lv = (id, key) => [1, 2, 3].map(r => D.skv({ sk: { [id]: r } }, id, key));
-        o.run = lv('A1', 'run'); o.pierce = lv('A2', 'pierce'); o.mat = lv('V1', 'mat'); o.sw = lv('V2', 'sw'); o.lean = lv('V2', 'lean'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
+        o.run = lv('A1', 'run'); o.pierce = lv('A2', 'pierce'); o.mat = lv('V1', 'mat'); o.lo = lv('V2', 'lo'); o.lf = lv('V2', 'lf'); o.lean = lv('V2', 'lean'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
-        o.marker = [0, 1, 2, 3].map(r => { D.sessReset(); if (r) D.SESSION.sk.V2 = r; D.reset(); return D.get().me.sw; });
+        o.marker = [0, 1, 2, 3].map(r => D.skv({ sk: { V2: r } }, 'V2', 'lf'));
         o.gone = ['A3', 'A4', 'U3'].map(id => Object.keys(D.CFG.skill[id]).filter(k => Array.isArray(D.CFG.skill[id][k])));
         return o;
       });
-      t.eq(r.run, [0, 0, 1], 'Laeufer: erst mit Ruhige Hand 3, die Zusatzstreuung beim Laufen faellt ganz weg');
-      t.eq(r.pierce, [0, 0, .5], 'Durchschuss: erst mit Durchschlag 3, der Beamte dahinter bekommt die Haelfte');
+      t.eq(r.run, [0, 0, .5], 'Laeufer: erst mit Ruhige Hand 3, die Zusatzstreuung beim Laufen halbiert');
+      t.eq(r.pierce, [0, 0, .35], 'Durchschuss: erst mit Durchschlag 3, der Beamte dahinter bekommt 35 %');
       t.eq(r.mat, [0, 0, 1], 'Materialsammler: erst mit Baumeister 3, ein Material mehr je Moebelstueck');
-      t.eq(r.sw, [0, 0, .45], 'Zaeh: erst mit Deckung 3, 45 % Leben');
-      t.eq(r.cap, [0, 0, 16], 'Verhandler: erst mit Sanitaeter 3, 16 s Aufschub');
+      t.eq([r.lo, r.lf], [[0, 0, .35], [0, 0, .3]], 'Zaeh: erst mit Deckung 3, unter 35 % Leben 30 % weniger Schaden');
+      t.eq(r.cap, [0, 0, 10], 'Verhandler: erst mit Sanitaeter 3, 10 s Aufschub');
       t.eq(r.heat, [0, 0, .5], 'Verhandler: erst mit Sanitaeter 3, Fahndung durch Geiseln halbiert');
-      t.eq(r.van, [0, 0, 8], 'Fahrer: erst mit Techniker 3, 8 s frueher');
-      t.eq(r.lean, [.25, .4, .55], 'Deckung bringt weiter 25 / 40 / 55 % weniger Schaden beim Lehnen');
+      t.eq(r.van, [0, 0, 5], 'Fahrer: erst mit Techniker 3, 5 s frueher');
+      t.eq(r.lean, [.25, .4, .45], 'Deckung bringt 25 / 40 / 45 % weniger Schaden beim Lehnen');
       t.eq(r.rev, [.25, .4, .55], 'Sanitaeter bringt weiter das schnellere Wiederbeleben');
       t.eq(r.sus, [.1, .2, .3], 'Techniker (frueher Schleicher) bringt weiter den langsameren Verdacht');
-      t.eq(r.marker, [0, 0, 0, 1], 'der Zaeh-Marker am Spieler (sw) steht nur mit Deckung 3');
+      t.eq(r.marker, [0, 0, 0, .3], 'Zaeh (lf) wirkt nur mit Deckung 3');
       t.eq(r.gone, [['cnt'], ['cnt'], ['cnt', 'hps']], 'Praezisionsgewehr und Granatwerfer haben nur die Stueckzahl, der Notfallkoffer Stueckzahl und Heilung (hps)');
     },
   },
@@ -177,7 +177,7 @@ module.exports = [
     },
   },
   {
-    name: 'Zusatz Laeufer (Ruhige Hand 3): Laufen kostet keine Zusatzstreuung mehr, Streuung im Stehen und die -30 % der Ruhigen Hand bleiben; mit Stufe 2 zaehlt das Laufen noch',
+    name: 'Zusatz Laeufer (Ruhige Hand 3): Laufen kostet nur noch halb so viel Zusatzstreuung, Streuung im Stehen und die -30 % der Ruhigen Hand bleiben; mit Stufe 2 zaehlt das Laufen noch',
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {}, sp0 = D.CFG.wpn.pistol.spread, sp = lv => { D.sessReset(); if (lv) D.SESSION.sk.A1 = lv; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.reset();
@@ -188,11 +188,11 @@ module.exports = [
       const f = x => +x.toFixed(5);
       t.eq(r.l0, [f(r.sp0), f(r.sp0 + .05)], 'ohne Skill: Streuung im Stehen und mit Laufzuschlag 0,05');
       t.eq(r.l2, [f(r.sp0 * .8), f((r.sp0 + .05) * .8)], 'Stufe 2: Streuung -20 %, der Laufzuschlag bleibt');
-      t.eq(r.l3, [f(r.sp0 * .7), f(r.sp0 * .7)], 'Stufe 3: Streuung -30 %, im Laufen genauso wie im Stehen');
+      t.eq(r.l3, [f(r.sp0 * .7), f((r.sp0 + .025) * .7)], 'Stufe 3: Streuung -30 %, der Laufzuschlag nur noch halb (0,025)');
     },
   },
   {
-    name: 'Zusatz Durchschuss (Durchschlag 3): die Kugel trifft auch den Beamten dahinter mit halbem Schaden, nur einmal, nicht durch Schilde, auch wenn der erste faellt; mit Stufe 2 nicht',
+    name: 'Zusatz Durchschuss (Durchschlag 3): die Kugel trifft auch den Beamten dahinter mit 35 % Schaden, nur einmal, nicht durch Schilde, auch wenn der erste faellt; mit Stufe 2 nicht',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const D = __dbg, T = 32, o = {};
         const strip = () => { const w = D.world(); for (let ty = w.WY0 + 2; ty < w.WY0 + w.H - 2; ty++) for (let tx = w.WX0 + 9; tx < w.WX0 + w.W - 3; tx++) { const x = tx * T + 16, y = ty * T + 16; let ok = true;
@@ -208,8 +208,8 @@ module.exports = [
         return o; })()`);
       t.ok(r.l2 && r.l3, 'freier Streifen gefunden');
       t.eq(r.l2.d, [34, 0, 0], 'Stufe 2: nur der erste Beamte wird getroffen');
-      t.eq(r.l3.d, [34, 17, 0], 'Stufe 3: der erste voll, der zweite mit halbem Schaden, der dritte nichts (nur einmal durch)');
-      t.eq([r.low.dead1, r.low.d[1]], [true, 17], 'faellt der erste, fliegt die Kugel trotzdem weiter und trifft den zweiten mit halbem Schaden');
+      t.eq(r.l3.d, [34, 11.9, 0], 'Stufe 3: der erste voll, der zweite mit 35 % Schaden, der dritte nichts (nur einmal durch)');
+      t.eq([r.low.dead1, r.low.d[1]], [true, 11.9], 'faellt der erste, fliegt die Kugel trotzdem weiter und trifft den zweiten mit 35 % Schaden');
       t.eq([r.shield.sh > 0, r.shield.d[1], r.shield.d[2]], [true, 0, 0], 'ein Schild haelt die Kugel auf, nichts geht durch');
     },
   },
