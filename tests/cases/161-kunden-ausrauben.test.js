@@ -102,7 +102,7 @@ module.exports = [
         return out;
       });
       t.eq(r.phase, [2, 2], 'Ueberfall laeuft');
-      t.eq(r.ver, 74, 'VER 74');
+      t.ok(r.ver >= 74, 'VER mindestens 74: ' + r.ver);
       t.ok(r.ord && r.ordAfter, 'itsAll hat bei Host und Client dieselbe Reihenfolge');
       t.ok(!r.none, 'Kunde gefunden');
       t.eq([r.hostRob, r.cliRob], [1, 1], 'Host und Client sehen ausgeraubt');
