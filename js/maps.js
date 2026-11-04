@@ -194,8 +194,10 @@ lay.road={side:sideOf.S,pos:cp(R0.pos),slots:af?[sl[1],sl[0]]:sl,
  exit:Object.assign({line:af?MA*T-ex.line:ex.line,span:[Math.min(c0,c1),Math.max(c0,c1)],dir:af?-ex.dir:ex.dir,tx:af?MA-1-ex.tx:ex.tx,goal:ex.goal?tile(ex.goal[0],ex.goal[1]):tile(ex.tx,Math.round(vn.pos/T))},ex.door?(()=>{const d0=cp(ex.door.span[0]),d1=cp(ex.door.span[1]);return{door:{line:af?MA*T-ex.door.line:ex.door.line,span:[Math.min(d0,d1),Math.max(d0,d1)]}}})():{})};
 delete lay.laneY;delete lay.slots;delete lay.exit;delete lay.van;delete lay.spots;delete lay.lockCells;delete lay.wins;delete lay.snp;
 lay.title={cx:Math.round(bc[0]-VW/2),ax:90,cy:Math.round(bc[1]-VH/2),ay:70};lay.flip=!sw&&fx;lay.turned=side+(mirror?'+':'');return lay}
-function genLayout(seed,po,tpf){const r=mulberry32(seed|0),q=po||genParams(r),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),rnd=po?()=>1:r;
-const{cx,vw,ew,bd,ld,fd,wy,sd,ey:ey0,od,nt,na,nb,nbun,yw}=q;
+/* nos = ohne Kammer (Rueckfall, wenn die Kammer validateMap nicht besteht, dann ist die Karte die von vorher). Kammer (K4, Plan Kammern): eigener Zufallsstrom, der Ostfluegel wird mit Kammer um 3 Spalten breiter (ew0 plus 3), alles dahinter rueckt mit. */
+function genLayout(seed,po,tpf,nos){const r=mulberry32(seed|0),q=po||genParams(r),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),rnd=po?()=>1:r;
+const{cx,vw,ew:ew0,bd,ld,fd,wy,sd,ey:ey0,od,nt,na,nb,nbun,yw}=q;
+const Kc=CFG.stash,skr=mulberry32((((seed|0)*374761393)>>>0)^0x3c6ef372),sk1=skr(),sk2=skr(),SKK=!po&&!nos&&Kc&&Kc.on&&Kc.scs.includes('bank')&&sk1<Kc.p?(sk2<.5?'abstell':'wc'):null,ew=ew0+(SKK?3:0);
 const tpr=mulberry32(Math.imul(seed|0,2246822519)^0x27d4eb2f),tp=po?'E':tpf||(tpr()<CFG.map.tpW?'W':'E'),X0=-6-(tp==='W'?CFG.map.tpX:0);
 const mr=mulberry32((((seed|0)*2654435761)>>>0)^0x5bd1e995),ms=po?CLASSICM:genMission(mr,'b',seed);
 const tr=mulberry32((((seed|0)*40503)>>>0)^0x1b873593),ti=po?0:Math.floor(tr()*THEMES.length),tw=tr(),di=po?0:tw<.35?0:tw<.55?1:tw<.85?2:3,sty=po?0:Math.floor(tr()*3),flip=po?false:tr()<.5,swp=po?false:tr()<.35,pr=mulberry32((((seed|0)*69069)>>>0)^0x2545f491),pi=(a,b)=>a+Math.floor(pr()*(b-a+1));
@@ -210,14 +212,17 @@ fill(ex0,bd+1,ex1,bd+1,'#');setc(od,bd+1,'d');
 [[bx1,ey],[bx1,ey+1],[fd,by1],[fd+1,by1]].concat(tp==='W'?[[0,wy],[0,wy+1]]:ms.west?[[0,wy]]:[]).forEach(a=>setc(a[0],a[1],'D'));
 /* Hoechstens 4 Aussentueren (Karten-Vertrag): Die Bank hat nur eine Hintertuer, CFG.map.back waehlt sie (vault = vor dem Tresor, der Standard, office = ueber dem Buero oder Sicherheitsraum). Die andere Stelle bleibt Wand, behaelt aber ihren Posten. */
 const bd1=CFG.map.back==='vault'?cx:oc,bd2=bd1===cx?oc:cx;setc(bd1,0,'L');
-const winN=[cx-8,cx-5,cx-2,ex0+1,ex1-1].filter(x=>x>=2&&rnd()>.12),winS=[];
+const exr=ex1-(SKK?3:0),winN=[cx-8,cx-5,cx-2,ex0+1,exr-1].filter(x=>x>=2&&rnd()>.12),winS=[];
 for(let x=2;x<=fd-3&&winS.length<3;x++)if(rnd()>.12)winS.push(x);for(let x=fd+4;x<=mx1-1;x++)if(rnd()>.12)winS.push(x);
 winN.forEach(x=>setc(x,0,'W'));winS.forEach(x=>setc(x,by1,'W'));
 [[2,2],[3,2],[cx-3,2],[cx-2,2],[oc-1,oy0+1],[oc,oy0+1],[oc+1,oy0+1]].forEach(a=>setc(a[0],a[1],'e'));
 [[oc-1,sy0+1],[oc,sy0+1],[oc+1,sy0+1]].forEach(a=>setc(a[0],a[1],'m'));
 const tills=[];for(let i=0;i<nt;i++){tills.push([3+3*i,bd]);setc(3+3*i,bd,'r')}
 [[cx-5,ly0+2],[cx+1,ly0+2]].forEach(a=>setc(a[0],a[1],'P'));
-[[1,ly1],[mx1-1,ly0],[ex1,sy1],[ex1,oy0]].forEach(a=>setc(a[0],a[1],'p'));
+/* Kammer im Buero des Ostfluegels (Nordostecke, mit Tausch Suedostecke): Innenraum 2 x 2 in den drei neuen Spalten, Wand zum Buero und darunter, Tuer in der Westwand auf der Seite zur Aussenwand, damit die Reihe an der Innenwand ohne Sicht durch die Tuer ist (deep). */
+let SK=null;if(SKK){const e=ex1;if(!swp){fill(e-2,1,e-2,3,'#');fill(e-2,3,e,3,'#');setc(e-2,1,'d');SK={kind:SKK,door:[e-2,1],out:[e-3,1],cells:[[e-1,1],[e,1],[e-1,2],[e,2]],deep:[[e-1,2],[e,2]]}}
+else{fill(e-2,ly1-2,e-2,ly1,'#');fill(e-2,ly1-2,e,ly1-2,'#');setc(e-2,ly1,'d');SK={kind:SKK,door:[e-2,ly1],out:[e-3,ly1],cells:[[e-1,ly1-1],[e,ly1-1],[e-1,ly1],[e,ly1]],deep:[[e-1,ly1-1],[e,ly1-1]]}}}
+[[1,ly1],[mx1-1,ly0],[ex1,sy1],SK&&!swp?[ex1-3,3]:[ex1,oy0]].forEach(a=>setc(a[0],a[1],'p'));
 for(let i=0;i<nb;i++)setc(mx1-4+i,ly1-1,'b');
 const atms=[];for(let i=0;i<na;i++){atms.push([mx1,ly1-i]);setc(mx1,ly1-i,'A')}
 atms.reverse();
@@ -241,7 +246,7 @@ const prop=(ch,x,y)=>{if(cell(x,y)!=='o'||rv.has(x+','+y)||x>bx1&&x<ex2&&y>by1-C
 {const cn=[[4,6,4,6,6,9],[1,2,1,2,12,18],[8,11,6,9,2,4]][sty],nk=pi(cn[0],cn[1]),nq=pi(cn[2],cn[3]),np=pi(cn[4],cn[5]);for(let i=0;i<nk;i++)prop('k',pi(-4,ex2-1),pi(-3,-2));
 for(let i=0;i<nq;i++){const side=pi(0,2);if(side===0)prop('q',pi(-5,-3),pi(-3,by1));else if(side===1)prop('q',pi(-4,bx1+2),pi(-3,-2));else prop('q',pi(bx1+2,ex2-1),pi(0,ey-3))}
 for(let i=0;i<np;i++){const side=pi(0,2);if(side===0)prop('p',-2,pi(0,by1));else if(side===1)prop('p',pi(-3,ex2-1),-1);else prop('p',pi(bx1+1,ex2-1),pi(-3,by1))}}
-const R0=[[3,sd],[fd,ly0+1],[mx1-1,ly0+1],[mx1,sd],[ex0+1,sd],[ex1-1,sd],[ex0+1,ly0],[mx1-1,ly1-1],[fd-1,ly1-1]],MR0=[[ex0+1,oy0+1],[ex1-1,oy1-1],[od,swp?oy0:oy1],[ex0+1,sy0+1],[ex1-1,sy1-1],[ex0+1,sy1-1]];
+const R0b=[[3,sd],[fd,ly0+1],[mx1-1,ly0+1],[mx1,sd],[ex0+1,sd],[exr-1,sd],[ex0+1,ly0],[mx1-1,ly1-1],[fd-1,ly1-1]],MR0b=[[ex0+1,oy0+1],[exr-1,oy1-1],[od,swp?oy0:oy1],[ex0+1,sy0+1],[exr-1,sy1-1],[ex0+1,sy1-1]],R0=SK?routeOut(R0b,SK):R0b,MR0=SK?routeOut(MR0b,SK):MR0b;
 const mgrR=rotR(MR0,ms.rot[2],ms.rot[3]),guards=[],deskT=[[oc-1,oy0+1],[oc,oy0+1],[oc+1,oy0+1],[2,2],[3,2],[cx-3,2],[cx-2,2]];
 if(ms.guards>=1){const rt=rotR(R0,ms.rot[0],ms.rot[1]);guards.push({p:rt[0],route:rt})}
 if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+4)%9,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
@@ -254,18 +259,18 @@ if(ev.includes('wache'))extra.push({p:frontP,route:rotR(R0,3,true),at:ms.at.wach
 if(ev.includes('transport')){extra.push({p:frontP,route:rotR(R0,6,false),at:ms.at.transport,msg:'Geldtransport trifft ein: Geldsäcke in der Halle, ein Wachmann sichert sie.'});for(const c of [[fd-2,ly1],[fd+3,ly1],[fd-3,ly1-1],[fd+4,ly1-1],[fd-4,ly1],[fd+5,ly1]])if(bags.length<2&&!isSol(c[0],c[1]))bags.push(c)}
 const tags=[];if(ms.vault==='drill')tags.push('Tresor nur laut');if(ms.guards===0)tags.push('keine Wache');else if(ms.guards===2)tags.push('zwei Wachen');if(!ms.west&&tp!=='W')tags.push('ohne Seitentür');if(tp==='W')tags.push('Fluchtweg: Seitentür');if(ms.civ>=8)tags.push('viel Kundschaft');else if(ms.civ<=3)tags.push('kaum Kundschaft');if(camsSel.length!==7)tags.push(camsSel.length+' Kameras');tags.unshift(...(ms.lg||[]).map(k=>lgN(ms,k)),...ev.map(e=>evTag[e]));
 const DCG=[{x:ca[0],y:by1+3,row:3,sh:'B'},{x:ca[1],y:by1+3,row:2,sh:'B'}].concat(ycars.map((c,i)=>({x:c[0],y:c[1],row:2+i,sh:'C'})));
-const lay={seed,decor:decorOf(DCG),q:Object.assign({},q,{sw:swp?1:0},tp==='W'?{tp:'W'}:{}),theme:mkTheme(ti,ms.lg.includes('nacht')?4:di,sty),bld:{x0:0,y0:0,x1:bx1,y1:by1},winN,winS,
+const lay={seed,decor:decorOf(DCG),q:Object.assign({},q,{sw:swp?1:0},tp==='W'?{tp:'W'}:{},SK?{stash:SKK}:{}),theme:mkTheme(ti,ms.lg.includes('nacht')?4:di,sty),bld:{x0:0,y0:0,x1:bx1,y1:by1},winN,winS,
 mat:(x,y)=>{if(x>=0&&x<=bx1&&y>=0&&y<=by1){if(x===cx+1&&(y===2||y===3))return'k';if(x>=cx+2&&x<=mx1&&y>=1&&y<=bd-1)return'm';if(x>=ex0&&x<=ex1&&y>=oy0&&y<=oy1)return'w';if(x>=ex0&&x<=ex1&&(swp?(y>=sy0&&y<=sy1):y>=ly0))return'k';if(y<=bd&&x<=cx)return'k';return't'}
 if(y>=by1+8)return'l';if(y===by1+7)return's';if(y>=by1+3)return'a';if(y>=by1+1)return's';if(x>bx1)return'a';if(x<0)return tp==='W'&&y>=wy-1&&y<=wy+2?'a':'l';return'y'},
 paintFloor(s){s.fillStyle='rgba(60,45,30,.55)';s.fillRect(fd*T-4,(by1-1)*T+2,2*T+8,T-4);
 if(!lay.meet){s.strokeStyle='rgba(255,255,255,.7)';s.lineWidth=2;for(const yy of tp==='W'?[wy,wy+1]:[ey,ey+1]){s.strokeRect(tp==='W'?-4*T+4:(bx1+1)*T+4,yy*T+4,4*T-8,T-8)}}
 s.fillStyle='rgba(224,182,40,.8)';s.fillRect(1*T+4,ly0*T+6,(cx-1)*T,2);
-s.fillStyle='rgba(235,235,225,.5)';for(let i=0;i<4;i++)s.fillRect(0*T+10+i*30,(by1+2)*T+2,12,2)},
+s.fillStyle='rgba(235,235,225,.5)';for(let i=0;i<4;i++)s.fillRect(0*T+10+i*30,(by1+2)*T+2,12,2);if(SK)stashFloor(s,SK)},
 paintTop(s){decorPaint(s,lay.decor);
 s.strokeStyle='rgba(255,255,255,.28)';s.lineWidth=2;for(let i=0;i<4;i++){s.beginPath();s.moveTo((bx1+1)*T+4,i*T*2+T*0+4);s.lineTo((bx1+1)*T+34,i*T*2+4);s.stroke()}
-s.fillStyle='#3b4048';s.fillRect(ex1*T+8,sy0*T+2,16,10);s.fillStyle='#e0b020';s.fillRect(ex1*T+14,sy0*T+5,4,4);s.fillStyle='rgba(255,255,255,.25)';s.fillRect(ex1*T+8,sy0*T+2,16,1)},
+s.fillStyle='#3b4048';s.fillRect(ex1*T+8,sy0*T+2,16,10);s.fillStyle='#e0b020';s.fillRect(ex1*T+14,sy0*T+5,4,4);s.fillStyle='rgba(255,255,255,.25)';s.fillRect(ex1*T+8,sy0*T+2,16,1);if(SK)stashTop(s,SK)},
 spawn:{x:(fd+.9)*T,y:(by1+1.6)*T},
-zones:[[1,1,cx,bd+1],[cx+1,1,mx1,bd-1],[ex0,1,ex1,ly1],[cx-3,-99,99,-1],[bx1+1,-99,99,by1]],lobby:[1,ly0,mx1,ly1],
+...(SK?{stash:SK}:{}),zones:[[1,1,cx,bd+1],[cx+1,1,mx1,bd-1],[ex0,1,ex1,ly1],[cx-3,-99,99,-1],[bx1+1,-99,99,by1]],lobby:[1,ly0,mx1,ly1],
 cams:camsSel,
 tellers:tills.map(t=>[t[0],bd-1]),
 mgr:{p:mgrR[0],route:mgrR},guards,civ:ev.includes('feiertag')?Math.min(CFG.ev.civMax,ms.civ*2):ms.civ,rob:robOf('bank'),mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:ms.west,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],...(ms.lgw?{lgw:ms.lgw}:{}),at:ms.at,extra,bags,blackoutAt:ev.includes('strom')?ms.at.strom:null},
@@ -294,7 +299,9 @@ if(!all(ln.slots,q=>R(q.curb[0],q.curb[1])))return false;
 let n=0;const l=lay.lobby;for(let y=l[1];y<=l[3];y++)for(let x=l[0];x<=l[2];x++)if(R(x,y))n++;if(n<14)return false;
 // Weglaengen wie in der Klassik halten (Schwierigkeit haengt stark daran): Start zu Tresor, Tresor zu Ausgang, Frontposten zu Tresor
 const P=(a,c)=>pathTo(a[0]*T+16,a[1]*T+16,c[0],c[1]).length,dr=[v0.door[0]-v0.dir,v0.door[1]+1],ex=ln.exit.goal,p0=lay.posts[0],m=CFG.map,inr=(v,r)=>v>=r[0]&&v<=r[1];
-return inr(P(sp,dr),m.a)&&inr(P(dr,ex),lay.q&&lay.q.tp==='W'?(lay.q.sw?m.bws:m.bw):lay.q&&lay.q.sw?m.bs:m.b)&&inr(P([p0.x,p0.y],dr),m.c)}finally{CX.vaultOpen=ov}}
+/* Kammer in der Bank (K4): der Ostfluegel ist 3 Spalten breiter, der Weg Tresor zu Ausgang im Osten wird entsprechend laenger, die obere Grenze rueckt mit. */
+const stx=lay.q&&lay.q.stash&&lay.q.tp!=='W'?3:0,rb=lay.q&&lay.q.tp==='W'?(lay.q.sw?m.bws:m.bw):lay.q&&lay.q.sw?m.bs:m.b;
+return inr(P(sp,dr),m.a)&&inr(P(dr,ex),[rb[0],rb[1]+stx])&&inr(P([p0.x,p0.y],dr),m.c)}finally{CX.vaultOpen=ov}}
 /* ---- Szenario Geldtransporter (fahrender Hinterhalt): Eine Strasse mit Haeuserbloecken (60x24 Kacheln), der Panzerwagen faehrt von Westen nach Osten.
    Dieselben LAY-Felder wie die Bank, die bankspezifischen (Tresor, Kameras, Angestellte) sind leer. LAY.truck markiert das Szenario, LAY.spots sind die Sperrstellen quer ueber die Fahrbahn (rd). ---- */
 function genTruckMission(sd){const r=mulberry32((((typeof sd==='number'?sd:7)*2654435761)>>>0)^0x7a3c91d5),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),crew=ri(2,4),bagN0=ri(6,8),arrive=ri(55,75);
