@@ -1,6 +1,7 @@
 // Notenbank-Messung (N5, Ticket 75, docs/tests-und-messwerte.md): spielt den Verteidigungs-Bot (tools/bot.js, bot.nb) ueber viele Seeds mit einer Strategie und fasst zusammen.
 // Aufruf (vom Projektordner, Chromium ueber HOLDUP_CHROME wie bei den Tests):
 //   node tools/messung-nb.js <n> '<Strategie als JSON>' [from] [parallel] [cfg-JSON]
+// NB_VAR=0 misst den Klassik-Grundriss (CFG.nb.var.on 0), sonst laufen die Varianten aus dem Seed (N7).
 // Strategie = Optionen von bot.nb, zum Beispiel frueh: '{"press":false,"gier":0}', lange: '{"press":true,"gier":150000,"stay":420}'. cfg-JSON ueberschreibt Werte in CFG.nb (zum Beispiel '{"drillT":90}').
 // Ausgabe: eine Zeile JSON mit Siegquote, Zeiten, Beute (Tresor, Presse, Abgabe), Druckstufe, tiefstem Ring, Stillstaenden und den verlorenen Seeds. Rauschen bei n 40 rund 7 Prozentpunkte.
 const lib = require('../tests/lib.js'), fs = require('fs'), path = require('path');
@@ -10,7 +11,7 @@ const lib = require('../tests/lib.js'), fs = require('fs'), path = require('path
   for (let i = 0; i < N; i++) parts[i % P].push(F + i);
   try {
     const res = (await Promise.all(parts.map(async seeds => {
-      const page = await lib.openGame(env); await page.addScriptTag({ content: src });
+      const page = await lib.openGame(env, process.env.NB_VAR === '0' ? {} : { nbvar: true }); await page.addScriptTag({ content: src });
       try { return await page.evaluate(([seeds, strat, cfg]) => { Object.assign(__dbg.CFG.nb, JSON.parse(cfg)); const o = JSON.parse(strat); return seeds.map(sd => { const r = bot.nb(Object.assign({}, o, { seed: sd })); r.seed = sd; return r; }); }, [seeds, strat, cfg]); }
       finally { await Promise.race([page.ctx.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]); }
     }))).flat().sort((a, b) => a.seed - b.seed);

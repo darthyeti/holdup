@@ -187,25 +187,30 @@ module.exports = [
   },
   {
     name: 'Notenbank: vier Verteidigungsringe, jede Engstelle ist die einzige Verbindung zum Ring dahinter (Flutfuellung mit der Engstelle als Wand), Ring 1 hat genau drei Eingaenge, der Tunnel bleibt erreichbar',
+    open: { nbvar: true },
+    timeout: 240000,
     async run(t) {
       const r = await t.page.evaluate(() => {
-        const D = __dbg, o = {}; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
-        const a = D.layoutBase(5), G = a.nb.gates; D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6];
+        const D = __dbg, o = { bad: [] }; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
+        for (let sd = 1; sd <= 16; sd++) {
+        const a = D.layoutBase(sd), G = a.nb.gates; D.buildLay(a); const w = D.world(), cl = (x, y) => w.M[y + 6][x + 6], z = a.nb.zone;
         const SOL = '#WYwCVXfvekqPpbAmrfuN', key = c => c.join();
         const reach = (from, to, blocked, tunnelOpen) => { const bl = new Set((blocked || []).map(key)), seen = new Set([key(from)]), q = [from];
-          for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = key(n), ch = cl(n[0], n[1]); const rigc = n[0] >= 17 && n[0] <= 18 && n[1] >= 2 && n[1] <= 3; if (seen.has(k) || bl.has(k) || ch === undefined || (SOL.includes(ch) && !(rigc && tunnelOpen))) continue; seen.add(k); q.push(n); } } return false; };
-        const out = [14, 30], flat = g => [].concat(...g);
-        o.s = [reach(out, [14, 21], G.schleuse), reach(out, [14, 21], []), reach(out, [16, 10], G.panzer), reach(out, [16, 10], []), reach(out, [19, 3], G.treppe), reach(out, [19, 3], []), reach([14, 21], [16, 10], G.panzer), reach([16, 10], [19, 3], G.treppe)];
-        o.r1 = [reach(out, [14, 26], flat([G.haupt, G.seite, G.hinten])), reach(out, [14, 26], flat([G.seite, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.seite]))];
-        o.tun = [reach(out, [17, 2], [], false), reach(out, [17, 2], [], true)];
-        o.gatesOk = G.haupt.concat(G.seite, G.hinten, G.schleuse, G.panzer, G.treppe).every(c => cl(c[0], c[1]) !== '#' && cl(c[0], c[1]) !== 'W');
-        o.len = [G.schleuse.length, G.panzer.length, G.treppe.length, G.haupt.length];
+          for (let h = 0; h < q.length; h++) { const c = q[h]; if (c[0] === to[0] && c[1] === to[1]) return true; for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [c[0] + d[0], c[1] + d[1]], k = key(n), ch = cl(n[0], n[1]); const rigc = n[0] >= z[0] && n[0] <= z[2] && n[1] >= z[1] && n[1] <= z[3]; if (seen.has(k) || bl.has(k) || ch === undefined || (SOL.includes(ch) && !(rigc && tunnelOpen))) continue; seen.add(k); q.push(n); } } return false; };
+        const out = [14, 30], flat = g => [].concat(...g), in2 = [14, 21], in3 = [13, 10], in4 = [z[2] + 1, z[1] + 1];
+        const s = [reach(out, in2, G.schleuse), reach(out, in2, []), reach(out, in3, G.panzer), reach(out, in3, []), reach(out, in4, G.treppe), reach(out, in4, []), reach(in2, in3, G.panzer), reach(in3, in4, G.treppe)];
+        const r1 = [reach(out, [14, 26], flat([G.haupt, G.seite, G.hinten])), reach(out, [14, 26], flat([G.seite, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.hinten])), reach(out, [14, 26], flat([G.haupt, G.seite]))];
+        const tun = [reach(out, [z[0], z[1]], [], false), reach(out, [z[0], z[1]], [], true)];
+        const gatesOk = G.haupt.concat(G.seite, G.hinten, G.schleuse, G.panzer, G.treppe).every(c => cl(c[0], c[1]) !== '#' && cl(c[0], c[1]) !== 'W');
+        const len = [G.schleuse.length, G.panzer.length, G.treppe.length, G.haupt.length];
+        if (JSON.stringify(s) !== '[false,true,false,true,false,true,false,false]') o.bad.push(sd + ' Engstellen ' + JSON.stringify(s));
+        if (JSON.stringify(r1) !== '[false,true,true,true]') o.bad.push(sd + ' Ring 1 ' + JSON.stringify(r1));
+        if (JSON.stringify(tun) !== '[false,true]') o.bad.push(sd + ' Loch ' + JSON.stringify(tun));
+        if (!gatesOk || !len.every(n => n >= 1 && n <= 2)) o.bad.push(sd + ' Oeffnungen ' + JSON.stringify(len));
+        }
         return o;
       });
-      t.eq(r.s, [false, true, false, true, false, true, false, false], 'Schleuse, Panzertuer und Treppe trennen je ihren Ring, offen ist er erreichbar (auch von innen nach aussen nicht ohne die Engstelle): ' + JSON.stringify(r.s));
-      t.eq(r.r1, [false, true, true, true], 'Ring 1 ist nur ueber Haupttuer, Seitentuer und Hintertuer erreichbar, jede reicht allein');
-      t.eq(r.tun, [false, true], 'Loch: zu unerreichbar, offen erreichbar');
-      t.ok(r.gatesOk && r.len.every(n => n >= 1 && n <= 2), 'Engstellen sind Oeffnungen und hoechstens 2 Kacheln breit: ' + JSON.stringify(r.len));
+      t.eq(r.bad, [], 'Schleuse, Panzertuer und Treppe trennen je ihren Ring (offen ist er erreichbar, nie ohne die Engstelle), Ring 1 hat drei Eingaenge die je allein reichen, das Loch ist nur offen erreichbar, Engstellen sind Oeffnungen von hoechstens 2 Kacheln (16 Seeds mit den Varianten aus N7): ' + JSON.stringify(r.bad.slice(0, 4)));
     },
   },
   {

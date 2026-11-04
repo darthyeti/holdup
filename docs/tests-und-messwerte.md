@@ -162,6 +162,8 @@ Offene Frage aus N2 (gehen Beamte gezielt zum Bohrer?): Der Bohrer steht durch "
 | god, stay 120 | 35 % | | 336 s | 87.143 (+45 %) | Stau 21, Ablage voll 20 |
 | god, stay 240 | 10 % | | 396 s | 77.500 | Stau 20, Ablage voll 15 |
 
+**Varianten (N7, Ticket 79):** 40 Seeds ab 7000, Strategie früh (`{"kit":"old","sigma":0.05,"post":"gate","bar":"treppe","press":false,"gier":0}`), solo, mit dem Sturm aus N6. Klassik-Grundriss (`NB_VAR=0`): Sieg 50 %, Dauer 227 s, Loch offen 225 s, Bohrer-Stillstände Defekt 37, Beschuss 3. Varianten aus dem Seed: Sieg 53 %, Dauer 223 s, Loch offen 222 s, Defekt 36, Beschuss 1 (Rauschen rund 7 Prozentpunkte, kein Unterschied messbar, der Bot findet die Treppe, Panzertür und Tresor in jeder Anordnung). Die Siegquote liegt seit N6 unter den 65 bis 73 % der Tabelle oben, weil der Sturm hinzukam.
+
 Die Presse liefert nach den Änderungen im Mittel 8 bis 8,3 Bündel (rund 41.000), die Druckstufe steigt auf 1,2 bis 1,4. Der god-Bot gewinnt seltener, weil er zuerst die Presse betreut und Beamte im Keller den Bohrer wieder stoppen (Lauf bis zum Zeitlimit). Als Hinweis auf die Überlebbarkeit gilt der echte Bot LANGE: 0 % Sieg. Wer in der Presse bleiben will, muss den Ring 3 selbst halten, der Bot kann es nicht.
 
 **Sturm (N6, Ticket 77), Bot solo, 40 Seeds ab 7000, Kit alt, Sturm aus (`stormSolo` 99999) gegen an (150 s nach Bohrer-Start):**
