@@ -49,6 +49,7 @@ module.exports = [
         document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true })); D.update(1 / 30);
         o.freed = [n.st, n.own, D.hasHost(m)];
         // neu nehmen, dann Besitzer am Boden
+        D.get().npcs.forEach(q => { q.rob = 1; });   // seit Ticket #60 raubt E einen Kunden zuerst aus (Test 160), hier geht es um die Geisel
         D.keys.e = true; T.run(45, q => { if (n.st === 'cower') { q.x = n.x; q.y = n.y; } }); D.keys.e = false; o.again = n.st;
         m.dn = 5; D.update(1 / 30); o.down = [n.st, n.own]; m.dn = 0;
         return o; })()`);

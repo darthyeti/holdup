@@ -64,6 +64,7 @@ Die Felder des Vertrags stehen als Tabelle `MAP_FIELDS` in `index.html` (Name, G
 | `noteAt` | optional (Spielcode tolerant) | Fundort des Tresorcodes `{k, x, y}` (Kachel), `k` aus desk, mgr, bin, file, mon, locker, nur bei Codetresor, setzt `placeNote` in `layoutBase`, `mirrorLayout` und `turnLayout` drehen es wie `note` mit (fehlt es, gilt der Schreibtisch `note`) | `reset` (Item `note`), `drawNote`, `validateMap` (Regel `fundort`) |
 | `mon` | optional | Kachel der Überwachungsmonitore | `reset`, `matCell` |
 | `sw` | optional | Hauptschalter `{x,y}` in px | `reset` |
+| `rob` | optional | Kunden ausrauben `{v:[min,max],u,lab,chips}`: Wertspanne, Platz je Kunde, Beschriftung, `chips` 1 bucht in Chips (Casino). Gesetzt von Klassik, Bank und Casino, fehlt es, gibt es kein Ausrauben. Keine Koordinaten, Spiegeln und Drehen lassen es in Ruhe | `robMi` (Phase 2) |
 | `tellers` | optional | Kassierer-Kacheln `[[x,y]]` | `reset` |
 | `mgr` | optional, schon nullbar | Manager `{p,route}` oder `null` | `reset` |
 | `tills` | optional | Kassen `[[x,y]]` | `reset` |
