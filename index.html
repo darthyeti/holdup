@@ -151,7 +151,7 @@ CFG.lock={inT:1.5,outT:3.6,exit:1,near:40};
 /* Wachen (Auftraege mit Wachmann): spd Tempo in px/s, fov halber Sichtwinkel in rad, rng Reichweite in px. Der Juwelier ueberschreibt sie mit CFG.jewel.guard (langsamer, schmaler, kuerzer), damit man dem sichtbaren Kegel ausweichen kann. */
 CFG.guard={spd:40,fov:1,rng:330};
 CFG.jewel={u:.5,smashT:1.2,cutT:6,win:2500,wall:4000,isl:6000,ctr:9000,boxU:1,boxV:14000,boxT:2,guard:{spd:28,fov:.8,rng:260}};
-CFG.truck={spd:150,acc:90,brake:240,gap:36,tire:100,tireSlide:170,policeAt:26,jamDelay:30,jamWin:12,crewHold:22,crew:{hp:120,dmg:8,rate:.9,spd:50,acc:.12},seg:{mc:2,bt:.8},arriveCut:12,arriveMin:35,surHp:35,capT:1.8,capBonus:6000,surPen:0,bagV:9000,bagU:1,bagT:1.4,keyT:1.8,drillT:22,keyTakeT:1.6};
+CFG.truck={spd:150,acc:90,brake:240,gap:36,tire:100,tireSlide:170,policeAt:26,jamDelay:30,jamWin:12,crewHold:22,crew:{hp:120,dmg:8,rate:.9,spd:50,acc:.12},seg:{mc:2,bt:.8},arriveCut:12,arriveMin:35,surHp:35,capT:1.8,capBonus:6000,surPen:0,bagV:9000,bagU:1,bagT:1.4,keyT:1.8,drillT:22,keyTakeT:1.6,cov:{on:1,r:6,leash:7,see:14,near:3,re:1.5,min:4,gain:2,hide:[1.2,2.2],peek:[1,1.8],hurt:.5,stagger:2,react:.3,shelLen:1.5,wShel:10,wNear:8,wFar:.8,wNoPeek:12,wDist:.5,wCenter:.3,wCrowd:3,crowdR:2,cands:5,walk:.8,arrive:3,peekMax:2,hideRe:.5,turn:.2,turnShoot:.25,rateVar:[.8,1.3],bulV:420,rearR:1.6,rearOff:.8}};
 /* Varianten des Transporters (T4a, 27. Oktober 2026, der Seed wuerfelt sie hinter den alten Wuerfen): cargo Fracht (p Wahrscheinlichkeit, v Wert je Stueck, u Taschenplaetze je Stueck, n Anzahl von bis, lab Beschriftung, nm Name im Tag), lock Schloss (k Faktor auf die Bohrzeit), alarm Funkalarm (d Sekunden auf die erste Polizei, nicht unter CFG.policeForced), heavy schwere Wachen (p Grenzen fuer 0, 1 oder 2, hp und dmg Faktoren auf die Besatzung, nie der Fahrer) */
 CFG.truck.var={cargo:{gold:{p:.2,v:24000,u:2,n:[3,4],lab:'Goldbarren einpacken',nm:'Goldbarren',tag:'Fracht: Gold'},muenzen:{p:.2,v:5500,u:1,n:[9,11],lab:'Münzsack einpacken',nm:'Münzsäcke',tag:'Fracht: Münzen'}},lock:{schwach:{p:.2,k:.55,tag:'Schwaches Schloss'},stark:{p:.2,k:1.6,tag:'Verstärktes Schloss'}},alarm:{sofort:{p:.25,d:-6,tag:'Funkalarm sofort'},spaet:{p:.25,d:12,tag:'Funkalarm verzögert'}},heavy:{p:[.6,.9],hp:1.7,dmg:1.25,tag:['Schwere Wache','Zwei schwere Wachen']},street:{baustelle:.25,gassen:.35},panne:{p:.3,x:[23,37]},vorhut:{p:.3,lead:12,sight:520,n:2},rev:{p:.35}};
 /* Explosionen (T2, 27. Oktober 2026, nur Optik): Zahl der Teilchen je 110 Pixel Radius (fire Feuerball, deb Truemmer, smoke Rauch), glow Lichtschein als Vielfaches des Radius, shake Kamerawackeln in Pixeln bei Abstand 0 (faellt bis shakeR mal Radius auf 0, dauert shakeT s), ptMax Obergrenze aller Teilchen, burn Brandstelle in s je Art (1 Auto, 2 Zapfsaeule), puff und flame Abstand von Rauch und Flammen der Brandstelle in s */
@@ -1182,7 +1182,7 @@ if(o.bd>G.fleeAt){hostBreak(n);if(n.flee)hostFlee(n,dt);continue}
 const t=o.tr;let acc=0,k=t.length-1,px=o.x,py=o.y;for(;k>=0;k--){acc+=Math.hypot(t[k].x-px,t[k].y-py);px=t[k].x;py=t[k].y;if(acc>G.gap)break}
 if(k>=0){const tg=t[k],dx=tg.x-n.x,dy=tg.y-n.y,dd=Math.hypot(dx,dy);if(Math.hypot(o.x-n.x,o.y-n.y)>300){n.x=tg.x;n.y=tg.y}else followStep(n,tg,G.spd,dt,4,true);if(k>3)t.splice(0,k-3)}else{n.mvg=false;n.a=alerp(n.a,Math.atan2(o.y-n.y,o.x-n.x),.1)}
 if(inBld(n.x,n.y))inside=true}
-if(phase===2&&inside&&holdX<holdCap()&&en.some(e=>e.mode==='post'&&!e.stm))holdX=Math.min(holdCap(),holdX+dt);
+if(phase===2&&inside&&holdX<holdCap()&&en.some(e=>(e.mode==='post'||e.mode==='cover')&&!e.stm))holdX=Math.min(holdCap(),holdX+dt);
 if(phase===2&&shX<holdCap()&&actv().some(o=>hostShield(o)&&en.some(e=>e.hp>0&&e.kind!=='sniper'&&Math.hypot(e.x-o.x,e.y-o.y)<460)))shX=Math.min(holdCap(),shX+dt)}
 function spawnWave(){waveN++;let ns=0,nh=0;let n=CFG.waveBase+(LAY.nb&&nPl<2?CFG.nb.soloWb:LAY.wb||0)+waveN+(players.length-1)*CFG.perPlayer+serWave(),crew=[];if(LAY.nb)n=Math.max(0,Math.min(n+nbLvl()*CFG.nb.escWave,nbMaxEn()-en.filter(e=>e.hp>0&&!e.stm&&COPK[e.kind]).length-pcs.reduce((m,c)=>m+(c.crew?c.crew.length:0),0)-fps.reduce((m,f)=>m+f.crew.length,0)));
 for(let i=0;i<n;i++){const sw=waveN>=hFrom(CFG.swatFrom,'swat')&&i%CFG.swatEvery===CFG.swatEvery-1,sh=!sw&&waveN>=hFrom(CFG.shield.from+lgA('shield'),'shield')&&i%CFG.shield.every===0;if(sw)ns++;if(sh)nh++;crew.push(sw?'swat':sh?'shield':'cop')}
@@ -1312,7 +1312,7 @@ if(stopC<1e8&&v.v<4&&d<10){v.v=0;v.st='stopped';vhStopped(why)}
 else if(D>0?v.x>(WX0+W)*T+VHL:v.x<WX0*T-VHL)v.st='gone'}
 /* Ein Besatzungsmitglied als Gegner: i = Nummer (0 ist der Fahrer, die letzten LAY.mission.heavy sind schwere Wachen). Beim normalen Zugriff steigt die Besatzung aus (spawnCrew), bei der Panne wird die wache Besatzung beim Ueberfall dazu (startHeist). */
 function mkCrew(x,y,i,a){const C=CFG.truck,n=LAY.mission.crew,V=C.var.heavy,e=mkCop(x,y,false),hv=i>=n-(LAY.mission.heavy|0),hp=C.crew.hp*(hv?V.hp:1);
-return Object.assign(e,{kind:'grd',row:2,hv:hv?1:0,hp,mhp:hp,cool:1+i*.25,dmg:C.crew.dmg*(hv?V.dmg:1),rate:C.crew.rate,acc:C.crew.acc,spd:C.crew.spd,muz:16,mode:'post',post:{x:0,y:0,a},rt:tH+C.crewHold+i*2,crew:true,drv:i===0,a})}
+return Object.assign(e,{kind:'grd',row:2,hv:hv?1:0,hp,mhp:hp,cool:1+i*.25,dmg:C.crew.dmg*(hv?V.dmg:1),rate:C.crew.rate,acc:C.crew.acc,spd:C.crew.spd,muz:16,mode:C.cov.on?'cover':'post',post:{x:0,y:0,a},rt:tH+C.crewHold+i*2,crew:true,drv:i===0,cvi:i,a})}
 function spawnCrew(){const t=tk,C=CFG.truck,n=LAY.mission.crew,D=tkD(),offs=[[80,-44],[80,44],[-24,-44],[-24,44],[-88,-44],[-88,44]];
 for(let i=0;i<n;i++){const o=offs[i%6];let x=t.x+D*o[0],y=t.y+o[1];if(blocked(x,y,9)){y=t.y-o[1];if(blocked(x,y,9))y=t.y+(o[1]<0?-34:34)}
 en.push(mkCrew(x,y,i,y<t.y?-1.57:1.57))}}
@@ -1322,6 +1322,38 @@ for(let i=0;i<M.crew;i++){const o=spots[i%6],ang=D>0?o[2]:Math.PI-o[2];let x=cx+
 let tx=Math.floor(x/T),ty=Math.floor(y/T);if(isSol(tx,ty))out:for(let r=1;r<=3;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(!isSol(tx+dx,ty+dy)&&!(ty+dy>=11&&ty+dy<=12&&tx+dx>=M.px-3&&tx+dx<=M.px+2)){tx+=dx;ty+=dy;break out}
 const e=mk('grd',2,tx,ty,{spd:G.spd,fov:G.fov,rng:G.rng,still:!o[3],base:ang,a:ang,crew:true,ci:i,drv:i===0});if(o[3]){setRoute(e,[[tx-3,ty],[tx+3,ty]]);e.ri=0;e.wait=CFG.ko.stand}}}
 function crewSur(e){if(!e.crew||e.sur||e.cap||e.hp>CFG.truck.surHp)return false;const others=en.filter(q=>q!==e&&q.crew&&!q.sur&&!q.cap&&q.hp>0).length;return others===0||others+1<actv().length}
+/* Deckungs-KI der Besatzung (Ticket 14, CFG.truck.cov, docs/szenarien.md): Modus cover. Die Besatzung sucht einen Platz an einer kugelsperrenden Kachel (Wagen, Sperre, Auto, Kiste, Fass, Wand), der gegen die Spieler deckt, schaut abwechselnd heraus (Nachbarkachel mit freier Linie, schiesst) und versteckt sich, wechselt bei Wegfall der Deckung, Flanke, zu nahen Spielern oder Treffern und bleibt dort, bis die Polizei da ist (dann push wie die Polizei). Nur der Host rechnet, das Netz kennt weder Modus noch Platz. */
+const covPick=r=>r[0]+Math.random()*(r[1]-r[0]);
+const covCenter=e=>tk&&tk.st!=='gone'?{x:tk.x,y:tk.y}:{x:e.x,y:e.y};
+const covAdj=(x,y)=>D4.some(v=>isBul(x+v[0],y+v[1]));
+function covShelter(x,y,o){const L=CFG.truck.cov.shelLen,dx=o.x-x,dy=o.y-y,dd=Math.hypot(dx,dy)||1;for(let s=10;s<=T*L;s+=6)if(isBul(Math.floor((x+dx/dd*s)/T),Math.floor((y+dy/dd*s)/T)))return true;return false}
+function covPeek(px,py,o){const bx=Math.floor(px/T),by=Math.floor(py/T),L=[];for(const v of D4)L.push([v[0],v[1]]);for(const v of D4)L.push([v[0]*2,v[1]*2]);for(const v of D8)if(v[0]&&v[1])L.push(v);
+for(const v of L){const nx=bx+v[0],ny=by+v[1],mx=bx+Math.sign(v[0]),my=by+Math.sign(v[1]);if(isSol(nx,ny)||isSol(mx,my)||(v[0]&&v[1]&&(isSol(bx+v[0],by)||isSol(bx,by+v[1]))))continue;const qx=nx*T+16,qy=ny*T+16;if(clear(qx,qy,o.x,o.y)&&los(qx,qy,o.x,o.y))return[qx,qy]}return null}
+function covBad(x,y){const V=CFG.truck.cov,t=tk;if(t){const rx=t.x-tkD()*(TKL/2+T*V.rearOff);if(Math.hypot(x*T+16-rx,y*T+16-t.y)<T*V.rearR)return true}const ec=LANE&&LANE.exit&&LANE.exit.cells;return!!(ec&&ec.some(q=>q[0]===x&&q[1]===y))}
+function covNear(px,py,thr){let b=null,bd=1e9;for(const o of thr){const d=Math.hypot(o.x-px,o.y-py);if(d<bd){bd=d;b=o}}return b}
+function covScore(e,x,y,thr,hurt){const V=CFG.truck.cov,px=x*T+16,py=y*T+16;let s=0;
+if(thr.length){let n=0;for(const o of thr)if(covShelter(px,py,o))n++;s+=V.wShel*n/thr.length;const o0=covNear(px,py,thr);if(Math.hypot(o0.x-px,o0.y-py)<V.near*T)s-=V.wNear;if(hurt)s+=Math.hypot(o0.x-px,o0.y-py)/T*V.wFar;if(!covPeek(px,py,o0))s-=V.wNoPeek}
+s-=Math.hypot(e.x-px,e.y-py)/T*V.wDist;const c=covCenter(e);s-=Math.hypot(c.x-px,c.y-py)/T*V.wCenter;
+for(const q of en)if(q!==e&&q.crew&&q.hp>0&&!q.sur){const qx=q.cv?q.cv.x*T+16:q.x,qy=q.cv?q.cv.y*T+16:q.y;if(Math.hypot(qx-px,qy-py)<T*V.crowdR)s-=V.wCrowd}
+return s}
+/* Bester freier Deckungsplatz (Kachel, Weg) im Umkreis r um den Wagen und innerhalb der Leine, null wenn keiner erreichbar ist */
+function crewCover(e,hurt){const V=CFG.truck.cov,c=covCenter(e),thr=covThr(e),cx=Math.floor(c.x/T),cy=Math.floor(c.y/T),L=[];
+for(let y=cy-V.r;y<=cy+V.r;y++)for(let x=cx-V.r;x<=cx+V.r;x++){if(isSol(x,y)||!covAdj(x,y)||Math.hypot(x*T+16-c.x,y*T+16-c.y)>V.leash*T||covBad(x,y))continue;if(en.some(q=>q!==e&&q.crew&&q.hp>0&&q.cv&&q.cv.x===x&&q.cv.y===y))continue;L.push({x,y,s:covScore(e,x,y,thr,hurt)})}
+L.sort((a,b)=>b.s-a.s);for(let i=0;i<Math.min(V.cands,L.length);i++){const pa=pathTo(e.x,e.y,L[i].x,L[i].y);if(pa.length||(Math.floor(e.x/T)===L[i].x&&Math.floor(e.y/T)===L[i].y)){L[i].path=pa;return L[i]}}return null}
+function covThr(e){return actv().filter(o=>Math.hypot(o.x-e.x,o.y-e.y)<CFG.truck.cov.see*T)}
+function crewCoverStep(e,dt,tg,shd){const V=CFG.truck.cov;let tx=0,ty=0,sp=e.spd;
+if(!e.cv){const b=crewCover(e);e.cv=b?{x:b.x,y:b.y}:{x:Math.floor(e.x/T),y:Math.floor(e.y/T)};e.cvT=tH;e.cvChk=tH+V.re;e.path=b?b.path:[];e.cs=e.path.length?'go':'hide';e.cst=covPick(V.hide)}
+const hx=e.cv.x*T+16,hy=e.cv.y*T+16;e.cool=Math.max(0,e.cool-dt);
+if(e.cs==='hide'&&tH>=e.cvChk){e.cvChk=tH+V.re;const hurt=e.hp<e.mhp*V.hurt&&!e.cvH;if(hurt||tH-e.cvT>=V.min){const thr=covThr(e),lost=!covAdj(e.cv.x,e.cv.y),flank=thr.some(q=>!covShelter(hx,hy,q)||Math.hypot(q.x-hx,q.y-hy)<V.near*T),cur=lost?-99:covScore(e,e.cv.x,e.cv.y,thr,false),o0=covNear(hx,hy,thr),nopk=!!o0&&!covPeek(hx,hy,o0),b=crewCover(e,hurt);
+if(hurt)e.cvH=1;if(b&&(b.x!==e.cv.x||b.y!==e.cv.y)&&b.path.length&&(hurt||lost||flank||(nopk&&b.s>cur)||b.s>=cur+V.gain)){e.cv={x:b.x,y:b.y};e.cvT=tH;e.path=b.path;e.cs='go';e.pk=null}}}
+const face=(px,py)=>{e.a=alerp(e.a,Math.atan2(py-e.y,px-e.x),V.turn)};
+if(e.cs==='go'){e.react=0;const q=e.path[0];if(!q)e.cs='hide',e.cst=covPick(V.hide);else{const dx=q[0]-e.x,dy=q[1]-e.y,dd=Math.hypot(dx,dy);if(dd<4)e.path.shift();else{tx=dx/dd;ty=dy/dd;sp=e.spd*CFG.pol.run;e.a=alerp(e.a,Math.atan2(ty,tx),V.turn)}}}
+else if(e.cs==='hide'){e.react=0;const dx=hx-e.x,dy=hy-e.y,dd=Math.hypot(dx,dy);if(dd>V.arrive){tx=dx/dd;ty=dy/dd;sp*=V.walk}const o0=covNear(e.x,e.y,covThr(e));if(o0)face(o0.x,o0.y);
+if((e.cst-=dt)<=0){const pk=o0&&covPeek(hx,hy,o0);if(pk){e.pk=pk;e.cs='peek';e.cst=covPick(V.peek);e.cpt=0}else e.cst=covPick(V.hide)*V.hideRe}}
+else{const dx=e.pk[0]-e.x,dy=e.pk[1]-e.y,dd=Math.hypot(dx,dy),arr=dd<=V.arrive;if(!arr){tx=dx/dd;ty=dy/dd;sp*=V.walk;e.cpt+=dt}else e.cst-=dt;
+if(tg&&!shd){const dxp=tg.x-e.x,dyp=tg.y-e.y;e.react+=dt;e.a=alerp(e.a,Math.atan2(dyp,dxp),V.turnShoot);if(arr&&e.react>V.react&&e.cool<=0){{e.cool=e.rate*(V.rateVar[0]+Math.random()*(V.rateVar[1]-V.rateVar[0]));const a=e.a+(Math.random()-.5)*e.acc;bl.push({id:++bid,x:e.x+Math.cos(e.a)*(e.muz+2),y:e.y+Math.sin(e.a)*(e.muz+2),vx:Math.cos(a)*V.bulV,vy:Math.sin(a)*V.bulV,l:1,o:0,dmg:e.dmg});e.fl=.05;evt('es',[e.id,e.x,e.y,e.kind])}}}else e.react=0;
+if(e.cst<=0||e.cpt>V.peekMax){e.cs='hide';e.cst=covPick(V.hide)}}
+return[tx,ty,sp]}
 function capTarget(o){let b=null,bd=38;for(const e of en){if(!e.sur||e.cap)continue;const d=Math.hypot(e.x-o.x,e.y-o.y);if(d<bd){bd=d;b=e}}return b}
 function capture(e){e.cap=true;capt++;capd.push({x:e.x,y:e.y,a:e.a});if(e.drv){keyTaken=true;say('Fahrer überwältigt: Schlüssel erbeutet');ban('Schlüssel erbeutet',2)}else say('Wache überwältigt');snd('pick',6)}
 function initTruck(){const D=tkD(),x0=L=>D>0?-3*T-L/2:(WX0+W)*T+3*T+L/2;tk={x:x0(TKL),y:12*T,v:0,st:'wait',tire:CFG.truck.tire,cells:null};vh=LAY.mission.vorhut?{x:x0(VHL),y:10*T,v:0,st:'wait',cells:null,rep:0}:null;if(LAY.mission.panne){tk.x=LAY.mission.px*T;tk.st='stopped';tkStamp()}
@@ -1664,10 +1696,12 @@ for(const o of act){const dd=Math.hypot(o.x-e.x,o.y-e.y);if(dd<460&&(dd<td||dd<t
 const shd=!tg&&!!ts;if(shd){tg=ts;td=tsd}
 let tx=0,ty=0,sp=e.spd;
 e.dt-=dt;if(e.dt<=0){e.dir*=-1;e.dt=1+Math.random()*1.5}
+if(e.mode==='cover'&&!e.stm&&policeShown&&tH>=policeAt+(e.cvi|0)*CFG.truck.cov.stagger){e.mode='push';e.post=null;e.path=[];e.cv=null}
 if(e.mode==='run'&&!e.stm&&(e.hp<e.mhp||e.sx||(tg&&!shd&&td<CFG.pol.reactD))){e.mode='push';e.post=null;e.path=[]}
 else if(e.mode==='post'&&!e.stm&&(((e.hp<e.mhp||e.sx)&&!e.crew)||tH>=e.rt+holdX-(e.hx||0))){const d=e.post.door;if(e.hp>=e.mhp&&!e.sx&&d&&cell(d[0],d[1])==='L'){e.mode='breach';e.bt=CFG.pol.breachT}else{e.mode='push';e.post=null}}
 else if(e.mode==='breach'){const d=e.post.door;if(e.hp<e.mhp||e.sx||cell(d[0],d[1])!=='L'){e.mode='push';e.post=null}else if((e.bt-=dt)<=0){setc(d[0],d[1],'l');snd('ev','crash');flowT=0;say('Die Polizei bricht die Hintertür auf!');e.mode='push';e.post=null}}
-if(tg&&e.mode!=='run'){const dxp=tg.x-e.x,dyp=tg.y-e.y,dd=td||1;if(shd)e.react=0;else e.react+=dt;e.a=alerp(e.a,Math.atan2(dyp,dxp),.25);if(e.mode==='post'||e.mode==='breach'){tx=-dyp/dd*e.dir*.5;ty=dxp/dd*e.dir*.5}else if(e.mode==='plant'){tx=0;ty=0}else if(dd>150){tx=dxp/dd;ty=dyp/dd}else{tx=-dyp/dd*e.dir;ty=dxp/dd*e.dir}sp*=.72;
+if(e.mode==='cover'){const cr=crewCoverStep(e,dt,tg,shd);tx=cr[0];ty=cr[1];sp=cr[2]}
+else if(tg&&e.mode!=='run'){const dxp=tg.x-e.x,dyp=tg.y-e.y,dd=td||1;if(shd)e.react=0;else e.react+=dt;e.a=alerp(e.a,Math.atan2(dyp,dxp),.25);if(e.mode==='post'||e.mode==='breach'){tx=-dyp/dd*e.dir*.5;ty=dxp/dd*e.dir*.5}else if(e.mode==='plant'){tx=0;ty=0}else if(dd>150){tx=dxp/dd;ty=dyp/dd}else{tx=-dyp/dd*e.dir;ty=dxp/dd*e.dir}sp*=.72;
 if(e.react>CFG.pol.react){e.cool-=dt;if(e.cool<=0){e.cool=e.rate*(.8+Math.random()*.5);const a=e.a+(Math.random()-.5)*e.acc;bl.push({id:++bid,x:e.x+Math.cos(e.a)*(e.muz+2),y:e.y+Math.sin(e.a)*(e.muz+2),vx:Math.cos(a)*420,vy:Math.sin(a)*420,l:1,o:0,dmg:e.dmg});e.fl=.05;evt('es',[e.id,e.x,e.y,e.kind])}}}
 else if(e.mode==='run'){e.react=0;const q=e.path[0];if(!q)e.mode='post';else{const dx=q[0]-e.x,dy=q[1]-e.y,dd=Math.hypot(dx,dy);if(dd<4)e.path.shift();else{tx=dx/dd;ty=dy/dd;sp=e.spd*CFG.pol.run;e.a=alerp(e.a,Math.atan2(ty,tx),.2)}}}
 else if(e.mode==='plant'){e.react=0;if(e.tb)e.a=alerp(e.a,Math.atan2(e.tb.y-e.y,e.tb.x-e.x),.15)}
