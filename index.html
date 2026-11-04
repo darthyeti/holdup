@@ -141,7 +141,7 @@ U3:{n:'Notfallkoffer',d:'C: {cnt} Koffer, heilt {hps} HP/s im Umkreis',s:'C: {cn
 U4:{n:'C4',d:'E am Tresor oder Laderaum: sprengen, Beuteverlust -{save%} %',s:'Sprengen, Verlust -{save%} %',cnt:[1,1,1],save:[.25,.5,.75],w:'E am Tresor oder Laderaum: sprengt sofort, laut, ein Teil der Beute verbrennt',x:'Öffnet den Tresor oder den Laderaum des Geldtransporters sofort (E, ein Stück je Auftrag). Laut: im Erkunden sofort Alarm, im Überfall kommt die Polizei früher. Ein Teil der Beute dort verbrennt, die Stufen sparen davon.'}},
 dec:{hp:140,mat:2,wreck:1,dur:1.6,reach:76},
 ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
-bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40},
+bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40,repT:1.8,repHp:100,repMc:1,repPref:50},
 lean:{reach:26,spd:0},
 gren:{from:2,gasFrom:4,spd:300,maxD:420,reach:420,range:520,flash:{fuse:1.1,r:200,t:3.2,minT:.6,face:.5,spread:.1,fade:1.2,delay:.5},gas:{fuse:.7,r:80,t:11,dps:4,slow:.8,spread:.05,maskF:.1,delay:1.8,tick:.8}},
 snp:{car:1,from:3,max:2,hp:60,dmg:55,aim:1.7,lock:.5,cool:4.5,first:3,range:700,spd:1200},
@@ -1004,7 +1004,7 @@ LAY.tills.forEach(c=>its.push(till(c[0],c[1])));LAY.atms.forEach(c=>its.push(atm
 cams.forEach(c=>its.push({t:'cam',x:c.x,y:c.y,r:50,pr:0,lab:()=>'Kamera deaktivieren',dur:()=>2.6,ok:()=>phase===1&&c.k&&!c.off,act(){c.off=true;snd('ev','cam');say('Kamera deaktiviert');ban('Kamera ausgeschaltet',1.6)}}));
 LAY.spots.forEach(sp=>{if(sp.lk)its.push(lockItem(sp))});if(LAY.jewel)LAY.vit.forEach(v=>its.push(vitItem(v)));(LAY.goods||[]).forEach(v=>its.push(goodItem(v)));if(LAY.cage)its.push(cageItem(LAY.cage));
 its.push({t:'sw',x:LAY.sw.x,y:LAY.sw.y,r:44,pr:0,lab:()=>LAY.museum?'Hauptschalter: Kameras und Laser 50 s aus':'Hauptschalter: Kameras 50 s aus',dur:()=>3,ok:()=>camDown<=0,act(){camDown=50;snd('ev','power');say(LAY.museum?'Kameras und Laser fahren herunter':'Kamerasystem fährt herunter');ban(LAY.museum?'Kameras und Laser aus (50 s)':'Kameras aus (50 s)',2.2)}});}
-LAY.spots.forEach((sp,i)=>{const b={i,cells:sp.cells,x:sp.x,y:sp.y,n:sp.n,side:sp.side,iv:sp.iv,rd:!!sp.rd,g:sp.g,okc:sp.rd?'o':'DlLdg',mc:sp.rd?CFG.truck.seg.mc:sp.mc||1,bt:sp.rd?CFG.truck.seg.bt:sp.bt||1,r:sp.r||58,pv:[],lv:0,hp:0,st:'wait',tk:false,cd:0,fz:0,bp:0};bars.push(b);const bi=barItem(b);its.push(bi,bardItem(b,bi))});
+LAY.spots.forEach((sp,i)=>{const b={i,cells:sp.cells,x:sp.x,y:sp.y,n:sp.n,side:sp.side,iv:sp.iv,rd:!!sp.rd,g:sp.g,okc:sp.rd?'o':'DlLdg',mc:sp.rd?CFG.truck.seg.mc:sp.mc||1,bt:sp.rd?CFG.truck.seg.bt:sp.bt||1,r:sp.r||58,pv:[],lv:0,hp:0,st:'wait',tk:false,cd:0,fz:0,bp:0};bars.push(b);const bi=barItem(b);its.push(bi,bardItem(b,bi),barrItem(b))});
 if(LAY.truck)initTruck();else for(const [x,y] of TILES)if(matCell(x,y))its.push(matItem(x,y,cell(x,y)));
 (LAY.wins||[]).forEach(w=>its.push(wbarItem(w)));
 if(LAY.prison)prisonItems();if(LAY.nb)nbItems();
@@ -1231,6 +1231,9 @@ const barOff=b=>(phase!==2&&!b.rd)||ended||b.st==='fuse'||!!(b.rd&&tk&&(tk.st===
 function barDism(b,o){const nd=b.mc||1;let back=0;for(let i=0;i<b.lv*nd;i++)if(o.units+CFG.bar.matU<=o.bag+.01&&(o.mat|0)<CFG.bar.matMax){o.mat=(o.mat|0)+1;o.units+=CFG.bar.matU;back++}
 b.cells.forEach((c,i)=>setc(c[0],c[1],b.pv[i]));b.lv=0;b.hp=0;b.tk=false;flowT=0;snd('thud',b.x,b.y);say(b.n+' freigeräumt'+(back?' (+'+back+' Material)':''))}
 function bardItem(b,bi){return{t:'bard',b,x:b.x,y:b.y,r:b.r||58,pr:0,sn:'pry',ok(o){return b.lv>0&&!barOff(b)&&bi.mode(o)!==2},lab:()=>'Barrikade abbauen: '+b.n,dur:()=>CFG.bar.dismT,act(o){if(b.lv>0)barDism(b,o)}}}
+/* Reparieren (Ticket 92): eigenes Objekt wie bar und bard. Angebot nur bei stehender Barrikade mit Schaden (hp unter lv*CFG.bar.hp) und Material (repMc). Gibt bis zu repHp HP zurueck, hoechstens bis voll, die Sperrfrist cd bleibt. Rang: repPref vor Verstaerken (pref). */
+function barrItem(b){const full=()=>b.lv*CFG.bar.hp;return{t:'barr',b,x:b.x,y:b.y,r:b.r||58,pr:0,sn:'pry',ok(o){return b.lv>0&&!barOff(b)&&b.hp<full()&&(o.mat|0)>=CFG.bar.repMc},lab:()=>'Barrikade reparieren: '+b.n+' ('+CFG.bar.repMc+' Material)',dur:o=>CFG.bar.repT*(1-skv(o.kit,'V1','build')),rk:()=>-CFG.bar.repPref,
+act(o){if(!this.ok(o))return;o.mat-=CFG.bar.repMc;o.units=Math.max(0,o.units-CFG.bar.matU*CFG.bar.repMc);b.hp=Math.min(full(),b.hp+CFG.bar.repHp);snd('thud',b.x,b.y);say(b.n+' repariert')}}}
 function barItem(b){return{t:'bar',b,x:b.x,y:b.y,r:b.r||58,pr:0,sn:'pry',
 mode(o){if(barOff(b))return 0;const need=b.mc||1;if(b.lv<(b.rd?1:CFG.bar.lv)&&(o.mat|0)>=need){if(!b.lv&&b.cells.some(c=>{const t=cell(c[0],c[1]);return b.okc.indexOf(t)<0&&!(t==='V'&&vaultOpen)}))return 0;return barFree(b)?1:3}return b.lv>0?2:0},
 ok(o){return this.mode(o)>0},
@@ -2158,6 +2161,7 @@ function badge(id,col,x,y,r){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,6.283);
 function pinfo(it,o){if(it.pi)return it.pi(o);const t=it.t;
 if(t==='bar'){const m=it.mode(o),b=it.b,q=b.rd?sperre(b.g):null;if(m===1)return{i:'hammer',c:'g',v:b.rd?'Sperre bauen':b.lv?'Verstärken':'Verbarrikadieren',n:b.rd?'':b.n,cost:b.mc||1,seg:q?[q.k,q.n]:null};if(m===2)return{i:'axe',c:'r',v:'Abbauen',n:b.rd?'':b.n};return{i:'block',c:'x',v:'Im Weg'}}
 if(t==='bard')return{i:'axe',c:'r',v:'Abbauen',n:it.b.rd?'':it.b.n};
+if(t==='barr')return{i:'hammer',c:'g',v:'Reparieren',n:it.b.rd?'':it.b.n,cost:CFG.bar.repMc};
 if(t==='mat')return{i:'axe',c:'r',v:'Zerlegen',gain:it.cnt||1};
 if(t==='wbar')return{i:'hammer',c:'g',v:'Fenster sichern',cost:CFG.win.mc};
 if(t==='till')return{i:'coin',c:'y',v:'Leeren'};
@@ -2194,7 +2198,7 @@ if(prog>0){g.fillStyle='#10161f';g.fillRect(x0,y0+h+2,w,5);g.fillStyle=col;g.fil
 function drawAlt(d,x0,y0){const col=ICOL[d.c]||ICOL.x;g.save();g.textBaseline='alphabetic';g.font='bold 13px monospace';const vw=g.measureText(d.v).width,w=10+24+8+(d.i?28:0)+vw+10,h=36;plate(x0,y0,w,h);g.strokeStyle=col;g.globalAlpha=.4;g.lineWidth=1;g.strokeRect(x0+.5,y0+.5,w-1,h-1);g.globalAlpha=1;
 let x=x0+10;g.fillStyle='#2a313b';g.fillRect(x,y0+8,24,20);g.strokeStyle='#9aa6b2';g.strokeRect(x+.5,y0+8.5,23,19);g.fillStyle='#e8edf2';g.textAlign='center';g.fillText('Q',x+12,y0+23);x+=32;
 if(d.i){badge(d.i,col,x+11,y0+18,11);x+=28}g.textAlign='left';g.fillStyle=col;g.fillText(d.v,x,y0+23);g.restore()}
-function drawTarget(tg,d){const col=ICOL[d.c]||ICOL.x,pl=.5+.5*Math.sin(time*6),big=tg.t==='mat'&&tg.cnt,r=big?0:tg.t==='bar'||tg.t==='bard'?20:18;g.save();g.strokeStyle=col;g.globalAlpha=.45+.4*pl;g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();
+function drawTarget(tg,d){const col=ICOL[d.c]||ICOL.x,pl=.5+.5*Math.sin(time*6),big=tg.t==='mat'&&tg.cnt,r=big?0:tg.t==='bar'||tg.t==='bard'||tg.t==='barr'?20:18;g.save();g.strokeStyle=col;g.globalAlpha=.45+.4*pl;g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();
 if(big)g.ellipse(tg.x,tg.y,66,36,0,0,6.283);else g.arc(tg.x,tg.y,r+pl*2,0,6.283);g.stroke();g.setLineDash([]);g.globalAlpha=1;
 if(d.i)badge(d.i,col,tg.x,tg.y-(big?44:r+14)-pl*2,9);g.restore()}
 function drawLegend(y){const L=[['hammer','g','bauen, öffnen, helfen'],['axe','r','zerstören, ausschalten'],['coin','y','Beute'],['mag','b','Info']];g.save();g.font='11px monospace';g.textAlign='left';let w=0;const ws=L.map(l=>{const t=g.measureText(l[2]).width;w+=26+t+20;return t});w+=24+g.measureText('laut').width;let x=480-w/2;
