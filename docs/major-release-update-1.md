@@ -29,7 +29,7 @@ Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräc
 | B3 | C4 für Tresore und die Sprengladung des Geldtransporters | dort, Gegenstände | mittel bis groß | gebaut |
 | B4 | Besondere Waffen: Präzisionsgewehr und Granatwerfer (Shift schaltet um) | dort | mittel bis groß | gebaut |
 | B5 | Notfallkoffer (Taste C) | dort | klein bis mittel | gebaut |
-| B6 | Balance des Skillbaums messen und anpassen | unten, Abschnitt B6 Plan | mittel | Plan v1 mit Messung (4. November 2026, Ticket #19), Bau nach Tills Entscheidung zu Zäh |
+| B6 | Balance des Skillbaums messen und anpassen | unten, Abschnitt B6 Plan | mittel | Plan v1 mit Messung (4. November 2026, Ticket #19), **B6a gebaut** (Werte und neues Zäh, 4. November 2026, ohne Spieltest), B6b und B6c offen |
 | C1 | Wachsamkeit der Läden, Stufe 1 (Zähler serienweit, Wachsames Personal erzwungen, Badge, Netz), dazu Lautlos-Bonus mit Abflachung und Skillpunkte lautlos 1, Überfall 2 | docs/ideen-und-planung.md, Karriere-Serie | mittel | gebaut |
 | C2 | Wachsamkeit, Stufe 2 (Sicherheitsdienst), nur falls Stufe 1 nicht reicht | dort | klein, aber das Layout hängt am Zähler | ersetzt durch #34 (Zivile Wachen und Zivilfahnder, gebaut am 29. Oktober 2026, Stand in docs/spielsystem.md) |
 | D0 | Messung: Wie viel Platz hat jede Karte in jeder Lage für einen zweiten und einen entfernten Treffpunkt | unten, Ergebnis im Abschnitt D0 Ergebnis | klein | gebaut (Messung), Entscheidung für D1 bis D3 bei Till |
@@ -211,9 +211,15 @@ Lesart: Die Streuung bei n=60 liegt bei rund 12 Punkten. Klar über dem Rauschen
 
 Erwartung (aus der Messung abgeleitet, nicht gemessen): Zäh mit 25 % und 0,5 s landet zwischen 88 und 97 %, also weiter der stärkste Zusatz, aber mit spürbarem Preis. Soll Zäh deutlich schwächer werden, ist das eine Frage der Art (zweites Leben ja oder nein), nicht der Zahl, siehe Entscheidung.
 
+### Stand B6a (gebaut am 4. November 2026, Ticket #19, ohne Spieltest)
+
+Tills Entscheidungen: **Zäh ist kein zweites Leben mehr** (Entscheidung C), die übrigen Werte wie vorgeschlagen (A). Neu in `CFG.skill.V2`: `lo` [0,0,.35] (Schwelle) und `lf` [0,0,.3] (Faktor): Wer unter 35 % Leben hat, nimmt 30 % weniger Schaden (`hitPlayer`, nach dem Lehnen, vor Helm und Weste). Das Aufstehen mit 45 %, die 2 s Schutzzeit und die Marke `sw` am Spieler entfallen, das Adrenalin aus dem Shop bleibt unverändert. Übrige Werte: `A1.run` [0,0,.5], `A2.pierce` [0,0,.35], `U2.van` [0,0,5], `U1.cap` [0,0,10], `V2.lean` [.25,.4,.45]. Kein `VER`, kein `UI_API` (Host rechnet, `hitPlayer` läuft nur beim Host, der Schnappschuss braucht nichts).
+
+Messung mit demselben Bot (Bank klassisch, `sigma` .07, `react` .35, `call` null, `van` alt, Fahndung 1, Wurzel 3 plus Pfad 3), n=100, Siegquote (n=60 sind mit rund 12 Punkten Streuung nur grob): Panzerung 3 und Deckung 3 **ohne Zäh 64 %** (zweite Messung 58 %), Zäh 35 %/40 % 83 % und 82 %, **Zäh 35 %/30 % 75 %** (gewählt), Zäh 35 %/25 % 69 %, Zäh 30 %/30 % 81 %, Zäh 25 %/30 % 68 %, Zäh 50 %/50 % 95 % (n=60). Zum Vergleich mit den neuen Werten: Läufer 71 % gegen 73 % ohne Läufer, Durchschuss 58 % gegen 53 % ohne. Vorher (alt, Plan oben) lag Zäh bei 100 %. Zäh bringt jetzt rund +11 bis +17 Punkte, im Bereich der alten Läufer- und Durchschuss-Werte (+13 bis +19) und deutlich unter 100 %, die abgeschwächten Läufer und Durchschuss liegen im Rauschen. Stellschrauben bei Bedarf: `lo` und `lf`. Tests: `93-skillbaum` (Zäh: 20 Schaden bei 100 und 36 Leben voll, bei 34 Leben 14, kein Aufstehen) und `98-skillbaum-umbau` (Listen, Läufer halber Zuschlag, Durchschuss 35 %), Mutanten (Zäh ohne Wirkung, Schwelle immer wahr) schlagen an.
+
 ### Schritte
 
-1. **B6a Werte (klein, Label `spielgefuehl`).** Die Werte oben in `CFG.skill`, neues Feld `V2.inv` in `hitPlayer` statt `CFG.shop.adInv` beim Zäh. Tests: `93-skillbaum` und `98-skillbaum-umbau` prüfen die Listen (dort steht .45), anpassen; ein neuer Testfall prüft die Schutzzeit von Zäh getrennt vom Adrenalin. Kein `VER` (Netz und Karten unverändert), kein `UI_API` (die Texte `b` lesen die Werte selbst). Doku: der Absatz Skillbaum in docs/spielsystem.md, ein Satz Spieltest-Hinweis in docs/offen-und-spieltest.md.
+1. **B6a Werte (gebaut, siehe Stand B6a; die Schutzzeit-Variante `V2.inv` entfiel mit der Änderung von Zäh) (klein, Label `spielgefuehl`).** Die Werte oben in `CFG.skill`, neues Feld `V2.inv` in `hitPlayer` statt `CFG.shop.adInv` beim Zäh. Tests: `93-skillbaum` und `98-skillbaum-umbau` prüfen die Listen (dort steht .45), anpassen; ein neuer Testfall prüft die Schutzzeit von Zäh getrennt vom Adrenalin. Kein `VER` (Netz und Karten unverändert), kein `UI_API` (die Texte `b` lesen die Werte selbst). Doku: der Absatz Skillbaum in docs/spielsystem.md, ein Satz Spieltest-Hinweis in docs/offen-und-spieltest.md.
 2. **B6b Nachmessung (klein).** Dieselbe Messung mit den neuen Werten, Ergebnis hier eintragen, dazu Tankstelle und Casino mit `batchSeeds` (je 40 Seeds), damit die Bank nicht allein entscheidet.
 3. **B6c nach Tills Spieltest.** Gegenstände und Sammler, Verhandler und Sanitäter im Coop, die der Bot nicht misst.
 
