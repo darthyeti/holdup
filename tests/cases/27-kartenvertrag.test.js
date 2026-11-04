@@ -183,12 +183,13 @@ module.exports = [
         D.CFG.val.pathSV = [8, 33];
         const sv = D.CFG.val.minW; D.CFG.val.minW = 100; run('welt', () => { }); D.CFG.val.minW = sv;
         // Zauntor der Bank (Parkplatz): ein Auto davor stellt es zu (Fehler), ein halb verstelltes Tor ist eine Warnung
-        D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.CFG.stash.on = 0;   // das Zauntor wird auf der Karte ohne Kammer geprueft (Bank 5 mit Kammer hat ein anderes Tor)
-        const gate = f => { const lay = D.layoutBase(5), w = D.world(), B = lay.bld, gy = B.y1 + 1; let gx = -1; for (let x = B.x1 + 1; x < w.WX0 + w.W - 1; x++) if (!D.isSol(x, gy)) { gx = x; break; } f(w.setc, gx, gy); const rep = D.validateMap(lay); return { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) }; };
+        D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); const stashOn = D.CFG.stash.on;
+        const gate = f => { const lay = D.layoutBase(5), w = D.world(), B = lay.bld, gy = B.y1 + 1; let gx = -1; for (let x = w.WX0 + 1; x < w.WX0 + w.W - 3; x++) if (w.cell(x - 1, gy) === 'f' && w.cell(x, gy) === 'o' && w.cell(x + 1, gy) === 'o' && w.cell(x + 2, gy) === 'f') { gx = x; break; } f(w.setc, gx, gy); const rep = D.validateMap(lay); return { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) }; };
         out['tor-ganz'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); c(gx + 1, gy - 1, 'v'); });
         out['tor-halb'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); });
         out['tor-frei'] = gate(() => { });
-        D.CFG.stash.on = 1;
+        // dieselben Proben mit Kammer (Bank 5 hat dann eine andere Huelle) und ohne, der Wert von CFG.stash.on wird gesichert und zurueckgesetzt
+        try { for (const on of [0, 1]) { D.CFG.stash.on = on; out['tor-ganz' + on] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); c(gx + 1, gy - 1, 'v'); }); out['tor-halb' + on] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); }); out['tor-frei' + on] = gate(() => { }); } } finally { D.CFG.stash.on = stashOn; }
         return out;
       });
       t.eq(r.ohne, { err: [], warn: [] }, 'der unveraenderte Juwelier ist sauber');
@@ -196,9 +197,11 @@ module.exports = [
       for (const [k, rule] of Object.entries(want)) t.ok(r[k].err.includes(rule), k + ': Regel "' + rule + '" muss anschlagen, bekam ' + JSON.stringify(r[k]));
       t.ok(r['eingang-verstellt'].warn.includes('eingang-verstellt') && !r['eingang-verstellt'].err.includes('eingang-weg'), 'Tuer hinter zerlegbarem Moebel ist nur eine Warnung: ' + JSON.stringify(r['eingang-verstellt']));
       t.ok(r['weg-warnung'].warn.includes('weg-start-tresor'), 'Weg Start zu Tresor ausserhalb des Richtwerts warnt: ' + JSON.stringify(r['weg-warnung']));
-      t.ok(r['tor-ganz'].err.includes('tor-verstellt'), 'Auto vor dem Zauntor ist ein Fehler: ' + JSON.stringify(r['tor-ganz']));
-      t.ok(r['tor-halb'].warn.includes('tor-eng') && !r['tor-halb'].err.includes('tor-verstellt'), 'halb verstelltes Zauntor ist nur eine Warnung: ' + JSON.stringify(r['tor-halb']));
-      t.ok(!r['tor-frei'].err.includes('tor-verstellt') && !r['tor-frei'].warn.includes('tor-eng'), 'freies Zauntor ist sauber: ' + JSON.stringify(r['tor-frei']));
+      for (const k of ['', '0', '1']) {
+        t.ok(r['tor-ganz'+k].err.includes('tor-verstellt'), '['+k+'] Auto vor dem Zauntor ist ein Fehler: ' + JSON.stringify(r['tor-ganz'+k]));
+        t.ok(r['tor-halb'+k].warn.includes('tor-eng') && !r['tor-halb'+k].err.includes('tor-verstellt'), '['+k+'] halb verstelltes Zauntor ist nur eine Warnung: ' + JSON.stringify(r['tor-halb'+k]));
+        t.ok(!r['tor-frei'+k].err.includes('tor-verstellt') && !r['tor-frei'+k].warn.includes('tor-eng'), '['+k+'] freies Zauntor ist sauber: ' + JSON.stringify(r['tor-frei'+k]));
+      }
     },
   },
   {
