@@ -50,7 +50,7 @@ async function launch(opts) {
   const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-accelerated-2d-canvas'] });
   // Mit #debug allein wuerfelt das Spiel zufaellige Karten. Die Tests brauchen die feste Klassikkarte und setzen sie hier ausdruecklich, fuer jeden Kontext (auch die eigenen Seiten einzelner Tests)
   const newCtx = browser.newContext.bind(browser);
-  browser.newContext = async (o) => { const c = await newCtx(o); await c.addInitScript(() => { window.__holdupSeed = 'classic'; }); return c; };
+  browser.newContext = async (o) => { const c = await newCtx(o); await c.addInitScript(() => { window.__holdupSeed = 'classic'; window.__nbVarOff = 1; }); return c; };
   return { srv, url, browser };
 }
 
@@ -62,6 +62,8 @@ async function openGame(env, opts) {
   if (opts.det) await ctx.addInitScript(() => { let a = 0x9e3779b9; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
   // Jeder Kontext bekommt die feste Klassikkarte schon in launch (siehe dort); opts.random nimmt sie zurueck, dann wuerfelt das Spiel wie im Browser
   if (opts.random) await ctx.addInitScript(() => { delete window.__holdupSeed; });
+  // Notenbank-Varianten (N7, CFG.nb.var.on) sind in den Tests aus (feste Koordinaten der Klassik-Karte, gesetzt in launch), opts.nbvar schaltet sie ein
+  if (opts.nbvar) await ctx.addInitScript(() => { delete window.__nbVarOff; });
   const page = await ctx.newPage();
   page.errors = [];
   page.on('pageerror', e => page.errors.push(String(e && e.stack || e)));

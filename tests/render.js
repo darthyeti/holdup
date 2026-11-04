@@ -13,7 +13,7 @@ const OUT = process.env.HOLDUP_OUT || path.join(os.tmpdir(), 'holdup-render');
   const args = process.argv.slice(2), jobs = [];
   for (let i = 0; i + 1 < args.length;) { const j = [args[i], args[i + 1], null]; i += 2; if (/^[NSEW]\+?$/.test(args[i] || '')) j[2] = args[i++]; jobs.push(j); }
   if (!jobs.length) { console.log('Aufruf: node render.js <szenario> <seed oder Grundrissname> ...'); process.exit(1); }
-  const env = await launch(), page = await openGame(env); await loadInpage(page, 'render.js');
+  const env = await launch(), page = await openGame(env, { nbvar: true }); await loadInpage(page, 'render.js');
   for (const [sc, sd, turn] of jobs) {
     const r = await page.evaluate(([sc, sd, turn]) => { const q = RN.draw(sc, sd, turn); return q.err ? q : { png: q.c.toDataURL('image/png'), seed: q.seed, hall: q.hall }; }, [sc, sd, turn]);
     if (r.err) { console.log(r.err); continue; }

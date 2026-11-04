@@ -82,12 +82,13 @@ module.exports = [
     },
   },
   {
-    name: 'Halten: Die Ringe kommen aus der Karte (LAY.nb.rings, aus den Engstellen abgeleitet): jede Gebaeudekachel liegt in genau einem Ring, ohne die Engstellen kommt man aus keinem Ring heraus und in jedem Ring zu allen Bodenkacheln (8 Seeds), nbRingAt liest nur die Karte',
-    timeout: 120000,
+    name: 'Halten: Die Ringe kommen aus der Karte (LAY.nb.rings, aus den Engstellen abgeleitet): jede Gebaeudekachel liegt in genau einem Ring, ohne die Engstellen kommt man aus keinem Ring heraus und in jedem Ring zu allen Bodenkacheln (24 Seeds mit den Varianten aus N7), nbRingAt liest nur die Karte',
+    open: { nbvar: true },
+    timeout: 240000,
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, T = 32, bad = []; D.setScenario('nb'); D.setSeedMode('random'); D.setLage([]);
-        for (let sd = 1; sd <= 8; sd++) {
+        for (let sd = 1; sd <= 24; sd++) {
           D.buildSeed(sd); D.reset(); const L = D.LAY(), B = L.bld, w = D.world(), cl = (x, y) => w.M[y + 6][x + 6]; if (!L.nb.rings || L.nb.rings.length !== 4) { bad.push('Seed ' + sd + ' keine vier Ringe'); continue; }
           const ringOf = (x, y) => { const k = []; L.nb.rings.forEach((rs, i) => { if (rs.some(q => x >= q[0] && x <= q[2] && y >= q[1] && y <= q[3])) k.push(i + 1); }); return k; };
           let miss = 0; for (let y = B.y0 + 1; y < B.y1; y++) for (let x = B.x0 + 1; x < B.x1; x++) { const k = ringOf(x, y); if (k.length !== 1) miss++; if (k.length === 1 && D.nbRingAt(x * T + 16, y * T + 16) !== k[0]) miss++; }
