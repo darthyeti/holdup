@@ -80,4 +80,15 @@ module.exports = [
       t.ok(r.vor.every(x => x[0] === 'post' && !x[1]), 'ohne cov.on: Posten, kein Deckungsplatz: ' + JSON.stringify(r.vor)); t.ok(r.nach.every(m => m === 'push'), 'nach crewHold (' + r.hold + ' s) stuermen sie wie vorher: ' + r.nach);
     },
   },
+  {
+    name: 'Panne und Vorhut: die Besatzung der Panne (beim Ziehen der Waffe) und die Wachen der Vorhut nutzen mit cov.on 1 den Modus cover, mit cov.on 0 post',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const B = ${BUILD}, STEP = ${STEP}, o = {}, FIND = (pred) => { const D = __dbg; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd < 800; sd++) if (pred(D.genTruckMission(sd))) return sd; };
+        for (const on of [1, 0]) { const sp = FIND(m => m.panne && m.crew >= 2); { const { D, g, me } = B(sp, { on }); D.startHeist(false, me); o['panne' + on] = D.get().en.filter(e => e.crew).map(e => e.mode); }
+          const sv = FIND(m => m.vorhut); { const { D, g, me } = B(sv, { on }); const b = D.bars().find(x => x.rd && x.g === 1); b.lv = 1; b.hp = 100; STEP(D, me, 150 * 30, () => D.get().phase === 2); STEP(D, me, 20 * 30, () => D.get().en.some(e => e.vg)); STEP(D, me, 2 * 30); o['vorhut' + on] = D.get().en.filter(e => e.vg).map(e => e.mode); } }
+        return o; })()`);
+      for (const k of ['panne', 'vorhut']) { t.ok(r[k + '1'].length >= 2 && r[k + '1'].every(m => m === 'cover'), k + ' mit cov.on 1: cover ' + r[k + '1']); t.ok(r[k + '0'].length >= 2 && r[k + '0'].every(m => m === 'post'), k + ' mit cov.on 0: post ' + r[k + '0']); }
+    },
+  },
 ];
