@@ -20,6 +20,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | S1 bis S3 mit Befund | gebaut (26. Oktober 2026), wartet auf Tills Spieltest (Till ergänzt weitere Punkte) |
 | P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
 | P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
+| P7 | Bank-Seed 5305: Posten von parkenden Autos eingeschlossen (Ticket #7) | v1 (4. November 2026) | Plan steht, wartet auf Till (Akte `posten-autos`) |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -245,3 +246,23 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 - v1 (26. Oktober 2026): Plan zu B6 und B7, noch ohne Go, zwei Entscheidungen offen.
 - v1.1 (26. Oktober 2026): Entscheidungen von Till eingetragen. B6 wird einfacher (Rücksetzen beim Betreten, keine Kachel "Neue Serie für alle", keine Serienrunde in der Liste), B7 bekommt fünf Bildschirme.
 - Bau (26. Oktober 2026): Go von Till, gebaut mit den Abweichungen oben, Status gebaut.
+
+## P7 Bank-Seed 5305: Posten von parkenden Autos eingeschlossen (Ticket #7)
+
+**Bugs**
+- B8 (26. Oktober 2026, Fund des langen Tests `tests/long/91-treffpunkt-bank.test.js`, kein Spielbericht): Auf Bank-Seed 5305 stempelt `deriveDecor` zwei parkende Autos so neben den Ostposten (30,4), dass er von der Straße nicht erreichbar ist (mapcheck: "Posten von der Strasse nicht erreichbar"). Der Test führt den Seed seither in `KNOWN`.
+
+**Befund (4. November 2026, Stand `0aff508`, gemessen mit `tools/mapcheck.js` wie Test 91, Lage-Tags aus).**
+- Seed 5305 ist heute frei: Der Posten (30,4) hat ringsum Boden, die vier echten Autos stehen woanders (an der Straße und im Westen). Spätere Änderungen an der Kartenerzeugung (Fundort des Codes #56, Zivilfahnder #34, Gefängnis #47 und andere) haben die Würfe verschoben. Über 1.400 Bank-Seeds (0 bis 999 und 5000 bis 5399) meldet mapcheck keinen unerreichbaren Posten mehr.
+- Die Ursache besteht aber weiter: `deriveDecor` (index.html) sperrt für die echten Autos nur die Kachel des Postens selbst (`blk.add(q.x+','+q.y)`), nicht den Weg zu ihm. Zwei Autos links und rechts oder ein Auto vor einer Wand können ihn wieder einschließen, sobald sich ein Wurf verschiebt.
+- Folge im Spiel, größer als im Ticket beschrieben: `freePost` gibt außerhalb des Transporters den ersten freien Posten der Liste zurück. Ist der nicht erreichbar, findet `toPost` keinen Weg und der Beamte bleibt ohne Posten im Modus `push` (stürmt sofort). Der Posten gilt weiter als frei, also bekommt ihn jeder folgende Beamte als Erstes und stürmt ebenso, bis die Liste anders aussieht. Die Doku sagt bisher "die Polizei nimmt dann einen anderen Posten", das stimmt laut Code nicht (nicht im Spiel nachgestellt, weil kein Seed den Fall heute zeigt).
+
+**Plan v1 (zwei Lösungen).**
+- **Lösung A, breit:** In `deriveDecor` auch die vier Nachbarkacheln jedes Postens sperren. Einfach, aber jedes echte Auto, das heute neben einem Posten steht, rutscht entlang der Straße oder bleibt Kulisse. Das betrifft viele Karten (an der Bank liegen Ostposten und Hof-Autos fast immer nah beieinander), also ändern sich Raster nach dem Aufbau, Wagenzahl und Lage der Autos und damit die Goldens, die die fertige Welt hashen (`10-karten`, `29-vielfalt`, `34-gedrehte-karten`, je nach Test), dazu die Zählungen in `91-autos-parkend` und `144-autos-gespiegelt` und die Bot-Messungen. Nachweis "nur Autos verschoben" wäre Pflicht.
+- **Lösung B, gezielt (Empfehlung):** (1) In `deriveDecor` nach dem Setzen eines echten Autos prüfen, ob alle Posten noch von der Straße erreichbar sind (eine Flutung über begehbare Kacheln von den Wagenplätzen aus, wie mapcheck es tut, ein paar tausend Kacheln je Karte, nur beim Aufbau). Schließt das Auto einen Posten ein, rutscht es weiter oder bleibt Kulisse. Karten ohne Einschluss bleiben Zeichen für Zeichen gleich, heute also alle gemessenen, die Goldens bleiben. (2) `freePost`/`toPost` robust machen: Findet `toPost` keinen Weg, merkt er den Posten für diese Runde als gesperrt und versucht den nächsten, statt den Beamten ohne Posten stürmen zu lassen. Das ändert das Verhalten nur, wenn ein Posten wirklich unerreichbar ist (zum Beispiel auch durch eine Barrikade oder ein Wrack, was heute denselben Fehler hätte).
+- **Tests:** neuer Test mit einer gebauten Lage (Klassik-Bank, Auto per `buildLay` so gelegt, dass es einen Posten einschließt): Mit B ist der Posten erreichbar oder das Auto Kulisse, mapcheck sauber. Zweiter Fall: Posten per Raster unerreichbar gemacht, drei Beamte kommen an, jeder bekommt einen erreichbaren Posten, keiner stürmt vor `hold`. `KNOWN` in Test 91 fällt weg. Alt-Neu (`tests/altneu.js`) für Bank, Juwelier, Tankstelle, Museum, Casino: IDENTISCH. Schneller Lauf, kein voller Lauf nötig (keine Karte ändert sich).
+- **Region:** `deriveDecor`, `freePost`, `toPost` in `index.html`, klein, ein PR, Label `bug`, kein `spielgefuehl` (keine sichtbare Änderung, solange kein Posten eingeschlossen ist).
+
+**Änderungsprotokoll**
+- v1 (4. November 2026): Befund mit Messung, zwei Lösungen, Empfehlung B, Akte `posten-autos` für Till.
+
