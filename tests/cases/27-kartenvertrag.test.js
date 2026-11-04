@@ -183,11 +183,12 @@ module.exports = [
         D.CFG.val.pathSV = [8, 33];
         const sv = D.CFG.val.minW; D.CFG.val.minW = 100; run('welt', () => { }); D.CFG.val.minW = sv;
         // Zauntor der Bank (Parkplatz): ein Auto davor stellt es zu (Fehler), ein halb verstelltes Tor ist eine Warnung
-        D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
+        D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.CFG.stash.on = 0;   // das Zauntor wird auf der Karte ohne Kammer geprueft (Bank 5 mit Kammer hat ein anderes Tor)
         const gate = f => { const lay = D.layoutBase(5), w = D.world(), B = lay.bld, gy = B.y1 + 1; let gx = -1; for (let x = B.x1 + 1; x < w.WX0 + w.W - 1; x++) if (!D.isSol(x, gy)) { gx = x; break; } f(w.setc, gx, gy); const rep = D.validateMap(lay); return { err: rep.err.map(e => e.r), warn: rep.warn.map(e => e.r) }; };
         out['tor-ganz'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); c(gx + 1, gy - 1, 'v'); });
         out['tor-halb'] = gate((c, gx, gy) => { c(gx, gy - 1, 'v'); });
         out['tor-frei'] = gate(() => { });
+        D.CFG.stash.on = 1;
         return out;
       });
       t.eq(r.ohne, { err: [], warn: [] }, 'der unveraenderte Juwelier ist sauber');
