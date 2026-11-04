@@ -12,6 +12,25 @@ const MK = `(n, sc, seed) => { const G = CT.mkGame(sc || 'bank', seed || 321, n)
 // Kennzahlen der Figur (muss vor dem Abriss und nach der Rueckkehr gleich sein)
 const FIG = `(d, i) => { const q = d.get().players[i]; return [Math.round(q.x), Math.round(q.y), Math.ceil(q.hp), Math.ceil(q.ar), q.mag, q.res, q.loot, q.units, q.mat | 0, q.armed ? 1 : 0, q.c4 | 0, q.trap | 0, q.dc | 0].join(','); }`;
 
+/* Wettkampf-Raum-Aufbau aus 146 (R2.mk, R2.fin) */
+const HELP = `
+  window.R2 = {
+    add(G, nm, spec) { const C = mkInst(G.net, nm); G.insts.push(C); C.setName(nm); C.joinRoom(G.A.NET.code, spec ? { spec: true } : undefined); G.run(2); return C; },
+    mk(n1, n2, ns) {
+      const G = CT.mkLobby(1, 0), A = G.A; A.setName('Anna'); G.run(.2); MT.click(A, 'mDuel'); G.run(.3);
+      const t1 = [A], t2 = [], sp = [], names = ['Bo', 'Cy', 'Di', 'Ed', 'Fi', 'Gu', 'Hu', 'Iv']; let k = 0; const all = [];
+      for (let i = 1; i < n1 + n2; i++) all.push(R2.add(G, names[k++]));
+      for (const d of all) { if (d.NET.team === 1) t1.push(d); else t2.push(d); }
+      for (let i = 0; i < ns; i++) sp.push(R2.add(G, 'Z' + (i + 1), true));
+      const mv = (d, to) => { const who = d.NET.team === 2 ? 't' + d.NET.tk : d.NET.team === 1 ? d.NET.myId : 's' + d.NET.sid; A.roleSet(who, to); G.run(.5); };
+      while (t1.length > n1) { const d = t1.pop(); mv(d, 2); t2.push(d); }
+      while (t2.length > n2) { const d = t2.pop(); mv(d, 1); t1.push(d); }
+      G.run(1); return { G, A, t1, t2, sp };
+    },
+    // Wettkampf bis zum Ergebnis (ein Auftrag), beide siegen, die Ergebnisseite zeigt die letzte Seite
+    fin(G, A, B) { A.CFG.duel.len = 1; A.duelStart(); G.run(9); A.setSecured(30000); A.finish(true, 'Sieg'); B.setSecured(20000); B.finish(true, 'Sieg'); G.run(2); A.get().ended.pg = 9; B.get().ended.pg = 9; G.run(.2); },
+  };`;
+
 // Abriss, der die Rueckkehr blockiert (harter Abriss plus stiller Abriss, der Beitritte scheitern laesst), bis net.heal(name)
 const DOWN = `(G, n) => { G.net.cut(n); G.net.cut(n, { silent: true, closeAfter: 99999 }); }`;
 
@@ -106,12 +125,12 @@ module.exports = [
     name: 'N1a Schutz entfaellt ab dem dritten Abriss je Runde (CFG.net.protN 2): erster und zweiter Abriss schuetzen die Figur, der dritte nicht',
     async run(t) {
       await SETUP(t);
-      const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(2), [A, B] = G.insts; o.n = [];
-        for (let i = 0; i < 3; i++) { (${DOWN})(G, 'c1'); G.run(5); const p = A.get().players[1]; p.inv = 0; p.hp = 100; p.ar = 0; A.hitPlayer(p, 30); o.n.push([p.awN, !!p.away, A.prot(p), Math.ceil(p.hp), A.actv().some(q => q.id === 1)]); G.net.heal('c1'); G.run(6); }
+      const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(3), [A, B, C] = G.insts; o.n = [];
+        for (let i = 0; i < 3; i++) { (${DOWN})(G, 'c1'); G.run(5); const p = A.get().players[1]; p.inv = 0; p.hp = 100; p.ar = 0; A.hitPlayer(p, 30); o.n.push([p.awN, !!p.away, A.prot(p), Math.ceil(p.hp), A.actv().some(q => q.id === 1)]); G.run(1); o.flag = (o.flag || []).concat([!!C.get().players[1].away]); G.net.heal('c1'); G.run(6); }
         o.nach = [!!A.get().players[1].away, B.NET.rj, A.get().players[1].awN];
         return o; })()`);
       t.eq(r.n, [[1, true, true, 100, false], [2, true, true, 100, false], [3, true, false, 70, true]], 'Abriss 1 und 2 geschuetzt, 3 verwundbar');
-      t.eq(r.nach, [false, null, 3], 'jedes Mal kehrt B zurueck');
+      t.eq(r.flag, [true, true, false], 'Flag 128 (Anzeige bei Mitspielern) nur solange B geschuetzt ist: Abriss 1 und 2 ja, Abriss 3 nein'); t.eq(r.nach, [false, null, 3], 'jedes Mal kehrt B zurueck');
     },
   },
   {
@@ -223,6 +242,30 @@ module.exports = [
         return o; })()`);
       t.eq(r.ergebnis, [true, true, 'play', false], 'Rueckkehr im Ergebnis: dasselbe Ergebnis, kein zweites');
       t.eq(r.neu, ['play', true, 1, true, false, true, true, true, 3], 'neuer Auftrag: B abwesend, geschuetzt, nicht gone, Kit da, Frist laeuft weiter'); t.eq(r.zurueck, ['play', null, false, false, null, true, []], 'B kommt im neuen Auftrag zurueck, Welt gleich');
+    },
+  },
+  {
+    name: 'N1a Lobby-Geist: Ist B im Ergebnis abwesend und fuehrt der Host in die Lobby (Rueckkehr nach dem Duell, duelRet), fallen NET.aw und der Roster-Eintrag heraus, der Platz wird frei, ein Rueckkehrer bekommt genau einen Platz',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { ${HELP}; const o = {}; const { G, A, t1, t2 } = R2.mk(2, 2, 0), B = t2[0], C = t1[1]; R2.fin(G, A, B);
+        (${DOWN})(G, C.name); G.run(2); o.vor = [!!A.NET.aw[1], A.NET.roster.length]; const ok = A.duelRet(); G.run(2);
+        o.lobby = [ok, A.state().scr, Object.keys(A.NET.aw).length, A.NET.roster.length, A.NET.roster.some(r => r.id === 1)];
+        G.net.heal(C.name); G.run(10); o.nach = [A.NET.roster.filter(r => r.id === 1).length, A.NET.roster.length, Object.keys(A.NET.aw).length, C.state().scr];
+        return o; })()`);
+      t.eq(r.vor, [true, 2], 'B ist im Ergebnis abwesend, der Eintrag bleibt'); t.eq(r.lobby, [true, 'lobby', 0, 1, false], 'nach dem Wechsel in die Lobby: kein Geist in NET.aw und im Roster');
+      t.ok(r.nach[0] <= 1 && r.nach[2] === 0, 'ein Rueckkehrer belegt hoechstens einen Platz: ' + JSON.stringify(r.nach));
+    },
+  },
+  {
+    name: 'N1b Raum endgueltig weg: Antwortet der Vermittler beim Neuversuch dauerhaft mit peer-unavailable, gibt der Client nach CFG.net.goneT (20 s) auf (Titel mit Hinweis), nicht erst nach der Frist von 60 oder 300 s; kommt der Raum vorher zurueck, geht es weiter',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(2), [A, B] = G.insts; o.t = A.CFG.net.goneT;
+        G.net.signalDown(A.NET.code, { hold: true }); G.net.cut('c1'); G.run(12); o.mitte = [B.state().scr, !!B.NET.rj]; G.run(12); o.ende = [B.state().scr, B.NET.rj, B.NET.role];
+        const H = (${MK})(2), [A2, B2] = H.insts; H.net.signalDown(A2.NET.code, { hold: true }); H.net.cut('c1'); H.run(12); H.net.signalUp(A2.NET.code); H.run(8); o.zurueck = [B2.state().scr, B2.NET.rj, A2.get().players[1].away];
+        return o; })()`);
+      t.eq(r.t, 20, 'CFG.net.goneT 20 s'); t.eq(r.mitte, ['play', true], 'nach 12 s wartet B noch'); t.eq(r.ende, ['title', null, 'solo'], 'nach rund 20 s steht B auf dem Titel'); t.eq(r.zurueck, ['play', null, null], 'kommt der Raum vor Ablauf zurueck, kehrt B zurueck');
     },
   },
 ];

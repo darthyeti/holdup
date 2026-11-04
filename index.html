@@ -108,7 +108,7 @@ hud:{lageLines:4,lageW:28,feedW:440},
 funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
 chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
 spec:{max:6,on:1,cam:420,fast:900,every:2,maxBuf:65536,msgB:6000,evMax:400,delay:0,qMax:1200},
-net:{max:15800,blKeep:60,stall:4,reconT:2,rejoin:30,rejoinT:3,retWait:8,retJoin:15,retLock:15,grace:60,graceMenu:300,protN:2},
+net:{goneT:20,max:15800,blKeep:60,stall:4,reconT:2,rejoin:30,rejoinT:3,retWait:8,retJoin:15,retLock:15,grace:60,graceMenu:300,protN:2},
 duel:{len:3,maxLen:5,count:5,hb:1,pg:1,specDelay:20},
 museumGen:{on:1,classic:.05,ww:[10,15],ew:[10,15],dy:[1,5],vx:[-1,1],tries:30,block:{on:1,per:10,max:40,tries:800,len:[3,5],pil:.8,pilGap:1,pilFree:1,thick:.3,dItem:1,dRoute:0}},
 casinoGen:{on:1,classic:.1,dx:[0,4],dy:[0,2],vx:[-2,2],tries:30},
@@ -1839,7 +1839,7 @@ const awFrist=()=>scr==='play'&&!ended?CFG.net.grace:CFG.net.graceMenu;
 function awayStart(c,o){const t=awFrist();o.awN=(o.awN|0)+1;const rec={t,tok:c.tok,kit:c.kit};NET.aw[c.pid]=rec;o.away=rec;o.inp=IDLE;
 say(pn(c.pid)+': Verbindung weg'+(prot(o)?' (Figur geschützt)':''));LOG.ev('netz',['abwesend',c.pid,o.awN,t])}
 function awayEnd(pid,why){const o=players[pid];delete NET.aw[pid];if(o){o.away=null;if(!o.gone){o.gone=true;o.dc=true;say(pn(pid)+' hat das Spiel verlassen')}}
-if(scr==='shop'||scr==='mission')NET.roster=NET.roster.filter(r=>r.id!==pid);LOG.ev('netz',['abwesend ende',pid,why||'frist']);if(scr==='play')checkEnd();bcastRoster()}
+if(scr==='shop'||scr==='mission'||scr==='lobby')NET.roster=NET.roster.filter(r=>r.id!==pid);LOG.ev('netz',['abwesend ende',pid,why||'frist']);if(scr==='play')checkEnd();bcastRoster()}
 /* Rueckkehr: pid ist der abwesende Platz (rec in NET.aw) oder der eines noch halb offenen Spielers (c0, alte Verbindung wird verworfen). Die neue Verbindung bekommt denselben Platz, dieselbe Marke und dasselbe Kit, wel mit rl 2 (kein sessReset), dann je nach Bildschirm des Hosts go (Auftrag laeuft), das letzte end (Ergebnis) oder nur ros (Shop, Auftragswahl). o.ack kehrt auf 0 zurueck, weil der Client seine Eingabenummer neu zaehlt. */
 function hostReturn(c,m,pid,c0){const o=players[pid],rec=NET.aw[pid];
 if(c0){NET.conns=NET.conns.filter(x=>x!==c0);c0.ok=false;c0.onclose=null;try{c0.close()}catch(e){}}
@@ -1939,6 +1939,7 @@ function laterStep(){if(!LATER.length)return;const due=LATER.filter(x=>x[0]<=cha
 const wkName=c=>c.spec?c.nm:c.t2?c.nm:pn(c.pid);
 function netWatch(dt){const F=CFG.net;
 if(NET.role==='host'){
+ if(scr==='lobby')for(const k of Object.keys(NET.aw))awayEnd(+k,'lobby');   /* Wechsel in die Lobby (Rueckkehr nach dem Duell, Revanche): Abwesende fallen heraus, ihr Platz wird frei, ein Rueckkehrer tritt neu bei */
  for(const k of Object.keys(NET.aw)){const r=NET.aw[k];if(!r)continue;r.t-=dt;if(r.t<=0)awayEnd(+k)}
  if(NET.disc){NET.discT+=dt;if(NET.discT>=F.reconT){NET.discT=0;NET.recN++;try{NET.srv&&NET.srv.reconnect&&NET.srv.reconnect()}catch(e){}}}
  const bad=[];for(const c of NET.conns.concat(NET.specs,NET.t2)){if(!c.ok)continue;const w=chatClk-c.rx>F.stall;
@@ -1948,7 +1949,7 @@ if(NET.role==='host'){
 else if(NET.role==='client'){
  const w=!!NET.conn&&!NET.rj&&chatClk-NET.rx>F.stall;if(w&&!NET.hwk){NET.hwk=1;LOG.ev('netz',['wackelt','host'])}else if(!w&&NET.hwk){NET.hwk=0;LOG.ev('netz',['zurueck','host'])}
  NET.pingT=(NET.pingT||0)-dt;if(NET.pingT<=0&&NET.conn){NET.pingT=2;NET.conn.send({t:'ping',n:performance.now()})}
- const r=NET.rj;if(r){r.t+=dt;r.wait-=dt;if(r.t>=r.max){LOG.ev('netz',['rj aufgegeben',r.n]);leaveGame('Verbindung zum Host verloren.');return}if(r.wait<=0&&!NET.conn)rjTry()}}
+ const r=NET.rj;if(r){r.t+=dt;r.wait-=dt;if(r.t>=r.max){LOG.ev('netz',['rj aufgegeben',r.n]);leaveGame('Verbindung zum Host verloren.');return}if(r.puT!=null&&r.t-r.puT>=F.goneT){LOG.ev('netz',['rj raum weg',r.n]);leaveGame('Der Raum ist nicht mehr erreichbar.');return}if(r.wait<=0&&!NET.conn)rjTry()}}
 const s2=NET.sp2;if(s2&&s2.gone&&s2.rtry!=null&&NET.role==='client'){s2.rtry-=dt;s2.rt+=dt;if(s2.rt>F.grace)s2.rtry=null;else if(s2.rtry<=0)sp2Open(s2.code,s2.rt)}
 if(NET.retT>0){NET.retT-=dt;if(NET.retT<=0)leaveGame('Rückkehr in den Raum fehlgeschlagen.')}
 const q=NET.ret;if(q&&NET.role==='host'){q.t+=dt;if((!NET.conns.length&&!NET.specs.length)||q.t>=F.retWait){NET.ret=null;LOG.ev('duell',['rueckkehr b beitritt',q.t<F.retWait?'alle weg':'zeit']);retClean();joinRoom(q.a,{want:{team:2,o:0},ret:true})}}}
@@ -1971,8 +1972,8 @@ const old=NET.srv;if(old){NET.srv=null;try{old.close()}catch(e){}}
 NET.rj={t:0,n:0,max:sec>0?sec:CFG.net.rejoin,wait:0,srv:null};LOG.ev('netz',['rj start',NET.rj.max]);clearKeys();mouse.down=0;aimG=0;spwOn=false;rjTry();return true}
 function rjTry(){const r=NET.rj;if(!r)return;r.n++;r.wait=CFG.net.rejoinT;if(r.srv){try{r.srv.close()}catch(e){}r.srv=null}
 r.srv=TR.join(NET.code,{onOpen(c){if(NET.rj!==r){try{c.close()}catch(e){}return}NET.conn=c;NET.rx=chatClk;c.onmsg=m=>clientMsg(m,c);c.onclose=()=>{if(NET.rj===r){if(NET.conn===c)NET.conn=null}else connLost(c)};
- c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0,rj:{tok:NET.tok,id:NET.myId}})},
- onError(e){if(NET.rj===r)LOG.ev('netz',['rj fehler',String(e).slice(0,30)])}})}
+ r.puT=null;c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0,rj:{tok:NET.tok,id:NET.myId}})},
+ onError(e){if(NET.rj===r){LOG.ev('netz',['rj fehler',String(e).slice(0,30)]);if(e==='peer-unavailable'){if(r.puT==null)r.puT=r.t}else r.puT=null}}})}
 /* Raum-Host A */
 function duelRet(){const d=NET.duel;if(NET.role!=='host'||!d||!d.lead||!d.uni||!d.link||!d.run||scr!=='play'||!ended)return false;const f=duelFin(d);if(!f||f==='x')return false;
 const l=d.link,n=d.rv?clamp(d.rv.n|0,1,4):1;d.link=null;try{l.send({t:'dl',k:'ret',a:NET.code})}catch(e){}l.onclose=null;later(()=>{try{l.close()}catch(e){}},.4);
@@ -2145,7 +2146,7 @@ for(const c of NET.specs){if(!c.ok)continue;c.evBuf=c.evBuf.concat(all);if(c.evB
 evq.length=0}
 function buildSnap(){return{t:'snap',T:r2(time),
 g:[phase,r2(tH),waveN,r2(waveT),policeAt,vanAt,vanArr?1:0,vanCalled?1:0,Math.round(vanX),policeShown?1:0,r1(sus),Math.round(secured),civKills,kills,escaped,vaultOpen?1:0,code?1:0,mon?1:0,r2(camDown),r2(rT),r2(blk),goal&&goal.fail?1:0,vanMode,r1(vanNv),r1(alarmT),hostN,r1(holdX),hostK,r1(shX),vanAlt],
-pl:players.map(o=>[o.id,r1(o.x),r1(o.y),r2(o.a),Math.ceil(o.hp),Math.ceil(o.ar),o.mag,o.res,r2(o.units),o.loot,(o.armed?1:0)|(o.dead?2:0)|(o.out?4:0)|(o.gone?8:0)|(o.mvg?16:0)|(o.ln?32:0)|(o.dg?64:0)|(o.away?128:0),r2(o.w),r2(Math.max(0,o.hurt)),r2(Math.max(0,o.rl)),o.ack,r2(o.mv),o.jam,o.med,o.mat|0,r1(Math.max(0,o.dn)),r2(o.rv),r2(Math.max(0,o.bl||0)),r2(o.gs||0),o.chipV|0,r2(o.bd),o.hh|0,o.sm|0,o.dc|0,o.ad|0,o.bt|0,o.trap|0,o.c4|0,o.sx|0,o.ak|0]),
+pl:players.map(o=>[o.id,r1(o.x),r1(o.y),r2(o.a),Math.ceil(o.hp),Math.ceil(o.ar),o.mag,o.res,r2(o.units),o.loot,(o.armed?1:0)|(o.dead?2:0)|(o.out?4:0)|(o.gone?8:0)|(o.mvg?16:0)|(o.ln?32:0)|(o.dg?64:0)|(o.away&&prot(o)?128:0),r2(o.w),r2(Math.max(0,o.hurt)),r2(Math.max(0,o.rl)),o.ack,r2(o.mv),o.jam,o.med,o.mat|0,r1(Math.max(0,o.dn)),r2(o.rv),r2(Math.max(0,o.bl||0)),r2(o.gs||0),o.chipV|0,r2(o.bd),o.hh|0,o.sm|0,o.dc|0,o.ad|0,o.bt|0,o.trap|0,o.c4|0,o.sx|0,o.ak|0]),
 np:npcs.map(q=>[q.id,r1(q.x),r1(q.y),r2(q.a),r2(q.w),q.mvg?1:0,q.st==='cower'?1:q.st==='away'?2:q.st==='hostage'?3:q.st==='ko'?4:0,q.alert>0?1:0,q.rk?1:0,q.st==='hostage'&&q.own>=0?q.own+1:0,q.mi&&q.mi.pr>0?r2(q.mi.pr):0,q.st==='ko'?Math.ceil(q.kt):0,q.kmi&&q.kmi.pr>0?r2(q.kmi.pr):q.bmi&&q.bmi.pr>0?r2(q.bmi.pr):q.ymi&&q.ymi.pr>0?r2(q.ymi.pr):0,q.st==='ko'&&q.dr>=0?q.dr+1:0,q.uc?1:0]),
 en:en.map(e=>[e.id,e.kind==='cop'?0:e.kind==='swat'?1:e.kind==='shield'?3:e.kind==='sniper'?4:2,r1(e.x),r1(e.y),r2(e.a),e.hp,e.mhp||100,r2(e.w),e.mvg?1:0,r2(Math.max(0,e.h)),e.sur?1:0,r2(e.cp||0),Math.round(e.sh||0),e.kind==='sniper'&&e.aim>0?[r2(e.aim/CFG.snp.aim),r1(e.lx),r1(e.ly),e.tg]:0,e.uc?e.row:0]),
 pc:pcs.map(c=>[c.id,r1(c.x),r1(c.y),r2(c.a),c.st==='park'?1:0,Math.ceil(Math.max(0,c.hp)),c.cv|0,r2(c.mi?c.mi.pr:0)]),
