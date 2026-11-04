@@ -77,7 +77,7 @@ module.exports = [
         const shoot = (c, own) => { D.get().bl.push({ id: 9500 + Math.random() * 1e5 | 0, x: c.x - 30, y: c.y, vx: 720, vy: 0, l: .8, o: 1, own: 0, d: 34, ov: false }); for (let i = 0; i < 6; i++) D.update(1 / 30); };
         const fresh = (sk, p1) => S(sk, p1);
         // Stufe 0 als Vergleich
-        o.base = { res: m0.res, jam: m0.jam, dc: m0.dc, mat: m0.mat, sw: m0.sw };
+        o.base = { res: m0.res, jam: m0.jam, dc: m0.dc, mat: m0.mat };
         let c = cop('shield', Math.PI); c.sh = 120; shoot(c); o.shield0 = 120 - c.sh;
         c = cop('swat', Math.PI); const h = c.hp; shoot(c); o.swat0 = h - c.hp;
         c = cop('swat', Math.PI); const h2 = c.hp; D.blastAt(c.x, c.y, { dmg: 100, r: 100, scorch: 10 }, 0); o.blast0 = h2 - c.hp;
@@ -86,14 +86,14 @@ module.exports = [
         // alle Stufen 3
         const all = {}; for (const id of D.SKID) all[id] = 3;
         const f = fresh(all), d = f.D, m = f.me, wp2 = d.CFG.wpn.pistol;
-        o.sk = { res: m.res, jam: m.jam, dc: m.dc, mat: m.mat, units: m.units, sw: m.sw };
+        o.sk = { res: m.res, jam: m.jam, dc: m.dc, mat: m.mat, units: m.units };
         m.mag = 0; d.keys.r = true; d.update(1 / 30); d.keys.r = false; o.rl = [m.rl, wp2.rl];
         c = cop('shield', Math.PI); c.sh = 120; (() => { d.get().bl.push({ id: 9601, x: c.x - 30, y: c.y, vx: 720, vy: 0, l: .8, o: 1, own: 0, d: 34, ov: false }); for (let i = 0; i < 6; i++) d.update(1 / 30); })(); o.shield3 = 120 - c.sh;
         c = d.mkCop(m.x + 300, m.y, 'swat'); c.a = Math.PI; c.mode = 'post'; c.post = { x: c.x, y: c.y, a: Math.PI, door: null }; c.rt = 1e9; d.get().en.length = 0; d.get().en.push(c); const h3 = c.hp;
         d.get().bl.push({ id: 9602, x: c.x - 30, y: c.y, vx: 720, vy: 0, l: .8, o: 1, own: 0, d: 34, ov: false }); for (let i = 0; i < 6; i++) d.update(1 / 30); o.swat3 = h3 - c.hp;
         c = d.mkCop(m.x + 300, m.y, 'swat'); c.mode = 'post'; c.post = { x: c.x, y: c.y, a: 0, door: null }; c.rt = 1e9; d.get().en.length = 0; d.get().en.push(c); const h4 = c.hp; d.blastAt(c.x, c.y, { dmg: 100, r: 100, scorch: 10 }, 0); o.blast3 = h4 - c.hp;
         m.ar = 100; m.inv = 0; m.ln = 0; d.hitPlayer(m, 20); o.ar3 = 100 - m.ar; m.hp = 100; m.ln = 1; m.ar = 0; d.hitPlayer(m, 20); o.lean3 = 100 - m.hp; m.ln = 0;
-        m.hp = 100; m.ar = 0; m.ad = 0; d.hitPlayer(m, 500); o.sw = [Math.round(m.hp), m.sw, m.inv > 0]; m.hp = 100; m.inv = 0; d.hitPlayer(m, 500); o.sw2 = m.hp <= 0;
+        m.ar = 0; m.ad = 0; m.ln = 0; m.inv = 0; m.hp = 100; d.hitPlayer(m, 20); o.zhi = Math.round(100 - m.hp); m.hp = 34; d.hitPlayer(m, 20); o.zlo = Math.round(34 - m.hp); m.hp = 36; d.hitPlayer(m, 20); o.zedge = Math.round(36 - m.hp); m.hp = 30; m.inv = 0; d.hitPlayer(m, 500); o.zdead = [m.hp <= 0, m.inv > 0]; m0.ar = 0; m0.ln = 0; m0.inv = 0; m0.hp = 30; D.hitPlayer(m0, 20); o.zbase = Math.round(30 - m0.hp);
         o.pick = [d.toolT(m, { sn: 'pry', t: 'x' }), base.D.toolT(m0, { sn: 'pry', t: 'x' })];
         const bar = d.get().its.find(i => i.t === 'bar'); m.mat = 5; o.bar = bar ? [bar.dur(m), o.dur0] : null;
         if (bar) { bar.act(m); o.barhp = [bar.b.hp, o.hp0]; }
@@ -107,15 +107,15 @@ module.exports = [
       t.ok(Math.abs(r.swat3 / r.swat0 - 1) < .02, 'Jaeger ist entfallen (steckt kuenftig im Praezisionsgewehr): Schaden gegen SWAT unveraendert: ' + JSON.stringify([r.swat0, r.swat3]));
       t.ok(Math.abs(r.blast3 / r.blast0 - 1) < .02, 'Sprengmeister ist entfallen (steckt kuenftig im Granatwerfer): Explosion unveraendert: ' + JSON.stringify([r.blast0, r.blast3]));
       t.ok(Math.abs(r.ar3 / r.ar0 - .25) < .02, 'Panzerung 3: die Weste verliert 75 % weniger: ' + JSON.stringify([r.ar0, r.ar3]));
-      t.ok(Math.abs(r.lean3 / r.lean0 - .45) < .02, 'Deckung 3: beim Lehnen 55 % weniger Schaden: ' + JSON.stringify([r.lean0, r.lean3]));
+      t.ok(Math.abs(r.lean3 / r.lean0 - .55) < .02, 'Deckung 3: beim Lehnen 45 % weniger Schaden: ' + JSON.stringify([r.lean0, r.lean3]));
       t.ok(r.bar && Math.abs(r.bar[0] / r.bar[1] - .5) < .02, 'Baumeister 3: Barrikaden 50 % schneller: ' + JSON.stringify(r.bar));
       t.ok(r.barhp && Math.abs(r.barhp[0] / r.barhp[1] - 1) < .01, 'Bollwerk ist entfallen: gebaute Barrikaden halten wie ohne Skill: ' + JSON.stringify(r.barhp));
-      t.eq(r.sw, [45, 0, true], 'Deckung 3 bringt Zaeh: einmal mit 45 % Leben wieder auf, danach verbraucht');
-      t.ok(r.sw2, 'der zweite Treffer wirkt wieder (kein zweites Aufstehen)');
+      t.eq([r.zhi, r.zedge, r.zlo, r.zbase], [20, 20, 14, 20], 'Deckung 3 bringt Zaeh: ab 35 % Leben (34) 30 % weniger Schaden (14 statt 20), bei 36 und 100 Leben und ohne Skill voller Schaden');
+      t.eq(r.zdead, [true, false], 'Zaeh ist kein zweites Leben mehr: der toedliche Treffer toetet, kein Aufstehen, keine Schutzzeit');
       t.eq([r.sk.jam - r.base.jam, r.sk.dc - r.base.dc], [2, 3], 'Werkzeug 3: zwei Stoersender und drei Ablenker mehr');
       t.ok(Math.abs(r.pick[0] / r.pick[1] - .7) < .01, 'Techniker 3: Dietrich (Aufbrechen) 30 % schneller (Faktor auf die Dauer .7, vorher falsch herum 1.3): ' + JSON.stringify(r.pick));
-      t.eq(r.van, [32, 40], 'Techniker 3 bringt Fahrer: der Wagen kommt 8 s frueher (32 statt 40 s)');
-      t.eq(r.cap, [46, 30], 'Sanitaeter 3 bringt Verhandler: Geisel-Aufschub +16 s');
+      t.eq(r.van, [35, 40], 'Techniker 3 bringt Fahrer: der Wagen kommt 5 s frueher (35 statt 40 s)');
+      t.eq(r.cap, [40, 30], 'Sanitaeter 3 bringt Verhandler: Geisel-Aufschub +10 s');
       t.eq(r.heat, [2], 'Sanitaeter 3 bringt Verhandler: die Geiselnahme kostet 50 % weniger Fahndung (4 wird 2)');
     },
   },
