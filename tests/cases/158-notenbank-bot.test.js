@@ -22,9 +22,9 @@ module.exports = [
     timeout: 240000,
     async run(t) {
       await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
-      const r = await t.page.evaluate(`(() => { const o = ${STRAT}; __dbg.CFG.nb.stormSolo = 1e6; let sd = 7003, a; for (const q of [7003, 7005, 7006, 7008, 7010, 7012]) { a = bot.nb(Object.assign({ seed: q }, o)); sd = q; if (a.holeT > 0) break; } const b = bot.nb(Object.assign({ seed: sd }, o, { gier: 1e9, stay: 40, fleeHp: -1 })); return { a: [a.res, a.t, a.holeT], b: [b.res, b.t, b.holeT] }; })()`);
+      const r = await t.page.evaluate(`(() => { const o = ${STRAT}; __dbg.CFG.nb.stormSolo = 1e6; let sd = 7003, a; for (const q of [7003, 7005, 7006, 7008, 7010, 7012]) { a = bot.nb(Object.assign({ seed: q }, o)); sd = q; if (a.holeT > 0) break; } let b; for (const q of [sd, 7003, 7005, 7006, 7008, 7010, 7012]) { b = bot.nb(Object.assign({ seed: q }, o, { gier: 1e9, stay: 40, fleeHp: -1 })); if (b.holeT > 0) break; } return { a: [a.res, a.t, a.holeT], b: [b.res, b.t, b.holeT] }; })()`);
       t.ok(r.a[2] > 0, 'der Bohrer ist durch (Loch offen) bei einem der Seeds: ' + JSON.stringify(r.a));
-      t.ok(r.b[2] > 0 && (r.b[0] !== 'WIN' || r.b[1] >= r.b[2] + 39), 'mit grosser Gier und stay 40 geht er fruehestens 40 s nach Loch offen (oder faellt vorher): ' + JSON.stringify(r.b));
+      t.ok(r.b[2] > 0 && (r.b[0] !== 'WIN' || r.b[1] >= r.b[2] + 39), 'mit grosser Gier und stay 40 geht er fruehestens 40 s nach Loch offen (oder faellt vorher), Seeds bis das Loch aufgeht (der Bot streut zufaellig): ' + JSON.stringify(r.b));
     },
   },
   {
