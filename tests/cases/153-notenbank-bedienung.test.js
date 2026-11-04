@@ -1,7 +1,8 @@
-// Notenbank N3c (Ticket 66, Tills test-68: "ich konnte nicht um die Presse herum gehen, das darf nicht passieren"): Um Presse, Foerderband, Ausgabetisch (Pressenraum) und Abgabetisch (Keller) bleibt ein freier Gang von mindestens einer Kachel (Bedienseite und beide Schmalseiten), nichts steht an Wand oder Tuer, alle Bedienpunkte sind vom Eingang aus begehbar und in E-Reichweite. Die Notenbank wird nicht gedreht (kein turnLayout), geprueft werden alle Seeds und damit alle drei Plaetze der Presse.
+// Notenbank N3c (Ticket 66, Tills test-68: "ich konnte nicht um die Presse herum gehen, das darf nicht passieren"): Um Presse, Foerderband, Ausgabetisch (Pressenraum) und Abgabetisch (Keller) bleibt ein freier Gang von mindestens einer Kachel (Bedienseite und beide Schmalseiten), nichts steht an Wand oder Tuer, alle Bedienpunkte sind vom Eingang aus begehbar und in E-Reichweite. Die Notenbank wird nicht gedreht (kein turnLayout), geprueft werden alle Seeds und damit alle drei Plaetze der Presse, seit N7 mit den Varianten (Pressenraum West oder Ost, open: nbvar).
 module.exports = [
   {
     name: 'Bedienbarkeit: Gang um Presse, Band und Ausgabetisch (eine Kachel an allen vier Seiten, nicht an Wand oder Tuer), Abgabetisch im Keller frei umgehbar, jeder Bedienpunkt hat eine erreichbare Kachel in E-Reichweite (alle Plaetze der Presse, 24 Seeds)',
+    open: { nbvar: true },
     timeout: 180000,
     async run(t) {
       const r = await t.page.evaluate(() => {
@@ -17,8 +18,8 @@ module.exports = [
           const x0 = L.press[0], x1 = L.tab[0] + 2, y0 = L.press[1], y1 = L.press[1] + 1; const ring = [];
           for (let x = x0 - 1; x <= x1 + 1; x++) { ring.push([x, y0 - 1], [x, y1 + 1]); } for (let y = y0; y <= y1; y++) ring.push([x0 - 1, y], [x1 + 1, y]);
           const miss = ring.filter(c => !free(c[0], c[1])); if (miss.length) bad.push('Seed ' + sd + ' Gang Presse: ' + JSON.stringify(miss.slice(0, 3)));
-          if (!(x0 - 1 >= 18 && x1 + 1 <= 26 && y0 - 1 >= 7 && y1 + 1 <= 14)) bad.push('Seed ' + sd + ' Maschinenzeile ausserhalb der Gangkacheln im Raum');
-          if (cl(17, 10) !== 'd' || !free(18, 10)) bad.push('Seed ' + sd + ' Tuer (17,10) oder Vorraum (18,10) verstellt');
+          const east = L.var.vs === 'O', rx0 = east ? 1 : 18, rx1 = east ? 9 : 26; if (!(x0 - 1 >= rx0 && x1 + 1 <= rx1 && y0 - 1 >= 7 && y1 + 1 <= 14)) bad.push('Seed ' + sd + ' Maschinenzeile ausserhalb der Gangkacheln im Raum');
+          const pdx = east ? 10 : 17, pix = east ? 9 : 18; if (cl(pdx, 10) !== 'd' || !free(pix, 10)) bad.push('Seed ' + sd + ' Tuer (' + pdx + ',10) oder Vorraum (' + pix + ',10) verstellt');
           // Abgabetisch im Keller
           const dp = L.dep, dr = []; for (let x = dp[0] - 1; x <= dp[0] + 2; x++) dr.push([x, dp[1] - 1], [x, dp[1] + 1]); dr.push([dp[0] - 1, dp[1]], [dp[0] + 2, dp[1]]);
           const dm = dr.filter(c => !free(c[0], c[1])); if (dm.length) bad.push('Seed ' + sd + ' Gang Abgabetisch: ' + JSON.stringify(dm.slice(0, 3)));
@@ -32,7 +33,7 @@ module.exports = [
         o.bad = bad; return o;
       });
       t.eq(r.bad, [], 'alle Gaenge und Bedienpunkte frei: ' + JSON.stringify(r.bad.slice(0, 4)));
-      t.ok(r.presses.length === 3, 'alle drei Plaetze der Presse kamen in den Seeds vor: ' + JSON.stringify(r.presses));
+      t.ok(r.presses.length === 6, 'alle sechs Plaetze der Presse (drei je Seite) kamen in den Seeds vor: ' + JSON.stringify(r.presses));
     },
   },
 ];

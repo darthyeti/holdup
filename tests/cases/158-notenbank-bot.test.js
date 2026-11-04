@@ -18,6 +18,20 @@ module.exports = [
     },
   },
   {
+    name: 'Notenbank-Bot frueh auf den Varianten (N7, open: nbvar): vier Seeds mit je anderer Anordnung, jeder Lauf endet vor dem Zeitlimit, der Tresor ist leer geraeumt, an der Treppe liegt der Barrikadenplatz, mindestens ein Lauf kommt durch das Loch',
+    open: { nbvar: true },
+    timeout: 300000,
+    async run(t) {
+      await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
+      const r = await t.page.evaluate(`(() => { __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = [], seen = new Set(); for (const sd of [7003, 7005, 7006, 7008, 7010, 7012, 7014, 7016, 7018, 7020, 7022, 7024]) { if (out.length >= 4 && out.some(q => q.res === 'WIN' && q.secured >= 45000 && q.holeT > 0)) break; const x = bot.nb(Object.assign({ seed: sd }, o)), L = __dbg.LAY().nb, st = L.gates.treppe[0], v = JSON.stringify(L.var); if (seen.has(v)) continue; seen.add(v); out.push({ sd, v, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, site: __dbg.bars().some(b => Math.floor(b.x / 32) === st[0] && Math.floor(b.y / 32) === st[1]) }); } return out; })()`);
+      t.ok(r.length >= 4, 'mindestens vier verschiedene Anordnungen gespielt (weitere Seeds, bis ein Lauf durchkommt, der Bot streut zufaellig): ' + JSON.stringify(r.map(x => x.v)));
+      t.eq(r.filter(x => x.res === 'TIMEOUT').map(x => x.sd), [], 'kein Lauf haengt bis zum Zeitlimit: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.t])));
+      t.eq(r.filter(x => !(x.vault >= 45000)).map(x => [x.sd, x.vault]), [], 'der Bot raeumt den Tresor fast ganz in jeder Anordnung');
+      t.eq(r.filter(x => !x.site).map(x => x.sd), [], 'an der Treppe (LAY.nb.gates.treppe) liegt in jeder Anordnung der Platz der Barrikade, den der Bot sperrt (ob die Sperre am Ende noch steht, haengt vom Zufall des Bots ab: Beamte zerstoeren sie, deshalb wird nur der Platz geprueft)');
+      t.ok(r.some(x => x.res === 'WIN' && x.secured >= 45000 && x.holeT > 0), 'mindestens ein Lauf bohrt durch und entkommt mit der Beute: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.holeT, x.secured])));
+    },
+  },
+  {
     name: 'Notenbank-Bot: ohne Bohrer kein Loch (Bohrer wird vom Bot gestartet, Mutant "Bohrer nie") und die Strategie gier haelt ihn bei offenem Loch zurueck',
     timeout: 240000,
     async run(t) {
