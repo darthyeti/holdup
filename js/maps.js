@@ -7,6 +7,7 @@
 function mkMaps(X){
 const CX=X;//Kontext (lokale Variablen X gibt es im Erzeugercode)
 const {CFG,DC_CASINO,DC_CLASSIC,DC_GAS,DC_JEWEL,DC_MUSEUM,OOB,SESSION,T,VH,VW,cell,decorOf,decorPaint,fill,fillDerived,isSol,laneOf,newGrid,pathTo,placeMeet,roadOf,setc,validateMap}=X;
+const robOf=k=>{const R=CFG.rob[k];return{v:R.v.slice(),u:R.u,lab:R.lab,chips:R.chips|0}};
 function classicLayout(){newGrid(44,28,-6,-5);
 fill(0,0,25,12,'#');fill(1,1,24,11,'.');
 fill(1,6,10,6,'C');setc(11,6,'g');
@@ -59,7 +60,7 @@ cams:[
 {x:16.5*T,y:-.45*T,a0:3.14,amp:.55,sp:.5,rng:300,fov:.5},
 {x:19.5*T,y:-.45*T,a0:0,amp:.55,sp:.45,rng:300,fov:.5},
 {x:27.5*T,y:8*T,a0:2.55,amp:.5,sp:.5,rng:260,fov:.5}],
-tellers:[[3,4],[6,4],[9,4]],mgr:{p:[20,2],route:[[20,2],[23,4],[21,5],[20,8],[23,10],[20,10]]},theme:mkTheme(0,0,0),guards:[{p:[3,9],route:[[3,9],[9,8],[16,8],[17,9],[20,9],[23,9],[20,7],[16,10],[8,10]]}],civ:6,mission:{code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,tags:[],ev:[],at:{},extra:[],bags:[],blackoutAt:null},
+tellers:[[3,4],[6,4],[9,4]],mgr:{p:[20,2],route:[[20,2],[23,4],[21,5],[20,8],[23,10],[20,10]]},theme:mkTheme(0,0,0),guards:[{p:[3,9],route:[[3,9],[9,8],[16,8],[17,9],[20,9],[23,9],[20,7],[16,10],[8,10]]}],civ:6,rob:robOf('bank'),mission:{code:'4719',vault:'code',guards:1,west:true,cams:7,civ:6,tags:[],ev:[],at:{},extra:[],bags:[],blackoutAt:null},
 note:[22,2],mon:[22,8],vault:{door:[12,2],pad:[11,4],dir:1,bundles:[[14,2],[16,2],[14,3],[16,3],[15,4]]},
 tills:[[3,5],[6,5],[9,5]],atms:[[17,10],[17,11]],backDoors:[[cbd,0]],
 sw:{x:24*T+16,y:7*T+22},exit:{x:26*T,y0:8*T,y1:12*T,dir:1,tx:26},van:{y:10*T,x0:32*T,stop:26*T,dir:-1},flip:false,
@@ -267,7 +268,7 @@ spawn:{x:(fd+.9)*T,y:(by1+1.6)*T},
 zones:[[1,1,cx,bd+1],[cx+1,1,mx1,bd-1],[ex0,1,ex1,ly1],[cx-3,-99,99,-1],[bx1+1,-99,99,by1]],lobby:[1,ly0,mx1,ly1],
 cams:camsSel,
 tellers:tills.map(t=>[t[0],bd-1]),
-mgr:{p:mgrR[0],route:mgrR},guards,civ:ev.includes('feiertag')?Math.min(CFG.ev.civMax,ms.civ*2):ms.civ,mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:ms.west,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],...(ms.lgw?{lgw:ms.lgw}:{}),at:ms.at,extra,bags,blackoutAt:ev.includes('strom')?ms.at.strom:null},
+mgr:{p:mgrR[0],route:mgrR},guards,civ:ev.includes('feiertag')?Math.min(CFG.ev.civMax,ms.civ*2):ms.civ,rob:robOf('bank'),mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:ms.west,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],...(ms.lgw?{lgw:ms.lgw}:{}),at:ms.at,extra,bags,blackoutAt:ev.includes('strom')?ms.at.strom:null},
 note:deskT[ms.noteIdx],mon:[oc,sy0+1],vault:{door:[cx+1,2],pad:[cx,bd-1],dir:1,bundles:[]},tills,atms,backDoors:[[bd1,0]],
 sw:{x:ex1*T+16,y:sy0*T+22},exit:tp==='W'?{x:0,y0:(wy-1)*T,y1:(wy+3)*T,dir:-1,tx:-1}:{x:(bx1+1)*T,y0:(ey-1)*T,y1:(ey+3)*T,dir:1,tx:bx1+1},van:tp==='W'?{y:(wy+1)*T,x0:(X0+1)*T,stop:-4*T,dir:1}:{y:(ey+1)*T,x0:(-6+w-6)*T,stop:(bx1+1)*T,dir:-1},flip:false,
 posts,slots,laneY:(by1+6)*T,title:{cx:Math.round((X0*T+((X0+w)*T-VW))/2),ax:Math.floor(((X0+w)*T-VW-X0*T)/2*.85),cy:-10,ay:110}};
@@ -753,7 +754,7 @@ s.fillStyle='rgba(180,200,230,.35)';for(let x=16;x<=18;x++)s.fillRect(x*T+4,T+4,
 s.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<4;i++)s.fillRect(0*T+10+i*30,(28+dy)*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(18*T+i*30,(28+dy)*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(34*T+i*30,(28+dy)*T+14,12,2)},
 spawn:{x:(e+1.4)*T,y:(25.2+dy)*T},
 zones:[[16,1,23+dx,5],[26+dx,1,34+dx,5],[36+dx,1,38+dx,5],[0,-99,99,-1],[41+dx,-99,99,23+dy]],lobby:[1,10,38+dx,22+dy],
-cams:camsSel,tellers:[[29+dx,5],[32+dx,5]].concat(HT.dl),mgr:{p:[20,3],route:[[20,3],[20,5],[22,3],[18,3]]},guards,civ:civN,
+cams:camsSel,tellers:[[29+dx,5],[32+dx,5]].concat(HT.dl),mgr:{p:[20,3],route:[[20,3],[20,5],[22,3],[18,3]]},guards,civ:civN,rob:robOf('casino'),
 mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:false,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],...(ms.lgw?{lgw:ms.lgw}:{}),at:ms.at,extra,bags:[],blackoutAt:ev.includes('strom')?ms.at.strom:null},
 note:deskT[ms.noteIdx%4],mon:[16,1],vault:{door:[35+dx,2],pad:[34+dx,4],dir:1,bundles:[[36+dx,1],[38+dx,1],[36+dx,4],[38+dx,4],[37+dx,3]]},tills:[],atms:[[38+dx,12],[38+dx,13]],backDoors:[[19,0],[30+dx,0]],
 sw:{x:20*T+16,y:1*T+22},exit:{x:(40+dx)*T,y0:15*T,y1:19*T,dir:1,tx:40+dx},van:{y:17*T,x0:(46+dx)*T,stop:(40+dx)*T,dir:-1},flip:false,cage:{x:(30+dx)*T,y:7*T+16,r:60},
