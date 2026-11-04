@@ -130,3 +130,35 @@ Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Der Debug-Hook und der Serv
 - Team-Leiste testen (Oktober 2026): `84-team-leiste` spielt zu dritt und zu viert (`CT.mkGame`, alle mit `units = 1` auf dem Spawn: lautlos gewonnen, alle sehen das Ergebnis) und drückt die Tasten wie ein Spieler (`MT.k(d,'Enter')`: Ergebnis, Seite 2, Shop, bereit, Auftragswahl, Start, ein Enter mehr für den Hinweis Nicht alle sind bereit). Geprüft werden `roster[].at` und `rdy` bei Host und Clients nach jedem Schritt, die gezeichneten Texte (`OV.drawn`), die Leiste im Vergleich mit und ohne Leiste (`OV.boxes`, Roster auf den Host gekürzt blendet die Leiste aus: Texte, die nur mit Leiste da sind, dürfen keinen anderen Text und keine Kachel treffen und müssen im oberen Rand liegen), Solo ohne Leiste, ein Mitspieler geht (`leaveGame`) und die Texte der Rückfrage in der Pause (Host `RAUM SCHLIESSEN`, Client `RAUM VERLASSEN`). Falle: Die Spieler im Test sterben, wenn die Runde läuft (`hp = 1e9` setzen), und der erste Enter in der Auftragswahl zeigt nur den Hinweis (zweiter oder dritter startet).
 - Rückfrage vor Raum schließen testen (Oktober 2026): `85-raum-schliessen-rueckfrage` baut eine Lobby mit `mkInst` und `hostRoom`, `joinRoom` (ohne Start) und ein Spiel mit `CT.mkGame` (lautlos gewonnen), drückt Esc und die Kachel als Host und prüft Fenster (`d.ui().modal()` ist `confirm`), Raum (`state().scr`, `state().role`), die Texte (`OV.drawn`, Zahl der Mitspieler), Nein, Esc im Fenster, Ja und dass die Clients auf dem Titel landen (die Test-Leitung reicht das Schließen weiter), dazu die Wege ohne Rückfrage (Host allein, Client, solo) und `OV.check(d,{modal:true})` für das Fenster. Gegenprobe: Der Stand davor fällt in allen drei Fällen durch.
 - Shop-Text testen (Oktober 2026): `86-shop-text` öffnet den Shop solo (`S.openShop()` nach `sessReset`, Geld und Stufen über `SESSION.wallet`, `SESSION.own`, `SESSION.wear` gesetzt) in fünf Lagen (kein Geld, wenig Geld, Weste und Helm mit Verschleiß, mit Geld auf Stufe 2, alles auf Stufe 3) und prüft über `OV.boxes`, dass kein Text einer Kachel `buy:i` über deren Rand ragt (6 Pixel Rand), und dass die gestuften Posten ohne Geld `zu teuer` zeigen und nicht `nicht gekauft`. Gegenprobe: Der Stand davor meldet 18 Pixel Überstand bei allen sechs gestuften Posten.
+
+## Notenbank-Bot und Balance (N5, Ticket 75, 2. November 2026)
+
+**Werkzeug.** `bot.nb(o)` und `bot.nbBatch(n,o,from)` in `tools/bot.js`, Reihen über viele Seeds mit `node tools/messung-nb.js <n> '<Strategie JSON>' [from] [parallel] [cfg-JSON]` (Chromium über `HOLDUP_CHROME`, `cfg-JSON` überschreibt Werte in `CFG.nb` vor dem Kartenbau). Der Bot spielt solo: Zettel mit dem Tresorcode lesen, Tresor öffnen, Bündel packen, Material holen und die Engstelle von innen mit einer Barrikade sperren (`bar` `'treppe'` oder `'panzer'`), den Bohrer im Keller starten und neu anwerfen, die Engstelle halten (anlehnen über die Barrikade), mit `press: true` die Presse betreuen (anwerfen, Papier, Stau, Ablage einpacken) und abgeben, bei offenem Loch hindurch, sobald gesicherte plus getragene Beute `gier` erreicht, nach `stay` Sekunden oder unter `fleeHp`. `god: true` macht ihn unverwundbar (misst nur Geld, Druckstufe und Stillstände, nicht die Überlebbarkeit). Ergebnis je Lauf: Ausgang, Dauer ab Alarm, Zeit Loch offen, gesichert, Beute aus Tresor, Presse und Abgabe, gedruckte Bündel, Druckstufe, tiefster Ring, gehaltene Zeit, Stillstände von Bohrer (Beschuss, Beamter im Keller, Defekt) und Presse (Papier, Stau, unbetreut, Ablage voll). Kurzer Test: `158-notenbank-bot`. Rauschen bei 40 Seeds rund 7 Prozentpunkte (der Bot zielt mit `Math.random`), absolute Quoten sind Richtwerte des Bots, belastbar sind Vergleiche vorher und nachher.
+
+**Beobachtung zum Bot.** Ohne Sperre der Kellertreppe gewinnt er 0 % (stirbt nach 80 bis 150 s), mit der Sperre von innen und Anlehnen rund 65 bis 73 %. Die Treppe ist die einzige gute Engstelle: Die Presse liegt in der offenen Halle des Rings 3, dort hält der Bot kaum (Sperre am Panzertor 0 bis 3 % Sieg).
+
+**Vorher** (Werte aus N2 bis N4: `drillT` 120, `faultN` 2, `wb` 2, `maxEn` 14, `pressF[3]` 0, `printT` 8), 40 Seeds ab 7000, Kit alt, Sekunden ab Alarm (dazu bis 45 s Erkunden):
+
+| Strategie | Sieg | Dauer Sieg | Loch offen | gesichert bei Sieg | Bohrer-Stillstände (40 Läufe) |
+|---|---|---|---|---|---|
+| frueh, Treppensperre, Kit alt | 65 % | 160 s | 159 s | 60.000 | Defekt 66, Beschuss 6, Beamter 1 |
+| frueh, Kit full | 70 % | 159 s | 158 s | 60.000 | Defekt 73, Beschuss 12, Beamter 1 |
+| lange (Presse, Panzertor), Kit alt | 0 % | | 147 s (3 Läufe) | | Stau 9, Ablage voll 9 |
+| god, stay 0 / 60 / 120 / 240 (20 Seeds) | 75 / 70 / 75 / 80 % | | | Presse 17.250 bis 23.750 (3,5 bis 4,8 Bündel) | Presse lief nur rund 5 bis 8 % der Zeit (Polizei im Ring 3 stoppt sie) |
+
+Offene Frage aus N2 (gehen Beamte gezielt zum Bohrer?): Der Bohrer steht durch "Beamter im Keller" nur 1 von 40 Läufen früh, solange die Treppe gesperrt ist; ohne Sperre öfter (28 Stillstände in 12 Läufen, Bot in der Kellerecke neben der Treppe, 12 Seeds). Keine Richtung nötig, kein Ticket.
+
+**Hebel zur Rundenlänge** (Till, Akte nb-balance, Antwort A): `drillT` 180 senkt die Siegquote stark (faultN 2: 8 %, faultN 1: 18 %, faultN 0: 28 %, 40 Seeds), weil die Wellen nach 130 s den Bot überrollen. Mit `faultN` 1 und dazu `wb` 0: 15 %, `maxEn` 10: 48 %, beide: 73 %, `pol` 8: 20 %. Gewählt: `drillT` 180, `faultN` 1 und für Solo `wb` 0 (`soloWb`), `maxEn` 10 (`soloMaxEn`); im Coop bleiben `wb` 2 und `maxEn` 14 (Leitstand nach Tills Spieltest: die Polizei darf im Coop nicht schwächer werden). Alle Messungen dieses Abschnitts sind Solo.
+
+**Nachher** (neue Startwerte: `drillT` 180, `faultN` 1, `wb` 0, `maxEn` 10, `pressF[3]` 0,3, `printT` 5), 40 Seeds ab 7000 (zweiter Lauf der Treppen-Strategie 65 %, der erste 73 %: Streuung des Bots):
+
+| Strategie | Sieg | Dauer Sieg | Loch offen | gesichert bei Sieg | Stillstände |
+|---|---|---|---|---|---|
+| frueh, Treppensperre, Kit alt | 65 bis 73 % | 228 s (gesamt rund 4,5 min) | 225 s | 60.000 | Defekt 36 bis 37, Beschuss 4 bis 5 |
+| lange (echter Bot, Panzertor, bis 420 s) | 0 % | | 228 s (1 Lauf) | | Stau 12, Ablage voll 21 |
+| god, stay 0 (20 Seeds) | 45 % (Rest hängt am Zeitlimit) | | 341 s | 76.111 | Stau 21, Ablage voll 28 |
+| god, stay 60 | 45 % | | 361 s | 78.889 (+31 % gegenüber früh) | Stau 17, Ablage voll 23 |
+| god, stay 120 | 35 % | | 336 s | 87.143 (+45 %) | Stau 21, Ablage voll 20 |
+| god, stay 240 | 10 % | | 396 s | 77.500 | Stau 20, Ablage voll 15 |
+
+Die Presse liefert nach den Änderungen im Mittel 8 bis 8,3 Bündel (rund 41.000), die Druckstufe steigt auf 1,2 bis 1,4. Der god-Bot gewinnt seltener, weil er zuerst die Presse betreut und Beamte im Keller den Bohrer wieder stoppen (Lauf bis zum Zeitlimit). Als Hinweis auf die Überlebbarkeit gilt der echte Bot LANGE: 0 % Sieg. Wer in der Presse bleiben will, muss den Ring 3 selbst halten, der Bot kann es nicht.

@@ -89,11 +89,11 @@ module.exports = [
     },
   },
   {
-    name: 'Notenbank: Obergrenze gleichzeitiger Beamter (CFG.nb.maxEn) und Geiseldeckel hcap; Polizei-Posten stehen nicht am Loch',
+    name: 'Notenbank: Obergrenze gleichzeitiger Beamter (CFG.nb.maxEn, solo soloMaxEn) und Geiseldeckel hcap; Polizei-Posten stehen nicht am Loch',
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
-        const H = ${SOLO}, D = H.D, T = H.T, o = {}; D.CFG.policeAt = 1e6; D.CFG.policeForced = 2; D.CFG.nb.maxEn = 5; D.CFG.nb.alarmAt = 1e6;
+        const H = ${SOLO}, D = H.D, T = H.T, o = {}; D.CFG.policeAt = 1e6; D.CFG.policeForced = 2; D.CFG.nb.soloMaxEn = 5; D.CFG.nb.alarmAt = 1e6;
         D.startHeist(true, H.me); D.CFG.waveGap = 4; D.CFG.waveGapMin = 4; D.CFG.waveGapStep = 0;
         let mx = 0; H.step(120, () => { const n = D.get().en.filter(e => e.hp > 0 && (e.kind === 'cop' || e.kind === 'swat' || e.kind === 'shield')).length; if (n > mx) mx = n; }); o.max = mx; o.wave = D.get().waveN;
         o.cap = D.holdCap ? D.holdCap() : -1; o.hcap = D.CFG.nb.hcap;

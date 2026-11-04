@@ -36,7 +36,7 @@ module.exports = [
     },
   },
   {
-    name: 'Halten: Wirkung. Polizei in Ring 2 bremst die Presse auf pressF[2], in Ring 3 und 4 steht sie ohne neuen Zustand (st bleibt 1), Bohrer in Ring 3 auf drillF[3], in Ring 4 steht er; nach der Rueckeroberung laufen beide von selbst weiter',
+    name: 'Halten: Wirkung. Polizei in Ring 2 bremst die Presse auf pressF[2], in Ring 3 laeuft sie mit pressF[3] (N5: 0,3), in Ring 4 steht sie ohne neuen Zustand (st bleibt 1), Bohrer in Ring 3 auf drillF[3], in Ring 4 steht er; nach der Rueckeroberung laufen beide von selbst weiter',
     timeout: 120000,
     async run(t) {
       const r = await t.page.evaluate(`(() => {
@@ -45,7 +45,7 @@ module.exports = [
         o.r0 = run(0); o.r2 = run(2); o.r3 = run(3); o.r4 = run(4); return o; })()`);
       t.ok(r.r0.a[0] >= 9 && r.r0.a[4] > .09, 'ohne Polizei: Presse etwa 10 Buendel, Bohrer etwa 10 %: ' + JSON.stringify(r.r0.a));
       t.ok(Math.abs(r.r2.a[0] - 6) <= 1 && r.r2.a[1] === 1 && Math.abs(r.r2.a[4] - r.r0.a[4]) < .005, 'Ring 2: Presse mit 0,6, Bohrer unveraendert: ' + JSON.stringify(r.r2.a));
-      t.ok(r.r3.a[0] === 0 && r.r3.a[1] === 1 && r.r3.a[2] === 1 && Math.abs(r.r3.a[4] - r.r0.a[4] / 2) < .01, 'Ring 3: Presse steht ohne neuen Zustand und verbraucht kein Papier (st 1), Bohrer mit 0,5: ' + JSON.stringify(r.r3.a));
+      t.ok(Math.abs(r.r3.a[0] - 10 * 0.3) <= 1 && r.r3.a[1] === 1 && Math.abs(r.r3.a[4] - r.r0.a[4] / 2) < .01, 'Ring 3: Presse laeuft mit pressF[3] 0,3 (N5) ohne neuen Zustand (st 1), Bohrer mit 0,5: ' + JSON.stringify(r.r3.a));
       t.ok(r.r4.a[0] === 0 && r.r4.a[3] === 2 && r.r4.a[5] === 2, 'Ring 4: Presse steht, Bohrer steht (Beamter im Keller, Ursache 2): ' + JSON.stringify(r.r4.a));
       t.ok(r.r2.b[0] - r.r2.a[0] >= 9 && r.r3.b[0] >= 9 && r.r3.b[1] === 1 && r.r3.b[3] > r.r3.a[4] + .09 && r.r4.b[0] >= 9, 'Rueckeroberung: Presse und Bohrer laufen von selbst weiter: ' + JSON.stringify([r.r2.b, r.r3.b, r.r4.b]));
     },

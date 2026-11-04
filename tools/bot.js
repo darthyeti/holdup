@@ -155,5 +155,71 @@ function truckBatch(n,o,from,by){const rs=[];from=from||3000;for(let i=0;i<n;i++
   stand:avg(a.filter(r=>r.milestones.stand!=null),r=>r.milestones.stand),offen:avg(a.filter(r=>r.milestones.offen!=null),r=>r.milestones.offen),voll:avg(a.filter(r=>r.milestones.voll!=null),r=>r.milestones.voll),zone:avg(a.filter(r=>r.milestones.zone!=null),r=>r.milestones.zone),
   t:avg(a.filter(r=>r.res==='WIN'),r=>r.t),hp:avg(a,r=>r.minHp),loot:avg(a.filter(r=>r.res==='WIN'),r=>r.loot),res:a.reduce((m,r)=>(m[r.res]=(m[r.res]||0)+1,m),{})});
  const out={all:sum(rs)};if(by){const g={};for(const r of rs)(g[by(r)]=g[by(r)]||[]).push(r);out.by={};for(const k of Object.keys(g).sort())out.by[k]=sum(g[k])}out.runs=rs.map(r=>[r.seed,r.res,r.t,r.minHp].join(':'));return out}
-window.bot={run,batch,batchSeeds,batchHalls,levels,truck,truckBatch};
+/* Notenbank-Bot (N5, Ticket 75): spielt eine Notenbank solo und haelt dabei das Gebaeude. Ablauf: Erkunden (Zettel mit dem Tresorcode lesen, Tresor oeffnen, Buendel einpacken), nach dem Alarm den Bohrer im Keller starten, optional die Notenpresse betreuen (anwerfen, Papier, Stau, gedruckte Buendel einpacken) und abgeben, die Engstelle halten und bei offenem Loch nach der Strategie hinein.
+   Strategie (Parameter): press (true = die Presse betreuen und abgeben, false = nur Tresor und Bohrer, "frueh gehen"), gier (Zielsumme: gesicherte plus getragene Beute, ab der er bei offenem Loch geht; 0 = sofort), stay (hoechstens so viele Sekunden nach Loch offen), fleeHp (unter diesen Lebenspunkten geht er sofort, wenn das Loch offen ist), post ('treppe' = Kellerseite der Treppe halten, 'keller' = beim Bohrer, sonst nirgends), abgabe (true = getragene Beute sofort an der Abgabe sichern, false = nur bei vollem Rucksack oder wenn nichts anderes ansteht). god (true = unverwundbar, misst nur Geld, Druckstufe und Stillstaende der Presse ohne Ueberlebbarkeit), Dazu wie bei run: seed, kit, skills, lage, turn, sigma, react, maxT, heat, round.
+   Ergebnis: res ('WIN', 'LOSE:Titel', 'TIMEOUT'), t (Sekunden seit dem Alarm), holeT (tH bei Loch offen), secured (gesicherte Beute am Ende, bei Sieg mit der durch das Loch getragenen), vault, press, dep (Beute aus Tresor, Presse, Abgabe), printed (gedruckte Buendel), lvl (Druckstufe am Ende), maxD (tiefster Ring mit Polizei), hold (Sekunden gehalten), dstop und pstop (Stillstaende von Bohrer und Presse je Ursache), kills, waves, hp, minHp. */
+function nb(o){o=Object.assign({sigma:.09,react:.35,maxT:900,kit:'old',cons:{},round:0,heat:0,press:false,gier:0,stay:600,fleeHp:30,post:'treppe',abgabe:false,matD:2},o||{});
+ D.sessReset();Object.assign(D.SESSION.own,KITS[o.kit]||{});Object.assign(D.SESSION.cons,o.cons);D.SESSION.round=o.round||0;D.SESSION.heat=o.heat||0;Object.assign(D.SESSION.sk,o.skills||{});
+ D.setScenario('nb');D.setSeedMode('random');if(o.lage!==undefined)D.setLage(o.lage);if(o.turn!==undefined)D.setTurn(o.turn);
+ if(o.seed!=null){if(o.lage!==undefined||o.turn!==undefined)D.buildLay(D.layoutFor(o.seed));else D.buildSeed(o.seed)}
+ D.reset();const L=D.LAY(),NB=L.nb,C=D.CFG.nb,BN=L.bn||D.CFG.bundle;k.a=k.d=k.w=k.s=k[' ']=k.e=k.f=0;
+ const bunV=BN.v*BN.n/S().its.filter(i=>i.t==='bundle').length,R={res:null,t:0,holeT:null,secured:0,vault:0,press:0,dep:0,printed:0,lvl:0,maxD:0,hold:0,dstop:{beschuss:0,beamter:0,defekt:0},pstop:{papier:0,stau:0,unbetreut:0,voll:0},kills:0,waves:0,hp:0,minHp:100,trace:[]};
+ let seen=new Map(),jit=0,jt=0,task=null,taskN=0,lastD=0,lastP=0,dsum=0,vd=0;
+ const reach=(it,flt)=>{const p=S().p;let best=null,bd=1e9;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const tx=Math.floor(it.x/32)+dx,ty=Math.floor(it.y/32)+dy;if(D.isSol(tx,ty)||(flt&&!flt(tx,ty)))continue;const d=Math.hypot(tx*32+16-it.x,ty*32+16-it.y),dr=Math.hypot(Math.max(tx*32-it.x,0,it.x-(tx+1)*32),Math.max(ty*32-it.y,0,it.y-(ty+1)*32));if(d>=(it.r||44)*.8&&!(it.t==='nbb'&&dr<=(it.r||44)-8))continue;const pl=D.pathTo(p.x,p.y,tx,ty).length;if(!pl&&!(tileOf(p)[0]===tx&&tileOf(p)[1]===ty))continue;const sc=pl+d*.05;if(sc<bd){bd=sc;best=[tx,ty]}}return best};
+ const hittable=(x0,y0,x1,y1)=>{const W=D.world(),n=Math.ceil(Math.hypot(x1-x0,y1-y0)/8);for(let i=1;i<n;i++){const tx=Math.floor((x0+(x1-x0)*i/n)/32),ty=Math.floor((y0+(y1-y0)*i/n)/32);if(D.isSol(tx,ty)){const c=W.cell(tx,ty);if(c!=='X'&&c!=='Y')return false}}return true};
+ // Sperre an der Engstelle: bar 'treppe' (Keller zu) oder 'panzer' (innerer Bereich zu), Stufen barLv (Standard 1); drinnen ist der Ring hinter der Engstelle
+ const GK=o.bar==='panzer'?'panzer':'treppe',GR=NB.rings[GK==='panzer'?2:3],BLV=o.bar?(o.barLv||1):0;
+ const gateBar=()=>{const g0=NB.gates[GK][0];return D.bars().find(b=>b.cells.some(c=>c[0]===g0[0]&&c[1]===g0[1]))};
+ const inK=(tx,ty)=>GR.some(q=>tx>=q[0]&&tx<=q[2]&&ty>=q[1]&&ty<=q[3])&&!gateBar().cells.some(c=>c[0]===tx&&c[1]===ty);
+ const avail=(it,p)=>!it.done&&(!it.ok||it.ok(p))&&(!it.fit||it.fit(p));
+ const post=()=>Array.isArray(o.post)?o.post:o.post==='treppe'||o.post==='gate'?(()=>{const b=gateBar(),c=b.cells[0];return[c[0]-b.iv[0],c[1]-b.iv[1]]})():o.post==='ecke'?[NB.stair[0]-1,NB.stair[1]-1]:o.post==='keller'?[NB.rig[0]-1,NB.rig[1]+3]:null;
+ const zone=()=>[NB.zone[0],NB.zone[1]];
+ // naechste Aufgabe: [Item, Merkmal] oder null (dann Warteposition)
+ function pick(s,p){const its=S().its,by=t=>its.filter(i=>i.t===t),ph2=s.phase===2,nbd=D.nbd(),nbp=D.nbp();
+  if(nbd.st===3){ // Loch offen: gehen?
+   if(R.holeT==null)R.holeT=s.tH;const tot=s.secured+s.loot;
+   if(tot>=o.gier||s.tH-R.holeT>=o.stay||p.hp<=o.fleeHp)return{tag:'exit'}}
+  const nt=by('note')[0];if(!s.vaultOpen&&nt&&avail(nt,p)&&!s.code&&!ph2)return{it:nt,tag:'note'};
+  const vt=by('vault')[0];if(!s.vaultOpen&&vt&&avail(vt,p))return{it:vt,tag:'vault',stand:D.vaultStand(L)};
+  const bb=o.bar?gateBar():null,need=bb?(bb.mc||1):0,hD=D.nbh().D;
+  if(ph2&&nbd.st!==3){const d=by('nbd0').concat(by('nbd1')).find(i=>avail(i,p));if(d)return{it:d,tag:'bohrer'}}
+  if(s.vaultOpen&&hD<3){const bs=by('bundle').filter(i=>avail(i,p)&&reach(i));if(bs.length){bs.sort((a,c)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(c.x-p.x,c.y-p.y));return{it:bs[0],tag:'buendel'}}}
+  if(bb&&bb.lv<BLV){if((p.mat|0)>=need){const bi=by('bar').find(i=>i.b===bb);if(bi&&avail(bi,p))return{it:bi,tag:'bau',flt:inK}}
+   else if(hD<=o.matD){const ms=by('mat').filter(i=>avail(i,p));if(ms.length){ms.sort((a,c)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(c.x-p.x,c.y-p.y));return{it:ms[0],tag:'material'}}}}
+  if(ph2&&o.press){
+   const pr=['nbp2','nbp0','nbp1'].map(t=>by(t)[0]).find(i=>i&&avail(i,p));if(pr)return{it:pr,tag:'presse'};
+   const tray=by('nbb').filter(i=>avail(i,p)&&reach(i));if(tray.length&&(tray.length>=3||nbp.st===6||s.units+.01>=p.bag-C.bundleU*2||nbd.st===3))return{it:tray[0],tag:'ablage'}}
+  const dp=by('nbdep')[0];if(ph2&&dp&&avail(dp,p)&&(o.abgabe||s.units+.01>=p.bag-C.bundleU||(!R.busy&&nbd.st!==1)||(nbd.st===3&&!o.press)))return{it:dp,tag:'abgabe'};
+  return null}
+ for(let n=0;n<o.maxT*30;n++){
+  const s=S(),p=s.p;if(s.ended)break;k.a=k.d=k.w=k.s=0;k.e=0;const ph2=s.phase===2;
+  // Zaehler
+  const nbd=D.nbd(),nbp=D.nbp(),nbh=D.nbh();
+  if(nbd.st===2&&lastD!==2){R.dstop[['','beschuss','beamter','defekt'][nbd.c]||'beschuss']++}lastD=nbd.st;
+  if(nbp.st!==lastP&&[2,3,4,6].includes(nbp.st)){R.pstop[{2:'papier',3:'stau',4:'unbetreut',6:'voll'}[nbp.st]]++}lastP=nbp.st;
+  R.maxD=Math.max(R.maxD,nbh.D);
+  // Feinde in Sicht
+  let tgt=null,bd=1e9;if(ph2)for(const e of s.en){if(e.sur||e.cap||!D.los(p.x,p.y,e.x,e.y)||!hittable(p.x,p.y,e.x,e.y))continue;const d0=Math.hypot(e.x-p.x,e.y-p.y),pen=e.kind==='shield'&&e.sh>0&&Math.abs(((Math.atan2(p.y-e.y,p.x-e.x)-e.a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)<D.CFG.shield.arc?1000:0,d=d0+pen;if(d0<430&&d<bd){bd=d;tgt=e}}
+  for(const [e,t] of seen)if(!s.en.includes(e))seen.delete(e);
+  if(tgt&&!seen.has(tgt))seen.set(tgt,s.tH);
+  if(tgt&&s.tH-seen.get(tgt)>=o.react){jt-=dt;if(jt<=0){jit=gauss()*o.sigma;jt=.18}
+   const lx=tgt.x-(tgt.vx||0)*.1,ly=tgt.y-(tgt.vy||0)*.1;p.a=Math.atan2(ly-p.y,lx-p.x)+jit;k[' ']=1;k.f=D.clear&&!D.clear(p.x,p.y,tgt.x,tgt.y)?1:0}
+  else{k[' ']=0;k.f=0;
+   if(!task||task.tag==='exit'||taskN>900||(task.it&&!avail(task.it,p))||n%20===0){const t2=pick(s,p);if(!t2||!task||t2.tag!==task.tag||t2.it!==task.it){task=t2;taskN=0;if(task&&task.it)task.at=task.stand||reach(task.it,task.flt)}}
+   R.busy=!!task&&task.tag!=='abgabe';
+   if(task){taskN++;if(task.tag==='exit'){const z=zone();steer(z[0],z[1])}
+    else if(task.at){const there=steerC(task.at[0],task.at[1]);if(there&&task.it.t==='nbb'){const dx=task.it.x-p.x,dy=task.it.y-p.y;if(dx>3)k.d=1;if(dx<-3)k.a=1;if(dy>3)k.s=1;if(dy<-3)k.w=1}if(there||Math.hypot(task.it.x-p.x,task.it.y-p.y)<(task.it.r||44)*.7)k.e=1}}
+   else{const q=post();if(q)steerC(q[0],q[1])}}
+  if(o.trace&&n%(o.trace>1?o.trace:150)===0&&(!o.traceFrom||s.tH>=o.traceFrom))R.trace.push([+s.tH.toFixed(1),tileOf(p).join(','),Math.round(p.hp),s.en.length,'D'+nbh.D,'bohr'+nbd.st+':'+Math.round(nbd.p*100),'presse'+nbp.st+':'+nbp.n,'u'+s.units,task?task.tag:'-',k.e?'E':'',tgt?'T'+tgt.kind+Math.round(bd):'',s.en.filter(e=>e.hp>0).map(e=>e.kind[0]+Math.round(e.x/32)+','+Math.round(e.y/32)).join(' ')].join(' '));
+  if(o.god){p.hp=1e5;p.ar=Math.max(p.ar||0,100)}
+  D.update(dt);R.minHp=Math.min(R.minHp,S().p.hp);
+ }
+ const s=S(),nbp=D.nbp();R.t=+s.tH.toFixed(1);R.hp=Math.round(s.p.hp);R.waves=s.waveN;R.kills=s.kills;R.res=s.ended?(s.ended.win?'WIN':'LOSE:'+s.ended.title):'TIMEOUT';R.minHp=Math.round(R.minHp);
+ R.secured=s.secured;R.printed=nbp.n;R.dep=nbp.dv;R.vault=Math.round(S().its.filter(i=>i.t==='bundle'&&i.done).length*bunV);R.press=nbp.n*C.bundleV;R.lvl=D.nbLvl();R.hold=Math.round(D.nbh().t);R.loot=s.loot;
+ if(!o.trace)delete R.trace;delete R.busy;return R}
+/* Notenbank-Reihe: die ersten n Seeds ab from (Standard 7000), je Lauf bot.nb(o). Liefert Siegquote, Mittel der Siege (Zeit, Beute) und aller Laeufe (Rest-HP, Druckstufe, tiefster Ring, Stillstaende). */
+function nbBatch(n,o,from){const rs=[];from=from||7000;for(let i=0;i<n;i++){const r=nb(Object.assign({},o,{seed:from+i}));r.seed=from+i;rs.push(r)}
+ const w=rs.filter(r=>r.res==='WIN'),avg=(a,f)=>a.length?Math.round(a.reduce((x,r)=>x+f(r),0)/a.length*10)/10:null,sum=(f)=>rs.reduce((x,r)=>x+f(r),0);
+ return{n,win:Math.round(100*w.length/n),t:avg(w,r=>r.t),holeT:avg(rs.filter(r=>r.holeT!=null),r=>r.holeT),secured:avg(rs,r=>r.secured),securedWin:avg(w,r=>r.secured),vault:avg(rs,r=>r.vault),press:avg(rs,r=>r.press),dep:avg(rs,r=>r.dep),printed:avg(rs,r=>r.printed),lvl:avg(rs,r=>r.lvl),maxD:avg(rs,r=>r.maxD),hold:avg(rs,r=>r.hold),minHp:avg(rs,r=>r.minHp),dstop:{beschuss:sum(r=>r.dstop.beschuss),beamter:sum(r=>r.dstop.beamter),defekt:sum(r=>r.dstop.defekt)},pstop:{papier:sum(r=>r.pstop.papier),stau:sum(r=>r.pstop.stau),unbetreut:sum(r=>r.pstop.unbetreut),voll:sum(r=>r.pstop.voll)},lost:rs.filter(r=>r.res!=='WIN').map(r=>r.seed+'@'+r.t+(r.res==='TIMEOUT'?'T':'')).join(','),rs}}
+window.bot={run,batch,batchSeeds,batchHalls,levels,truck,truckBatch,nb,nbBatch};
 })();
