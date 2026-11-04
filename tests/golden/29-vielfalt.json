@@ -33,10 +33,10 @@
   "gas": {
    "sc": "gas",
    "seeds": 200,
-   "huelle": 195,
-   "groessen": 38,
-   "flucht": 171,
-   "beute": 131,
+   "huelle": 197,
+   "groessen": 54,
+   "flucht": 177,
+   "beute": 141,
    "hallen": 4,
    "hallenVerteilung": {
     "Insel": 55,

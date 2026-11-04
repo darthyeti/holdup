@@ -103,7 +103,7 @@ turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,camsFew:2,two:48}},
 jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],deep:{on:1,p:.5,max:2},tries:30,crowd:{few:93,camsFew:5,two:96}},
 /* Kammern (Abstellraum oder WC) als Versteck fuer Bewusstlose (Plan Kammern in docs/ideen-und-planung.md, Entscheidungen von Till am 28. Oktober 2026): on schaltet alle ab, p Anteil der Karten mit Kammer, scs die Szenarien mit Kammer, cells Mindestzahl Innenkacheln, gap Abstand der Wegpunkte zum Ring in Kacheln, sight Sichtweite in Kacheln, mit der validateMap Posten gegen die Versteck-Kacheln (stash.deep) prueft (Wachen sehen 8,1 Kacheln, mit Reserve fuer Lage-Tags), wall bevorzugte Zahl schon vorhandener Wandkacheln im Ring (nur Museum und Casino, placeStash nimmt sonst jeden Kandidaten). */
-stash:{on:1,p:.85,scs:['jewel','museum','casino','bank'],zone:['bank','gas'],cells:4,gap:2,sight:10,wall:4},
+stash:{on:1,p:.85,add:{bank:3,gas:5},scs:['jewel','museum','casino','bank','gas'],zone:['bank','gas'],cells:4,gap:2,sight:10,wall:4},
 hud:{lageLines:4,lageW:28,feedW:440},
 funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
 chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
@@ -281,7 +281,7 @@ const meetOf=sc=>Object.assign({},CFG.meet,(CFG.meet.per||{})[sc]);
 function placeMeet(lay){const sc=scOf(lay),M=meetOf(sc);if(!M.on||!(M.p>0)||lay.truck||lay.road||lay.meet||typeof lay.seed!=='number'||(sc==='bank'&&!lay.tries)||!M.scs.includes(sc))return lay;
 let h=0;for(let i=0;i<sc.length;i++)h=Math.imul(h^sc.charCodeAt(i),16777619);
 const r=mulberry32(Math.imul(lay.seed|0,2246822519)^0x4d454554^h);if(r()>=M.p)return lay;
-const ex=lay.exit,hiC=ex.dir>0,S0=WX0,hiEnd=S0+W-1,K=meetKit(lay),e0=K.e0,lim=e0==null?0:Math.min(M.pveMax,e0+M.extra);
+const ex=lay.exit,hiC=ex.dir>0,S0=WX0,hiEnd=S0+W-1,K=meetKit(lay),e0=K.e0,ext=lay.q&&lay.q.stash&&sc==='gas'?CFG.stash.add.gas:0,lim=e0==null?0:Math.min(M.pveMax+ext,e0+M.extra+ext);/* Tankstelle mit Kammer (K5): das Gebaeude ist 3 Zeilen tiefer, die Wege zum Treffpunkt im Norden werden um 3 laenger, das Fenster rueckt mit */
 // Reihenfolge aus dem Seed mischen, der erste Platz mit genauem Abstand und Weg im Fenster gewinnt (gleichverteilt unter den gueltigen)
 // Stil: Die Fahrstrecke darf einen Zaun nur kreuzen (ein Tor), nicht ihm entlang laufen, und in der Zone steht kein Zaun (Pflanzen, Faesser und Kisten raeumt das Setzen weg)
 const style=c=>{for(let x=c.t;x<=c.t+3;x++)for(const y of[c.r-1,c.r+2])if(cell(x,y)==='f')return false;
@@ -587,7 +587,7 @@ let mat=0;for(const [x,y] of TILES)if(matCell(x,y,lay)&&near(x*T+16,y*T+16,46))m
 const P=(a,c)=>{const dd=new Int16Array(W*H).fill(-1),q=[a];if(OOB(a[0],a[1]))return 0;dd[at(a[0],a[1])]=0;for(let h=0;h<q.length;h++){const q0=q[h];if(q0[0]===c[0]&&q0[1]===c[1])return dd[at(q0[0],q0[1])];for(const d of D4){const nx=q0[0]+d[0],ny=q0[1]+d[1];if(OOB(nx,ny)||dd[at(nx,ny)]>=0||!(!isSol(nx,ny)||cell(nx,ny)==='L'))continue;dd[at(nx,ny)]=dd[at(q0[0],q0[1])]+1;q.push([nx,ny])}}return 0};
 if(stand){const sv=P(sp,stand),ve=P(stand,ln.exit.goal);rep.info.pathSV=sv;rep.info.pathVE=ve;
  if(!sv)Wn('weg','Kein Weg vom Start zum Tresor');else if(sv<V.pathSV[0]||sv>V.pathSV[1])Wn('weg-start-tresor','Weg Start zu Tresor '+sv+' Schritte (Richtwert '+V.pathSV.join(' bis ')+')');
- if(!ve)Wn('weg','Kein Weg vom Tresor zum Ausgang');else if(ve<V.pathVE[0]||ve>(lay.museum?CFG.museum.pathVE:V.pathVE[1]))Wn('weg-tresor-ausgang','Weg Tresor zu Ausgang '+ve+' Schritte (Richtwert '+V.pathVE.join(' bis ')+')')}
+ if(!ve)Wn('weg','Kein Weg vom Tresor zum Ausgang');else if(ve<V.pathVE[0]||ve>(lay.museum?CFG.museum.pathVE:V.pathVE[1]+(lay.gas&&lay.q&&lay.q.stash?CFG.stash.add.gas:0)))Wn('weg-tresor-ausgang','Weg Tresor zu Ausgang '+ve+' Schritte (Richtwert '+V.pathVE.join(' bis ')+')')}
 if(rep.info.loot.v<V.loot[0]||rep.info.loot.v>V.loot[1])Wn('beute-summe','Beute-Summe '+rep.info.loot.v+' ausserhalb '+V.loot.join(' bis '));
 rep.info.cams=(lay.cams||[]).length;rep.info.guards=(lay.guards||[]).length;if(rep.info.cams>V.cams)Wn('kameras',rep.info.cams+' Kameras (Richtwert hoechstens '+V.cams+')');if(rep.info.guards>V.guards)Wn('wachen',rep.info.guards+' Wachen (Richtwert hoechstens '+V.guards+')')}
 rep.ok=!rep.err.length;return rep}
