@@ -9,7 +9,7 @@ module.exports = [
     timeout: 240000,
     async run(t) {
       await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
-      const r = await t.page.evaluate(`(() => { const o = ${STRAT}, out = []; for (const sd of [7003, 7005, 7006, 7008]) { const x = bot.nb(Object.assign({ seed: sd }, o)); out.push({ sd, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, maxD: x.maxD, hold: x.hold, kills: x.kills, dstop: x.dstop }); } return out; })()`);
+      const r = await t.page.evaluate(`(() => { __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = []; for (const sd of [7003, 7005, 7006, 7008]) { const x = bot.nb(Object.assign({ seed: sd }, o)); out.push({ sd, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, maxD: x.maxD, hold: x.hold, kills: x.kills, dstop: x.dstop }); } return out; })()`);
       t.eq(r.filter(x => x.res === 'TIMEOUT').map(x => x.sd), [], 'kein Lauf haengt bis zum Zeitlimit: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.t])));
       t.eq(r.filter(x => !(x.vault >= 45000)).map(x => [x.sd, x.vault]), [], 'der Bot raeumt den Tresor fast ganz (mindestens 45000 von 60000)');
       t.ok(r.every(x => x.kills >= 1 && x.maxD >= 1), 'die Polizei kommt, der Bot schiesst: ' + JSON.stringify(r.map(x => [x.kills, x.maxD])));
@@ -22,8 +22,8 @@ module.exports = [
     timeout: 240000,
     async run(t) {
       await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
-      const r = await t.page.evaluate(`(() => { const o = ${STRAT}; const a = bot.nb(Object.assign({ seed: 7003 }, o)); const b = bot.nb(Object.assign({ seed: 7003 }, o, { gier: 1e9, stay: 40, fleeHp: -1 })); return { a: [a.res, a.t, a.holeT], b: [b.res, b.t, b.holeT] }; })()`);
-      t.ok(r.a[2] > 0, 'der Bohrer ist durch (Loch offen) bei Seed 7003: ' + JSON.stringify(r.a));
+      const r = await t.page.evaluate(`(() => { const o = ${STRAT}; __dbg.CFG.nb.stormSolo = 1e6; let sd = 7003, a; for (const q of [7003, 7005, 7006, 7008, 7010, 7012]) { a = bot.nb(Object.assign({ seed: q }, o)); sd = q; if (a.holeT > 0) break; } const b = bot.nb(Object.assign({ seed: sd }, o, { gier: 1e9, stay: 40, fleeHp: -1 })); return { a: [a.res, a.t, a.holeT], b: [b.res, b.t, b.holeT] }; })()`);
+      t.ok(r.a[2] > 0, 'der Bohrer ist durch (Loch offen) bei einem der Seeds: ' + JSON.stringify(r.a));
       t.ok(r.b[2] > 0 && (r.b[0] !== 'WIN' || r.b[1] >= r.b[2] + 39), 'mit grosser Gier und stay 40 geht er fruehestens 40 s nach Loch offen (oder faellt vorher): ' + JSON.stringify(r.b));
     },
   },

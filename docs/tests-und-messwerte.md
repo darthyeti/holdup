@@ -162,3 +162,14 @@ Offene Frage aus N2 (gehen Beamte gezielt zum Bohrer?): Der Bohrer steht durch "
 | god, stay 240 | 10 % | | 396 s | 77.500 | Stau 20, Ablage voll 15 |
 
 Die Presse liefert nach den Änderungen im Mittel 8 bis 8,3 Bündel (rund 41.000), die Druckstufe steigt auf 1,2 bis 1,4. Der god-Bot gewinnt seltener, weil er zuerst die Presse betreut und Beamte im Keller den Bohrer wieder stoppen (Lauf bis zum Zeitlimit). Als Hinweis auf die Überlebbarkeit gilt der echte Bot LANGE: 0 % Sieg. Wer in der Presse bleiben will, muss den Ring 3 selbst halten, der Bot kann es nicht.
+
+**Sturm (N6, Ticket 77), Bot solo, 40 Seeds ab 7000, Kit alt, Sturm aus (`stormSolo` 99999) gegen an (150 s nach Bohrer-Start):**
+
+| Strategie | Sturm | Sieg | Dauer Sieg | Loch offen | Beamter im Keller stoppt den Bohrer |
+|---|---|---|---|---|---|
+| frueh (Treppensperre) | aus | 55 % | 225 s | 222 s | 0 |
+| frueh (Treppensperre) | an | 50 % | 230 s | 227 s | 0 |
+| god, Presse, 60 s Bleiben (20 Seeds) | aus | 25 % | 394 s | 320 s | 6 |
+| god, Presse, 60 s Bleiben (20 Seeds) | an | 10 % | 631 s | 523 s | 36 |
+
+Wer früh geht, spürt den Sturm kaum (Rauschen rund 7 Prozentpunkte: der Bohrer ist nach rund 225 s durch, der Sturm braucht bis Ring 3 rund 60 s ab Beginn). Wer bleibt (Presse), wird vom Sturm deutlich gebremst: Loch statt nach 320 s erst nach 523 s, sechsmal so viele Bohrer-Stillstände durch Beamte im Keller, Druckstufe 1,4 statt 0,9, und der unverwundbare Bot kommt seltener durch (10 % gegen 25 %, wegen Zeitlimit). Die Siegquote des Bots früh lag in den Läufen dieser Tabelle bei 50 bis 55 %, in den N5-Läufen bei 65 bis 73 % (gleiche Werte, nur Rauschen und Lauf): Die Aussagen gelten für den Vergleich Sturm aus gegen an.
