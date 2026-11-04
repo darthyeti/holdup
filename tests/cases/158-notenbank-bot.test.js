@@ -18,6 +18,20 @@ module.exports = [
     },
   },
   {
+    name: 'Notenbank-Bot frueh auf den Varianten (N7, open: nbvar): vier Seeds mit je anderer Anordnung, jeder Lauf endet vor dem Zeitlimit, der Tresor ist leer geraeumt, die Treppe (an ihrer Stelle LAY.nb.gates.treppe) ist gesperrt, mindestens ein Lauf kommt durch das Loch',
+    open: { nbvar: true },
+    timeout: 300000,
+    async run(t) {
+      await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
+      const r = await t.page.evaluate(`(() => { __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = [], seen = new Set(); for (const sd of [7003, 7005, 7006, 7008, 7010, 7012, 7014, 7016]) { if (out.length >= 4) break; const x = bot.nb(Object.assign({ seed: sd }, o)), L = __dbg.LAY().nb, st = L.gates.treppe[0], v = JSON.stringify(L.var); if (seen.has(v)) continue; seen.add(v); out.push({ sd, v, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, bar: __dbg.bars().some(b => b.lv >= 1 && Math.floor(b.x / 32) === st[0] && Math.floor(b.y / 32) === st[1]) }); } return out; })()`);
+      t.eq(r.length, 4, 'vier verschiedene Anordnungen gespielt: ' + JSON.stringify(r.map(x => x.v)));
+      t.eq(r.filter(x => x.res === 'TIMEOUT').map(x => x.sd), [], 'kein Lauf haengt bis zum Zeitlimit: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.t])));
+      t.eq(r.filter(x => !(x.vault >= 45000)).map(x => [x.sd, x.vault]), [], 'der Bot raeumt den Tresor fast ganz in jeder Anordnung');
+      t.ok(r.filter(x => x.bar).length >= 3, 'die Treppe ist an ihrer Stelle gesperrt (mindestens drei von vier): ' + JSON.stringify(r.map(x => [x.sd, x.bar])));
+      t.ok(r.some(x => x.res === 'WIN' && x.secured >= 45000 && x.holeT > 0), 'mindestens ein Lauf bohrt durch und entkommt mit der Beute: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.holeT, x.secured])));
+    },
+  },
+  {
     name: 'Notenbank-Bot: ohne Bohrer kein Loch (Bohrer wird vom Bot gestartet, Mutant "Bohrer nie") und die Strategie gier haelt ihn bei offenem Loch zurueck',
     timeout: 240000,
     async run(t) {
