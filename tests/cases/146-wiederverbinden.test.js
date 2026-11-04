@@ -154,11 +154,11 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { ${HELP}; const o = {}, { G, A, t1, t2, sp } = R2.mk(2, 3, 0), [B, M1, M2] = t2, st = d => d.state().scr;
         A.duelStart(); G.run(9); A.CFG.duel.len = 1; A.NET.duel.len = 1; B.NET.duel.len = 1; A.setSecured(30000); A.finish(true, 'Sieg'); B.setSecured(20000); B.finish(true, 'Sieg'); G.run(2); for (const d of [A, B, M1, M2]) { const e = d.get().ended; if (e) e.pg = 9; }
         M2.NET.conn.onmsg = () => {}; o.wait = B.CFG.net.retWait; MT.click(A, 'endRet'); G.run(4); o.waehrend = [st(B), B.NET.role, st(M1), M1.NET.code === A.NET.code, st(M2), M2.NET.code === B.NET.code];
-        G.run(13); o.danach = [st(B), B.NET.code === A.NET.code, B.NET.team, st(M2), M2.flog().dump().ereignisse.some(e => e[2] === 'netz' && /Verbindung zum Host verloren/.test(JSON.stringify(e[3]))), A.NET.t2.length, A.NET.t2[0].nm === B.SC.name, A.ho()];
+        G.run(13); o.danach = [st(B), B.NET.code === A.NET.code, B.NET.team, st(M2), M2.flog().dump().ereignisse.some(e => e[2] === 'netz' && /Verbindung zum Host verloren/.test(JSON.stringify(e[3]))), A.NET.t2.length, A.NET.t2[0].nm === B.SC.name, A.ho(), !!M2.NET.rj];
         return o; })()`);
       t.ok(r.wait > 0 && r.wait <= 10, 'Wartezeit ' + r.wait);
       t.eq(r.waehrend, ['play', 'host', 'lobby', true, 'play', true], 'waehrend B wartet: M1 ist schon bei A, M2 reagiert nicht, B haelt seinen Raum');
-      t.eq(r.danach.slice(0, 4), ['lobby', true, 2, 'title'], 'danach: B bei A in Team 2, M2 auf dem Titel'); t.ok(r.danach[4], 'M2 verliert die Verbindung zum Host (Flugschreiber)'); t.eq(r.danach.slice(5), [2, true, null], 'A: B und M1 in Team 2, B zuerst, Sperre geloest');
+      t.eq(r.danach.slice(0, 4), ['lobby', true, 2, 'play'], 'danach: B bei A in Team 2, M2 steht in der Rueckkehr (N1b: kein sofortiger Titel, der Raum von B ist weg, M2 wartet in der Frist)'); t.ok(r.danach[8], 'M2 versucht es neu (NET.rj)'); t.ok(r.danach[4], 'M2 verliert die Verbindung zum Host (Flugschreiber)'); t.eq(r.danach.slice(5, 8), [2, true, null], 'A: B und M1 in Team 2, B zuerst, Sperre geloest');
     },
   },
   {
