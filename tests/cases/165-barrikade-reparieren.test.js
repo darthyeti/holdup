@@ -56,15 +56,28 @@ module.exports = [
         run(1);
         o.hpB0 = B.bars()[b.i].hp;
         B.keys.e = 1;
-        for (let i = 0; i < 2.4 * 60; i++) { p.x = b.x + b.iv[0] * 20; p.y = b.y + b.iv[1] * 20; p.vx = p.vy = 0; const m = B.get().me; m.x = p.x; m.y = p.y; step(G.insts, G.net, 1 / 60); }
+        for (let i = 0; i < 4 * 60; i++) { p.x = b.x + b.iv[0] * 20; p.y = b.y + b.iv[1] * 20; p.vx = p.vy = 0; const m = B.get().me; m.x = p.x; m.y = p.y; step(G.insts, G.net, 1 / 60); }
         B.keys.e = 0; run(1.5);
         o.hpA = b.hp; o.hpB = B.bars()[b.i].hp; o.matA = g.players[1].mat; o.matB = B.get().players[1].mat; return o;
       });
       t.eq(r.ok, true, 'Angebot beim Host fuer Spieler 1');
       t.eq(r.hpB0, 100, 'Client sieht den Schaden vor der Reparatur');
-      t.eq(r.hpA, 200, 'Host rechnet: HP voll');
+      t.eq(r.hpA, 200, 'Host rechnet: HP voll, E 4 s durchgehalten baut die Barrikade nicht ab');
       t.eq(r.hpB, 200, 'Client sieht HP voll');
       t.ok(r.matA < r.m0 && r.matA === r.matB, 'Material beim Client weniger und gleich auf beiden (' + r.m0 + ' -> ' + r.matA + '/' + r.matB + ')');
+    },
+  },
+  {
+    name: 'E durchhalten baut die frisch gebaute oder reparierte Barrikade nicht ab; erst nach Loslassen und neuem Halten geht der Abbau',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, { D, me, b, br } = S, o = {}; me.mat = 4;
+        const hold = sec => { D.keys.e = true; for (let i = 0; i < sec * 30; i++) D.update(1 / 30); };
+        hold(14); o.built = [b.lv, b.hp];             // bauen, verstaerken, dann nicht abbauen
+        D.keys.e = false; D.update(1 / 30); b.hp = 100; me.mat = 2; hold(4); o.rep = [b.lv, b.hp];   // reparieren, dann nicht abbauen
+        D.keys.e = false; D.update(1 / 30); hold(3); o.dism = [b.lv, b.hp]; D.keys.e = false; return o; })()`);
+      t.eq(r.built, [2, 200], 'Bauen und Verstaerken, danach steht sie noch');
+      t.eq(r.rep, [2, 200], 'Reparieren, E weiter gehalten: steht noch, voll');
+      t.eq(r.dism, [0, 0], 'E losgelassen und neu gehalten: Abbau moeglich');
     },
   },
 ];

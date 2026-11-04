@@ -1641,7 +1641,8 @@ sus=clamp(sus+(wr?wr*lgM('sus')*(wrBy?1-skv(wrBy.kit,'U2','sus'):1)-(CFG.watch.n
 hostageStep(dt);koStep(dt);noteStep();
 const worked=new Set(),rvd=new Set();
 const cpd=new Set();
-for(const o of act){const rt=revTarget(o);if(rt){if(o.inp.e){rvd.add(rt);rt.rv+=dt/(CFG.rev.t*(1-skv(o.kit,'U1','rev')));if(rt.rv>=1){revive(rt);o.st.rev++}}continue}const ct=LAY.truck?capTarget(o):null;if(ct){if(o.inp.e){cpd.add(ct);ct.cp=(ct.cp||0)+dt/CFG.truck.capT;if(ct.cp>=1){capture(ct);o.st.cap++}}continue}const cur=pickIt(o,o.inp.w==null?-1:o.inp.w);if(cur&&o.inp.e){worked.add(cur);o.st.work+=dt;if(LOOT_T.includes(cur.t)||cur.t==='ko')o.thf=.6;cur.pr+=dt/cur.dur(o)/toolT(o,cur);if(cur.pr>=1){cur.pr=0;o.st.acts++;cur.act(o)}}}
+for(const o of act){const rt=revTarget(o);if(rt){if(o.inp.e){rvd.add(rt);rt.rv+=dt/(CFG.rev.t*(1-skv(o.kit,'U1','rev')));if(rt.rv>=1){revive(rt);o.st.rev++}}continue}const ct=LAY.truck?capTarget(o):null;if(ct){if(o.inp.e){cpd.add(ct);ct.cp=(ct.cp||0)+dt/CFG.truck.capT;if(ct.cp>=1){capture(ct);o.st.cap++}}continue}if(!o.inp.e)o.rel=null;let cur=pickIt(o,o.inp.w==null?-1:o.inp.w);if(cur&&o.rel&&o.rel===cur.b&&(cur.t==='bard'||cur.t==='bar'&&cur.mode(o)===2))cur=null;/* Abbau erst nach Loslassen von E, sonst baut man die frisch gebaute oder reparierte Barrikade bei zu langem Halten gleich wieder ab */
+if(cur&&o.inp.e){worked.add(cur);o.st.work+=dt;if(LOOT_T.includes(cur.t)||cur.t==='ko')o.thf=.6;cur.pr+=dt/cur.dur(o)/toolT(o,cur);if(cur.pr>=1){cur.pr=0;o.st.acts++;cur.act(o);if(cur.t==='bar'||cur.t==='barr')o.rel=cur.b}}}
 for(const q of players)if(q.dn>0&&!rvd.has(q))q.rv=0;
 for(const e of en)if(e.sur&&!cpd.has(e))e.cp=0;
 for(const it of itsAll())if(!worked.has(it)&&!it.keep)it.pr=0;
