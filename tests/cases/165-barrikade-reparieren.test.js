@@ -42,4 +42,29 @@ module.exports = [
       t.eq(r.mat, 1, '1 Material verbraucht');
     },
   },
+  {
+    name: 'Reparieren im Coop: der Client haelt E an der beschaedigten Barrikade, der Host rechnet, beide sehen die HP voll, Material beim Client weniger',
+    async run(t) {
+      await t.loadTool('loopnet.js');
+      await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(() => {
+        const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0], run = G.run, o = {};
+        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true })); B.cv.dispatchEvent(new KeyboardEvent('keyup', { key: 'f', bubbles: true })); run(3);
+        const g = A.get(); g.en.length = 0; g.npcs.length = 0; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
+        const b = A.bars().find(x => !x.rd), br = g.its.find(i => i.t === 'barr' && i.b === b), p = g.players[1];
+        const bi = g.its.find(i => i.t === 'bar' && i.b === b); p.x = b.x + b.iv[0] * 20; p.y = b.y + b.iv[1] * 20; p.mat = 4; bi.act(p); bi.act(p); b.hp = 100; b.cd = 0; p.mat = 3; p.units = 0; o.m0 = p.mat; o.ok = br.ok(p);
+        run(1);
+        o.hpB0 = B.bars()[b.i].hp;
+        B.keys.e = 1;
+        for (let i = 0; i < 2.4 * 60; i++) { p.x = b.x + b.iv[0] * 20; p.y = b.y + b.iv[1] * 20; p.vx = p.vy = 0; const m = B.get().me; m.x = p.x; m.y = p.y; step(G.insts, G.net, 1 / 60); }
+        B.keys.e = 0; run(1.5);
+        o.hpA = b.hp; o.hpB = B.bars()[b.i].hp; o.matA = g.players[1].mat; o.matB = B.get().players[1].mat; return o;
+      });
+      t.eq(r.ok, true, 'Angebot beim Host fuer Spieler 1');
+      t.eq(r.hpB0, 100, 'Client sieht den Schaden vor der Reparatur');
+      t.eq(r.hpA, 200, 'Host rechnet: HP voll');
+      t.eq(r.hpB, 200, 'Client sieht HP voll');
+      t.ok(r.matA < r.m0 && r.matA === r.matB, 'Material beim Client weniger und gleich auf beiden (' + r.m0 + ' -> ' + r.matA + '/' + r.matB + ')');
+    },
+  },
 ];
