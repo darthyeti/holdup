@@ -29,7 +29,7 @@ Die Größen sind Schätzungen, keine Messungen. Namen für Commits und Gespräc
 | B3 | C4 für Tresore und die Sprengladung des Geldtransporters | dort, Gegenstände | mittel bis groß | gebaut |
 | B4 | Besondere Waffen: Präzisionsgewehr und Granatwerfer (Shift schaltet um) | dort | mittel bis groß | gebaut |
 | B5 | Notfallkoffer (Taste C) | dort | klein bis mittel | gebaut |
-| B6 | Balance des Skillbaums messen und anpassen | dort | mittel | offen, nach Tills Rückmeldung |
+| B6 | Balance des Skillbaums messen und anpassen | unten, Abschnitt B6 Plan | mittel | Plan v1 mit Messung (4. November 2026, Ticket #19), Bau nach Tills Entscheidung zu Zäh |
 | C1 | Wachsamkeit der Läden, Stufe 1 (Zähler serienweit, Wachsames Personal erzwungen, Badge, Netz), dazu Lautlos-Bonus mit Abflachung und Skillpunkte lautlos 1, Überfall 2 | docs/ideen-und-planung.md, Karriere-Serie | mittel | gebaut |
 | C2 | Wachsamkeit, Stufe 2 (Sicherheitsdienst), nur falls Stufe 1 nicht reicht | dort | klein, aber das Layout hängt am Zähler | ersetzt durch #34 (Zivile Wachen und Zivilfahnder, gebaut am 29. Oktober 2026, Stand in docs/spielsystem.md) |
 | D0 | Messung: Wie viel Platz hat jede Karte in jeder Lage für einen zweiten und einen entfernten Treffpunkt | unten, Ergebnis im Abschnitt D0 Ergebnis | klein | gebaut (Messung), Entscheidung für D1 bis D3 bei Till |
@@ -157,6 +157,66 @@ Meldung als großes Banner und im Feed mit der Himmelsrichtung von B gegenüber 
 
 **Tests**: `125-ausweichpunkt` (sechs Tests, rund 55 s, Einzelheiten in docs/tests-und-messwerte.md). **Für später offen**: ein festes Ereignis "Straße gesperrt" aus dem Seed (nicht Teil des Updates), die Wahl des Treffpunkts beim Rufen (G).
 
+## B6 Plan: Balance der Stufe 3 im Skillbaum (Plan v1, 4. November 2026, Ticket #19)
+
+Anlass (Till): Die Boni auf Stufe 3 sind teilweise zu hoch. Gemeint sind vor allem die sechs Zusätze, die erst mit Stufe 3 eines Pfades wirken (Läufer, Durchschuss, Sammler, Zäh, Verhandler, Fahrer), daneben die dritten Stufen der Pfade und Gegenstände. Alle Werte stehen in `CFG.skill` (`index.html`, Zeile 125 ff., Knoten `A0` bis `U4`), gelesen über `skv(Kit, Knoten, Schlüssel)`.
+
+### Bestandsaufnahme Stufe 3 (Stand `main` am 4. November 2026)
+
+| Knoten | Stufe 3 heute | Wirkt in | Vergleich |
+|---|---|---|---|
+| `A1` Ruhige Hand, Zusatz **Läufer** (`run` [0,0,1]) | Zusatzstreuung beim Laufen ganz weg (-100 %), dazu `spread` .3, `rl` .3 | `shotSp`: `spread + .05*mv*(1-run)` | Laufen und Schießen ohne jeden Nachteil |
+| `A2` Durchschlag, Zusatz **Durchschuss** (`pierce` [0,0,.5]) | zweiter Beamter dahinter mit 50 % Schaden, dazu `shield` .6 | Kugelschleife (`b.pc`, `b.px`) | jede Kugel bis 1,5-fach |
+| `V1` Baumeister, Zusatz **Sammler** (`mat` [0,0,1]) | 2 statt 1 Material je Möbelstück, dazu `build` .5 | `matItem` | begrenzt durch Tasche und `bar.matMax` 4 |
+| `V2` Deckung, Zusatz **Zäh** (`sw` [0,0,.45]) | einmal je Auftrag mit 45 HP wieder auf, danach `CFG.shop.adInv` 2 s unverwundbar, dazu `lean` .55 | `hitPlayer` (vor dem Adrenalin) | Adrenalin aus dem Shop kostet 8.000 je Stück und gibt 25 HP (`adHp`) |
+| `U1` Sanitäter, Zusatz **Verhandler** (`cap` [0,0,16], `heat` [0,0,.5]) | Geisel-Aufschub 30 auf 46 s (+53 %), Fahndung durch Geiseln halbiert, dazu `rev` .55 | `holdCap`, `heatCalc` (`hostMul`) | Fahndung: höchstens 6 Punkte je Auftrag gespart (`host` 4, `hostMax` 12) |
+| `U2` Techniker, Zusatz **Fahrer** (`van` [0,0,8]) | Fluchtwagen 8 s früher (mindestens 8 s), dazu `sus` .3, `pick` .3 | `vanT` | Funkgerät 34, 27, 20 s, ohne 40 s (`vanCall`): mit Funkgerät 3 und Fahrer 12 s, also 40 % weniger |
+| `A0` Munition | Reserve +75 % | `mkPl` | |
+| `V0` Panzerung | Weste verschleißt 75 % langsamer | `hitPlayer` | Weste 3 im Shop hält 200 |
+| Gegenstände | Gewehr 7 Schuss, Werfer 4, Mine oder Claymore 3, Koffer 2 x 90 HP (`hps` 9 x 10 s), C4 spart 75 % des Verlusts | B2 bis B5 oben | der Bot spielt sie nicht |
+
+### Messung mit dem Balance-Bot (4. November 2026, rund 8 Minuten)
+
+Aufbau: Bank klassisch, `bot.batch(n,{sigma:.07,react:.35,kit:'old',call:null,van:'alt',heat:20,wait:[15,4]})`, also ein mittelschwacher Schütze, der im Tresor wartet, bis der Wagen von selbst kommt, bei Fahndungsstufe 1. Jede Zeile mit Wurzel auf 3 und Pfad auf 3 (zum Beispiel `{V0:3,V2:3}`), Varianten über `CFG` live gesetzt. Das Messskript lag nur im Scratchpad (Schleife über `bot.batch` mit `__dbg.CFG.skill` je Zeile), es ist kein Werkzeug im Repo.
+
+| Zeile (n=60) | Siege | Rest-HP |
+|---|---|---|
+| ohne Skills | 57 % | 11 |
+| Panzerung 3 und Deckung 3 ohne Zäh (`sw` 0) | 63 % | 14 |
+| mit **Zäh** 45 % (heute) | **100 %** | 14 |
+| Zäh 25 % | 97 % | 12 |
+| Zäh 25 %, ohne Schutzzeit (`adInv` 0) | 88 % | 15 |
+| Zäh 15 %, ohne Schutzzeit | 80 % | 12 |
+| Munition 3 und Ruhige Hand 3 ohne Läufer | 58 % | 17 |
+| ebenso mit **Läufer** (heute) | 77 % | 22 |
+| ebenso mit **Durchschuss** ohne / mit (heute) | 55 % / 68 % | 13 / 16 |
+
+Dazu bei n=40: Fahrer (Techniker 3) mit `call` 25 und Fahndung 5 senkt die Dauer der Siege von 111 auf 103 s, die Siegquote bleibt im Rauschen (83 % ohne, 80 % mit). In einem zweiten, härteren Aufbau (`sigma` .07, Fahndung 2) stieg die Siegquote mit Zäh von 8 auf 75 %, alle anderen Zusätze lagen unter 20 %.
+
+Lesart: Die Streuung bei n=60 liegt bei rund 12 Punkten. Klar über dem Rauschen liegt nur **Zäh**: ein zweites Leben je Auftrag, gratis, stärker als das gekaufte Adrenalin, und weil der Bot meist knapp am Ende stirbt, verwandelt es fast jede Niederlage in einen Sieg. Der Wert selbst (45 oder 25 HP) zählt weniger als die zweite Chance und die 2 s Schutzzeit danach. Läufer und Durchschuss liegen an der Grenze (+13 bis +19 Punkte), Fahrer spart Zeit, aber der Bot zeigt keinen Nutzen, weil er im Tresor wartet. Sammler, Verhandler und Sanitäter misst der Bot nicht (er baut keine Barrikaden, nimmt keine Geiseln, spielt allein), ebenso keine Gegenstände. Grenzen: nur die Bank, nur der Überfall, ein Bot ist kein Spieler, Bewegung (Läufer) spielt er kaum.
+
+### Vorschlag (alt und neu)
+
+| Wert | alt | neu | Grund |
+|---|---|---|---|
+| `V2.sw` (Zäh) | [0,0,.45] | [0,0,.25] | gleich viel wie Adrenalin aus dem Shop, das Geld kostet |
+| neu `V2.inv` (Schutzzeit nach Zäh, statt `CFG.shop.adInv`) | 2 s | .5 s | die Schutzzeit trägt einen großen Teil der Wirkung (97 auf 88 %); Adrenalin behält 2 s |
+| Zäh und Adrenalin im selben Auftrag | beide nacheinander | unverändert, siehe Entscheidung | |
+| `A1.run` (Läufer) | [0,0,1] | [0,0,.5] | Laufen soll beim Zielen etwas kosten, halbiert statt aufgehoben |
+| `A2.pierce` (Durchschuss) | [0,0,.5] | [0,0,.35] | an der Grenze des Rauschens, leicht zurück |
+| `U2.van` (Fahrer) | [0,0,8] | [0,0,5] | mit Funkgerät 3 heute 12 s Anfahrt, neu 15 s; das Rufen bleibt eine Entscheidung |
+| `U1.cap` (Verhandler) | [0,0,16] | [0,0,10] | Aufschub 30 auf 40 statt 46 s; `heat` .5 bleibt (höchstens 6 Punkte) |
+| `V2.lean` Stufe 3 | .55 | .45 | zusammen mit Zäh war Deckung der stärkste Baum |
+| `V1.mat` (Sammler), `A0`, `V0`, `U0`, `U2.sus` und `pick`, Gegenstände | | unverändert | nicht messbar mit dem Bot oder nicht auffällig, nach Tills Spieltest |
+
+Erwartung (aus der Messung abgeleitet, nicht gemessen): Zäh mit 25 % und 0,5 s landet zwischen 88 und 97 %, also weiter der stärkste Zusatz, aber mit spürbarem Preis. Soll Zäh deutlich schwächer werden, ist das eine Frage der Art (zweites Leben ja oder nein), nicht der Zahl, siehe Entscheidung.
+
+### Schritte
+
+1. **B6a Werte (klein, Label `spielgefuehl`).** Die Werte oben in `CFG.skill`, neues Feld `V2.inv` in `hitPlayer` statt `CFG.shop.adInv` beim Zäh. Tests: `93-skillbaum` und `98-skillbaum-umbau` prüfen die Listen (dort steht .45), anpassen; ein neuer Testfall prüft die Schutzzeit von Zäh getrennt vom Adrenalin. Kein `VER` (Netz und Karten unverändert), kein `UI_API` (die Texte `b` lesen die Werte selbst). Doku: der Absatz Skillbaum in docs/spielsystem.md, ein Satz Spieltest-Hinweis in docs/offen-und-spieltest.md.
+2. **B6b Nachmessung (klein).** Dieselbe Messung mit den neuen Werten, Ergebnis hier eintragen, dazu Tankstelle und Casino mit `batchSeeds` (je 40 Seeds), damit die Bank nicht allein entscheidet.
+3. **B6c nach Tills Spieltest.** Gegenstände und Sammler, Verhandler und Sanitäter im Coop, die der Bot nicht misst.
+
 ## Gemeinsame Regeln für alle Schritte
 
 - Test zuerst (rot), dann Code, `npm test`, bei Karten und Generatoren der Langlauf (`npm run test:long`) und der Alt-Neu-Vergleich (`tests/altneu.js`), die Gegenprobe über eine Kopie ohne den Umbau.
@@ -187,3 +247,4 @@ Entschieden am 25. Oktober 2026: Die Spuren laufen nacheinander. Der Mindestabst
 - 26. Oktober 2026: D1 gebaut (`placeMeet`, `CFG.meet`, `VER` 42, Test `109-treffpunkt-abseits`), Bank als erster Kunde.
 - 26. Oktober 2026: D2 gebaut (alle fünf Gebäude-Szenarien in `CFG.meet.scs`, Werte je Szenario in `CFG.meet.per`).
 - 27. Oktober 2026: D3 gebaut (`altOf`, `ALT`, `setAlt`, `altSwap`, `CFG.alt`, `VER` 51, Test `125-ausweichpunkt`). B ist nicht vorher sichtbar (Till). Dazu `tools/bot.js`: das Ziel folgt der aktuellen Lane.
+- 4. November 2026: B6 Plan v1 mit Bot-Messung (Ticket #19), Abschnitt B6 Plan: Zäh ist der einzige Zusatz klar über dem Rauschen, Vorschlagswerte für Zäh, Läufer, Durchschuss, Fahrer, Verhandler und Deckung.
