@@ -1289,11 +1289,11 @@ if(t.st!=='drive')return;
 const C=CFG.truck,D=tkD(),tu=D*t.x,front=tu+TKL/2;let stopC=1e9,why=0;
 for(const b of bars)if(b.rd&&b.lv>0){const q=sperre(b.g);if(q.k<q.n)continue;const xb=b.cells[0][0]*T,ub=D>0?xb:-(xb+T);if(ub>front-10){const c=ub-C.gap-TKL/2;if(c<stopC){stopC=c;why=1}}}
 for(const o of actv()){const ou=D*o.x;if(Math.abs(o.y-t.y)<TKH/2+16&&ou>front-6&&ou<front+130){const c=ou-100-TKL/2;if(c<stopC){stopC=c;why=2}}}
-if(t.tire<=0){if(t.slideX===undefined)t.slideX=tu+C.tireSlide;if(t.slideX<stopC){stopC=t.slideX;why=why||3}}
+if(t.tire<=0){if(t.slideX===undefined)t.slideX=Math.max(tu,Math.min(tu+C.tireSlide,(D>0?(WX0+W)*T:-WX0*T)-TKL/2));if(t.slideX<stopC){stopC=t.slideX;why=why||3}}
 const d=stopC-tu;let want=C.spd;if(stopC<1e8)want=Math.min(want,Math.max(0,d)*1.8);
 t.v+=clamp(want-t.v,-dt*C.brake,dt*C.acc);t.x+=D*t.v*dt;
-if(stopC<1e8&&t.v<4&&d<10){t.v=0;t.st='stopped';tkStopped(why)}
-else if(D>0?t.x>(WX0+W)*T+TKL:t.x<WX0*T-TKL){t.st='gone';finish(false,'Wagen entkommen','Der Panzerwagen ist durch. Niemand wurde gefasst, die Serie läuft weiter.',true)}}
+if(D>0?t.x>(WX0+W)*T+TKL:t.x<WX0*T-TKL){t.st='gone';finish(false,'Wagen entkommen','Der Panzerwagen ist durch. Niemand wurde gefasst, die Serie läuft weiter.',true)}
+else if(stopC<1e8&&t.v<4&&d<10){t.v=0;t.st='stopped';tkStopped(why)}}
 function tkStamp(){const t=tk,x0=Math.floor((t.x-TKL/2+4)/T),x1=Math.floor((t.x+TKL/2-4)/T),y0=Math.floor((t.y-TKH/2+2)/T),y1=Math.floor((t.y+TKH/2-2)/T);t.cells=[];
 for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(cell(x,y)==='o'){setc(x,y,'v');t.cells.push([x,y])}return y0}
 function tkStopped(why){const t=tk,y0=tkStamp();const out=y0*T-14;for(const o of players.concat(en,npcs))if(Math.abs(o.x-t.x)<TKL/2+8&&Math.abs(o.y-t.y)<TKH/2+10)o.y=out;
