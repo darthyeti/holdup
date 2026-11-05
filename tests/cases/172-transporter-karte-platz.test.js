@@ -24,9 +24,10 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { const D = __dbg, o = {}; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); let sd = 0; for (let s = 1; s < 400 && !sd; s++) if (D.genTruckMission(s).street === 'std') sd = s;
         D.sessReset(); D.setTurn('S'); D.buildSeed(sd); const M = D.world().M, cnt = (y0, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = 0; x < M[0].length; x++) if ('kq'.includes(M[y][x])) n++; return n; };
         o.all = cnt(0, 23); o.north = cnt(7, 7); o.south = cnt(14, 14); o.alleyN = cnt(1, 6); o.alleyS = cnt(15, 22); o.posts = cnt(8, 8) + cnt(13, 13); o.road = cnt(9, 12);
+        const wide = []; for (let y = 5; y <= 8; y++) wide.push(M[y][10], M[y][25]); for (let y = 13; y <= 16; y++) wide.push(M[y][20], M[y][45]); o.wide = wide.filter(c => c === '#' || c === 'W').length; o.walls = [M[4][10], M[17][20]].join('');
         o.ends = D.pathTo(2 * 32 + 16, 8 * 32 + 16, 57, 8).length > 0; return o; })()`);
       t.ok(r.all >= 40, 'mindestens 40 Kisten und Faesser: ' + r.all); t.ok(r.north >= 4 && r.south >= 4, 'gehwegseitig mindestens je vier: ' + r.north + ' / ' + r.south); t.ok(r.alleyN >= 4 && r.alleyS >= 4, 'in den Gassen mindestens je vier: ' + r.alleyN + ' / ' + r.alleyS);
-      t.eq([r.posts, r.road], [0, 0], 'Postenzeilen und Fahrspuren frei'); t.ok(r.ends, 'der Gehweg ist von West nach Ost begehbar');
+      t.eq([r.posts, r.road], [0, 0], 'Postenzeilen und Fahrspuren frei'); t.eq([r.wide, r.walls], [0, '#W'.includes(r.walls[0]) && '#W'.includes(r.walls[1]) ? r.walls : 'x'], 'Gehwege vier Zeilen breit (Zeilen 5 bis 8 und 13 bis 16 ohne Mauer), Haeuserfronten in Zeile 4 und 17'); t.ok(r.ends, 'der Gehweg ist von West nach Ost begehbar');
     },
   },
 ];
