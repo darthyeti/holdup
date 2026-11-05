@@ -39,10 +39,10 @@ Teil der Projektdoku, der Kern steht in `CLAUDE.md`.
 ## Optik-Regler GFX (Ticket #118, gebaut 5. November 2026)
 
 `GFX` in `index.html` neben `VIEW` und `MLOCK`: Stufen niedrig, mittel, hoch, Voreinstellung mittel, gespeichert in `localStorage` `holdup.gfx`. Kachel `Grafik` in den Optionen (Aktion `gfx`, neben der Bildgröße, `uiAct` ruft `GFX.cycle()`). Nur das Zeichnen liest ihn, Simulation, Schnappschuss und `VER` kennen ihn nicht. Die Tests laufen auf niedrig (`window.__holdupGfx` in `tests/lib.js`), Test `179-grafikregler`.
-- **Leuchten (O1):** `glow()` zeichnet ein vorgerendertes Leuchtbild je Farbe (`GFX.glowImg`, 128 px, einmal gebaut) mit `drawImage` ohne Glättung (im Software-Zeichnen sonst doppelt so teuer wie der alte Verlauf). Gilt auf allen Stufen, Bildzeit auf niedrig wie vorher.
+- **Leuchten (O1):** `glow()` zeichnet ein vorgerendertes Leuchtbild je Farbe und Größenstufe (`GFX.glowImg(farbe,px)`, 13 Stufen von 32 bis 512 px, die Stufe ist mindestens so groß wie das Ziel, es wird also nur verkleinert, höchstens um den Faktor 1,25) mit `drawImage` ohne Glättung (im Software-Zeichnen sonst doppelt so teuer wie der alte Verlauf, ohne sichtbare Stufen). Der Zwischenspeicher wird bei 96 Bildern geleert. Gilt auf allen Stufen.
 - **Sichtkante (O9):** niedrig wie bisher, mittel ein zusätzlicher weicher Strich (20 px) um das Sichtpolygon, hoch zwei (`GFX.edge`).
 - **Farbkorrektur (O15):** niedrig nur der Schleier `tint` wie bisher, mittel und hoch ein zwischengespeichertes Bild je Thema und Tageszeit (`GFX.overlay`: Tint, Lichtfarbe aus `GFX.grade`, Vignette aus `GFX.vig`), hoch stärker. Ein echter Kontrastregler ist nicht gebaut (kein Mischmodus, zu teuer im Software-Zeichnen).
-- Messung im Container (Software-Zeichnen, nur als Relativwert, ms je `draw()`): Bank 21 niedrig, 26 mittel, 26 hoch, Casino 21, 27, 25. Alt gegen neu auf niedrig mit Leuchten: 26 ms beide.
+- Messung im Container (Software-Zeichnen, nur als Relativwert, ms je `draw()`, Szene mit Explosion): Bank main 23, niedrig 21, mittel 30, hoch 32; Casino main 24, niedrig 23, mittel 33, hoch 31.
 
 ## Beute, Spieler, Bildschirme und Ton
 
