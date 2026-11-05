@@ -330,23 +330,26 @@ s.fillStyle='#4a4f55';for(let i=0;i<=w;i+=48){s.fillRect(x0+i-1,y0,3,4);s.fillRe
 function truckLayout(sd){const tms=genTruckMission(sd),st=tms.street;newGrid(60,24,0,0);fill(0,0,59,23,'o');
 fill(0,0,59,0,'f');fill(0,23,59,23,'f');fill(0,0,0,23,'f');fill(59,0,59,23,'f');
 for(let y=9;y<=12;y++){setc(0,y,'o');setc(59,y,'o')}
-[[1,16],[20,37],[41,58]].forEach(a=>fill(a[0],1,a[1],6,'#'));
-[[1,8],[12,30],[34,58]].forEach(a=>fill(a[0],15,a[1],22,'#'));
-[3,6,9,12,15,23,26,29,32,35,44,47,50,53,56].forEach(x=>setc(x,6,'W'));
-[3,6,14,17,20,23,26,37,40,43,46,50,54,57].forEach(x=>setc(x,15,'W'));
+/* Breite Gehwege (Ticket 100, Tills Spieltest): Die Haeuserbloecke sind nur noch vier (Nord, Zeilen 1 bis 4) und sechs Zeilen tief (Sued, 17 bis 22), die Gehwege vier Zeilen breit (5 bis 8 und 13 bis 16), Fahrbahn 9 bis 12 und Postenzeilen 8 und 13 unveraendert */
+[[1,16],[20,37],[41,58]].forEach(a=>fill(a[0],1,a[1],4,'#'));
+[[1,8],[12,30],[34,58]].forEach(a=>fill(a[0],17,a[1],22,'#'));
+[3,6,9,12,15,23,26,29,32,35,44,47,50,53,56].forEach(x=>setc(x,4,'W'));
+[3,6,14,17,20,23,26,37,40,43,46,50,54,57].forEach(x=>setc(x,17,'W'));
 const parked=[{x:9,y:7,row:2},{x:35,y:7,row:3},{x:22,y:13,row:3},{x:44,y:13,row:2}];
 parked.forEach(c=>fill(c.x,c.y,c.x+3,c.y+1,'v'));
 [[5,7],[6,7],[25,7],[44,7],[52,7],[18,2],[18,3],[39,2],[39,3],[14,14],[15,14],[36,14],[54,14],[10,17],[32,18],[32,19]].forEach(a=>setc(a[0],a[1],'k'));
 [[3,7],[30,7],[48,7],[56,7],[19,5],[38,5],[11,14],[11,16],[40,14],[33,16],[57,14]].forEach(a=>setc(a[0],a[1],'q'));
 /* Mehr Deckung fuer Flanken (Ticket 100): einzelne Kisten und Faesser auf den Gehwegen (Zeilen 7 und 14, nie auf den Postenzeilen 8 und 13) und in den Seitengassen */
 [[14,7],[21,7],[41,7],[20,14],[28,14],[50,14],[17,4],[40,4],[9,19],[33,20]].forEach(a=>setc(a[0],a[1],'k'));[[34,7],[27,7],[52,14],[42,14],[19,3],[10,20]].forEach(a=>setc(a[0],a[1],'q'));
+/* und auf den breiteren Gehwegen (Zeilen 5, 6, 15, 16) */
+[[8,5],[24,5],[46,5],[15,16],[30,16],[48,16]].forEach(a=>setc(a[0],a[1],'k'));[[33,5],[52,5],[4,15],[22,16]].forEach(a=>setc(a[0],a[1],'q'));
 /* Strassenvarianten (T4b): Baustelle sperrt in der Mitte die Zeilen 9 und 10, Gassen mauert einen Teil der vier Seitengassen zu (nach den Kulissen, damit auch deren Kisten verschwinden) */
 if(st==='baustelle')fill(TK_SITE[0],TK_SITE[1],TK_SITE[2],TK_SITE[3],'f');
-if(st==='gassen')[[17,19,1,6],[38,40,1,6],[9,11,15,22],[31,33,15,22]].forEach((a,i)=>{if(tms.closed[i])fill(a[0],a[2],a[1],a[3],'#')});
+if(st==='gassen')[[17,19,1,4],[38,40,1,4],[9,11,17,22],[31,33,17,22]].forEach((a,i)=>{if(tms.closed[i])fill(a[0],a[2],a[1],a[3],'#')});
 const spots=[];[18,29,39].forEach((x,i)=>(st==='baustelle'&&i===1?[11,12]:[9,10,11,12]).forEach(y=>spots.push({cells:[[x,y]],x:x*T+16,y:y*T+16,side:null,iv:[1,0],ex:false,lk:false,rd:true,g:i,r:54,n:['Sperre West','Sperre Mitte','Sperre Ost'][i]})));
 const tr=mulberry32((((typeof sd==='number'?sd:3)|0)*40503>>>0)^0x1b873593),ti=Math.floor(tr()*THEMES.length),tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
 const lay={seed:sd,truck:true,bld:{x0:1,y0:1,x1:58,y1:6},winN:[],winS:[],
-mat:(x,y)=>y>=9&&y<=12?'a':y===8||y===13?'s':'y',
+mat:(x,y)=>y>=9&&y<=12?'a':(y>=5&&y<=8)||(y>=13&&y<=16)?'s':'y',
 paintFloor(s){s.fillStyle='rgba(235,235,225,.55)';for(let i=st==='baustelle'?4:0;i<8;i++)s.fillRect(26*T+3,9*T+4+i*15,2*T-6,8)},
 paintTop(s){if(st==='baustelle')paintSite(s)},
 spawn:tms.panne?{x:4.5*T,y:13.6*T}:{x:29.5*T,y:13.6*T},zones:[],lobby:[2,8,57,8],cams:[],tellers:[],mgr:{p:[0,0],route:[]},guards:[],civ:0,

@@ -7,7 +7,7 @@ async function setup(t) {
 }
 const FIND = `(want) => { const D = __dbg, out = {}; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd < 400; sd++) { const m = D.genTruckMission(sd); for (const k of want) { const key = k(m); if (key && !out[key]) out[key] = sd; } } return out; }`;
 // die vier Seitengassen: x von, x bis, Zeile von, Zeile bis (Reihenfolge wie closed in der Mission)
-const ALLEYS = [[17, 19, 1, 6], [38, 40, 1, 6], [9, 11, 15, 22], [31, 33, 15, 22]];
+const ALLEYS = [[17, 19, 1, 4], [38, 40, 1, 4], [9, 11, 17, 22], [31, 33, 17, 22]];
 
 module.exports = [
   {
