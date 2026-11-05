@@ -103,7 +103,7 @@ turn:{on:1,scs:['jewel','gas','museum','casino'],sides:['S','N','E','W'],mirror:
 gasGen:{on:1,classic:.1,sw:[12,18],sd:[3,5],tries:30,minArea:42,crowd:{few:40,camsFew:2,two:48}},
 jewGen:{on:1,classic:.1,hw:[11,17],hd:[12,13],vx:[0,2],deep:{on:1,p:.5,max:2},tries:30,crowd:{few:93,camsFew:5,two:96}},
 /* Kammern (Abstellraum oder WC) als Versteck fuer Bewusstlose (Plan Kammern in docs/ideen-und-planung.md, Entscheidungen von Till am 28. Oktober 2026): on schaltet alle ab, p Anteil der Karten mit Kammer, scs die Szenarien mit Kammer, cells Mindestzahl Innenkacheln, gap Abstand der Wegpunkte zum Ring in Kacheln, sight Sichtweite in Kacheln, mit der validateMap Posten gegen die Versteck-Kacheln (stash.deep) prueft (Wachen sehen 8,1 Kacheln, mit Reserve fuer Lage-Tags), wall bevorzugte Zahl schon vorhandener Wandkacheln im Ring (nur Museum und Casino, placeStash nimmt sonst jeden Kandidaten). */
-stash:{on:1,p:.85,scs:['jewel','museum','casino'],cells:4,gap:2,sight:10,wall:4},
+stash:{on:1,p:.85,scs:['jewel','museum','casino','bank'],zone:['bank','gas'],cells:4,gap:2,sight:10,wall:4},
 hud:{lageLines:4,lageW:28,feedW:440},
 funk:{cool:1.2,same:5,menuT:3.5,pingT:6,mkT:3},
 chat:{max:60,gap:1,burst:6,lineT:8,lines:4,hist:50},
@@ -331,7 +331,9 @@ function setAlt(i){if(!ALT||vanAlt===i)return;if(vanSt){stampOff(vanSt);vanSt=nu
 function turnFor(seed,sc){const T=CFG.turn;if(!T.on||!T.scs.includes(sc))return'S';let h=0;for(let i=0;i<sc.length;i++)h=Math.imul(h^sc.charCodeAt(i),16777619);const r=mulberry32(Math.imul(seed|0,2654435761)^h);r();const side=T.sides[Math.floor(r()*T.sides.length)];return side+(r()<T.mirror?'+':'')}
 function layoutBase(seed){return placeNote(finishLay(layoutFor0(seed)),seed)}
 function layoutFor(seed){const lay=layoutBase(seed);if(lay.truck||lay.road)return lay;const tf=turnForce||turnFor(seed,jobSc);return tf==='S'?lay:turnLayout(lay,tf[0],tf[1]==='+')}
-function layoutFor0(seed){const LF={truck:truckLayout,jewel:jewelLayout,gas:gasLayout,museum:museumLayout,casino:casinoLayout,prison:prisonLayout,nb:nbLayout};if(LF[jobSc]){const lay=LF[jobSc](seed);lay.seed=seed;return lay}if(seed==='classic')return classicLayout();const base=seed|0;const tpf=mulberry32(Math.imul(base,2246822519)^0x27d4eb2f)()<CFG.map.tpW?'W':'E';for(let k=0;k<CFG.map.tries;k++){const lay=genLayout(base+k*7919,undefined,tpf);if(validLayout(lay)){lay.seed=seed;lay.tries=k+1;return lay}}return classicLayout()}
+function layoutFor0(seed){const LF={truck:truckLayout,jewel:jewelLayout,gas:gasLayout,museum:museumLayout,casino:casinoLayout,prison:prisonLayout,nb:nbLayout};if(LF[jobSc]){const lay=LF[jobSc](seed);lay.seed=seed;return lay}if(seed==='classic')return classicLayout();const base=seed|0;const tpf=mulberry32(Math.imul(base,2246822519)^0x27d4eb2f)()<CFG.map.tpW?'W':'E';/* Bank mit Kammer (K4): besteht die Kammer validateMap nicht (keine neuen Fehler oder Warnungen gegenueber derselben Karte ohne Kammer), wird dieselbe Huelle ohne Kammer gebaut (genLayout mit nos). */
+const stashOk=(s,tpf)=>{const rep=validateMap(finishLay(genLayout(s,undefined,tpf)));if(!rep.err.length&&!rep.warn.length)return true;const b=validateMap(finishLay(genLayout(s,undefined,tpf,true))),sg=m=>m.r+':'+m.m,bs=new Set(b.err.concat(b.warn).map(sg));return rep.err.concat(rep.warn).every(m=>bs.has(sg(m)))};
+for(let k=0;k<CFG.map.tries;k++){const s=base+k*7919;let lay=genLayout(s,undefined,tpf);if(!(validLayout(lay)&&(!lay.stash||stashOk(s,tpf)))){if(!lay.stash)continue;lay=genLayout(s,undefined,tpf,true);if(!validLayout(lay))continue}lay.seed=seed;lay.tries=k+1;return lay}return classicLayout()}
 /* Sperrstellen: alle Tueren in der Gebaeudehuelle (Glastueren D und Hintertueren), benachbarte Kacheln bilden einen Eingang. Aus dem Raster abgeleitet, daher auch gespiegelt/getauscht richtig. */
 function findSpots(lay){const B=lay.bld,bd=new Set(lay.backDoors.map(q=>q[0]+','+q[1])),seen=new Set(),out=[];
 const inB=(x,y)=>x>=B.x0&&x<=B.x1&&y>=B.y0&&y<=B.y1,sol=(x,y)=>SOLID.indexOf(cell(x,y))>=0;
@@ -495,12 +497,16 @@ if(!ring.some(c=>c[0]===dr[0]&&c[1]===dr[1])||cell(dr[0],dr[1])!=='d')return bad
 const rb=ring.filter(c=>!(c[0]===dr[0]&&c[1]===dr[1])&&cell(c[0],c[1])!=='#');if(rb.length)return bad('Ring nicht geschlossen: '+rb.slice(0,3).map(c=>c+':'+cell(c[0],c[1])).join(' '));
 if(Math.abs(ou[0]-dr[0])+Math.abs(ou[1]-dr[1])!==1||cs.some(c=>c[0]===ou[0]&&c[1]===ou[1]))return bad('Kachel vor der Tuer liegt nicht neben der Tuer');
 const inZ=(x,y)=>(lay.zones||[]).some(z=>x>=z[0]&&x<=z[2]&&y>=z[1]&&y<=z[3]);
-if(cs.concat(ring,[ou]).some(c=>inZ(c[0],c[1])))return bad('liegt in einer Sperrzone');
+if(!(C.zone||[]).includes(scOf(lay))&&cs.concat(ring,[ou]).some(c=>inZ(c[0],c[1])))return bad('liegt in einer Sperrzone');
 if(OOB(ou[0],ou[1])||isSol(ou[0],ou[1])||!hs(RL,ou[0],ou[1])||cs.some(c=>!hs(RL,c[0],c[1])))return bad('Tuer oder Innenraum nicht erreichbar');
 const pts=[],wps=[],seg=r=>{if(!r)return;for(let k=0;k<r.length;k++){pts.push(r[k]);wps.push(r[k]);if(k){const a=r[k-1],b=r[k],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])*2));for(let t=1;t<n;t++)pts.push([a[0]+(b[0]-a[0])*t/n,a[1]+(b[1]-a[1])*t/n])}}};
 (lay.guards||[]).forEach(g=>seg(g.route));if(lay.mgr)seg(lay.mgr.route);(lay.mission.extra||[]).forEach(x=>seg(x.route));(lay.tellers||[]).forEach(t=>{pts.push(t);wps.push(t)});
 const gp=C.gap,near=wps.find(p=>p[0]>=x0-1-gp&&p[0]<x1+2+gp&&p[1]>=y0-1-gp&&p[1]<y1+2+gp);if(near)return bad('Route oder Kassierer zu nah am Ring: '+near.map(v=>Math.round(v*10)/10));
 if((lay.goods||[]).some(g=>g.rc&&g.rc[0]<(x1+2)*T&&g.rc[0]+g.rc[2]>(x0-1)*T&&g.rc[1]<(y1+2)*T&&g.rc[1]+g.rc[3]>(y0-1)*T))return bad('Beute-Stueck im Ring oder Innenraum');
+/* Personalbereich (CFG.stash.zone: bank, gas): Der Zugang (Kachel vor der Tuer und ihre begehbaren Nachbarn ausser der Tuer) liegt ausserhalb der Sicht der Kassierer (Reichweite 250, rundum, damit die Regel in allen Drehungen gilt) und aller Kameras (Reichweite mal 1,25, ganzer Schwenk). Manager und Wachen laufen im Personalbereich, sie koennen den Zugang sehen: ein Versteck, kein Freifahrtschein. */
+if((C.zone||[]).includes(scOf(lay))){const nbc=[[1,0],[-1,0],[0,1],[0,-1]].map(v=>[ou[0]+v[0],ou[1]+v[1]]).filter(q=>!(q[0]===dr[0]&&q[1]===dr[1])&&!isSol(q[0],q[1])),acc=[ou].concat(nbc),angd=(a,b)=>{const d=Math.abs(a-b)%(2*Math.PI);return d>Math.PI?2*Math.PI-d:d};
+ for(const c of acc){const tx=(c[0]+.5)*T,ty=(c[1]+.5)*T;for(const q of lay.tellers||[]){const sx=(q[0]+.5)*T,sy=(q[1]+.5)*T;if(Math.hypot(tx-sx,ty-sy)<250&&los(sx,sy,tx,ty))return bad('Zugang '+c+' wird vom Kassierer eingesehen')}
+  for(const m of lay.cams||[])if(Math.hypot(tx-m.x,ty-m.y)<m.rng*1.25&&angd(m.a0,Math.atan2(ty-m.y,tx-m.x))<=m.amp+m.fov&&los(m.x,m.y,tx,ty))return bad('Zugang '+c+' wird von einer Kamera eingesehen')}}
 const dp=S.deep||[];if(!dp.length||dp.some(c=>!cs.some(q=>q[0]===c[0]&&q[1]===c[1])))return bad('Versteck-Kacheln (deep) fehlen oder liegen nicht im Innenraum');
 for(const c of dp){const cx=(c[0]+.5)*T,cy=(c[1]+.5)*T;let seen=pts.some(p=>Math.hypot((p[0]+.5)*T-cx,(p[1]+.5)*T-cy)<C.sight*T&&los((p[0]+.5)*T,(p[1]+.5)*T,cx,cy));
  if(!seen)seen=(lay.cams||[]).some(m=>Math.hypot(m.x-cx,m.y-cy)<m.rng*1.25&&los(m.x,m.y,cx,cy));if(seen)return bad('Versteck-Kachel '+c+' wird eingesehen')}}

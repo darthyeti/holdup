@@ -5,12 +5,12 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 10,
+   "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 11,
    "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 5,
-   "Hintertür (N) | Osttür (E) | Fluchttür (W) | Vordertür (S)": 22,
-   "Hintertür (N) | Westtür (W) | Fluchttür (E) | Vordertür (S)": 22,
-   "Hintertür (N) | Fluchttür (W) | Osttür (E) | Vordertür (S)": 14,
-   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 7
+   "Hintertür (N) | Osttür (E) | Fluchttür (W) | Vordertür (S)": 20,
+   "Hintertür (N) | Westtür (W) | Fluchttür (E) | Vordertür (S)": 20,
+   "Hintertür (N) | Fluchttür (W) | Osttür (E) | Vordertür (S)": 18,
+   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 6
   },
   "range": {
    "pathSV": [
@@ -18,7 +18,7 @@
     14
    ],
    "pathVE": [
-    14,
+    16,
     28
    ],
    "loot": [
@@ -34,16 +34,16 @@
     2
    ],
    "mat": [
-    6,
+    5,
     8
    ],
    "slots": [
     7,
-    9
+    10
    ],
    "posts": [
     14,
-    18
+    17
    ]
   }
  },

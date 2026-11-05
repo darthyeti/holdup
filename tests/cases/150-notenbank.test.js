@@ -167,7 +167,7 @@ module.exports = [
           const z = D.LAY().nb.zone; me.loot = 0; me.x = (z[0] + 1) * T; me.y = (z[1] + .5) * T; H.step(1); const e = D.get().ended; out.nb = e && [e.win, D.get().secured, e.title]; }
         { const D = __dbg, T = 32; D.sessReset(); D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.buildSeed(5); D.reset(); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
           const g = D.get(), me = g.me; g.npcs.splice(0); D.startHeist(true, me); me.loot = 0; const L = D.LAY();
-          for (let i = 0; i < 30 * 200 && !D.get().ended; i++) { me.hp = 1e9; me.dead = false; if (D.get().vanArr) { me.x = L.exit.x + T; me.y = (L.exit.y0 + L.exit.y1) / 2; } D.update(1 / 30); }
+          for (let i = 0; i < 30 * 200 && !D.get().ended; i++) { me.hp = 1e9; me.dead = false; if (D.get().vanArr) { me.x = L.exit.x + L.exit.dir * T; me.y = (L.exit.y0 + L.exit.y1) / 2; } D.update(1 / 30); }
           const e = D.get().ended; out.bank = e && [e.win, D.get().secured, e.title]; }
         return out; })()`);
       t.ok(r.bank && r.nb, 'beide Laeufe enden: ' + JSON.stringify(r));
