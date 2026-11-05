@@ -8,6 +8,22 @@ const vol={mus:1,sfx:1},cl=v=>typeof v==='number'&&isFinite(v)?Math.min(1,Math.m
 try{const v=JSON.parse(localStorage.getItem('holdup.vol'));if(v){vol.mus=cl(v.mus);vol.sfx=cl(v.sfx)}}catch(e){}
 const rl=(k,ms)=>{const n=performance.now();if(n-(last[k]||0)<ms)return false;last[k]=n;return true};
 const hz=(base,semi)=>base*Math.pow(2,semi/12);
+/* ---- Stellschrauben des Klangs (Ticket #120, docs/studie-grafik-und-ton.md T1 T3 T8). Alle Werte hier, nicht im Code verstreut. ----
+   wpn: Schuss je Waffe. th = tiefer Schlag (Sinus, von-nach in Hz, 40 bis 80), td/tg = Dauer/Pegel, cr = Knall (Rauschen, von-nach in Hz), cd/cg = Dauer/Pegel,
+   bd = Koerper (Sinus), tl = Hallfahne (Rauschen, Tiefpass von-nach), tld/tlg = Dauer/Pegel. kind: Waffe des Spielers (pistol, smg, rifle) oder Gegnerart (cop, swat, shield, sniper).
+   boom: Explosion. lo = Tiefton (von-nach, Dauer, Pegel), rb = Nachgrollen (Tiefpass von-nach, Dauer, Pegel), deb = Truemmerprasseln (Anzahl, Beginn, Spanne, Pegel).
+   occ: Daempfung hinter einer Wand (T3). lp = Tiefpass in Hz, g = Pegelfaktor. Die Sichtpruefung (los) laeuft hoechstens bud-mal je win ms, Ergebnisse gelten ttl ms je Kachelpaar. */
+const TUNE={
+wpn:{pistol:{th:[70,44],td:.09,tg:.85,cr:[2800,320],cd:.11,cg:.8,bd:[190,60],bg:.7,tl:[1500,220],tld:.6,tlg:.3},
+smg:{th:[64,42],td:.07,tg:.7,cr:[3400,420],cd:.08,cg:.75,bd:[240,90],bg:.5,tl:[1800,260],tld:.45,tlg:.22},
+rifle:{th:[58,40],td:.14,tg:1,cr:[2400,220],cd:.15,cg:.85,bd:[150,48],bg:.85,tl:[1200,160],tld:1,tlg:.4},
+cop:'pistol',swat:'rifle',shield:'pistol',sniper:'rifle',grd:'pistol'},
+boom:{lo:[52,24,1.3,1.1],rb:[500,70,2.6,.9],deb:[16,.25,1.5,.3]},
+occ:{lp:650,g:.45,ttl:300,bud:6,win:100}};
+let losFn=null,bw=0,bc=0;const oc=new Map();
+/* Wand zwischen Quelle und Hoerer? 1 = ja. Gedrosselt: Ergebnis je Kachelpaar zwischengespeichert, bei vielen Klaengen in einem Bild nur bud neue Pruefungen je win ms (dann gilt der alte Wert oder frei). */
+function occl(x,y){if(!losFn)return 0;const O=TUNE.occ,k=(x>>4)+','+(y>>4)+','+(lx>>4)+','+(ly>>4),n=performance.now(),c=oc.get(k);if(c&&n-c.t<O.ttl)return c.v;
+if(n-bw>O.win){bw=n;bc=0}if(bc>=O.bud)return c?c.v:0;bc++;let v=0;try{v=losFn(x,y,lx,ly)?0:1}catch(e){}if(oc.size>300)oc.clear();oc.set(k,{t:n,v});return v}
 function init(ctx){if(ac)return;try{const A=window.AudioContext||window.webkitAudioContext;ac=ctx||(A?new A():null);if(!ac)return;
 const cp=ac.createDynamicsCompressor();cp.threshold.value=-12;cp.knee.value=20;cp.ratio.value=4;cp.attack.value=.005;cp.release.value=.2;const pre=ac.createGain();pre.gain.value=.5;const sh=ac.createWaveShaper(),cv2=new Float32Array(2048);for(let i=0;i<2048;i++)cv2[i]=.95*Math.tanh((i/2047*2-1)*2/.95);sh.curve=cv2;cp.connect(pre);pre.connect(sh);sh.connect(ac.destination);mg=ac.createGain();mg.gain.value=muted?0:1.3;mg.connect(cp);
 sfx=ac.createGain();sfx.gain.value=vol.sfx*vol.sfx;sfx.connect(mg);mus=ac.createGain();mus.gain.value=.3*vol.mus*vol.mus;mus.connect(mg);
@@ -23,20 +39,34 @@ const g=ac.createGain(),a=o.a||.003;env(g,t,a,dur,o.g||.3);let n=os;if(o.lp){con
 n.connect(g);g.connect(o.dst||sfx);os.start(t);os.stop(t+a+dur+.05)}
 // Raumklang: Lautstärke nach Abstand zum Spieler, Stereo nach seitlichem Versatz. null = zu leise.
 function sp(x,y,vol){if(x==null)return sfx;const dx=x-lx,dy=y-ly;let v=Math.max(0,1-Math.hypot(dx,dy)/650);v=v*v*vol;if(v<.015)return null;
-const g=ac.createGain();g.gain.value=v;if(ac.createStereoPanner){const pn=ac.createStereoPanner();pn.pan.value=Math.max(-1,Math.min(1,dx/380));g.connect(pn);pn.connect(sfx)}else g.connect(sfx);return g}
+const oc2=occl(x,y);if(oc2)v*=TUNE.occ.g;if(v<.008)return null;
+const g=ac.createGain();g.gain.value=v;let o=g;if(oc2){const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=TUNE.occ.lp;f.Q.value=.5;g.connect(f);o=f}
+if(ac.createStereoPanner){const pn=ac.createStereoPanner();pn.pan.value=Math.max(-1,Math.min(1,dx/380));o.connect(pn);pn.connect(sfx)}else o.connect(sfx);return g}
 const click=(t,f,g)=>{nz(t,.025,{t:'highpass',f:2500,g:g||.3});tn(t,.02,{f,f2:f*.6,w:'square',g:.07})};
 /* ---- Einzelklänge ---- */
-function shot(){if(!ac)return;const t=T0();nz(t,.14,{f:2600,f2:260,q:.7,g:.8});tn(t,.1,{f:170,f2:45,g:.9});nz(t,.28,{t:'lowpass',f:900,f2:200,g:.6,a:.004})}
-function eshot(x,y,k){if(!ac||!rl('es',35))return;const d=sp(x,y,1);if(!d)return;const t=T0(),s=k==='swat';nz(t,.12,{f:s?2000:3000,f2:400,g:.85,dst:d});tn(t,.09,{f:s?140:190,f2:60,g:.75,dst:d})}
+/* Schuss mit Koerper (T1): Knall, tiefer Schlag, Koerper und eine kurze Hallfahne. w = Eintrag aus TUNE.wpn, dst = Ziel (Raumklang) */
+const wk0=k=>{let w=TUNE.wpn[k];if(typeof w==='string')w=TUNE.wpn[w];return w||TUNE.wpn.pistol};
+function gun(t,w,dst,m){m=m||1;nz(t,w.cd,{f:w.cr[0],f2:w.cr[1],q:.7,g:w.cg*m,dst});tn(t,w.td,{f:w.th[0],f2:w.th[1],g:w.tg*m,dst});tn(t,.1,{f:w.bd[0],f2:w.bd[1],g:w.bg*m,dst});nz(t+.01,w.tld,{t:'lowpass',f:w.tl[0],f2:w.tl[1],g:w.tlg*m,a:.01,dst})}
+function shot(kind){if(!ac)return;gun(T0(),wk0(kind))}
+function eshot(x,y,k){if(!ac||!rl('es',35))return;const d=sp(x,y,1);if(!d)return;gun(T0(),wk0(k),d,.9)}
 function hit(x,y,flesh){if(!ac||!rl('ht',25))return;const d=sp(x,y,.8);if(!d)return;const t=T0();
 if(flesh){tn(t,.09,{f:140,f2:60,g:.9,dst:d});nz(t,.08,{t:'lowpass',f:700,g:1.2,dst:d})}else{nz(t,.05,{t:'highpass',f:3500,g:.6,dst:d});tn(t,.03,{f:1800,f2:900,w:'square',g:.07,dst:d})}}
 function kill(x,y){if(!ac)return;const d=sp(x,y,.9);if(!d)return;const t=T0();tn(t,.22,{f:95,f2:38,g:.8,dst:d});nz(t,.18,{t:'lowpass',f:500,g:1.2,dst:d})}
 function hurt(){if(!ac||!rl('hu',90))return;const t=T0();tn(t,.16,{f:110,f2:48,g:.8});nz(t,.14,{t:'lowpass',f:600,g:1.2})}
 function skid(x,y){if(!ac||!rl('sk',250))return;const d=sp(x,y,1);if(!d)return;const t=T0();nz(t,.55,{f:2600,f2:900,q:1.6,g:.3,a:.04,dst:d});tn(t,.3,{f:70,f2:48,w:'sawtooth',g:.14,lp:300,dst:d})}
-function boom(x,y){if(!ac)return;const d=sp(x,y,1.2);if(!d)return;const t=T0();nz(t,.5,{f:1800,f2:160,g:1.1,dst:d});tn(t,.4,{f:90,f2:34,g:1.1,dst:d});nz(t,.8,{t:'lowpass',f:500,f2:90,g:.9,a:.01,dst:d})}
+/* Explosion (T1): langer Tiefton, Knall, Nachgrollen und Truemmerprasseln (kurze Klicks mit Zufall, nach hinten leiser) */
+function boom(x,y){if(!ac)return;const d=sp(x,y,1.2);if(!d)return;const t=T0(),B=TUNE.boom;nz(t,.5,{f:1800,f2:160,g:1.1,dst:d});tn(t,B.lo[2],{f:B.lo[0],f2:B.lo[1],g:B.lo[3],a:.006,dst:d});tn(t,.35,{f:90,f2:34,g:.8,dst:d});
+nz(t,B.rb[2],{t:'lowpass',f:B.rb[0],f2:B.rb[1],g:B.rb[3],a:.012,dst:d});
+for(let i=0;i<B.deb[0];i++){const u=Math.random(),at=t+B.deb[1]+u*B.deb[2];nz(at,.03+Math.random()*.03,{f:1200+Math.random()*3500,q:1.2,g:B.deb[3]*(1-u*.8)*(.5+Math.random()*.5),a:.001,dst:d})}}
 function beep(x,y){if(!ac||!rl('bp',120))return;const d=sp(x,y,1);if(!d)return;const t=T0();tn(t,.08,{f:2100,w:'square',g:.45,dst:d})}
 function thud(x,y){if(!ac)return;const d=sp(x,y,.9);if(!d)return;const t=T0();nz(t,.12,{t:'lowpass',f:600,f2:200,g:.7,dst:d});tn(t,.09,{f:140,f2:70,g:.6,dst:d});click(t+.12,900,.3);click(t+.24,800,.25)}
 function blip(){if(!ac||!rl('vb',160))return;const t=T0();nz(t,.07,{f:2200,f2:700,q:.8,g:.5});tn(t,.06,{f:240,f2:90,g:.55})}
+/* Menuetoene (T8): focus (Fokus wechselt), ok (bestaetigen), back (zurueck), buy (Kauf), deny (gesperrt) */
+function ui(k){if(!ac)return;if(k==='focus'){if(!rl('uf',40))return;tn(T0(),.03,{f:1900,w:'triangle',g:.05,a:.002});return}const t=T0();
+if(k==='ok'){tn(t,.07,{f:740,w:'triangle',g:.12});tn(t+.055,.1,{f:1110,w:'triangle',g:.11})}
+else if(k==='back'){tn(t,.07,{f:900,f2:700,w:'triangle',g:.1});tn(t+.05,.09,{f:600,f2:440,w:'triangle',g:.1})}
+else if(k==='buy'){tn(t,.09,{f:1568,w:'triangle',g:.16});tn(t+.06,.2,{f:2349,w:'triangle',g:.15});nz(t,.1,{t:'highpass',f:5200,g:.08})}
+else if(k==='deny'){tn(t,.09,{f:170,w:'square',g:.2,lp:600});tn(t+.11,.12,{f:130,w:'square',g:.2,lp:600})}}
 function reload(){if(!ac)return;const t=T0();click(t,1100);click(t+.38,800,.25)}
 function reloaded(){if(!ac)return;const t=T0();click(t,1400);click(t+.09,1000,.35)}
 function empty(){if(!ac)return;click(T0(),700,.5)}
@@ -128,5 +158,5 @@ function resume(){if(ac&&ac.state==='suspended'&&!pz)try{const r=ac.resume();if(
 function applyVol(){if(!ac)return;const t=ac.currentTime;if(sfx)sfx.gain.setTargetAtTime(vol.sfx*vol.sfx,t,.03);if(mus)mus.gain.setTargetAtTime(.3*vol.mus*vol.mus,t,.03)}
 function setVol(k,v){if(k!=='mus'&&k!=='sfx')return;vol[k]=Math.round(cl(v)*20)/20;applyVol();try{localStorage.setItem('holdup.vol',JSON.stringify(vol))}catch(e){}}
 function toggleMute(){muted=!muted;try{localStorage.setItem('holdup.mute',muted?'1':'0')}catch(e){}if(mg)mg.gain.setTargetAtTime(muted?0:1.3,T0(),.05);return muted}
-return{init,resume,pause,frame,toggleMute,isMuted:()=>muted,vol:k=>vol[k],setVol,blip,skid,_gains:()=>({sfx:sfx&&sfx.gain.value,mus:mus&&mus.gain.value}),on:()=>!!ac,listen:(x,y)=>{lx=x;ly=y},
-shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,rad,chat,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
+return{ui,tune:TUNE,setLos:f=>{losFn=typeof f==='function'?f:null;oc.clear()},_occ:occl,init,resume,pause,frame,toggleMute,isMuted:()=>muted,vol:k=>vol[k],setVol,blip,skid,_gains:()=>({sfx:sfx&&sfx.gain.value,mus:mus&&mus.gain.value}),on:()=>!!ac,listen:(x,y)=>{lx=x;ly=y},
+shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,rad,chat,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;oc.clear();bw=bc=0;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
