@@ -106,3 +106,22 @@ module.exports = [
     },
   },
 ];
+
+module.exports.push(
+  {
+    name: 'Wachwechsel: Erkennung haengt am Auftrag (ev wache und at), nicht am Meldungstext; Ueberfall: Wache erscheint sofort draussen ohne Sichtpruefung und Wartezeit',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const D = __dbg; D.sessReset(); D.setScenario('gas'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.setFocus(true); D.CFG.watch.grace = 1e6;
+        const o = {}, L = D.LAY(); o.ev = L.mission.ev.includes('wache'); o.atOk = L.mission.extra.some(x => x.at === L.mission.at.wache);
+        L.mission.extra.forEach(x => { x.msg = 'ganz anderer Text'; }); D.reset(); o.ent = D.get().npcs.filter(q => q.ent).length;
+        const g = D.get(), n = g.npcs.find(q => q.ent), me = g.me; g.cams.forEach(c => { c.off = true; });
+        const c = n.ent.sps[0], px = c[0] * 32 + 16, py = c[1] * 32 + 16; n.at = 0.2; D.startHeist(true); let t1 = null;
+        for (let i = 0; i < 30 * 4 && t1 == null; i++) { me.x = px + 40; me.y = py; D.update(1 / 30); if (D.get().en.some(e => e.kind === 'grd' && Math.hypot(e.x - px, e.y - py) < 60)) t1 = i / 30; }
+        o.t1 = t1; return o; })()`);
+      t.ok(r.ev && r.atOk, 'ev wache und at gesetzt');
+      t.eq(r.ent, 1, 'Wache wird auch mit anderem Text erkannt');
+      t.ok(r.t1 != null && r.t1 < 3, 'im Ueberfall sofort draussen als Gegner: ' + r.t1);
+    },
+  }
+);

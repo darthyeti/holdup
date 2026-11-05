@@ -996,7 +996,7 @@ if(LAY.mgr){const mg=mk('mgr',6,LAY.mgr.p[0],LAY.mgr.p[1],{spd:34,fov:1.1,rng:28
 const GP=Object.assign({},CFG.guard,LAY.jewel?CFG.jewel.guard:LAY.museum?CFG.museum.guard:null);
 LAY.guards.forEach(g=>{const gd=mk('grd',2,g.p[0],g.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng});setRoute(gd,g.route)});
 for(let i=0;i<LAY.civ;i++){const c=LOBBY[Math.floor(npcR()*LOBBY.length)];mk('civ',3+(i%2),c[0],c[1],{spd:32+npcR()*10,wait:npcR()*3,a:npcR()*6.28})}
-(LAY.mission.extra||[]).forEach(x=>{const n=mk('grd',2,x.p[0],x.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng,st:'away'});setRoute(n,x.route);n.at=x.at;n.msg=x.msg;if(/^Wachwechsel/.test(x.msg||''))n.ent=entPlan(n)});
+(LAY.mission.extra||[]).forEach(x=>{const n=mk('grd',2,x.p[0],x.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng,st:'away'});setRoute(n,x.route);n.at=x.at;n.msg=x.msg;if(LAY.mission.ev.includes('wache')&&x.at===LAY.mission.at.wache)n.ent=entPlan(n)});
 {const nu=ucCount();if(nu>0){const cv=npcs.filter(q=>q.k==='civ'),ur=mulberry32((Math.imul(LAY.seed|0,2654435761)>>>0)^0x55c0f4d3);for(let i=0;i<nu&&cv.length;i++){const q=cv.splice(Math.floor(ur()*cv.length),1)[0];q.uc=1;q.fov=GP.fov;q.rng=GP.rng}}}
 for(const n of npcs)if(n.route){n.ri=0;n.wait=CFG.ko.stand}}else if(LAY.mission.panne)panneCrew();
 const till=(tx,ty)=>({t:'till',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,lab:()=>'Kasse leeren',fit:o=>fits(o,CFG.till.u),dur:()=>CFG.till.t,ok(){return phase===2&&!this.done},act(o){if(!take(o,CFG.till.u,CFG.till.v))return;snd('ev','till');this.done=true}});
@@ -1434,7 +1434,7 @@ let sps=all.filter(c=>c[2]>=E.dMin);if(!sps.length){const mx=Math.max(0,...all.m
 for(let i=sps.length-1;i>0;i--){const j=Math.floor(n.rr()*(i+1));[sps[i],sps[j]]=[sps[j],sps[i]]}
 return{cells:sp.cells,oc,ic,sps:sps.map(c=>[c[0],c[1]]),s:0,t:0,w:0,op:0}}
 /* Spawnkachel waehlen: die erste, die kein lebender Spieler in Sichtlinie und Reichweite CFG.ev.ent.vis sieht, nach wait s die erste */
-function entSpawn(n,dt){const e=n.ent,E=CFG.ev.ent;e.w+=dt;if(!e.sps.length)return e.oc;
+function entSpawn(n,dt){const e=n.ent,E=CFG.ev.ent;e.w+=dt;if(phase===2||!e.sps.length)return e.sps[0]||e.oc;
 for(const c of e.sps){const x=c[0]*T+16,y=c[1]*T+16;if(!players.some(o=>live(o)&&Math.hypot(o.x-x,o.y-y)<E.vis&&los(o.x,o.y,x,y)))return c}
 return e.w>=E.wait?e.sps[0]:null}
 function entGo(n){const e=n.ent;n.st='idle';n.wait=99;n.look=null;e.s=1;e.t=0;n.path=pathTo(n.x,n.y,e.oc[0],e.oc[1]);if(!n.path.length&&Math.hypot(n.x-(e.oc[0]*T+16),n.y-(e.oc[1]*T+16))>T*.75){n.x=e.oc[0]*T+16;n.y=e.oc[1]*T+16}}
