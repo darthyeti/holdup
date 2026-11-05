@@ -11,6 +11,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Spieltest (ungespielt, kurz)
 
+- **Grafikregler** (Ticket #118): Optionen, Kachel Grafik (niedrig, mittel, hoch, Voreinstellung mittel). Mittel und hoch: weichere Sichtkante, leichte Farbe und Vignette je Tageszeit. Wirkt es realistisch und dezent, ruckelt es auf deinem Rechner?
 - **Wachwechsel durch die Tür** (Ticket #107): Der zweite Wachmann steht nicht mehr plötzlich im Gebäude, er taucht draußen auf (außer Sicht), geht zur Hintertür (sonst Haupttür), schließt sie auf und kommt herein. Stimmt das Timing, siehst du ihn von draußen kommen?
 - Barrikaden reparieren (Ticket 92): Nach einem Polizeiknall an einer beschädigten Barrikade E halten, es erscheint Reparieren (1 Material, 1,8 s, +100 HP). Fühlt sich der Preis richtig an?
 - **Kunden ausrauben** (Ticket #60, `VER` 74, ungespielt, nur Bank und Casino): Im Überfall bei einem kauernden Kunden E 1,5 s halten, Beute 300 bis 1.500 (Casino 1.000 bis 3.000 in Chips), das nächste E nimmt ihn als Geisel. Ist es zu viel Geld für wenig Platz, vor allem bei 25 Gästen im Casino (`CFG.rob`)?

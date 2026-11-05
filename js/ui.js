@@ -288,8 +288,10 @@ if(MLOCK.can)rows.push({id:'lock',key:'f',act:'mlock',half:1,title:'Maus fangen:
 /* Funkspruch im Coop (Taste X im Spiel): Ton, Ton und Stimme (Sprachausgabe des Browsers) oder stumm (nur die Meldung) */
 rows.push({id:'funk',key:'x',act:'funk',half:0,title:'Funk: '+({ton:'Ton',stimme:'Ton+Stimme',stumm:'stumm'}[X.funkMode]||'Ton')},{id:'chat',key:'c',act:'chat',half:1,title:'Chat: '+(X.chatShow?'an':'aus')});
 /* Bildgroesse und Vollbild (VIEW aus index.html): zwei halbe Kacheln nebeneinander, ohne Vollbild-Unterstuetzung nur die Bildgroesse in voller Breite */
-rows.push({id:'view',key:'b',act:'view',half:VIEW.can?0:undefined,title:'Bildgröße',sub:VIEW.mode==='auto'?'Passt sich dem Fenster an':'Fest, höchstens 1100 px'});
-if(VIEW.can)rows.push({id:'full',key:'v',act:'full',half:1,title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'});
+/* Grafikqualitaet (GFX aus index.html) neben der Bildgroesse: niedrig, mittel, hoch */
+rows.push({id:'gfx',key:'g',act:'gfx',half:0,title:'Grafik: '+GFX.name,sub:GFX.lv===0?'Wie bisher':GFX.lv===1?'Weiche Kante, Farbe':'Stärker, mit Vignette'});
+rows.push({id:'view',key:'b',act:'view',half:1,title:'Bildgröße',sub:VIEW.mode==='auto'?'Passt sich dem Fenster an':'Fest, höchstens 1100 px'});
+if(VIEW.can)rows.push({id:'full',key:'v',act:'full',title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'});
 if(title)rows.push({id:'name',key:'n',act:'name',paint(t){const{g}=X;g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText('Dein Name',t.x+12,t.y+26);g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=myName||nameEdit?TX:'#6c7480';g.fillText((myName||(nameEdit?'':'ohne Namen'))+(nameEdit&&Math.floor(time*2)%2?'|':''),t.x+t.w-52,t.y+26)}});
 if(title)rows.push({id:'series',kind:'x',act:'ui:confirm',arg:{k:'series'},title:'Neue Serie beginnen',sub:'Konto und Ausrüstung gehen verloren.'});
 /* Flugschreiber (Session-Log, F9 und F8): Log speichern und Markieren nebeneinander */
@@ -301,6 +303,7 @@ let gap=8,hs=rows.map(r=>r.sub?56:44);const hOf=()=>70+hs.reduce((a,b,i)=>a+(row
 /* Mit #debug kommen zwei Zeilen dazu: dann passen die Kacheln enger (Abstand 6, Zeilen 40 und 50 hoch), damit das Fenster im Bild bleibt */
 if(hOf()>534){gap=6;hs=rows.map(r=>r.sub?50:40)}
 if(hOf()>534){gap=4;hs=rows.map(r=>r.sub?46:36)}
+if(hOf()>534){gap=3;hs=rows.map(r=>r.sub?44:34)}
 const h=hOf(),y0=Math.round((544-h)/2),px=240,pw=480,hw=(pw-40-gap)/2;
 let yy=y0+56;const t=rows.map((r,i)=>{const o=Object.assign({x:px+20,y:yy,w:pw-40,h:hs[i]},r);if(r.half===0)o.w=hw;else if(r.half===1){o.x=px+20+hw+gap;o.w=hw}if(r.half!==0)yy+=hs[i]+gap;return o});
 t.push({id:'close',x:px+pw/2-90,y:y0+h-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'});
