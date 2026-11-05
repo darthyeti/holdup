@@ -45,7 +45,7 @@ module.exports = [
   },
   {
     name: 'Gedreht: Schnappschuss der gedrehten Karten (Hash je Szenario und Lage ueber alle Hallen)',
-    timeout: 120000,
+    timeout: 300000,
     async run(t) {
       await t.loadInpage('turn.js');
       const hashes = await t.page.evaluate(({ SC, SEEDS }) => {

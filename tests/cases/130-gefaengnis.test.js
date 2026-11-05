@@ -166,7 +166,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => {
         const o = {}, G = CT.mkGame('bank', 5, 2, 60, 20), A = G.A, B = G.clients[0];
         A.get().players[0].out = true; A.finish(true, 'Test', 'x'); G.run(1);
-        o.pz = [A.SESSION.pz, B.SESSION.pz]; o.msg = A.get().ended && A.get().ended.lines.some(l => /sitzt im Gefängnis/.test(l));
+        o.pz = [A.SESSION.pz, B.SESSION.pz]; o.msg = !!A.get().ended && /sitzt im Gefängnis/.test(A.get().ended.pz || '');
         A.startNext(); G.run(2.5);
         o.next = [A.sc(), B.sc()]; o.pzNow = [A.getPz(), B.getPz()]; const nop = d => { const s = CT.sig(d); s.its = s.its.filter(x => !/^(pist|crd)/.test(x)); return s; }; o.map = CT.diff(nop(A), nop(B));
         const R = A.LAY().prison; o.pos = A.get().players.map(p => [p.x, p.y]); o.cell = R.cell;

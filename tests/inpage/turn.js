@@ -10,7 +10,7 @@
   const diffPx = (a, b) => { if (a.width !== b.width || a.height !== b.height) return Infinity; const x = a.getContext('2d').getImageData(0, 0, a.width, a.height).data, y = b.getContext('2d').getImageData(0, 0, b.width, b.height).data; let n = 0; for (let i = 0; i < x.length; i += 4) if (x[i] !== y[i] || x[i + 1] !== y[i + 1] || x[i + 2] !== y[i + 2] || x[i + 3] !== y[i + 3]) n++; return n; };
   // Hash einer Karte nach layoutFor (Raster und alle Felder, Funktionen fallen aus JSON heraus)
   // noteAt (Fundort des Tresorcodes, Issue 53, kommt aus placeNote in layoutBase) bleibt aussen vor: Die Hashes sollen zeigen, dass Raster und uebrige Felder der Karten unveraendert sind, der Fundort hat seinen eigenen Test (148)
-  const layHash = (D, lay) => { const { noteAt, ...rest } = lay; return fnv(D.world().M.join('\n') + JSON.stringify(rest)); };
+  const layHash = (D, lay) => { const { noteAt, rob, ...rest } = lay; return fnv(D.world().M.join('\n') + JSON.stringify(rest)); };
 
   // Eine Coop-Partie zu zweit auf der Karte (sc, seed) in Lage turn, vom Start bis zum Sieg. Liefert { tag, bad: [Abweichungen], stat }
   function coop(sc, seed, turn, o) {

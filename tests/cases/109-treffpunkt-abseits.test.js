@@ -63,7 +63,7 @@ module.exports = [
             const m = f.meet, tag = sc + '#' + s + ' ' + JSON.stringify(m), ln = D.laneOf(f), tm = treffpunkt.measure(f, { cars: 'fest' }), rep = D.validateMap(f);
             st.d.push(m.d); st.e.push(m.e); st.eNow.push(m.e0);
             if (m.d < M.minD) bad.push(tag + ' Abstand ' + m.d + ' unter ' + M.minD);
-            if (m.e < M.pveMin || m.e > M.pveMax || m.e > m.e0 + M.extra) bad.push(tag + ' Weg Tresor zu Wagen ' + m.e + ' (vorher ' + m.e0 + ') ausserhalb des Fensters');
+            const ext = sc === 'gas' && f.q && f.q.stash ? D.CFG.stash.add.gas : 0; if (m.e < M.pveMin || m.e > M.pveMax + ext || m.e > m.e0 + M.extra + ext) bad.push(tag + ' Weg Tresor zu Wagen ' + m.e + ' (vorher ' + m.e0 + ') ausserhalb des Fensters');
             if (tm.now !== m.d || tm.pveNow !== m.e) bad.push(tag + ' Messwerkzeug sieht d ' + tm.now + ' und e ' + tm.pveNow);
             if (!tm.curOk) bad.push(tag + ' der Treffpunkt besteht die Regeln des Messwerkzeugs nicht');
             { const nw = rep.warn.filter(w => !repB.warn.some(b => b.r === w.r)); if (rep.err.length || nw.length) bad.push(tag + ' validateMap ' + rep.err.concat(nw).map(e => e.r + ': ' + e.m).join(' | ')); }   // die Kennzahlen-Warnungen der Karte selbst (Casino) sind bekannt, neu darf keine dazukommen

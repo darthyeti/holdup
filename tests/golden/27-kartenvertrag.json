@@ -5,12 +5,12 @@
   "err": {},
   "warn": {},
   "entries": {
-   "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 10,
+   "Hintertür (N) | Fluchttür (E) | Westtür (W) | Vordertür (S)": 11,
    "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 5,
-   "Hintertür (N) | Osttür (E) | Fluchttür (W) | Vordertür (S)": 22,
-   "Hintertür (N) | Westtür (W) | Fluchttür (E) | Vordertür (S)": 22,
-   "Hintertür (N) | Fluchttür (W) | Osttür (E) | Vordertür (S)": 14,
-   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 7
+   "Hintertür (N) | Osttür (E) | Fluchttür (W) | Vordertür (S)": 20,
+   "Hintertür (N) | Westtür (W) | Fluchttür (E) | Vordertür (S)": 20,
+   "Hintertür (N) | Fluchttür (W) | Osttür (E) | Vordertür (S)": 18,
+   "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 6
   },
   "range": {
    "pathSV": [
@@ -18,7 +18,7 @@
     14
    ],
    "pathVE": [
-    14,
+    16,
     28
    ],
    "loot": [
@@ -34,16 +34,16 @@
     2
    ],
    "mat": [
-    6,
+    5,
     8
    ],
    "slots": [
     7,
-    9
+    10
    ],
    "posts": [
     14,
-    18
+    17
    ]
   }
  },
@@ -104,15 +104,13 @@
   "warn": {},
   "entries": {
    "Hintertür (W) | Vordertür (E) | Fluchttür (S)": 6,
-   "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 12,
+   "Fluchttür (N) | Vordertür (E) | Hintertür (W)": 16,
    "Hintertür (N) | Fluchttür (E) | Vordertür (S)": 11,
    "Vordertür (N) | Fluchttür (W) | Hintertür (S)": 9,
    "Hintertür (N) | Fluchttür (W) | Vordertür (S)": 12,
    "Fluchttür (N) | Vordertür (W) | Hintertür (E)": 12,
-   "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 10,
-   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 3,
-   "Fluchttür (N) | Hintertür (W) | Vordertür (E)": 4,
-   "Vordertür (W) | Hintertür (E) | Fluchttür (S)": 1
+   "Hintertür (E) | Vordertür (W) | Fluchttür (S)": 11,
+   "Vordertür (N) | Fluchttür (E) | Hintertür (S)": 3
   },
   "range": {
    "pathSV": [
@@ -121,7 +119,7 @@
    ],
    "pathVE": [
     17,
-    28
+    33
    ],
    "loot": [
     25200,
@@ -136,7 +134,7 @@
     2
    ],
    "mat": [
-    13,
+    12,
     15
    ],
    "slots": [

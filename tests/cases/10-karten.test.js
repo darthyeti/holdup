@@ -40,7 +40,7 @@ tests.push({
       for (const sc of SC.concat('truck')) {
         __dbg.setScenario(sc); __dbg.setSeedMode('random'); __dbg.setLage(null);
         let acc = '';
-        for (let i = 0; i < 120; i++) acc += JSON.stringify(__dbg.layoutFor(1 + i * 13));
+        for (let i = 0; i < 120; i++) acc += JSON.stringify(__dbg.layoutFor(1 + i * 13), (k, v) => k === 'rob' ? undefined : v);
         out[sc] = h(acc);
       }
       return out;

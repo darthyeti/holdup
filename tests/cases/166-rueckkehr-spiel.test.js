@@ -3,8 +3,8 @@
 // kann nichts tun, die Runde kippt nicht durch ihn (checkEnd zaehlt live), Rueckkehr ueber die Marke tok mit demselben Platz, ab dem dritten Abriss je Runde entfaellt der Schutz, Start mit "trotzdem los".
 // N1b (Client): connLost fuehrt in rejoin(Frist) statt auf den Titel, Overlay, Eingaben eingefroren, Esc gibt auf, Zuschauer kommen zurueck, die Zweitverbindung im Duell versucht es neu.
 const SETUP = async t => { await t.loadTool('loopnet.js'); await t.loadInpage('coop.js'); await t.loadInpage('menu.js'); await t.loadInpage('overlap.js');
-  /* Weltvergleich ohne die wandernde Schluesselkarte (crd): der Host bewegt sie, der Client sieht sie auch ohne Abriss erst spaeter, kein Thema von N1 */
-  await t.page.evaluate("window.WD = (a, b) => CT.diff(CT.sig(a), CT.sig(b)).filter(x => !/crd:/.test(x))"); };
+  /* Weltvergleich ohne die wandernden Gefaengnis-Gegenstaende (Schluesselkarte crd, Pistole pist): der Host bewegt sie, der Client sieht sie auch ohne Abriss erst spaeter, kein Thema von N1 */
+  await t.page.evaluate("window.WD = (a, b) => CT.diff(CT.sig(a), CT.sig(b)).filter(x => !/ (crd|pist):/.test(x))"); };
 const TEXTS = `(d) => { const c = d.cv.getContext('2d'), txt = [], ft = c.fillText; c.fillText = function (s) { txt.push(String(s)); return ft.apply(this, arguments); }; d.draw(); c.fillText = ft; return txt; }`;
 const NETEV = `(d) => d.flog().dump().ereignisse.filter(e => e[2] === 'netz').map(e => JSON.stringify(e[3]))`;
 // Spiel mit n Spielern im Ueberfall (Phase 2), keine Polizei von selbst

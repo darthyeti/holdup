@@ -7,7 +7,7 @@ async function setup(t) {
 }
 const FIND = `(want) => { const D = __dbg, out = {}; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd < 400; sd++) { const m = D.genTruckMission(sd); for (const k of want) { const key = k(m); if (key && !out[key]) out[key] = sd; } } return out; }`;
 // die vier Seitengassen: x von, x bis, Zeile von, Zeile bis (Reihenfolge wie closed in der Mission)
-const ALLEYS = [[17, 19, 1, 6], [38, 40, 1, 6], [9, 11, 15, 22], [31, 33, 15, 22]];
+const ALLEYS = [[17, 19, 1, 4], [38, 40, 1, 4], [9, 11, 17, 22], [31, 33, 17, 22]];
 
 module.exports = [
   {
@@ -55,7 +55,7 @@ module.exports = [
         const std = (build(f.s), D.world().M.slice());
         for (const k of ['g1', 'g3']) { const L = build(f[k]), W = D.world(), cl = L.mission.closed; o[k] = cl.slice();
           A.forEach((a, i) => { let all = true; for (let y = a[2]; y <= a[3]; y++) for (let x = a[0]; x <= a[1]; x++) { const c = W.M[y][x]; if (c !== '#') all = false; }
-            if (cl[i] && !all) o.zu.push([k, i, 'nicht zu']); if (!cl[i]) { const sx = (a[0] + 1) * 32 + 16, sy = (i < 2 ? 7 : 14) * 32 + 16; if (D.pathTo(sx, sy, a[0] + 1, i < 2 ? a[3] : a[2]).length === 0) o.offen.push([k, i, 'kein Weg']); } });
+            if (cl[i] && !all) o.zu.push([k, i, 'nicht zu']); if (!cl[i]) { const sx = (a[0] + 1) * 32 + 16, sy = (i < 2 ? 7 : 14) * 32 + 16; if (D.pathTo(sx, sy, a[0] + 1, i < 2 ? a[3] : a[2] + 1).length === 0) o.offen.push([k, i, 'kein Weg']); } });
           const M2 = W.M; let diff = 0; for (let y = 0; y < M2.length; y++) for (let x = 0; x < M2[y].length; x++) if (M2[y][x] !== std[y][x]) { const inAlley = A.some((a, i) => cl[i] && x >= a[0] && x <= a[1] && y >= a[2] && y <= a[3]); if (!inAlley) diff++; } o.rest.push([k, diff]); }
         return o; })()`);
       t.eq(r.rest.map(x => x[1]), [0, 0], 'ausserhalb der zugemauerten Gassen ist die Karte wie im Normalfall (Kacheln, die abweichen)'); t.eq(r.zu, [], 'zugemauerte Gassen sind ueberall Mauer'); t.eq(r.offen, [], 'offene Gassen haben einen Weg von der Strasse bis ans Ende');
