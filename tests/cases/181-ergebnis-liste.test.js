@@ -8,7 +8,8 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const d = MT.solo(null, 's'), o = { bad: [], lens: [] };
         const cv = document.createElement('canvas'), g = cv.getContext('2d'), mw = (f, s) => { g.font = f; return g.measureText(s).width; };
-        const mk = n => Array.from({ length: n }, (_, i) => i === 1 ? 'Beute verloren: Gefangenschaft kostet das ganze Konto der Serie' : 'Notenbank Zeile ' + (i + 1) + ': Tresor, Stahlkammer, Wachen, Bonus ' + '9'.repeat(i % 4) + ' $');
+        const mk0 = n => Array.from({ length: n }, (_, i) => i === 1 ? 'Beute verloren: Gefangenschaft kostet das ganze Konto der Serie' : 'Notenbank Zeile ' + (i + 1) + ': Tresor, Stahlkammer, Wachen, Bonus ' + '9'.repeat(i % 4) + ' $');
+        const mk = n => (n % 3 === 0 ? mk0(n - 2).concat(['Dein Anteil: $ 12.000', 'Konto: $ 40.000']) : n % 3 === 1 ? mk0(n - 3).concat(['Dein Anteil: $ 0', 'Bester Auftrag der Serie!', 'Konto: $ 0']) : mk0(n));
         d.startGame(); d.setFocus(true); d.startHeist(false); MT.adv(d, .5);
         d.endLocal({ win: false, soft: false, score: 0, n: 4, lines: mk(16), fh: null, title: 't', extra: '', hi: 1 });
         const tiles = d.ui().tiles().map(q => ({ id: q.id, x: q.x, y: q.y, w: q.w, h: q.h }));
@@ -16,8 +17,10 @@ module.exports = [
         for (let n = 1; n <= 24; n++) {
           const rows = d.endRows(mk(n), n > 1 ? 1 : 0, mw);
           if (n <= 6) o.lens.push(rows.map(q => q.y).join());
+          const bx = q => ({ x0: q.al === 'left' ? q.x : q.x - q.w / 2, x1: q.al === 'left' ? q.x + q.w : q.x + q.w / 2, y0: q.y - q.fs, y1: q.y + 3 });
+          rows.forEach((q, a) => rows.forEach((u, b) => { const A = bx(q), B = bx(u); if (b > a && A.x0 < B.x1 && A.x1 > B.x0 && A.y0 < B.y1 && A.y1 > B.y0) o.bad.push(n + ':zeilen:' + q.i + '/' + u.i); }));
           rows.forEach(q => {
-            const x0 = q.x - q.w / 2, x1 = q.x + q.w / 2, y0 = q.y - q.fs, y1 = q.y + 3;
+            const { x0, x1, y0, y1 } = bx(q);
             if (x0 < 0 || x1 > 960 || y0 < 0 || y1 > 544) o.bad.push(n + ':bild:' + q.i);
             tiles.forEach(k => { if (x0 < k.x + k.w && x1 > k.x && y0 < k.y + k.h && y1 > k.y) o.bad.push(n + ':' + k.id + ':' + q.i); });
           });

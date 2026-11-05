@@ -1623,9 +1623,17 @@ const lf=win&&!LAY.prison&&!NET.duel&&players.length>1?players.find(o=>!o.out&&!
 duelRound(res);if(NET.role==='host')bcast({t:'end',res});endLocal(res)}
 /* Nach einem Auftrag bleibt, was uebrig ist: Vorraete, Westenrest und Helmtreffer */
 function keepKit(){for(const q of CONS)SESSION.cons[q]=me[q]|0;if(SESSION.own.vest)SESSION.wear.vest=Math.max(0,Math.round(me.ar));if(SESSION.own.helm)SESSION.wear.helm=Math.max(0,me.hh|0)}
-/* Ergebnisseite: Zeilenliste im Fenster y 244 bis 392 (darunter beginnen die Kacheln, rechts die Fahndungs-Box ab x 748). Bis 6 Zeilen wie gewohnt (Abstand 28, 15px), darüber enger und kleiner, ab 9 Zeilen in zwei, ab 21 in drei Spalten; zu breite Zeilen schrumpfen, dann Auslassung */
-function endRows(lines,hi,mw){const n=lines.length,cols=n<=8?1:n<=20?2:3,per=Math.ceil(n/cols),step=per>1?Math.min(28,Math.floor(148/(per-1))):28,fs=step>=26?15:step>=21?14:step>=17?13:step>=14?12:11,cx=cols===1?[480]:cols===2?[240,560]:[150,390,630],maxW=cols===1?520:cols===2?310:230,out=[];
-for(let i=0;i<n;i++){const c=Math.floor(i/per),r=i%per,b=i===hi;let f=Math.min(b?fs+5:fs,b?20:15),s=String(lines[i]),ft=()=>(b?'bold ':'')+f+'px monospace';while(f>10&&mw(ft(),s)>maxW)f--;while(s.length>1&&mw(ft(),s)>maxW)s=s.slice(0,-2)+'\u2026';out.push({i,s,f:ft(),fs:f,x:cx[c],y:244+r*step,w:mw(ft(),s)})}return out}
+/* Ergebnisseite: Zeilenliste im Fenster y 244 bis 392 (darunter beginnen die Kacheln, rechts die Fahndungs-Box ab x 748). Bis 6 Zeilen wie gewohnt (Abstand 28, 15px). Darüber: die Schlusszeilen (ab "Dein Anteil", sonst nur die letzte) stehen mittig unten, die übrigen enger und kleiner darüber, ab etwa 9 Zeilen in zwei oder drei linksbündigen Spalten, die als Block zur Mitte stehen; zu breite Zeilen schrumpfen, dann Auslassung */
+function endRows(lines,hi,mw){const n=lines.length,out=[];let fi=lines.findIndex(l=>/^Dein Anteil/.test(l));if(fi<0)fi=n-1;if(n<=6)fi=n;
+const body=lines.slice(0,fi),m=body.length,f=n-fi,fst=f>2?18:22,fy0=392-Math.max(0,f-1)*fst,avail=(f?fy0-26:392)-244;
+let cols=1,per=m,step=28;for(cols=1;cols<=3;cols++){per=Math.max(1,Math.ceil(m/cols));step=per>1?Math.min(28,Math.floor(avail/(per-1))):28;if(step>=17||cols===3)break}
+const fs=step>=26?15:step>=21?14:step>=17?13:step>=14?12:11,gap=30,cap=cols===1?520:Math.floor((540-gap*(cols-1))/cols);
+const fit=(i,fz,mx)=>{const b=i===hi;let f2=Math.min(b?fz+5:fz,b?20:15),s=String(lines[i]);const ft=()=>(b?'bold ':'')+f2+'px monospace';while(f2>10&&mw(ft(),s)>mx)f2--;while(s.length>1&&mw(ft(),s)>mx)s=s.slice(0,-2)+'\u2026';return{i,s,f:ft(),fs:f2,w:mw(ft(),s)}};
+let u=fs;for(let i=0;i<m;i++)if(i!==hi)u=Math.min(u,fit(i,fs,cap).fs);
+const cw=[0,0,0],rows=[];for(let i=0;i<m;i++){const c=Math.floor(i/per),r=fit(i,u,cap);r.c=c;r.y=244+(i%per)*step;cw[c]=Math.max(cw[c],r.w);rows.push(r)}
+const tot=cw.slice(0,cols).reduce((a,b)=>a+b,0)+gap*(cols-1),xs=[];let x=470-tot/2;for(let c=0;c<cols;c++){xs.push(x);x+=cw[c]+gap}
+rows.forEach(r=>{if(cols===1){r.x=480;r.al='center'}else{r.x=xs[r.c];r.al='left'}out.push(r)});
+for(let i=fi;i<n;i++){const r=fit(i,f>2?13:14,520);r.x=480;r.al='center';r.y=fy0+(i-fi)*fst;out.push(r)}return out}
 function endLocal(res){if(NET.spec){LOG.ev('ende',{win:!!res.win,soft:!!res.soft,titel:String(res.title||'').slice(0,60),score:Math.round(res.score||0)});SND.work(null,0);SND.end(res.win);ended={aw:cleanAw(res.aw),pg:0,win:res.win,soft:!!res.soft,title:res.title,extra:res.extra,lines:res.lines.slice(),hi:res.hi,fh:null};return}
 const share=res.score/res.n,lines=res.lines.slice();if(res.n>1)lines.push('Dein Anteil: '+fmt(share));
 if(!res.soft)SESSION.round++;
@@ -2511,7 +2519,7 @@ if(!ended)hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.
 if(MLOCK.on&&MLOCK.can&&plWant()&&!plHeld()&&focus&&!paused&&!ended){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('KLICKEN: MAUS FANGEN',VW-12,VH-(SND.isMuted()?68:52));g.textAlign='left'}
 if(paused&&!ended){drawPause()}else if(!focus&&!ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}fhBadge(480,352,'c');g.textAlign='left'}
 if(ended){g.fillStyle='rgba(6,8,14,.82)';g.fillRect(0,0,VW,VH);g.textAlign='center';if(ended.pg===0){g.fillStyle=ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a';g.font='bold 34px monospace';g.fillText(ended.title.toUpperCase(),480,170);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(ended.extra,480,200);if(ended.pz){g.fillStyle='#ffb000';g.font='bold 15px monospace';g.fillText(ended.pz,480,224)}
-endRows(ended.lines,ended.hi,(f,tx)=>{g.font=f;return g.measureText(tx).width}).forEach(r=>{g.fillStyle=r.i===ended.hi?'#ffb000':r.i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=r.f;g.fillText(r.s,r.x,r.y)})}
+endRows(ended.lines,ended.hi,(f,tx)=>{g.font=f;return g.measureText(tx).width}).forEach(r=>{g.fillStyle=r.i===ended.hi?'#ffb000':r.i===ended.lines.length-1?(ended.win?'#7ee34a':ended.soft?'#ffb347':'#ff6a5a'):'#e6eaf0';g.font=r.f;g.textAlign=r.al;g.fillText(r.s,r.x,r.y)});g.textAlign='center'}
 g.fillStyle='#8d95a1';g.font='13px monospace';g.font='11px monospace';g.fillText('Karte #'+LAY.seed,480,VH-14);UI.drawEnded();g.textAlign='left'}losAll=false;drawChat()}
 /* Ergebnis: Seite 1 = Beute, Seite 2 = Auszeichnungen (nur Coop, nur wenn es welche gibt). Weiter blaettert erst, danach geht es in den Shop oder die neue Serie. */
 const endPages=()=>1+(ended&&ended.aw.length?1:0)+(NET.du&&NET.du.run?1:0);
