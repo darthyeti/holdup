@@ -543,7 +543,7 @@ if(P.np>=2||P.ps==='L')isl.push([pxL,py]);if(P.np>=2||P.ps==='R')isl.push([pxR,p
 const PU=[].concat(...isl.map(a=>[[a[0],a[1]],[a[0]+1,a[1]]]));
 asc(gasRows(sw,sd,er),0,0);SH.forEach(a=>fill(a[0],a[1],a[0]+a[2]-1,a[1]+a[3]-1,'C'));H.lg.forEach(a=>setc(a[0],a[1],a[2]));PU.forEach(a=>setc(a[0],a[1],'u'));
 /* Kammer im Lager (K5, Plan Kammern, Personalbereich): Das Gebaeude waechst um drei Zeilen nach Norden (y -3..-1 ueber der ganzen Breite, ausser dem Lager massive Wand), die Welt mit. Im Lager entsteht ein Gang (x4..5, y-2..0) und links davon, ab x6, die Kammer (Innenraum 2 x 2 in x7..8, y-2..-1, Tuer in der Westwand oben, die Reihe unten an der Wand zum Lager ist ohne Sicht durch die Tuer). Die Hintertuer zieht in die neue Nordwand (4,-3). */
-let SK=null;if(sk){fill(0,-3,sw+1,-1,'#');fill(4,-2,5,0,'.');setc(7,0,'#');setc(4,-3,'L');/* #110: die zwei Schreibtische standen unter dem Gang (x4..5, y1) und sperrten die Hintertuer, sie ruecken nach x6..7 */setc(4,1,'.');setc(5,1,'.');setc(6,1,'e');setc(7,1,'e');setc(6,-2,'d');fill(7,-2,8,-1,'.');SK={kind:sk,door:[6,-2],out:[5,-2],cells:[[7,-2],[8,-2],[7,-1],[8,-1]],deep:[[7,-1],[8,-1]]}}
+let SK=null;if(sk){fill(0,-3,sw+1,-1,'#');fill(4,-2,5,0,'.');setc(7,0,'#');setc(4,-3,'L');/* #110: die zwei Schreibtische standen unter dem Gang (x4..5, y1) und sperrten die Hintertuer, sie ruecken nach (7,1) und (5,2) */setc(4,1,'.');setc(5,1,'.');setc(7,1,'e');setc(5,2,'e');setc(6,-2,'d');fill(7,-2,8,-1,'.');SK={kind:sk,door:[6,-2],out:[5,-2],cells:[[7,-2],[8,-2],[7,-1],[8,-1]],deep:[[7,-1],[8,-1]]}}
 const inBlk=a=>sk&&a[0]>=0&&a[0]<=sw+1&&a[1]>=-3&&a[1]<=-1;
 const sx=a=>a[0]>=16?a[0]+dx:a[0];[[18,1],[19,1],[18,2],[-2,-3],[24,10],[28,4]].filter(a=>!inBlk([sx(a),a[1]])).forEach(a=>setc(sx(a),a[1],'k'));[[20,5],[21,9],[17,11],[26,8],[-2,5],[-2,10],[10,-3]].filter(a=>!inBlk([sx(a),a[1]])).forEach(a=>setc(sx(a),a[1],'q'));[[2,22],[9,22],[16,22],[24,22],[31,22],[0,15],[15,15]].forEach(a=>setc(a[0],a[1],'p'));
 const winS=[];for(let x=1;x<=sw;x++)if(x!==fd&&x!==fd+1)winS.push(x);
@@ -561,7 +561,7 @@ const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stro
 const wp=P.classic?[fd,bot]:[[fd,bot-1],[fd+1,bot-1],[fd-1,bot-1],[fd+2,bot-1]].find(a=>!isSol(a[0],a[1]))||[fd,bot];
 if(ev.includes('wache'))extra.push({p:wp,route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,3);
-const deskT=[[4,1],[5,1]],goods=[];
+const deskT=sk?[[7,1],[5,2]]:[[4,1],[5,1]],goods=[];
 for(let x=Math.max(cx0,sw-4);x<=sw;x++)goods.push({k:'cig',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
 SH.forEach(a=>goods.push({k:'shelf',x:(a[0]+a[2]/2)*T,y:(a[1]+a[3]/2)*T,rc:[a[0]*T,a[1]*T,a[2]*T,a[3]*T],r:50}));
 return{seed:sn,decor:decorOf(DC_GAS(dx)),gas:true,hall:H.n,theme:mkTheme(ti,ms.lg.includes('nacht')?4:di,0),bld:{x0:0,y0:by0,x1:sw+1,y1:wall},winN:[],winS,
