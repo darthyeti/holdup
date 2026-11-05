@@ -142,7 +142,7 @@ U2:{n:'Techniker',d:'Verdacht {sus%} % langsamer, Dietrich {pick%} % schneller, 
 U3:{n:'Notfallkoffer',d:'C: {cnt} Koffer, heilt {hps} HP/s im Umkreis',s:'C: {cnt} Stück, {hps} HP/s',cnt:[1,1,2],hps:[5,7,9],w:'Koffer an deiner Stelle: heilt 10 s lang alle im Umkreis, auch dich, nur im Überfall'},
 U4:{n:'C4',d:'E am Tresor oder Laderaum: sprengen, Beuteverlust -{save%} %',s:'Sprengen, Verlust -{save%} %',cnt:[1,1,1],save:[.25,.5,.75],w:'E am Tresor oder Laderaum: sprengt sofort, laut, ein Teil der Beute verbrennt',x:'Öffnet den Tresor oder den Laderaum des Geldtransporters sofort (E, ein Stück je Auftrag). Laut: im Erkunden sofort Alarm, im Überfall kommt die Polizei früher. Ein Teil der Beute dort verbrennt, die Stufen sparen davon.'}},
 dec:{hp:140,mat:2,wreck:1,dur:1.6,reach:76},
-ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14},
+ev:{streife:6,blackout:40,vis:520,sight:.75,civMax:14,ent:{dMin:9,dMax:16,vis:640,wait:25,max:50}},
 bar:{lv:2,hp:100,matU:.5,matMax:4,matT:2.2,buildT:[2.6,3.4],dismT:2,near:230,reach:70,hold:32,again:8,fuse:5,crowd:.06,rad:70,pdmg:50,dmg:100,pen:8,wave:.85,pref:40,repT:1.8,repHp:100,repMc:1,repPref:50},
 lean:{reach:26,spd:0},
 gren:{from:2,gasFrom:4,spd:300,maxD:420,reach:420,range:520,flash:{fuse:1.1,r:200,t:3.2,minT:.6,face:.5,spread:.1,fade:1.2,delay:.5},gas:{fuse:.7,r:80,t:11,dps:4,slow:.8,spread:.05,maskF:.1,delay:1.8,tick:.8}},
@@ -996,7 +996,7 @@ if(LAY.mgr){const mg=mk('mgr',6,LAY.mgr.p[0],LAY.mgr.p[1],{spd:34,fov:1.1,rng:28
 const GP=Object.assign({},CFG.guard,LAY.jewel?CFG.jewel.guard:LAY.museum?CFG.museum.guard:null);
 LAY.guards.forEach(g=>{const gd=mk('grd',2,g.p[0],g.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng});setRoute(gd,g.route)});
 for(let i=0;i<LAY.civ;i++){const c=LOBBY[Math.floor(npcR()*LOBBY.length)];mk('civ',3+(i%2),c[0],c[1],{spd:32+npcR()*10,wait:npcR()*3,a:npcR()*6.28})}
-(LAY.mission.extra||[]).forEach(x=>{const n=mk('grd',2,x.p[0],x.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng,st:'away'});setRoute(n,x.route);n.at=x.at;n.msg=x.msg});
+(LAY.mission.extra||[]).forEach(x=>{const n=mk('grd',2,x.p[0],x.p[1],{spd:GP.spd,fov:GP.fov,rng:GP.rng,st:'away'});setRoute(n,x.route);n.at=x.at;n.msg=x.msg;if(LAY.mission.ev.includes('wache')&&x.at===LAY.mission.at.wache)n.ent=entPlan(n)});
 {const nu=ucCount();if(nu>0){const cv=npcs.filter(q=>q.k==='civ'),ur=mulberry32((Math.imul(LAY.seed|0,2654435761)>>>0)^0x55c0f4d3);for(let i=0;i<nu&&cv.length;i++){const q=cv.splice(Math.floor(ur()*cv.length),1)[0];q.uc=1;q.fov=GP.fov;q.rng=GP.rng}}}
 for(const n of npcs)if(n.route){n.ri=0;n.wait=CFG.ko.stand}}else if(LAY.mission.panne)panneCrew();
 const till=(tx,ty)=>({t:'till',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,lab:()=>'Kasse leeren',fit:o=>fits(o,CFG.till.u),dur:()=>CFG.till.t,ok(){return phase===2&&!this.done},act(o){if(!take(o,CFG.till.u,CFG.till.v))return;snd('ev','till');this.done=true}});
@@ -1425,8 +1425,28 @@ const lsp=o=>(o.bl>0?CFG.gren.flash.spread:0)+(o.gs>.2&&!o.mask?CFG.gren.gas.spr
 /* Streuung eines Schusses: Waffe, Laufzuschlag (mit Ruhige Hand 3 gibt es den Laeufer-Zusatz: kein Zuschlag), Rueckstoss, Blendung und Gas, dann der Abzug der Ruhigen Hand */
 const shotSp=(o,wp)=>(wp.spread+.05*o.mv*(1-skv(o.kit,'A1','run'))+o.rec+lsp(o))*(1-skv(o.kit,'A1','spread'));
 /* Auftrags-Ereignisse (LAY.mission.ev): Wachwechsel und Geldtransport (vorab angelegte, abwesende Wachen), Stromausfall, Streife (Polizei frueher), Feiertag (mehr Zivilisten) */
+/* Wachwechsel-Einlass (Ticket 107): Die Wache (extra mit ent) wartet abwesend, erscheint dann draussen auf einer o-Kachel ausser Sicht der Spieler (nach CFG.ev.ent.wait s notfalls trotzdem), geht zur Aussenkachel einer Tuer, schliesst sie bei Bedarf auf (Hintertuer L), geht auf die Innenkachel und laeuft dann ihre Route. Die Tuer kommt aus LAY.spots: bevorzugt eine verriegelte Hintertuer, sonst eine Aussentuer (nie die Fluchttuer, wenn es eine andere gibt). Phase 2: sofort ein Gegner an der Aussenkachel. Nur der Host rechnet, die Clients sehen Ort und Tuerzustand (dr) aus dem Schnappschuss. */
+function entPlan(n){const E=CFG.ev.ent,B=LAY.bld,r0=n.route[0],okR=s=>{const c=s.cells[0],ix=c[0]+s.iv[0],iy=c[1]+s.iv[1];return !isSol(ix,iy)&&!LAY.zones.some(z=>ix>=z[0]&&ix<=z[2]&&iy>=z[1]&&iy<=z[3])&&(ix===r0[0]&&iy===r0[1]||pathTo(ix*T+16,iy*T+16,r0[0],r0[1]).length>0)},ss=LAY.spots.filter(s=>s.side&&!s.ex).filter(okR),pool=ss.filter(s=>s.lk),cd=pool.length?pool:ss.length?ss:LAY.spots.filter(s=>s.side&&okR(s));if(!cd.length)return null;
+const sp=cd[Math.floor(n.rr()*cd.length)],c0=sp.cells[0],oc=[c0[0]-sp.iv[0],c0[1]-sp.iv[1]],ic=[c0[0]+sp.iv[0],c0[1]+sp.iv[1]];if(isSol(oc[0],oc[1])||isSol(ic[0],ic[1]))return null;
+const inB=(x,y)=>x>=B.x0&&x<=B.x1&&y>=B.y0&&y<=B.y1,dm=new Map([[oc[0]+','+oc[1],0]]),q=[oc],all=[];
+for(let h=0;h<q.length;h++){const c=q[h],d=dm.get(c[0]+','+c[1]);if(d>=E.dMax)continue;for(const v of D4){const x=c[0]+v[0],y=c[1]+v[1],k=x+','+y;if(dm.has(k)||isSol(x,y)||inB(x,y)||cell(x,y)!=='o')continue;dm.set(k,d+1);q.push([x,y]);all.push([x,y,d+1])}}
+let sps=all.filter(c=>c[2]>=E.dMin);if(!sps.length){const mx=Math.max(0,...all.map(c=>c[2]));sps=all.filter(c=>c[2]===mx)}
+for(let i=sps.length-1;i>0;i--){const j=Math.floor(n.rr()*(i+1));[sps[i],sps[j]]=[sps[j],sps[i]]}
+return{cells:sp.cells,oc,ic,sps:sps.map(c=>[c[0],c[1]]),s:0,t:0,w:0,op:0}}
+/* Spawnkachel waehlen: die erste, die kein lebender Spieler in Sichtlinie und Reichweite CFG.ev.ent.vis sieht, nach wait s die erste */
+function entSpawn(n,dt){const e=n.ent,E=CFG.ev.ent;e.w+=dt;if(phase===2||!e.sps.length)return e.sps[0]||e.oc;
+for(const c of e.sps){const x=c[0]*T+16,y=c[1]*T+16;if(!players.some(o=>live(o)&&Math.hypot(o.x-x,o.y-y)<E.vis&&los(o.x,o.y,x,y)))return c}
+return e.w>=E.wait?e.sps[0]:null}
+function entGo(n){const e=n.ent;n.st='idle';n.wait=99;n.look=null;e.s=1;e.t=0;n.path=pathTo(n.x,n.y,e.oc[0],e.oc[1]);if(!n.path.length&&Math.hypot(n.x-(e.oc[0]*T+16),n.y-(e.oc[1]*T+16))>T*.75){n.x=e.oc[0]*T+16;n.y=e.oc[1]*T+16}}
+function entStep(n,dt){const e=n.ent,E=CFG.ev.ent;if(n.st==='ko'||n.st==='cower'||n.st==='hostage'||n.st==='dead'){e.s=0;return}e.t+=dt;const tg=e.s===1?e.oc:e.ic,tx=tg[0]*T+16,ty=tg[1]*T+16,late=e.t>E.max;
+if(n.path.length&&!late)return;
+if(late||Math.hypot(n.x-tx,n.y-ty)>T*.75){n.x=tx;n.y=ty;n.path=[]}
+if(e.s===1){if(e.cells.some(c=>cell(c[0],c[1])==='L')){e.cells.forEach(c=>{if(cell(c[0],c[1])==='L')setc(c[0],c[1],'l')});e.op=1;flowT=0;snd('ev','latch')}e.s=2;n.path=pathTo(n.x,n.y,e.ic[0],e.ic[1]);if(!n.path.length){n.x=e.ic[0]*T+16;n.y=e.ic[1]*T+16}return}
+e.s=0;if(e.op&&!players.some(o=>e.cells.some(c=>Math.hypot(o.x-(c[0]*T+16),o.y-(c[1]*T+16))<T))&&!npcs.some(o=>o!==n&&o.st!=='away'&&e.cells.some(c=>Math.hypot(o.x-(c[0]*T+16),o.y-(c[1]*T+16))<T*.8))){e.cells.forEach(c=>{if(cell(c[0],c[1])==='l')setc(c[0],c[1],'L')});flowT=0}
+say(n.msg);snd('found');n.wait=CFG.ko.stand}
 function evStep(dt){const ms=LAY.mission;let gone=false;
-for(const n of npcs)if(n.st==='away'&&rT>=n.at&&!(LAY.museum&&phase===1&&gapNear(n))){say(n.msg);if(phase===1){n.st='idle';n.wait=CFG.ko.stand;snd('found')}else{convGuard(n);n.st='dead';gone=true}}
+for(const n of npcs)if(n.st==='away'&&rT>=n.at&&!(LAY.museum&&phase===1&&gapNear(n))){if(n.ent){const sp=entSpawn(n,dt);if(!sp)continue;n.x=sp[0]*T+16;n.y=sp[1]*T+16;if(phase===2){say(n.msg);convGuard(n);n.st='dead';gone=true}else entGo(n)}else{say(n.msg);if(phase===1){n.st='idle';n.wait=CFG.ko.stand;snd('found')}else{convGuard(n);n.st='dead';gone=true}}}
+for(const n of npcs)if(n.ent&&n.ent.s)entStep(n,dt);
 if(gone)npcs=npcs.filter(q=>q.st!=='dead');
 if(ms.blackoutAt!=null&&!evDone.blk&&phase===1&&rT>=ms.blackoutAt){evDone.blk=1;blk=CFG.ev.blackout;camDown=Math.max(camDown,CFG.ev.blackout);snd('ev','power');ban('Stromausfall!',2.4);say('Stromausfall: Kameras und Licht sind aus.')}
 if(blk>0){blk-=dt;if(blk<=0){blk=0;say('Der Strom ist wieder da.')}}}
@@ -1609,7 +1629,7 @@ function canSee(sx,sy,sa,fov,rng,tx,ty){const dx=tx-sx,dy=ty-sy,dd=Math.hypot(dx
 const camAng=(c,i)=>c.a0+Math.sin(time*c.sp+i*1.7)*c.amp;
 /* Wachabstand im Museum: Eine Streife bleibt stehen, wenn der naechste Schritt sie naeher als gap Kacheln an die andere der ersten beiden Streifen (Nummer 0 und 1) oder naeher als near Kacheln an jede weitere brachte (und sie damit naeher kaeme als jetzt). Zehn Kacheln zu dritt halten die Routen nicht, die dritte Wache (Sicherheitsdienst) und der Wachwechsel halten nur near. Nach hold s Stillstand dreht die Wache um und geht ihre Runde rueckwaerts (zwei Streifen auf derselben Strecke prallen so ab), steht sie binnen 4 x hold s wieder, gilt der grosse Abstand fuer sie free s lang nicht (kein Dauerstillstand, near bleibt). Die Wachwechsel-Wache (gapNear) beginnt erst, wenn keine Streife naeher als near Kacheln an ihrem Startpunkt steht. */
 function gapHold(n,nx,ny){const K=CFG.museum.guard;for(const q of npcs){if(q===n||q.k!=='grd'||!q.route||q.st!=='idle')continue;const g=(n.id<2&&q.id<2&&!(n.free>0)?K.gap:K.near)*T,d1=Math.hypot(nx-q.x,ny-q.y);if(d1<g&&d1<Math.hypot(n.x-q.x,n.y-q.y))return true}return false}
-const gapNear=n=>npcs.some(q=>q!==n&&q.k==='grd'&&q.route&&q.st==='idle'&&Math.hypot(n.x-q.x,n.y-q.y)<CFG.museum.guard.near*T);
+const gapNear=n=>{const x=n.ent?n.ent.ic[0]*T+16:n.x,y=n.ent?n.ent.ic[1]*T+16:n.y;return npcs.some(q=>q!==n&&q.k==='grd'&&q.route&&q.st==='idle'&&Math.hypot(x-q.x,y-q.y)<CFG.museum.guard.near*T)};
 function updNpc(n,i,dt){if(n.free>0)n.free-=dt;if(n.st==='cower'||n.st==='dead'||n.st==='away'||n.st==='hostage'||n.st==='ko')return;n.alert=Math.max(0,n.alert-dt);
 if(n.look&&n.look.t>0){n.look.t-=dt;n.a=alerp(n.a,Math.atan2(n.look.y-n.y,n.look.x-n.x),.15);n.mvg=false;return}
 if(n.still){n.a=n.base+Math.sin(time*.45+i*2)*.7;return}
@@ -2116,7 +2136,7 @@ const g=s.g;phase=g[0];tH=g[1];waveN=g[2];waveT=g[3];policeAt=g[4];vanAt=g[5];va
 for(const a of s.pl){const o=players[a[0]];if(!o)continue;const f=a[10];o.hp=a[4];o.ar=a[5];o.mag=a[6];o.res=a[7];o.units=a[8];o.loot=a[9];o.armed=!!(f&1);o.dead=!!(f&2);o.out=!!(f&4);o.gone=!!(f&8);o.ln=f&32?1:0;o.dg=f&64?1:0;{const pg=f&256?1:0;if(pg!==(o.pgw|0))o.wp=pg?CFG.wpn.pistol:wpOf(o);o.pgw=pg}o.rl=a[13];o.hurt=Math.max(o.hurt,a[12]);o.jam=a[16]|0;o.med=a[17]|0;o.mat=a[18]|0;o.dn=a[19]||0;o.rv=a[20]||0;o.bl=a[21]||0;o.gs=a[22]||0;o.chipV=a[23]||0;o.bd=a[24]||0;o.hh=a[25]|0;o.sm=a[26]|0;o.dc=a[27]|0;o.ad=a[28]|0;o.bt=a[29]|0;o.trap=a[30]|0;o.c4=a[31]|0;o.sx=a[32]|0;o.ak=a[33]|0;
 if(o===me){const ox=o.x,oy=o.y;o.x=a[1];o.y=a[2];pend=pend.filter(c=>c.s>a[14]);const w0=o.w,a0=o.a;for(const c of pend)movePl(o,c);o.w=w0;o.a=a0;LOG.corr(Math.hypot(o.x-ox,o.y-oy))}
 else{o.tx=a[1];o.ty=a[2];o.ta=a[3];o.mvg=!!(f&16);o.w=a[11];o.mv=a[15];if(!o.init){o.x=a[1];o.y=a[2];o.a=a[3];o.init=1}}}
-const seen=new Set();for(const a of s.np){const q=npcs.find(n=>n.id===a[0]);if(!q)continue;seen.add(q.id);q.tx=a[1];q.ty=a[2];q.ta=a[3];q.w=a[4];q.mvg=!!a[5];q.st=a[6]===1?'cower':a[6]===2?'away':a[6]===3?'hostage':a[6]===4?'ko':'idle';q.own=(a[9]|0)-1;if(a[10]>0)hostMi(q).pr=a[10];else if(q.mi)q.mi.pr=0;q.kt=a[11]|0;q.dr=(a[13]|0)-1;if(a[12]>0){(q.st==='ko'?bodyMi(q):koMi(q)).pr=a[12];if(q.st==='ko'&&q.drv)keyMi(q).pr=a[12]}else{if(q.kmi)q.kmi.pr=0;if(q.bmi)q.bmi.pr=0;if(q.ymi)q.ymi.pr=0}q.alert=a[7]?.5:0;q.rk=!!a[8];q.uc=a[14]?1:0;q.rob=a[15]?1:0;if(a[16]>0)robMi(q).pr=a[16];else if(q.rmi)q.rmi.pr=0;if(!q.init){q.x=a[1];q.y=a[2];q.a=a[3];q.init=1}}
+const seen=new Set();for(const a of s.np){const q=npcs.find(n=>n.id===a[0]);if(!q)continue;seen.add(q.id);q.tx=a[1];q.ty=a[2];q.ta=a[3];q.w=a[4];const wasAway=q.st==='away';q.mvg=!!a[5];q.st=a[6]===1?'cower':a[6]===2?'away':a[6]===3?'hostage':a[6]===4?'ko':'idle';if(wasAway&&q.st!=='away'){q.x=a[1];q.y=a[2];q.a=a[3]}q.own=(a[9]|0)-1;if(a[10]>0)hostMi(q).pr=a[10];else if(q.mi)q.mi.pr=0;q.kt=a[11]|0;q.dr=(a[13]|0)-1;if(a[12]>0){(q.st==='ko'?bodyMi(q):koMi(q)).pr=a[12];if(q.st==='ko'&&q.drv)keyMi(q).pr=a[12]}else{if(q.kmi)q.kmi.pr=0;if(q.bmi)q.bmi.pr=0;if(q.ymi)q.ymi.pr=0}q.alert=a[7]?.5:0;q.rk=!!a[8];q.uc=a[14]?1:0;q.rob=a[15]?1:0;if(a[16]>0)robMi(q).pr=a[16];else if(q.rmi)q.rmi.pr=0;if(!q.init){q.x=a[1];q.y=a[2];q.a=a[3];q.init=1}}
 npcs=npcs.filter(q=>seen.has(q.id));
 const oe=new Map(en.map(e=>[e.id,e]));en=s.en.map(a=>{let e=oe.get(a[0]);if(!e)e={id:a[0],kind:['cop','swat','grd','shield','sniper'][a[1]],row:[0,8,2,0,8][a[1]],r:9,muz:a[1]===2?16:a[1]===4?30:32,fl:0,h:0,x:a[2],y:a[3],a:a[4]};e.tx=a[2];e.ty=a[3];e.ta=a[4];e.hp=a[5];e.mhp=a[6];e.w=a[7];e.mvg=!!a[8];e.h=Math.max(e.h,a[9]);e.sur=!!a[10];e.cp=a[11]||0;e.sh=a[12]|0;e.aimA=a[13]||0;if(a[14]){e.row=a[14];e.uc=1}return e});
 const opc=new Map(pcs.map(c=>[c.id,c]));pcs=(s.pc||[]).map(a=>{let c=opc.get(a[0]);if(!c)c={id:a[0],x:a[1],y:a[2],a:a[3]};c.tx=a[1];c.ty=a[2];c.ta=a[3];c.st=a[4]?'park':'in';c.hp=a[5];c.dead=a[5]<=0;c.civ=a[6]?1:0;c.cv=a[6]|0;if(a[7]>0||c.mi)carMi(c).pr=a[7]||0;if(!c.cells&&(c.st==='park'||c.dead))stampCar(c,c.tx,c.ty);return c});for(const o of opc.values())if(!pcs.includes(o)){stampOff(o.cells);o.cells=null};vanSync()
