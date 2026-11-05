@@ -1,0 +1,12 @@
+[
+ {"name":"00-titel","sc":"bank","seed":"classic","code":"D.toTitle(); D.update(1/30);"},
+ {"name":"01-bank-phase1","sc":"bank","seed":"classic","code":"H.run(3); out.p=[D.get().me.x,D.get().me.y]; out.scr=D.state().scr;"},
+ {"name":"02-bank-phase1-innen","sc":"bank","seed":"classic","code":"const me=D.get().me; const L=D.LAY(); out.vault=L.vault; me.x=me.dx=me.tx=me.x+0; me.y=me.y-160; H.run(2); out.p=[me.x,me.y];"},
+ {"name":"03-transporter-phase1","sc":"truck","seed":5,"code":"H.run(4); out.p=[D.get().me.x,D.get().me.y];"},
+ {"name":"04-juwelier-phase1","sc":"jewel","seed":5,"code":"H.run(3);"},
+ {"name":"05-tankstelle-phase1","sc":"gas","seed":5,"code":"H.run(3);"},
+ {"name":"06-museum-phase1","sc":"museum","seed":5,"code":"H.run(3);"},
+ {"name":"07-casino-phase1","sc":"casino","seed":5,"code":"H.run(3);"},
+ {"name":"08-notenbank-phase1","sc":"nb","seed":5,"code":"H.run(3);"},
+ {"name":"09-gefaengnis-phase1","sc":"prison","seed":5,"code":"H.run(3); out.sc=D.sc();"}
+]
