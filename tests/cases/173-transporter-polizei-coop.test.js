@@ -1,5 +1,5 @@
 // Transporter-Polizei im Coop (Ticket 100): Die Anker und Deckungsplaetze rechnet nur der Host (Zufall nur dort), der Client sieht die Beamten ueber den Schnappschuss. Geprueft wird mit der Test-Leitung (60 ms Latenz, 20 ms Streuung):
-// gleiche Beamte (Ids) und gleiche Orte bei Host und Client, und beide Seiten des Panzerwagens besetzt. Das Netzformat bleibt, VER ist unveraendert.
+// gleiche Beamte (Ids) und gleiche Orte bei Host und Client, und beide Seiten des Panzerwagens besetzt. Dazu die Sirene: Das Feld pc[8] (emp, VER 79) sagt dem Client, ob noch jemand im Streifenwagen sitzt.
 module.exports = [
   {
     name: 'Coop: die Beamten haben auf Host und Client dieselben Ids und (bis auf die Laufzeit) dieselben Orte, die Beamten verteilen sich auf beide Seiten des Wagens, kein Seitenfehler',
