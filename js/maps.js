@@ -338,6 +338,8 @@ const parked=[{x:9,y:7,row:2},{x:35,y:7,row:3},{x:22,y:13,row:3},{x:44,y:13,row:
 parked.forEach(c=>fill(c.x,c.y,c.x+3,c.y+1,'v'));
 [[5,7],[6,7],[25,7],[44,7],[52,7],[18,2],[18,3],[39,2],[39,3],[14,14],[15,14],[36,14],[54,14],[10,17],[32,18],[32,19]].forEach(a=>setc(a[0],a[1],'k'));
 [[3,7],[30,7],[48,7],[56,7],[19,5],[38,5],[11,14],[11,16],[40,14],[33,16],[57,14]].forEach(a=>setc(a[0],a[1],'q'));
+/* Mehr Deckung fuer Flanken (Ticket 100): einzelne Kisten und Faesser auf den Gehwegen (Zeilen 7 und 14, nie auf den Postenzeilen 8 und 13) und in den Seitengassen */
+[[14,7],[21,7],[41,7],[20,14],[28,14],[50,14],[17,4],[40,4],[9,19],[33,20]].forEach(a=>setc(a[0],a[1],'k'));[[34,7],[27,7],[52,14],[42,14],[19,3],[10,20]].forEach(a=>setc(a[0],a[1],'q'));
 /* Strassenvarianten (T4b): Baustelle sperrt in der Mitte die Zeilen 9 und 10, Gassen mauert einen Teil der vier Seitengassen zu (nach den Kulissen, damit auch deren Kisten verschwinden) */
 if(st==='baustelle')fill(TK_SITE[0],TK_SITE[1],TK_SITE[2],TK_SITE[3],'f');
 if(st==='gassen')[[17,19,1,6],[38,40,1,6],[9,11,15,22],[31,33,15,22]].forEach((a,i)=>{if(tms.closed[i])fill(a[0],a[2],a[1],a[3],'#')});
