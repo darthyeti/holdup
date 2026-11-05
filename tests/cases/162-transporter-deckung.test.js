@@ -45,9 +45,9 @@ module.exports = [
       await setup(t);
       const r = await t.page.evaluate(`(() => { ${MORE} const B = ${BUILD}, STEP = ${STEP}, TO2 = ${TO2}, o = {}; const sd = (${NP})(1)[0], { D, g, me } = B(sd, { pol: 400 }); TO2(D, me, STEP); STEP(D, me, 8 * 30); const V = D.CFG.truck.cov, e = crew(D)[0]; const cv0 = e.cv.x + ',' + e.cv.y, tl = tile(e);
         const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(v => [e.cv.x + v[0], e.cv.y + v[1]]).filter(c => D.world().isBul(c[0], c[1])); o.nb = nb.length; o.ok0 = adj(D, e.cv.x, e.cv.y); const saved = nb.map(c => [c, D.world().cell(c[0], c[1])]); for (const c of nb) D.world().setc(c[0], c[1], 'o'); o.adjNach = adj(D, e.cv.x, e.cv.y);
-        const t1 = STEP(D, me, 20 * 30, () => e.cv.x + ',' + e.cv.y !== cv0); o.gewechselt = t1; STEP(D, me, 6 * 30); o.steht = adj(D, ...tile(e)); o.cvAdj = adj(D, e.cv.x, e.cv.y); o.cs = e.cs; o.min = V.min; o.re = V.re; return o; })()`);
+        const t1 = STEP(D, me, 20 * 30, () => e.cv.x + ',' + e.cv.y !== cv0); o.gewechselt = t1; STEP(D, me, 6 * 30); STEP(D, me, 8 * 30, () => e.cs === 'hide' && Math.hypot(e.x - (e.cv.x * 32 + 16), e.y - (e.cv.y * 32 + 16)) < 4); o.steht = adj(D, ...tile(e)); o.cvAdj = adj(D, e.cv.x, e.cv.y); o.cs = e.cs; o.min = V.min; o.re = V.re; return o; })()`);
       t.ok(r.nb >= 1 && r.ok0, 'das Mitglied stand neben einer sperrenden Kachel'); t.eq(r.adjNach, false, 'Vorbereitung: nach dem Abraeumen deckt der Platz nicht mehr');
-      t.ok(r.gewechselt >= 0 && r.gewechselt <= r.min + r.re + 1, 'es wechselt den Platz, hoechstens min + re nach dem Wegfall: ' + r.gewechselt.toFixed(1) + ' s'); t.eq([r.steht, r.cvAdj], [true, true], 'es steht danach neben einer sperrenden Kachel');
+      t.ok(r.gewechselt >= 0 && r.gewechselt <= r.min + r.re + 1, 'es wechselt den Platz, hoechstens min + re nach dem Wegfall: ' + r.gewechselt.toFixed(1) + ' s'); t.eq([r.steht, r.cvAdj], [true, true], 'es steht danach (wartend, nicht im Herausschauen) neben einer sperrenden Kachel');
     },
   },
   {
