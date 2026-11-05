@@ -120,9 +120,10 @@ module.exports = [
   {
     name: 'Autos: zivile Wagen haben kein Blaulicht (nur Streifenwagen leuchten rot und blau), ein brennendes Wrack gluet orange',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('gas', 21, 'S'), o = {}, rec = [], og = CanvasRenderingContext2D.prototype.createRadialGradient;
-        // jede Leuchte (glow) legt einen Verlauf an: Mitte und Farbe merken
-        CanvasRenderingContext2D.prototype.createRadialGradient = function (...a) { const q = og.apply(this, a), as = q.addColorStop, e = { x: a[0], y: a[1], col: '' }; rec.push(e); q.addColorStop = function (k, c) { if (!e.col) e.col = c; return as.call(this, k, c); }; return q; };
+      const r = await t.page.evaluate(`(() => { const S = ${SETUP}, D = S('gas', 21, 'S'), o = {}, rec = [], og = CanvasRenderingContext2D.prototype.drawImage, gi = GFX.glowImg, cols = new Map();
+        // jede Leuchte (glow) zeichnet ein Leuchtbild aus GFX.glowImg: Farbe des Bildes merken, Mitte aus dem Zielrechteck von drawImage
+        GFX.glowImg = function (c, px) { const im = gi.call(this, c, px); cols.set(im, c); return im; };
+        CanvasRenderingContext2D.prototype.drawImage = function (...a) { if (cols.has(a[0]) && a.length === 5) rec.push({ x: a[1] + a[3] / 2, y: a[2] + a[4] / 2, col: cols.get(a[0]) }); return og.apply(this, a); };
         try {
           D.startHeist(false, D.get().me); const me = D.get().me; me.hp = 1e9; const cars = D.get().cars, civ = cars.filter(c => c.civ);
           const near = (c, e) => Math.hypot(e.x - c.x, e.y - c.y) < 40, lamp = e => /60,100,255|255,50,50/.test(e.col), fire = e => /255,120,40/.test(e.col);
@@ -132,7 +133,7 @@ module.exports = [
           const pol = Object.assign({}, civ[0], { id: 99001, civ: 0, cv: 1, hp: D.CFG.pol.car.hp }); cars.push(pol); f = frame(); o.lampsPol = f.filter(e => lamp(e) && near(pol, e)).length; cars.pop();
           // Wrack: orange Glut, kein Blaulicht
           civ[0].dead = true; civ[0].hp = 0; f = frame(); o.fireWreck = f.filter(e => fire(e) && near(civ[0], e)).length; o.lampsWreck = f.filter(e => lamp(e) && near(civ[0], e)).length;
-        } finally { CanvasRenderingContext2D.prototype.createRadialGradient = og; }
+        } finally { CanvasRenderingContext2D.prototype.drawImage = og; GFX.glowImg = gi; }
         return o; })()`);
       t.ok(r.civ >= 2, 'mindestens zwei zivile Autos: ' + r.civ);
       t.eq(r.lampsCiv.some(n => n > 0), false, 'zivile Autos leuchten nicht: ' + JSON.stringify(r.lampsCiv));

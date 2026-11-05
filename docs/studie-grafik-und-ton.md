@@ -151,7 +151,7 @@ Dazu eine Selbstprüfung: Liegt die Bildzeit (heute schon in `LOG.cost` gemessen
 
 ## 4. Pakete und Reihenfolge
 
-**Paket A: Schnelle Gewinne (Empfehlung: zuerst). Stand: A3 (T1, T3, T8) gebaut mit Ticket #120, Test `180-ton-wucht`.** O1 Leuchten zwischenspeichern, O5 Spuren, O6 Treffer mit Wucht, O9 weiche Sichtkante, O15 Farbkorrektur, T1 Schuss und Explosion mit Körper, T3 Verdeckung, T8 Menütöne, dazu der Optik-Regler als Gerüst. Aufwand: zwei bis drei kleine Tickets, keine Assets, kein Netz. Wirkung: Feuergefechte fühlen sich sofort härter an. Label `spielgefuehl`, Vorschau unter `/pr/<n>/`.
+**Paket A: Schnelle Gewinne (Empfehlung: zuerst). Stand: A3 (T1, T3, T8) gebaut mit Ticket #120, Test `180-ton-wucht`.** O1 Leuchten zwischenspeichern, O5 Spuren, O6 Treffer mit Wucht, O9 weiche Sichtkante, O15 Farbkorrektur, T1 Schuss und Explosion mit Körper, T3 Verdeckung, T8 Menütöne, dazu der Optik-Regler als Gerüst. Aufwand: zwei bis drei kleine Tickets, keine Assets, kein Netz. Wirkung: Feuergefechte fühlen sich sofort härter an. Label `spielgefuehl`, Vorschau unter `/pr/<n>/`. **Stand 5. November 2026: A1 gebaut (#118)**: Regler `GFX`, O1, O9, O15 (ohne Kontrast), siehe docs/spielsystem.md, Optik-Regler. Offen in Paket A: O5, O6 (#119).
 
 **Paket B: Licht und Höhe (danach).** O2 weiche Schatten, O3 Wandkronen, O4 Bodendetails, O7 Licht-Ebene, T2 Hall. Vorher Auslagern Schritt 4 (`js/draw.js`, docs/ideen-und-planung.md) mit einem Pixel-Hash-Test je Szenario und Phase, damit die Optik-Arbeit nicht mit jedem anderen PR in `start()` kollidiert. Aufwand: mittel, berührt die statische Ebene (`turn-hash`, Ebenenvergleich), deshalb `voller-lauf`.
 
@@ -178,3 +178,5 @@ Empfehlung: A sofort, B direkt danach, C nach Tills Spieltest von B, D erst nach
 5. Figurengröße: bleiben die Figuren klein (Übersicht, Cyberdogs) oder werden sie größer (Detail, weniger Überblick)?
 6. Meldungen: Dürfen die langen Auftragstexte aus der Ecke oben rechts in eine Startkarte wandern (weniger Text im Bild)?
 7. Qualitätsregler: Voreinstellung mittel, und soll das Spiel bei Ruckeln selbst eine Stufe herunter vorschlagen?
+
+Tills Antworten vom 5. November 2026: (1) Stil realistisch. (2) Musik erzeugt, in Schichten (Paket C). (3) Geräusche später als CC0-Aufnahmen, Grafik selbst erzeugt. (4) Wackeln, Blut und Rauch mittel und einzeln abschaltbar. (5) Figurengröße bleibt. Reihenfolge: Paket A sofort (#118, #119 nach #118, #120). (7) Regler voreingestellt mittel; ob das Spiel bei Ruckeln selbst eine Stufe herunter vorschlägt, ist offen und wird nicht gebaut. Frage 6 (Startkarte) bleibt offen.
