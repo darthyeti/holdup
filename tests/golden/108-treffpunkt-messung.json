@@ -471,7 +471,7 @@
   "gas": {
    "Gänge": {
     "n": 8,
-    "welt": "44x30",
+    "welt": "44x33",
     "hofFlucht": [
      18,
      21,
@@ -493,11 +493,11 @@
      18
     ],
     "A2D": {
-     "pct": 100,
+     "pct": 0,
      "dMax": [
-      18,
-      21,
-      22
+      0,
+      0,
+      0
      ]
     },
     "B": {
@@ -505,31 +505,31 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 100,
-     "wallVE": 8
+     "wallPct": 0,
+     "wallVE": null
     },
     "V": {
      "wallPct": 0,
      "wallVE": null
     },
     "pve10": {
-     "minE": 17,
-     "meanE": 28
+     "minE": 31,
+     "meanE": 31
     },
     "pve12": {
-     "minE": 19,
-     "meanE": 29
+     "minE": 33,
+     "meanE": 33
     },
     "pve14": {
-     "minE": 21,
-     "meanE": 32
+     "minE": 35,
+     "meanE": 35
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Insel": {
     "n": 11,
-    "welt": "44x30",
+    "welt": "44x33",
     "hofFlucht": [
      18,
      21,
@@ -551,10 +551,10 @@
      19
     ],
     "A2D": {
-     "pct": 100,
+     "pct": 55,
      "dMax": [
-      18,
-      20,
+      0,
+      10,
       22
      ]
     },
@@ -563,7 +563,7 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 100,
+     "wallPct": 27,
      "wallVE": 8
     },
     "V": {
@@ -571,23 +571,23 @@
      "wallVE": 26
     },
     "pve10": {
-     "minE": 18,
-     "meanE": 26
-    },
-    "pve12": {
-     "minE": 20,
+     "minE": 28,
      "meanE": 28
     },
-    "pve14": {
-     "minE": 22,
+    "pve12": {
+     "minE": 30,
      "meanE": 30
+    },
+    "pve14": {
+     "minE": 32,
+     "meanE": 32
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Klassik": {
     "n": 10,
-    "welt": "44x30",
+    "welt": "44x33",
     "hofFlucht": [
      17,
      19,
@@ -609,11 +609,11 @@
      20
     ],
     "A2D": {
-     "pct": 100,
+     "pct": 40,
      "dMax": [
-      16,
-      18,
-      23
+      0,
+      0,
+      20
      ]
     },
     "B": {
@@ -621,7 +621,7 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 100,
+     "wallPct": 30,
      "wallVE": 8
     },
     "V": {
@@ -629,23 +629,23 @@
      "wallVE": 25
     },
     "pve10": {
-     "minE": 20,
-     "meanE": 30
-    },
-    "pve12": {
-     "minE": 22,
+     "minE": 32,
      "meanE": 32
     },
-    "pve14": {
-     "minE": 24,
+    "pve12": {
+     "minE": 34,
      "meanE": 34
+    },
+    "pve14": {
+     "minE": 36,
+     "meanE": 36
     },
     "curOk": 100,
     "pveGleich": 100
    },
    "Wandregale": {
     "n": 11,
-    "welt": "44x30",
+    "welt": "44x33",
     "hofFlucht": [
      17,
      19,
@@ -667,11 +667,11 @@
      17
     ],
     "A2D": {
-     "pct": 100,
+     "pct": 0,
      "dMax": [
-      17,
-      19,
-      20
+      0,
+      0,
+      0
      ]
     },
     "B": {
@@ -679,24 +679,24 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 100,
-     "wallVE": 8
+     "wallPct": 0,
+     "wallVE": null
     },
     "V": {
      "wallPct": 18,
      "wallVE": 20
     },
     "pve10": {
-     "minE": 19,
-     "meanE": 29
+     "minE": 31,
+     "meanE": 31
     },
     "pve12": {
-     "minE": 21,
-     "meanE": 30
+     "minE": 33,
+     "meanE": 33
     },
     "pve14": {
-     "minE": 23,
-     "meanE": 33
+     "minE": 35,
+     "meanE": 35
     },
     "curOk": 100,
     "pveGleich": 100
