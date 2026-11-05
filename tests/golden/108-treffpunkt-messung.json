@@ -483,9 +483,9 @@
      5
     ],
     "pveJetzt": [
-     20,
      22,
-     23
+     24,
+     25
     ],
     "d1D": [
      15,
@@ -493,11 +493,11 @@
      18
     ],
     "A2D": {
-     "pct": 0,
+     "pct": 100,
      "dMax": [
-      0,
-      0,
-      0
+      18,
+      21,
+      22
      ]
     },
     "B": {
@@ -505,24 +505,24 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 0,
-     "wallVE": null
+     "wallPct": 100,
+     "wallVE": 8
     },
     "V": {
      "wallPct": 0,
      "wallVE": null
     },
     "pve10": {
-     "minE": 31,
+     "minE": 23,
      "meanE": 31
     },
     "pve12": {
-     "minE": 33,
-     "meanE": 33
+     "minE": 21,
+     "meanE": 32
     },
     "pve14": {
-     "minE": 35,
-     "meanE": 35
+     "minE": 21,
+     "meanE": 33
     },
     "curOk": 100,
     "pveGleich": 100
@@ -541,9 +541,9 @@
      5
     ],
     "pveJetzt": [
-     18,
      19,
-     23
+     21,
+     25
     ],
     "d1D": [
      15,
@@ -551,10 +551,10 @@
      19
     ],
     "A2D": {
-     "pct": 55,
+     "pct": 100,
      "dMax": [
-      0,
-      10,
+      18,
+      20,
       22
      ]
     },
@@ -563,23 +563,23 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 27,
+     "wallPct": 100,
      "wallVE": 8
     },
     "V": {
-     "wallPct": 100,
+     "wallPct": 55,
      "wallVE": 26
     },
     "pve10": {
-     "minE": 28,
-     "meanE": 28
+     "minE": 20,
+     "meanE": 29
     },
     "pve12": {
-     "minE": 30,
+     "minE": 20,
      "meanE": 30
     },
     "pve14": {
-     "minE": 32,
+     "minE": 22,
      "meanE": 32
     },
     "curOk": 100,
@@ -599,9 +599,9 @@
      5
     ],
     "pveJetzt": [
-     18,
-     23,
-     25
+     19,
+     25,
+     27
     ],
     "d1D": [
      14,
@@ -609,11 +609,11 @@
      20
     ],
     "A2D": {
-     "pct": 40,
+     "pct": 100,
      "dMax": [
-      0,
-      0,
-      20
+      16,
+      18,
+      23
      ]
     },
     "B": {
@@ -621,24 +621,24 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 30,
+     "wallPct": 100,
      "wallVE": 8
     },
     "V": {
      "wallPct": 100,
-     "wallVE": 25
+     "wallVE": 27
     },
     "pve10": {
-     "minE": 32,
-     "meanE": 32
+     "minE": 24,
+     "meanE": 33
     },
     "pve12": {
-     "minE": 34,
+     "minE": 23,
      "meanE": 34
     },
     "pve14": {
-     "minE": 36,
-     "meanE": 36
+     "minE": 24,
+     "meanE": 35
     },
     "curOk": 100,
     "pveGleich": 100
@@ -657,9 +657,9 @@
      5
     ],
     "pveJetzt": [
-     20,
      22,
-     24
+     24,
+     26
     ],
     "d1D": [
      14,
@@ -667,11 +667,11 @@
      17
     ],
     "A2D": {
-     "pct": 0,
+     "pct": 100,
      "dMax": [
-      0,
-      0,
-      0
+      17,
+      19,
+      20
      ]
     },
     "B": {
@@ -679,24 +679,24 @@
      "wallVE": null
     },
     "R": {
-     "wallPct": 0,
-     "wallVE": null
+     "wallPct": 100,
+     "wallVE": 8
     },
     "V": {
      "wallPct": 18,
-     "wallVE": 20
+     "wallVE": 22
     },
     "pve10": {
-     "minE": 31,
-     "meanE": 31
+     "minE": 23,
+     "meanE": 32
     },
     "pve12": {
-     "minE": 33,
+     "minE": 22,
      "meanE": 33
     },
     "pve14": {
-     "minE": 35,
-     "meanE": 35
+     "minE": 23,
+     "meanE": 34
     },
     "curOk": 100,
     "pveGleich": 100
