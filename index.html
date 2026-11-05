@@ -742,7 +742,7 @@ const skBlock=(sk,id)=>{const a=skAlt(id);return a&&((sk||{})[a]|0)>0?a:null};
 const skOk=(sk,id)=>{const q=skNeed(id);return !CFG.skill[id].soon&&!skBlock(sk,id)&&(!q||((sk||{})[q]|0)>=CFG.skill.max)};
 const skDeps=id=>{const t=id[0],n=+id[1];return n===0?[t+'1',t+'2']:n===1?[t+'3']:n===2?[t+'4']:[]};
 const skCanSell=(sk,id)=>{if(!SKID.includes(id)||!SESSION.sk0)return false;const r=(sk||{})[id]|0;return r>(SESSION.sk0[id]|0)&&!skDeps(id).some(d=>((sk||{})[d]|0)>0)};
-function skillBuy(id){if(!SKID.includes(id)||SESSION.pts<1||(SESSION.sk[id]|0)>=CFG.skill.max||!skOk(SESSION.sk,id)){SND.ev('deny');return false}SESSION.sk[id]=(SESSION.sk[id]|0)+1;SESSION.pts--;SND.cash();sendKit();return true}
+function skillBuy(id){if(!SKID.includes(id)||SESSION.pts<1||(SESSION.sk[id]|0)>=CFG.skill.max||!skOk(SESSION.sk,id)){SND.ev('deny');return false}SESSION.sk[id]=(SESSION.sk[id]|0)+1;SESSION.pts--;SND.ui('buy');sendKit();return true}
 function skillSell(id){if(!skCanSell(SESSION.sk,id)){SND.ev('deny');return false}if(--SESSION.sk[id]<=0)delete SESSION.sk[id];SESSION.pts++;SND.cash();sendKit();return true}
 function curKit(){const o=SESSION.own,c=SESSION.cons,w=SESSION.wear,sh=CFG.shop,k={w:WPN_ORDER.find(q=>o[q])||'pistol',mask:o.mask?1:0,vh:null,hh:null,sk:Object.assign({},SESSION.sk)};
 for(const q of['vest','helm','pack','drill','pick','radio'])k[q]=clamp(o[q]|0,0,3);
@@ -829,13 +829,16 @@ if(chatShow){const src=chatOpen?chat.slice(-8):chat.filter(l=>chatClk-l.tm<C.lin
 const vis=rows.slice(-(chatOpen?8:C.lines));vis.forEach((r,i)=>{const y=bot-(vis.length-i)*20,w=Math.ceil(g.measureText(r.s).width)+12;plate(x0,y,w,18);g.fillStyle=r.c;g.fillText(r.s,x0+6,y+13)})}
 if(chatOpen){const w=520,x=Math.round(VW/2-w/2),y=VH-72;plate(x,y,w,26);g.fillStyle='#ffb000';g.fillText('Chat',x+8,y+17);g.fillStyle='#e6eaf0';g.fillText(chatBuf+(Math.floor(chatClk*2)%2?'|':''),x+50,y+17);g.textAlign='right';g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('Enter senden, Esc abbrechen',x+w-8,y+17)}
 g.restore()}
+/* Waffenname fuer den Schussklang (SND.tune.wpn): CFG.wpn-Eintrag -> pistol, smg, rifle. Fremde Schuetzen ohne Waffe klingen nach Pistole (frueher alle 'cop'). */
+const wpKey=w=>Object.keys(CFG.wpn).find(k=>CFG.wpn[k]===w)||'pistol';
+SND.setLos((x0,y0,x1,y1)=>los(x0,y0,x1,y1));
 function fxApply(n,a){
 if(n==='say'){feed.unshift({t:6,s:a[0]});if(feed.length>5)feed.pop();LOG.ev('say',a[0])}
 else if(n==='ban'){banner={s:a[0],t:a[1]||2.4};LOG.ev('ban',a[0])}
 else if(n==='rad')funkApply(a)
 else if(n==='fx')fx.push({x:a[0],y:a[1],t:a[3]||1.2,s:a[2]});
 else if(n==='s'){const f=SND[a[0]];if(f)f.apply(null,a.slice(1))}
-else if(n==='sh'){const o=players[a[0]];if(!o||(o===me&&NET.role==='client'))return;o.flash=.05;const ca=a[3]+1.57;cs.push({x:a[1]+Math.cos(a[3])*10,y:a[2]+Math.sin(a[3])*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});if(o===me)SND.shot();else SND.eshot(a[1],a[2],'cop')}
+else if(n==='sh'){const o=players[a[0]];if(!o||(o===me&&NET.role==='client'))return;o.flash=.05;const ca=a[3]+1.57;cs.push({x:a[1]+Math.cos(a[3])*10,y:a[2]+Math.sin(a[3])*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});if(o===me)SND.shot(wpKey(o.wp));else SND.eshot(a[1],a[2],wpKey(o.wp))}
 else if(n==='es'){const e=en.find(q=>q.id===a[0]);if(e)e.fl=.05;SND.eshot(a[1],a[2],a[3])}
 else if(n==='hw'){hole(a[0],a[1]);SND.hit(a[0],a[1],0);dust(a[0],a[1],5);sparks(a[0],a[1],3)}
 else if(n==='hf'){SND.hit(a[0],a[1],1);dust(a[0],a[1],a[2]||5,'110,30,24')}
@@ -1779,7 +1782,7 @@ checkEnd()}
 fxStep(dt);if(NET.role==='host')netHostTick(dt)}
 function clientStep(dt){time+=dt;
 if(live(me)){const c=readInput(dt);c.s=++seq;movePl(me,c);stepSnd(me,c);me.inp=c;pend.push(c);if(pend.length>90)pend.shift();
-if(me.armed&&c.fire&&me.cool<=0&&me.rl<=0&&me.mag>0){me.cool=me.wp.cool;me.flash=.05;const ca=me.a+1.57;cs.push({x:me.x+Math.cos(me.a)*10,y:me.y+Math.sin(me.a)*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});SND.shot()}
+if(me.armed&&c.fire&&me.cool<=0&&me.rl<=0&&me.mag>0){me.cool=me.wp.cool;me.flash=.05;const ca=me.a+1.57;cs.push({x:me.x+Math.cos(me.a)*10,y:me.y+Math.sin(me.a)*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});SND.shot(wpKey(me.wp))}
 NET.conn&&NET.conn.send({t:'in',s:c.s,dt:c.dt,vx:c.vx,vy:c.vy,sn:c.sn,e:c.e,ln:c.ln,fire:c.fire,rl:c.rl,aim:c.aim,a:+c.a.toFixed(3),w:c.w})}
 else me.inp=IDLE;
 if(NET.spec&&specFree)specMove(dt);
@@ -2170,7 +2173,7 @@ else if(m.t==='ret')retMsg(m)
 else if(m.t==='go'){NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;nPl=m.n;if(m.sc)jobSc=m.sc;PZ=Number.isInteger(m.pz)?m.pz:-1;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
 else if(m.t==='snap'){if(scr==='play'&&!ended){LOG.snap();NET.lastSnap=m;applySnap(m)}}
 else if(m.t==='end'){if(scr==='play'&&!ended){NET.lastEnd=m.res;endLocal(m.res)}}
-else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
+else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.ui('buy');shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
 else if(m.t==='rst'){if(scr==='play'||scr==='shop'||NET.spec){NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;if(m.n>0)nPl=m.n|0;if(m.sc)jobSc=m.sc;PZ=Number.isInteger(m.pz)?m.pz:-1;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong'){NET.ping=performance.now()-m.n;LOG.ping(NET.ping)}
 else if(m.t==='lb'){if(NET.spec)spQ=[];scr='lobby';ended=null;paused=false;clearKeys();mouse.down=0;sessReset();if(!NET.spec&&NET.conn)NET.conn.send({t:'kit',k:curKit()})}
@@ -2617,7 +2620,7 @@ const lawCost=()=>{const F=CFG.fahndung.law;return F.base+F.perLv*heatLv(SESSION
 const lawState=()=>SESSION.heat<=0?'kein Bedarf':SESSION.law?'beauftragt':SESSION.wallet<lawCost()?'zu teuer':'kaufen';
 function lawHire(){const p=lawCost();SESSION.heat=heatClamp(SESSION.heat-CFG.fahndung.law.cut);SESSION.law=true;return p}
 function lawBuy(){if(NET.role==='client'){if(NET.conn){NET.conn.send({t:'law'});shopNote={s:'Anwalt wird beauftragt ...',t:3}}return}
-SESSION.wallet-=lawHire();SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2};if(NET.role==='host')bcastRoster()}
+SESSION.wallet-=lawHire();SND.ui('buy');shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2};if(NET.role==='host')bcastRoster()}
 /* Reparatur: fehlender Anteil mal CFG.shop.rep des Stufenpreises, Weste und Helm zusammen */
 function repCost(){const o=SESSION.own,w=SESSION.wear,sh=CFG.shop;let c=0;
 if(o.vest&&w.vest!=null)c+=(1-clamp(w.vest/sh.tier.vest[o.vest-1],0,1))*sh.price.vest[o.vest-1]*sh.rep;
@@ -2637,7 +2640,7 @@ if(it.r){SESSION.wear.vest=null;SESSION.wear.helm=null}
 else if(it.c)SESSION.cons[it.k]=(SESSION.cons[it.k]|0)+1;
 else if(it.t){SESSION.own[it.k]=(SESSION.own[it.k]|0)+1;if(it.k==='vest')SESSION.wear.vest=null;if(it.k==='helm')SESSION.wear.helm=null}
 else SESSION.own[it.k]=1;
-SND.cash();shopNote={s:it.r?'Repariert':it.n+(it.t?' Stufe '+SESSION.own[it.k]:'')+' gekauft',t:2};sendKit()}
+SND.ui('buy');shopNote={s:it.r?'Repariert':it.n+(it.t?' Stufe '+SESSION.own[it.k]:'')+' gekauft',t:2};sendKit()}
 else{SND.ev('deny');shopNote={s:st==='zu teuer'?'Zu teuer':st==='gekauft'?(it.t?'Schon auf der höchsten Stufe':'Schon gekauft'):st==='heil'?'Nichts zu reparieren':st==='voll'?'Vorrat voll':st==='kein Bedarf'?'Keine Fahndung, kein Anwalt nötig':st==='beauftragt'?'Der Anwalt war diesen Besuch schon dran':'Das Sturmgewehr ist besser',t:2}}}
 function openShop(){if(NET.role==='host'){NET.roster=NET.roster.filter(r=>r.id===0||NET.conns.some(c=>c.pid===r.id));bcastRoster()}scr='shop';paused=false;clearKeys();mouse.down=0;shopNote={s:'',t:0};shopConf=-9;SESSION.sk0=Object.assign({},SESSION.sk);sendKit()}
 function shopGo(){if(NET.role==='solo'){startNext();return}

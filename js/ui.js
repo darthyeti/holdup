@@ -413,7 +413,9 @@ return c}
 /* ---------- Eingabe ---------- */
 function tileAt(x,y){const c=cur();if(!c)return null;for(let i=c.t.length-1;i>=0;i--){const t=c.t[i];if(x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h)return t}return null}
 function setSlider(t,x){X.volAdj(t.slider,Math.max(0,Math.min(1,(x-(t.x+130))/(t.w-200))),true)}
-function activate(t){if(!t||!t.act)return;if(t.lock){SND.ev('deny');return}const a=t.act;
+/* Menuetoene (T8, SND.ui): Fokuswechsel, Bestaetigen, Zurueck; Kauf und Fehlschlag spielt der Shop selbst (index.html), Regler haben ihren Piep (volAdj). */
+function setF(id){if(id!==focus){focus=id;SND.ui('focus')}}
+function activate(t){if(!t||!t.act)return;if(t.lock){SND.ui('deny');return}const a=t.act;{const c=cur();if(c&&a===c.back)SND.ui('back');else if(a!=='buy'&&a!=='skill'&&a!=='skillsell'&&a!=='mute'&&a!=='name'&&a!=='paste')SND.ui('ok')}
 if(a==='ui:close'){closeModal();return}
 if(a==='ui:options'||a==='ui:help'||a==='ui:skills'||a==='ui:dbg'||a==='ui:kick'){openModal({k:a.slice(3)});return}
 if(a==='ui:kickAsk'){closeModal();openModal({k:'confirm',title:t.nm&&String(t.arg)[0]==='s'?'ZUSCHAUER ENTFERNEN':'MITSPIELER ENTFERNEN',msg:(t.nm||X.pn(t.arg))+' wird aus dem Raum entfernt und sieht den Titel. Wirklich entfernen?',yesLabel:'Ja, entfernen',yes:'kick',arg:t.arg,no:'ui:kickBack'});return}
@@ -429,19 +431,19 @@ const cx=t=>t.x+t.w/2,cy=t=>t.y+t.h/2;let best=null,bs=1e9;
 for(const t of L){if(t===f)continue;const dx=cx(t)-cx(f),dy=cy(t)-cy(f);let p,q;
 if(k==='ArrowRight'){if(dx<=4)continue;p=dx;q=Math.abs(dy)}else if(k==='ArrowLeft'){if(dx>=-4)continue;p=-dx;q=Math.abs(dy)}else if(k==='ArrowDown'){if(dy<=4)continue;p=dy;q=Math.abs(dx)}else{if(dy>=-4)continue;p=-dy;q=Math.abs(dx)}
 const s=p+2.5*q;if(s<bs){bs=s;best=t}}
-if(best)focus=best.id;return true}
+if(best)setF(best.id);return true}
 function key(k,e){const c=cur();if(c&&k==='Escape'&&c.back&&c.t.every(t=>t.nofocus)){if(!(e||{}).repeat)activate({act:c.back});return true}if(!c||c.t.every(t=>t.nofocus))return false;e=e||{};const ft=c.t.find(t=>t.id===focus&&!t.nofocus);
 if(k==='m'){if(!e.repeat)X.act('mute');return true}
 if(k==='ArrowLeft'||k==='ArrowRight'){if(ft&&ft.slider!=null){X.volAdj(ft.slider,k==='ArrowLeft'?-.05:.05);return true}return nav(k)}
 if(k==='ArrowUp'||k==='ArrowDown')return nav(k);
-if(k==='Tab'){const L=c.t.filter(t=>!t.nofocus),i=L.findIndex(t=>t.id===focus);focus=L[(i+1)%L.length].id;return true}
+if(k==='Tab'){const L=c.t.filter(t=>!t.nofocus),i=L.findIndex(t=>t.id===focus);setF(L[(i+1)%L.length].id);return true}
 if(k==='Enter'||k===' '){if(!e.repeat){const t=(k==='Enter'&&c.enter)?c.t.find(q=>q.id===c.enter):ft;activate(t)}return true}
 if(k==='Escape'){if(!e.repeat&&c.back)activate({act:c.back});return true}
 const t=c.t.find(q=>q.key&&q.key===k);if(t){if(!e.repeat)activate(t);return true}
 return true}
 function down(x,y){const c=cur();if(!c)return false;const t=tileAt(x,y);if(t){if(t.slider!=null){drag=t;setSlider(t,x)}pressed=t.id;if(!t.nofocus)focus=t.id}return true}
 function up(x,y){if(drag){drag=null;pressed=null;return}const c=cur();if(!c){pressed=null;return}const t=tileAt(x,y);if(pressed&&t&&t.id===pressed&&t.slider==null)activate(t);pressed=null}
-function move(x,y){if(drag){setSlider(drag,x);return}const t=tileAt(x,y);hov=t?t.id:null;if(t&&!t.nofocus)focus=t.id}
+function move(x,y){if(drag){setSlider(drag,x);return}const t=tileAt(x,y);hov=t?t.id:null;if(t&&!t.nofocus)setF(t.id)}
 const active=()=>!!cur();
 
 /* ---------- Zeichnen ---------- */

@@ -113,11 +113,11 @@ Tests allgemein: Die Pixel-Schnappschüsse liegen lokal (`tests/golden-local`, n
 
 ### Ton
 
-**T1 Schuss und Explosion mit Körper.** Jeder Schuss bekommt einen tiefen Schlag (40 bis 80 Hz, sehr kurz) und eine kurze Hallfahne, jede Explosion einen langen Tiefton, Nachgrollen und Trümmerprasseln (Rauschen mit Zufallsklicks). Waffen klingen verschieden (Pistole, SMG, Sturmgewehr, Gewehr). Aufwand klein, Risiko: Pegel prüfen (Kompressor), keine Assets.
+**T1 Schuss und Explosion mit Körper (gebaut mit Ticket #120, siehe docs/spielsystem.md).** Jeder Schuss bekommt einen tiefen Schlag (40 bis 80 Hz, sehr kurz) und eine kurze Hallfahne, jede Explosion einen langen Tiefton, Nachgrollen und Trümmerprasseln (Rauschen mit Zufallsklicks). Waffen klingen verschieden (Pistole, SMG, Sturmgewehr, Gewehr). Aufwand klein, Risiko: Pegel prüfen (Kompressor), keine Assets.
 
 **T2 Hall in Innenräumen.** Ein `ConvolverNode` mit selbst erzeugter Impulsantwort (abklingendes Rauschen, keine Datei), zwei Räume: drinnen (kurz, 0,6 s, Halle, Tresor), draußen (sehr kurz, Hauswand-Echo). Jeder Klang geht anteilig in den Hall, je nachdem ob Quelle und Hörer drinnen sind (aus `LAY.bld` oder Raster). Aufwand klein bis mittel, Leistung: ein bis zwei Faltungen, vertretbar, auf "niedrig" aus. Keine Assets.
 
-**T3 Verdeckung durch Wände.** Liegt eine Wand zwischen Quelle und Hörer (`los`), bekommt der Klang einen Tiefpass und wird leiser. Ferne Schüsse dumpf, nahe scharf. Hilft auch der Orientierung (wo schießt die Polizei). Aufwand klein, Leistung: ein `los` je Klang, gedrosselt. Keine Assets.
+**T3 Verdeckung durch Wände (gebaut mit Ticket #120).** Liegt eine Wand zwischen Quelle und Hörer (`los`), bekommt der Klang einen Tiefpass und wird leiser. Ferne Schüsse dumpf, nahe scharf. Hilft auch der Orientierung (wo schießt die Polizei). Aufwand klein, Leistung: ein `los` je Klang, gedrosselt. Keine Assets.
 
 **T4 Umgebung.** Leiser Dauerklang je Karte und Ort: draußen Stadt (Verkehrsrauschen, ferne Hupe, Vögel bei Tag, Grillen nachts), drinnen Raumton (Klimaanlage, Kühlschrank in der Tankstelle, Spielautomaten und Gemurmel im Casino, Stille und Uhrticken im Museum). Alles synthetisch möglich, besser mit freien Aufnahmen. Aufwand klein (synthetisch) bis mittel (mit Dateien), Leistung klein. Risiko: Ladezeit bei Dateien.
 
@@ -127,7 +127,7 @@ Tests allgemein: Die Pixel-Schnappschüsse liegen lokal (`tests/golden-local`, n
 
 **T7 Musikschichten nach Phase und Fahndung.** Der Sequenzer ist schon da. Ausbau: in der Erkundung ein ruhiges Grundmuster statt nur Drone (Bass, gedämpfte Akkorde), das bei Verdacht Schichten dazunimmt, beim Alarm ein Übergang (Trommelwirbel, dann Takt eins der Überfall-Musik), die Fahndungsstufe (`SESSION.heat`) hebt Tempo und Dichte, ein ruhiger Ausklang beim Einsteigen in den Fluchtwagen, ein eigenes Thema im Titel und Shop. Aufwand mittel (synthetisch), Risiko: Musik ist Geschmack, darum Regler und eigene Abschaltung. Alternativ freie Musikstücke in Schichten (Stems), die übereinander geblendet werden.
 
-**T8 Menütöne.** Fokus, Bestätigen, Zurück, Kauf, gesperrt. Aufwand klein, keine Assets.
+**T8 Menütöne (gebaut mit Ticket #120).** Fokus, Bestätigen, Zurück, Kauf, gesperrt. Aufwand klein, keine Assets.
 
 ### Optik-Regler (Qualität niedrig, mittel, hoch)
 
@@ -151,7 +151,7 @@ Dazu eine Selbstprüfung: Liegt die Bildzeit (heute schon in `LOG.cost` gemessen
 
 ## 4. Pakete und Reihenfolge
 
-**Paket A: Schnelle Gewinne (Empfehlung: zuerst).** O1 Leuchten zwischenspeichern, O5 Spuren, O6 Treffer mit Wucht, O9 weiche Sichtkante, O15 Farbkorrektur, T1 Schuss und Explosion mit Körper, T3 Verdeckung, T8 Menütöne, dazu der Optik-Regler als Gerüst. Aufwand: zwei bis drei kleine Tickets, keine Assets, kein Netz. Wirkung: Feuergefechte fühlen sich sofort härter an. Label `spielgefuehl`, Vorschau unter `/pr/<n>/`.
+**Paket A: Schnelle Gewinne (Empfehlung: zuerst). Stand: A3 (T1, T3, T8) gebaut mit Ticket #120, Test `180-ton-wucht`.** O1 Leuchten zwischenspeichern, O5 Spuren, O6 Treffer mit Wucht, O9 weiche Sichtkante, O15 Farbkorrektur, T1 Schuss und Explosion mit Körper, T3 Verdeckung, T8 Menütöne, dazu der Optik-Regler als Gerüst. Aufwand: zwei bis drei kleine Tickets, keine Assets, kein Netz. Wirkung: Feuergefechte fühlen sich sofort härter an. Label `spielgefuehl`, Vorschau unter `/pr/<n>/`.
 
 **Paket B: Licht und Höhe (danach).** O2 weiche Schatten, O3 Wandkronen, O4 Bodendetails, O7 Licht-Ebene, T2 Hall. Vorher Auslagern Schritt 4 (`js/draw.js`, docs/ideen-und-planung.md) mit einem Pixel-Hash-Test je Szenario und Phase, damit die Optik-Arbeit nicht mit jedem anderen PR in `start()` kollidiert. Aufwand: mittel, berührt die statische Ebene (`turn-hash`, Ebenenvergleich), deshalb `voller-lauf`.
 
