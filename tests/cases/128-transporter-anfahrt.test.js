@@ -66,7 +66,7 @@ module.exports = [
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const D = __dbg, o = {}; D.sessReset(); D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(202);
-        const L = D.LAY(); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.snp.from = 99; D.startHeist(false, D.get().me); const W = D.world(), T = 32;
+        const L = D.LAY(); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.snp.from = 99; D.CFG.truck.cop.on = 0; D.startHeist(false, D.get().me); const W = D.world(), T = 32;
         let far = null; const keep = () => { const m = D.get().me; m.hp = 1e9; m.x = far ? far[0] : L.spawn.x; m.y = far ? far[1] : L.spawn.y; };
         const mk = (tx, ty) => { const e = D.mkCop(tx * T + 16, ty * T + 16); D.toPost(e); return e; };
         const posts = L.posts.slice(); const po = posts[0];

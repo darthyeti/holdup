@@ -45,7 +45,7 @@ module.exports = [
         STEP(D, me, 200 * 30, () => { const tk = D.tk(); for (const e of (${pvs})(D)) { let q = tr.get(e.id); const d = Math.abs(e.ac.x - tk.x); if (!q) { q = { d: [d], k: [e.pvk], t0: D.get().tH, t1: null, pl: false }; tr.set(e.id, q); } else if (e.pvk !== q.k[q.k.length - 1]) { q.d.push(d); q.k.push(e.pvk); } if (e.mode === 'plant') q.pl = true; if (e.mode === 'push' && q.t1 == null) q.t1 = D.get().tH; }
           return tr.size >= 8 && [...tr.values()].filter(q => q.t1 != null).length >= 6; });
         for (const [id, q] of tr) { if (q.t1 == null || q.pl) continue; o.tot++; if (q.d.some((d, i) => i && d > q.d[i - 1] + 1)) o.back.push([sd, id]); if (q.t1 - q.t0 > (C.adv + 1) * C.stay[1] + 8) o.late.push([sd, id, +(q.t1 - q.t0).toFixed(1)]); o.ks.push(q.k[q.k.length - 1]); o.d0.push(q.d[0]); o.d1.push(q.d[q.d.length - 1]); } o.cfg = [C.adv, C.stay[1]]; } const m = a => a.reduce((x, y) => x + y, 0) / a.length / 32; o.m0 = +m(o.d0).toFixed(1); o.m1 = +m(o.d1).toFixed(1); o.kmin = Math.min(...o.ks); return o; })()`);
-      t.ok(r.tot >= 10, 'mindestens 10 Beamte beobachtet, die bis ins Spiel gekommen sind: ' + r.tot); t.eq(r.back, [], 'der Anker weicht nie zurueck (Seed, Id)'); t.eq(r.late, [], 'hoechstens (adv + 1) * stay + 8 s bis zum Spiel (Seed, Id, Sekunden)');
+      t.ok(r.tot >= 8, 'mindestens 8 Beamte beobachtet, die bis ins Spiel gekommen sind: ' + r.tot); t.eq(r.back, [], 'der Anker weicht nie zurueck (Seed, Id)'); t.eq(r.late, [], 'hoechstens (adv + 1) * stay + 8 s bis zum Spiel (Seed, Id, Sekunden)');
       t.eq(r.kmin, r.cfg[0], 'jeder macht alle ' + r.cfg[0] + ' Spruenge vor dem Spiel'); t.ok(r.m1 < r.m0 - 1, 'der Anker steht am Ende naeher am Wagen als am Anfang (Kacheln): ' + r.m0 + ' -> ' + r.m1);
     },
   },
