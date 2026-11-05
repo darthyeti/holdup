@@ -300,7 +300,7 @@ let n=0;const l=lay.lobby;for(let y=l[1];y<=l[3];y++)for(let x=l[0];x<=l[2];x++)
 // Weglaengen wie in der Klassik halten (Schwierigkeit haengt stark daran): Start zu Tresor, Tresor zu Ausgang, Frontposten zu Tresor
 const P=(a,c)=>pathTo(a[0]*T+16,a[1]*T+16,c[0],c[1]).length,dr=[v0.door[0]-v0.dir,v0.door[1]+1],ex=ln.exit.goal,p0=lay.posts[0],m=CFG.map,inr=(v,r)=>v>=r[0]&&v<=r[1];
 /* Kammer in der Bank (K4): der Ostfluegel ist 3 Spalten breiter, der Weg Tresor zu Ausgang im Osten wird entsprechend laenger, die obere Grenze rueckt mit. */
-const stx=lay.q&&lay.q.stash&&lay.q.tp!=='W'?3:0,rb=lay.q&&lay.q.tp==='W'?(lay.q.sw?m.bws:m.bw):lay.q&&lay.q.sw?m.bs:m.b;
+const stx=lay.q&&lay.q.stash&&lay.q.tp!=='W'?CFG.stash.add.bank:0,rb=lay.q&&lay.q.tp==='W'?(lay.q.sw?m.bws:m.bw):lay.q&&lay.q.sw?m.bs:m.b;
 return inr(P(sp,dr),m.a)&&inr(P(dr,ex),[rb[0],rb[1]+stx])&&inr(P([p0.x,p0.y],dr),m.c)}finally{CX.vaultOpen=ov}}
 /* ---- Szenario Geldtransporter (fahrender Hinterhalt): Eine Strasse mit Haeuserbloecken (60x24 Kacheln), der Panzerwagen faehrt von Westen nach Osten.
    Dieselben LAY-Felder wie die Bank, die bankspezifischen (Tresor, Kameras, Angestellte) sind leer. LAY.truck markiert das Szenario, LAY.spots sind die Sperrstellen quer ueber die Fahrbahn (rd). ---- */
@@ -512,7 +512,9 @@ function gsBoxes(c,x,y,w,h,r,pal){const n=Math.max(2,Math.floor(w/6)),m=Math.max
 const CLASSICGP={sw:14,sd:4,er:7,np:2,ps:'L',classic:true};
 /* Zufallsparameter der Tankstelle (eigener Strom, wie genParams der Bank): k ist der Versuch, Versuch 0 ist mit CFG.gasGen.classic die Klassik-Huelle. */
 function gasParams(sn,k){const G=CFG.gasGen,P=Object.assign({},CLASSICGP);if(!G.on)return P;const r=mulberry32((Math.imul(sn|0,374761393)+Math.imul(k+1,668265263))^0x2f6b1d93),ri=(a,b)=>a+Math.floor(r()*(b-a+1)),c=r();if(k===0&&c<G.classic)return P;
-P.sw=ri(G.sw[0],G.sw[1]);P.sd=ri(G.sd[0],G.sd[1]);P.er=ri(7,4+P.sd);const q=r();P.np=q<.2?1:q<.8?2:3;P.ps=r()<.5?'L':'R';P.classic=P.sw===14&&P.sd===4&&P.er===7&&P.np===2;return P}
+P.sw=ri(G.sw[0],G.sw[1]);P.sd=ri(G.sd[0],G.sd[1]);P.er=ri(7,4+P.sd);const q=r();P.np=q<.2?1:q<.8?2:3;P.ps=r()<.5?'L':'R';P.classic=P.sw===14&&P.sd===4&&P.er===7&&P.np===2;
+/* Kammer (K5, CFG.stash): zwei weitere angehaengte Wuerfe, Ja/Nein und Art (die Klassik-Huelle bekommt keine). */
+const s1=r(),s2=r(),K=CFG.stash;if(!P.classic&&K&&K.on&&K.scs.includes('gas')&&s1<K.p)P.stash=s2<.5?'abstell':'wc';return P}
 function gsShopOf(sn){const hr=mulberry32((((sn)*7919)>>>0)^0x3a1f5c27);return GS_SHOPS[Math.floor(hr()*GS_SHOPS.length)]}
 /* Breite der Verkaufsflaeche (Paket P1): schiebt einen 2x2-Block ueber freie Kacheln (x 1..sw, y 6..5+sd) von einem Startblock an der Vordertuer (unterste Zeile, ueberlappt die zwei Tuerkacheln um mindestens eine Spalte) bis zu einem Zielblock an der Fluchttuer (Spalte sw, ueberlappt die zwei Tuerzeilen um mindestens eine Zeile). Liest das Raster (isSol), q = lay.q (sw, sd, er). */
 function gasWide(q){const sw=q.sw,sd=q.sd,er=q.er,fd=1+Math.floor((sw-2)/2),ok=(x,y)=>x>=1&&y>=6&&x+1<=sw&&y+1<=sd+5&&!isSol(x,y)&&!isSol(x+1,y)&&!isSol(x,y+1)&&!isSol(x+1,y+1),seen=new Set(),w=[];
@@ -528,13 +530,17 @@ for(const [x0,x1,y0,y1] of [[1,38+q.dx,10,S],[12,38+q.dx,7,9]])for(let y=y0;y<=y
 function jewWide(q){const hw=q.hw,hd=q.hd,dx=hw-13,vd=hw-2-q.vx,ok=(x,y)=>x>=1&&y>=1&&x+1<=22+dx&&y+1<=hd&&!isSol(x,y)&&!isSol(x+1,y)&&!isSol(x,y+1)&&!isSol(x+1,y+1),seen=new Set(),w=[];
 for(let x=vd-1;x<=vd+1;x++)if(ok(x,hd-1)){w.push([x,hd-1]);seen.add(x+','+(hd-1))}
 for(let h=0;h<w.length;h++){const c=w[h];if(c[0]===21+dx&&c[1]===10)return true;for(const d of CX.D4){const nx=c[0]+d[0],ny=c[1]+d[1],k=nx+','+ny;if(seen.has(k)||!ok(nx,ny))continue;seen.add(k);w.push([nx,ny])}}return false}
-function gasLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.gasGen;if(G.on){const H=gsShopOf(sn);for(let k=0;k<G.tries;k++){const P=gasParams(sn,k);if(P.classic)return genGas(sn,P);if(P.sd<H.minSd||P.sw*P.sd<G.minArea)continue;const lay=finishLay(genGas(sn,P));if(validateMap(lay).ok){lay.tries=k+1;return lay}}}return genGas(sn,CLASSICGP)}
-function genGas(sn,P){const sw=P.sw,sd=P.sd,er=P.er,fd=1+Math.floor((sw-2)/2),bot=5+sd,wall=6+sd,dx=sw-14,cx0=10;frameWorld(44,30,-6,-6,13);setc(37,er,'o');setc(37,er+1,'o');
+function gasLayout(sd){const sn=typeof sd==='number'?sd:7,G=CFG.gasGen;if(G.on){const H=gsShopOf(sn);for(let k=0;k<G.tries;k++){const P=gasParams(sn,k);if(P.classic)return genGas(sn,P);if(P.sd<H.minSd||P.sw*P.sd<G.minArea)continue;let lay=finishLay(genGas(sn,P));if(validateMap(lay).ok){lay.tries=k+1;return lay}
+if(P.stash){/* Rueckfall: dieselbe Huelle ohne Kammer (K5) */lay=finishLay(genGas(sn,Object.assign({},P,{stash:null})));if(validateMap(lay).ok){lay.tries=k+1;return lay}}}}return genGas(sn,CLASSICGP)}
+function genGas(sn,P){const sw=P.sw,sd=P.sd,er=P.er,fd=1+Math.floor((sw-2)/2),bot=5+sd,wall=6+sd,dx=sw-14,cx0=10,sk=P.stash,by0=sk?-3:0;frameWorld(44,sk?33:30,-6,sk?-9:-6,13);setc(37,er,'o');setc(37,er+1,'o');
 const H=P.shop!=null?GS_SHOPS[P.shop]:gsShopOf(sn),SH=H.sh(sw),py=wall+2,pxL=Math.min(H.pl,fd-4),pxR=Math.max(sw-H.pr,fd+4),isl=[];
 if(P.np>=2||P.ps==='L')isl.push([pxL,py]);if(P.np>=2||P.ps==='R')isl.push([pxR,py]);if(P.np===3){if(pxR-3>=fd+4)isl.push([pxR-3,py]);else if(pxL+3<=fd-4)isl.push([pxL+3,py])}isl.sort((a,b)=>a[0]-b[0]);
 const PU=[].concat(...isl.map(a=>[[a[0],a[1]],[a[0]+1,a[1]]]));
 asc(gasRows(sw,sd,er),0,0);SH.forEach(a=>fill(a[0],a[1],a[0]+a[2]-1,a[1]+a[3]-1,'C'));H.lg.forEach(a=>setc(a[0],a[1],a[2]));PU.forEach(a=>setc(a[0],a[1],'u'));
-const sx=a=>a[0]>=16?a[0]+dx:a[0];[[18,1],[19,1],[18,2],[-2,-3],[24,10],[28,4]].forEach(a=>setc(sx(a),a[1],'k'));[[20,5],[21,9],[17,11],[26,8],[-2,5],[-2,10],[10,-3]].forEach(a=>setc(sx(a),a[1],'q'));[[2,22],[9,22],[16,22],[24,22],[31,22],[0,15],[15,15]].forEach(a=>setc(a[0],a[1],'p'));
+/* Kammer im Lager (K5, Plan Kammern, Personalbereich): Das Gebaeude waechst um drei Zeilen nach Norden (y -3..-1 ueber der ganzen Breite, ausser dem Lager massive Wand), die Welt mit. Im Lager entsteht ein Gang (x4..5, y-2..0) und links davon, ab x6, die Kammer (Innenraum 2 x 2 in x7..8, y-2..-1, Tuer in der Westwand oben, die Reihe unten an der Wand zum Lager ist ohne Sicht durch die Tuer). Die Hintertuer zieht in die neue Nordwand (4,-3). */
+let SK=null;if(sk){fill(0,-3,sw+1,-1,'#');fill(4,-2,5,0,'.');setc(7,0,'#');setc(4,-3,'L');setc(6,-2,'d');fill(7,-2,8,-1,'.');SK={kind:sk,door:[6,-2],out:[5,-2],cells:[[7,-2],[8,-2],[7,-1],[8,-1]],deep:[[7,-1],[8,-1]]}}
+const inBlk=a=>sk&&a[0]>=0&&a[0]<=sw+1&&a[1]>=-3&&a[1]<=-1;
+const sx=a=>a[0]>=16?a[0]+dx:a[0];[[18,1],[19,1],[18,2],[-2,-3],[24,10],[28,4]].filter(a=>!inBlk([sx(a),a[1]])).forEach(a=>setc(sx(a),a[1],'k'));[[20,5],[21,9],[17,11],[26,8],[-2,5],[-2,10],[10,-3]].filter(a=>!inBlk([sx(a),a[1]])).forEach(a=>setc(sx(a),a[1],'q'));[[2,22],[9,22],[16,22],[24,22],[31,22],[0,15],[15,15]].forEach(a=>setc(a[0],a[1],'p'));
 const winS=[];for(let x=1;x<=sw;x++)if(x!==fd&&x!==fd+1)winS.push(x);
 const mr=mulberry32((((sn)*2654435761)>>>0)^0x5bd1e995),ms=genMission(mr,'g',sn),tr=mulberry32((((sn)*40503)>>>0)^0x1b873593),ti=tr()<.5?2:0,tw=tr(),di=tw<.35?0:tw<.55?1:tw<.85?2:3;
 ms.civ=Math.max(1,Math.min(3,Math.round(ms.civ*.4)));ms.guards=ms.lg.includes('sicher')?2:Math.min(ms.guards,1);ms.cams=Math.max(2,Math.min(4,ms.cams-4));
@@ -553,27 +559,27 @@ const tags=lageTags(ms,ev,evTag,camsSel.length,3);
 const deskT=[[4,1],[5,1]],goods=[];
 for(let x=Math.max(cx0,sw-4);x<=sw;x++)goods.push({k:'cig',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
 SH.forEach(a=>goods.push({k:'shelf',x:(a[0]+a[2]/2)*T,y:(a[1]+a[3]/2)*T,rc:[a[0]*T,a[1]*T,a[2]*T,a[3]*T],r:50}));
-return{seed:sn,decor:decorOf(DC_GAS(dx)),gas:true,hall:H.n,theme:mkTheme(ti,ms.lg.includes('nacht')?4:di,0),bld:{x0:0,y0:0,x1:sw+1,y1:wall},winN:[],winS,
-mat:(x,y)=>{if(x>=0&&x<=sw+1&&y>=0&&y<=wall)return(y<=4&&x!==9)?'w':'m';
+return{seed:sn,decor:decorOf(DC_GAS(dx)),gas:true,hall:H.n,theme:mkTheme(ti,ms.lg.includes('nacht')?4:di,0),bld:{x0:0,y0:by0,x1:sw+1,y1:wall},winN:[],winS,
+mat:(x,y)=>{if(x>=0&&x<=sw+1&&y>=by0&&y<=wall)return(y<=4&&x!==9)?'w':'m';
 if(y>=22)return'l';if(y>=20)return's';if(y>=16)return'a';if(y>=14)return's';if(x>sw+1)return'a';return'y'},
 paintFloor(s){const r=mulberry32(sn*7+1);
 for(let i=0;i<40;i++){const x=T+r()*(sw-1)*T,y=(wall+1)*T+r()*3*T,q=s.createRadialGradient(x,y,0,x,y,10+r()*14);q.addColorStop(0,'rgba(25,22,20,.28)');q.addColorStop(1,'rgba(25,22,20,0)');s.fillStyle=q;s.fillRect(x-24,y-24,48,48)}
 for(const a of isl.map(q=>[q[0]-.6,q[1]-.45])){s.fillStyle='#7c828a';s.fillRect(a[0]*T,a[1]*T,3.2*T,1.9*T);s.fillStyle='#aeb4bb';s.fillRect(a[0]*T+3,a[1]*T+3,3.2*T-6,1.9*T-6)}
 s.strokeStyle='rgba(235,200,60,.7)';s.lineWidth=2;s.strokeRect(1.2*T,(wall+1.2)*T,(sw-.4)*T,2.6*T);
-s.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++)s.fillRect((sw+2.5)*T+i*0,2*T+i*T*1.6,3*T,2)},
+s.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++)s.fillRect((sw+2.5)*T+i*0,2*T+i*T*1.6,3*T,2);if(SK)stashFloor(s,SK)},
 paintTop(s){const r=mulberry32(sn*13+5),PAL=['#c4402f','#e8b84a','#3a7fc4','#59a65a','#d8d4c8','#8a4fc4'];
 decorPaint(s,DC_GAS(dx).map((d,i)=>Object.assign({i,bx:d.x,by:d.y},d)));
 for(const q of goods)gsBoxes(s,q.rc[0],q.rc[1],q.rc[2],q.rc[3],r,q.k==='cig'?['#d8d4c8','#c4402f','#2a2e34','#e8b84a']:PAL);
 s.fillStyle='#3b4048';s.fillRect(6*T+8,1*T+2,16,10);s.fillStyle='#e0b020';s.fillRect(6*T+14,1*T+5,4,4);s.fillStyle='rgba(255,255,255,.25)';s.fillRect(6*T+8,1*T+2,16,1);
-s.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<8;i++)s.fillRect(0*T+10+i*30,18*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(14*T+i*30,18*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(24*T+i*30,18*T+14,12,2)},
+s.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<8;i++)s.fillRect(0*T+10+i*30,18*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(14*T+i*30,18*T+14,12,2);for(let i=0;i<8;i++)s.fillRect(24*T+i*30,18*T+14,12,2);if(SK)stashTop(s,SK)},
 spawn:{x:(fd+.9)*T,y:(wall+2.3)*T},
-zones:[[1,1,8,4],[10,1,sw,4],[0,-99,99,-1],[sw+2,-99,99,wall]],lobby:[1,6,sw,bot],
+...(SK?{stash:SK}:{}),zones:[[1,sk?-3:1,8,4],[10,1,sw,4],[0,-99,99,sk?-4:-1],[sw+2,-99,99,wall]],lobby:[1,6,sw,bot],
 cams:camsSel,tellers:[[cx0+2,4]],mgr:null,guards,civ:ev.includes('feiertag')?Math.min(CFG.ev.civMax,ms.civ*2):ms.civ,
 mission:{code:ms.code,vault:ms.vault,guards:ms.guards,west:false,cams:camsSel.length,civ:ms.civ,tags,ev,lg:ms.lg||[],...(ms.lgw?{lgw:ms.lgw}:{}),at:ms.at,extra,bags:[],blackoutAt:ev.includes('strom')?ms.at.strom:null},
-note:deskT[ms.noteIdx%2],mon:[8,1],vault:{door:[3,2],pad:[4,4],dir:-1,bundles:[[1,2],[2,3]]},tills:[[cx0+2,5]],atms:[],backDoors:[[7,0]],
+note:deskT[ms.noteIdx%2],mon:[8,1],vault:{door:[3,2],pad:[4,4],dir:-1,bundles:[[1,2],[2,3]]},tills:[[cx0+2,5]],atms:[],backDoors:[sk?[4,-3]:[7,0]],
 sw:{x:6*T+16,y:1*T+22},exit:{x:(sw+2)*T,y0:(er-1)*T,y1:(er+3)*T,dir:1,tx:sw+2},van:{y:(er+1)*T,x0:(sw+8)*T,stop:(sw+2)*T,dir:-1},flip:false,
 ...(P.classic?{posts:[{x:4,y:15,a:-1.57,k:'S'},{x:18,y:6,a:3.14,k:'E',anchor:true},{x:-1,y:8,a:0,k:'W'},{x:7,y:-1,a:1.57,k:'N',door:[7,0]},{x:10,y:15,a:-1.57,k:'S'},{x:18,y:9,a:3.14,k:'E',anchor:true},{x:3,y:-1,a:1.57,k:'N'},{x:14,y:15,a:-1.57,k:'S'},{x:-1,y:4,a:0,k:'W'},{x:12,y:-1,a:1.57,k:'N'},{x:7,y:15,a:-1.57,k:'S'},{x:19,y:4,a:3.14,k:'E',anchor:true},{x:5,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:12,y:15,a:-1.57,k:'S'},{x:2,y:15,a:-1.57,k:'S'}],
-slots:{W:[12,7,2,-3],E:[17,22,27,32]}}:{q:{sw,sd,er,np:P.np,ps:P.ps}}),laneY:19*T,title:titleBox(),bn:CFG.gas.bn,polAt:CFG.gas.pol,wb:CFG.gas.wb,goods,
+slots:{W:[12,7,2,-3],E:[17,22,27,32]}}:{q:{sw,sd,er,np:P.np,ps:P.ps,...(sk?{stash:sk}:{})}}),laneY:19*T,title:titleBox(),bn:CFG.gas.bn,polAt:CFG.gas.pol,wb:CFG.gas.wb,goods,
 pumps:PU.map(a=>({x:a[0],y:a[1],hp:CFG.gas.pump.hp}))}}
 /* ---- Szenario Museum bei Nacht: Gebaeude x0..27, y0..17. Westgalerie mit vier Gemaelden, Atrium mit Infotresen, Sicherheitsraum (Monitore, Hauptschalter, Hintertuer) im Norden, Ostgalerie mit Statue und Reliktvitrinen hinter einem Lasertor, Depot im Nordosten hinter einem zweiten Laser.
    Eingaenge: Haupteingang (Glas, Sueden), Hintertuer (Norden, direkt in den Sicherheitsraum) und Osttuer (Fluchttuer in der Ostgalerie, von innen leise zu entriegeln, so kommt man an den Lasern vorbei raus). Laser (LAY.lasers) loesen in Phase 1 Alarm aus, solange die Kameras laufen. ---- */
