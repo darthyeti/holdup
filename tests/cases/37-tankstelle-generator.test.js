@@ -80,7 +80,7 @@ module.exports = [
           const sw = lay.q.sw, fd = 1 + Math.floor((sw - 2) / 2), wall = lay.bld.y1, bot = wall - 1, tag = 'gas#' + s + ' ' + lay.hall + ' ' + JSON.stringify(lay.q);
           if (lay.bld.x1 !== sw + 1 || lay.bld.y1 !== 6 + lay.q.sd) bad.push(tag + ' Gebaeudekasten ' + JSON.stringify(lay.bld));
           // Lager mit Safe (x0..9, y0..5) in der Huelle des Rasters: nur die Hallen-Kisten wechseln
-          const w = D.world(); store.add(lay.hall + ':' + [0, 1, 2, 3, 4, 5].map(y => Array.from({ length: 10 }, (_, x) => w.cell(x, y)).join('')).join('/'));
+          const w = D.world(); store.add((lay.stash ? 'K' : '') + lay.hall + ':' + (lay.stash ? [-3, -2, -1, 0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5]).map(y => Array.from({ length: 10 }, (_, x) => w.cell(x, y)).join('')).join('/'));
           const rep = D.validateMap(lay); if (rep.err.length || rep.warn.length) bad.push(tag + ' validateMap ' + rep.err.concat(rep.warn).map(e => e.r + ': ' + e.m).join(' | '));
           // Zapfsaeulen: 2 je Insel, hoechstens 3 Inseln, mindestens 3,5 Kacheln von beiden Tuerkacheln (die Explosion reicht 3), Posten ausserhalb des Gefahrenradius
           pumps[lay.pumps.length] = (pumps[lay.pumps.length] || 0) + 1; if (lay.pumps.length % 2 || lay.pumps.length < 2 || lay.pumps.length > 6) bad.push(tag + ' ' + lay.pumps.length + ' Zapfsaeulen');
@@ -100,7 +100,7 @@ module.exports = [
       t.note(r.n + ' Karten, Zapfsaeulen je Karte ' + JSON.stringify(r.pumps) + ', kleinster Abstand Saeule zu Tuer ' + r.minPump + ', Route zu Eingang ' + r.minRoute);
       t.eq(r.bad, [], 'Abweichungen (' + r.nbad + ')');
       t.ok(r.n === 400, 'genug generierte Karten: ' + r.n);
-      t.ok(r.stores <= 4, 'das Lager mit Safe ist ein fester Block, nur die Hallen-Kisten wechseln (hoechstens vier Raster): ' + r.stores);
+      t.ok(r.stores <= 8, 'das Lager mit Safe ist ein fester Block, nur die Hallen-Kisten wechseln (hoechstens vier Raster, mit Kammer (K5) noch einmal vier): ' + r.stores);
     },
   },
   {

@@ -51,7 +51,7 @@ module.exports = [
           k++; out.n++; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; const g = D.get(), me = g.me, L = D.LAY(), dx = L.q ? L.q.ww - 9 : 0; for (const c of g.cams) c.off = true; L.mission.blackoutAt = null;
           for (const q of g.npcs) if (q.st === 'away') q.at = 4;   // der Wachwechsel kommt nach 4 s dazu
           for (let i = 0; i < 30 * 100; i++) { me.x = -300; me.y = -300; D.update(1 / 30); if (i % 3) continue; const gs = D.get().npcs.filter(q => q.k === 'grd' && q.st === 'idle'); out.rng = gs[0] ? gs[0].rng : out.rng; out.fov = gs[0] ? gs[0].fov : out.fov;
-            for (const q of gs) { if (q.x / T >= 17 + dx) out.laser++; }
+            for (const q of gs) { if (q.x / T >= 17 + dx && q.x / T < L.bld.x1 && q.y / T > L.bld.y0 && q.y / T < L.bld.y1) out.laser++; }   // nur im Haus: der Wachwechsel kommt von draussen (Ticket 107), draussen gibt es keinen Laserbereich
             for (let a = 0; a < gs.length; a++) for (let b = a + 1; b < gs.length; b++) { const d = Math.hypot(gs[a].x - gs[b].x, gs[a].y - gs[b].y) / T; if (gs[a].id < 2 && gs[b].id < 2) { if (d < out.minD) { out.minD = d; out.worst = sd; } } else if (d < out.minAll) out.minAll = d; } } }
         return out; })()`);
       t.ok(r.n >= 30, 'Aufbau: genug Karten mit zwei und mehr Wachen: ' + r.n);

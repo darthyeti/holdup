@@ -13,6 +13,7 @@ Tills Wünsche (26. Oktober 2026, vor dem Feierabend):
 - **Spur Z, Zuschauer.** Zuschauer sind passive Clients ohne Spielerplatz. Sie dürfen jederzeit kommen (auch in ein laufendes Spiel), sehen das Spiel aus der Sicht eines Spielers oder frei, und bekommen den Strom mit halber Rate (10 statt 20 Schnappschüsse je Sekunde). Obergrenze 6 je Raum. Gemessen: Ein Schnappschuss kostet den Host 0,07 ms, die Bandbreite je Empfänger ist der eigentliche Engpass. Zwei Wegwerf-Versuche haben belegt, dass die zwei größten technischen Fragen harmlos sind: Eine Platzhalter-Figur als `me` läuft in allen Szenarien ohne Fehler, und ein Zuschauer, der mitten im Gefecht einsteigt, hat nach 12 s denselben Zustand wie ein Dauer-Client.
 - **Spur W, Wettkampf.** Zwei getrennte Coop-Räume (zwei Hosts, je bis zu vier Spieler) auf derselben Karte, verbunden durch eine dünne Host-zu-Host-Leitung für Start, Fortschritt und Ergebnis. Die Zuschauer sehen das eine Team in voller Ansicht und beide Teams als Punkte auf derselben Karte (zwei Welten, eine Karte). Wichtigste Einschränkung: Das Spiel ist nicht deterministisch (Streuung, Beamte, Zivilisten würfeln), fair heißt deshalb "gleiche Bedingungen", nicht "gleiche Ergebnisse".
 - **Reihenfolge.** F1 und F2 (Funk, Markierung), F3 (Chat), W0 (Seed-feste Zivilisten, klein), Z1 bis Z4 (Zuschauer), W1 bis W3 (Wettkampf). Die Serien-Code-Schritte S1 bis S3 (docs/ideen-und-planung.md) machen den Wettkampf schöner, sind aber keine Voraussetzung.
+- **Spur B und Spur L (Plan v1 vom 4. November 2026).** Coop-Bot und getrennte Coop-Werte (#13), Bestandsaufnahme und Messplan für den Lag-Ausgleich des eigenen Schusses (#12). Spur N hat dazu einen Bauplan für N1 und N2 (#11) mit Tills Antworten.
 - **Vorab zu klären (Till, Abschnitt Entscheidungen):** Netz-Realität (strenge NATs, Relay), Standardwerte (Zuschauer an, Obergrenze, Verzögerung im Wettkampf), Wertung und Länge eines Duells.
 
 ## So würde es sich anfühlen
@@ -336,6 +337,134 @@ Empfohlene Reihenfolge: **N0, N3, N1, N2.** N3 zuerst, weil es Tills ausdrückli
 4. **Soll die Rückkehr auch gehen, wenn der Browser-Tab neu geladen oder abgestürzt ist?** Empfehlung: **Ja, aber als zweiter Schritt (N1b), nicht gleich.** Tab zu oder Neuladen sind die häufigsten Gründe für einen Abriss. Der Spielstand (Konto, Ausrüstung) des Spielers müsste dafür im Tab gesichert werden (`sessionStorage`), das ist eine kleine, getrennte Aufgabe. Erst N1 mit "Tab lebt, Netz war weg" bauen und im Spiel prüfen, dann entscheiden.
 5. **Hostwechsel, wenn der Host für immer ausfällt.** Empfehlung: **Nein zum Hostwechsel mit Übernahme der laufenden Runde** (teuer, fehleranfällig, kaum testbar, nur für einen seltenen Fall), **ja zu N2** (Host kommt nach kurzem Netzproblem zurück, das ist der häufige Fall) und **später vielleicht Nachfolge-Raum (N4)**: Wenn der Host weg ist, öffnet ein Mitspieler automatisch einen neuen Raum, alle landen darin, die Serie bleibt, nur die laufende Runde ist verloren. Till entscheidet, ob N4 überhaupt auf die Liste soll, nach dem ersten echten Abriss-Log.
 
+### Plan v1 für den Rest von #11: N1, N2 und der Ausfall des Hosts (4. November 2026)
+
+Nachtrag zum Plan oben, auf dem Stand von N0 und N3 (PR #46, Branch `claude/36-rueckkehr-duell`, `VER` 74). Die Stufen N1 und N2 oben bleiben der Entwurf, dieser Abschnitt macht daraus Bauschritte je PR und trägt Tills Antworten ein. **Nichts davon ist gebaut.**
+
+**Tills Antworten (Akten vom 29. Oktober 2026, Board "Holdup Entscheidungen"):**
+- `netz-frist`: wie empfohlen, **60 s im laufenden Auftrag, 5 min in Shop, Auftragswahl und Ergebnis**.
+- `netz-figur`: wie empfohlen, **die Figur bleibt stehen, ist unverwundbar und kann nichts tun** (keine Beute sichern, nicht entkommen), der Schutz entfällt ab dem dritten Abriss in derselben Runde.
+- `netz-tab`: **Rückkehr nach Neuladen oder Absturz des Tabs gleich mit N1** bauen, nicht später (Abweichung von der Empfehlung).
+- `netz-host`: wie empfohlen, **kein Hostwechsel mit Übernahme der Runde**, N2 (Host kommt nach kurzem Netzproblem zurück) ja, über den Nachfolge-Raum (N4) entscheidet Till nach dem ersten echten Abriss-Log.
+- `netz-duell`: wie empfohlen (Rückkehr nach dem Duell auf Knopfdruck, gebaut in N3).
+
+**Was realistisch ist (host-autoritativ, der Zustand liegt nur beim Host):**
+- *Ein Client kommt zurück:* **realistisch und der Kern von #11.** Der Host hat die Welt, die Figur und das Kit des Spielers, der Client braucht nur einen neuen Beitritt und den Spät-Einstieg, den Zuschauer seit Z1 nutzen (`specAttach` schickt `go`, `reset()` baut aus Seed und Szenario, Schnappschüsse füllen auf). Neu ist nur die Wiedererkennung (Marke `tok`, schon im `wel`) und die Abwesenheit mit Frist beim Host.
+- *Das Netz des Hosts wackelt, sein Tab lebt:* **realistisch** (N2). Der Host hält die Welt, N0 meldet ihn beim Vermittler wieder an (`netWatch`, `reconnect()`), die Clients laufen wie bei eigenem Abriss in `rejoin()`. Für die Clients sieht es aus wie ein eigener Abriss.
+- *Der Host ist für immer weg* (Tab zu, Absturz, Gerät aus): **die laufende Runde ist verloren, daran ändert kein Bauschritt etwas,** solange es keinen Server gibt. Nur der Host kennt Wellenplan, KI-Zustand, Zufallsströme, Zeiten und Zähler; ein Client könnte aus dem letzten Schnappschuss nur eine springende Kopie bauen. Till hat das Übernehmen abgelehnt. Was bleibt: das Konto jedes Spielers in seinem Tab, und später vielleicht der Nachfolge-Raum (N4, alle landen in einer neuen Lobby, Serie bleibt). Neu dazu: Lädt der **Host** seinen Tab neu, ist das derselbe Fall (die Welt ist weg), N1c hilft nur Clients.
+
+**Ergänzende Fundstellen (Stand `origin/main` plus PR #46):**
+- *Was N0 schon liefert:* `rejoin(sec)` und `rjTry()` (neuer `TR.join` alle `CFG.net.rejoinT` 3 s mit `hi.rj:{tok,id}`, Frist `CFG.net.rejoin` 30 s, danach `leaveGame`), `NET.tok`, `mkTok()` in `hostHello` (dort steht der Platzhalter: "Wiedererkennung mit der Marke kommt in N1"), `netWatch(dt)` (Stille `CFG.net.stall` 4 s, `c.wk`, `ros.wk`, `NET.hwk`), `netNote`/`netHud` (Anzeige oben mittig), `net.cut`, `net.heal`, `net.signalDown`, `net.signalUp` in `tools/loopnet.js`, Test `146-wiederverbinden`.
+- *Abbruch beim Host heute:* `playerAttach`, `c.onclose`: in Lobby und Shop fliegt der Roster-Eintrag, außerhalb der Lobby `o.gone=true`, `o.dc=true`, Meldung, `checkEnd()`. Hier setzt N1a an.
+- *Abfragen, die ein Abwesender nicht kippen darf:* `live(o)` (`!dead&&!out&&!gone`) und `actv()`, beide auch für `checkEnd` (`if(ended||actv().length)return`); die Abfahrt des Wagens in `hostStep` (`for(const o of act)o.gone=true`: wer nicht an Bord ist, bleibt zurück); `hostStep` setzt die Eingabe nach 400 ms Stille auf `IDLE` (`o.lastIn`); `hostMsg` bewegt nur `live` Spieler. Die Spielerzahl für Wellen und Verdacht kommt aus `players.length` (fest ab Rundenstart, zählt Gegangene mit, siehe Spur B).
+- *Client:* `connLost(c)` ruft `leaveGame('Verbindung zum Host verloren.')`, `pagehide` ruft `netReset` (schließt sauber, der Host bekommt sofort `onclose`). Die eigene Figur hängt an `players[NET.myId]` (`reset()`), die Vorhersage an `pend`, `seq`, `o.ack`.
+- *Schnappschuss:* `buildSnap`/`applySnap`, Spielerzeile `pl`, Flag-Feld `pl[10]` (bisher bis Bit 64 belegt, `gone` ist Bit 8).
+
+**Bauschritte (je ein PR):**
+
+| PR | Inhalt | Größe | `VER` | Label |
+|---|---|---|---|---|
+| N1a | **Host: Abwesenheit und Wiedereinstieg.** `c.onclose` außerhalb der Lobby setzt `o.away={t:Frist,n:Abrisse}` statt `gone` (Frist `CFG.net.grace` 60 s im Auftrag, `CFG.net.graceMenu` 300 s sonst), der Roster-Eintrag bleibt mit `aw`. Neue Abfrage `here(o)` (`live(o)&&!o.away`) für alles, was Handeln ist (E-Auswahl, Sichern, Entkommen, Wiederbeleben), für Gegnerziele und für Schaden; `live`, `actv` und `checkEnd` bleiben unverändert, so endet die Runde nicht, solange jemand zurückkommen kann. Ab dem dritten Abriss je Runde (`o.awN>2`) ist der Abwesende verwundbar. Frist um: was heute sofort geschieht (`gone`, `dc`, Meldung, `checkEnd`). `hostHello` prüft `rj.tok` gegen die abwesenden Plätze: passt sie, bekommt die neue Verbindung denselben `pid` und `c.kit`, `wel` mit `rl:2`, danach im Spiel `go` mit dem Stand der Runde (Weg aus `specAttach`), im Ergebnis das letzte `end`, in Shop und Auftragswahl `ros`. Falsche Marke: `rej`. Flag 128 im Schnappschuss, Anzeige über der Figur "Verbindung weg (N s)". Am Client ändert sich noch nichts (Test mit `__dbg` und `rejoin()`). | mittel | ja | `voller-lauf` (berührt `checkEnd` und alle Szenarien) |
+| N1b | **Client: Rückkehr statt Titel.** `connLost` im Spiel, Shop, Auftragswahl und Ergebnis ruft `rejoin(Frist)` statt `leaveGame`, Overlay "Verbindung weg, versuche es neu (N s)", Eingaben eingefroren, Esc bietet "Aufgeben" (wie heute Titel). `rejoin` wartet bei `peer-unavailable` weiter (das ist der Fall "Host-Netz weg", N2a). Ein `go` mit `rl:2` leert `pend` und setzt `seq` neu, damit kein Rubberbanding bleibt. Zuschauer: gleicher Weg ohne Platz, die Zweitverbindung im Duell (`sp2`) versucht es alle 3 s neu. | mittel | nein | `spielgefuehl` |
+| N1c | **Neuladen und Absturz des Tabs (Tills "gleich mit").** `sessionStorage` (je Tab, überlebt Neuladen und meist die Wiederherstellung nach Absturz, nicht das Schließen) hält `{code,tok,id,spec,at,SESSION}`, geschrieben bei `wel`, bei jeder Änderung von `SESSION` und beim Rundenwechsel, gelöscht bei "Aufgeben", `leaveGame` und `rej`. Beim Laden: Eintrag jünger als die Frist, dann sofort `rejoin()` ohne Titelbild. Für die Tests braucht `start()` einen Speicher von außen (`opt.store`), weil alle Instanzen einer Seite sich sonst einen `sessionStorage` teilen. | klein bis mittel | nein | `spielgefuehl` |
+| N2a | **Host-Netz weg.** Alle Mitspieler gleichzeitig abwesend heißt: das Netz des Hosts ist weg. Der Host zeigt "Netz weg, warte auf Mitspieler (N s)", die Clients laufen in `rejoin()` (N1b), `netWatch` meldet den Host beim Vermittler wieder an. Ob die Runde dabei anhält, ist Entscheidung `netz-pause` (unten). Erkennung: zwei oder mehr Spieler innerhalb von 2 s weg, oder der Vermittler ist weg (`NET.disc`) und alle Verbindungen sind still. | klein | nein | `spielgefuehl` |
+| N2b | **Duell: Gegner-Leitung mit Frist.** `d.link.onclose` beendet das Duell erst nach `CFG.net.grace` (`d.away` statt `d.gone`), `hostRival` nimmt während der Frist einen Rückkehrer mit der Duell-Marke an (`dl` im `hi`, Marke beim ersten `dl` gewürfelt), `d.mine` und `d.rvr` bleiben. Team-Host B: für sein Team gilt N1 und N2a, die Leitung heilt hier. | mittel | ja | `voller-lauf` |
+| N4 | (nur nach Tills Entscheidung, frühestens nach einem echten Abriss-Log) Nachfolge-Raum wie oben beschrieben. | mittel | ja | |
+
+Reihenfolge: **N1a, N1b, N1c, N2a, N2b.** N1a und N1b gehören zusammen (erst mit N1b merkt ein Spieler etwas), sie sind trotzdem getrennt, weil N1a die Spielschicht (`checkEnd`, Schaden, Gegnerziele) und N1b nur die Netzschicht berührt. N2a ist klein, weil N1b das Warten schon kann.
+
+**Tests mit `tools/loopnet.js`** (neue Datei `147-rueckkehr-spiel`, dazu Erweiterungen von `146-wiederverbinden`; Fristen in virtueller Zeit über `net.advance`):
+- *N1a:* `net.cut('b')` (hart) im Spiel: Figur sofort abwesend, Flag 128 beim zweiten Client, Gegner schießen nicht auf sie, Schaden 0, keine E-Aktion. Rückkehr mit `rejoin()` in der Frist: derselbe `pid`, `chk` vor und nach gleich (Ort, HP, Munition, Beute, Material, Gegenstände). `net.cut('b',{silent:true,closeAfter:30})` und `heal` vor 30 s: keine Abwesenheit. Frist abgelaufen: `gone` wie heute, späte Rückkehr bekommt `rej`. Falsche Marke: `rej`, kein Platz. Dritter Abriss: verwundbar. Alle anderen tot, einer abwesend: die Runde läuft bis zum Ende der Frist, dann `checkEnd`. Wagen fährt ab, während jemand weg ist: er bleibt zurück (`gone`). Shop: Rückkehr mit `ros`, Kit bleibt. Ergebnis: das `end` kommt noch einmal, der Client zeigt es einmal.
+- *Je Szenario* (Bank, Transporter, Juwelier, Tankstelle, Museum, Casino, Notenbank, Gefängnis mit Gefangenem als Abwesendem), `slow: true`: Abriss nach 20 s Überfall, Rückkehr nach 10 s, danach `CT.diff(CT.sig(A),CT.sig(B))` leer und die Runde zu Ende spielbar.
+- *N1b:* `connLost` führt in `rejoin()`, nicht auf den Titel; Esc "Aufgeben" führt auf den Titel; `pend` leer nach `go`; Zuschauer und `sp2` kommen zurück.
+- *N1c:* Instanz B schließen (`netReset` wie `pagehide`), neue Instanz mit demselben `opt.store`: sie landet ohne Titel wieder auf Platz 1 mit ihrem `SESSION`. Veralteter Eintrag (älter als die Frist) wird verworfen.
+- *N2a:* `net.cut('a',{silent:true,closeAfter:20})` plus `net.signalDown(code,{hold:true})`, nach 25 s `heal` und `signalUp`: alle Clients wieder da, Anzeige beim Host, je nach Entscheidung Spielzeit angehalten oder weitergelaufen.
+- *N2b:* `CT.mkDuel`, Leitung still trennen, in der Frist heilen: Duell läuft weiter, danach Frist ablaufen lassen: Urteil `x` wie heute.
+- Was die Test-Leitung nicht zeigt: wie lange der Browser bei einem echten WLAN-Abriss bis `failed` braucht (Annahme rund 30 s) und ob strenge NATs eine zweite Verbindung zulassen. Das zeigt nur ein Flugschreiber-Log von Till (WLAN aus, 20 s, WLAN an).
+
+**Risiken (ergänzend zu N-R1 bis N-R9):**
+- *N-R10 `here` gegen `live`:* Jede Stelle, die Handeln, Zielen oder Schaden prüft, muss `here` nehmen, jede, die das Ende der Runde prüft, `live`. Vergisst der Bau eine, kann ein Abwesender Beute sichern oder umfallen. Vor dem Bau alle Fundstellen von `live(` und `actv()` (im Kern rund 25) sortieren, Mutanten auf die wichtigsten.
+- *N-R11 Rundenwechsel während jemand weg ist:* Startet der Host aus dem Shop, während ein Spieler abwesend ist, entsteht seine Figur abwesend (Rest der Frist läuft weiter). Siehe Entscheidung `netz-start`.
+- *N-R12 Geteilter Speicher in Tests:* Ohne `opt.store` lesen alle Instanzen denselben `sessionStorage` und treten gegenseitig zurück. Pflicht vor N1c.
+- *N-R13 Pause als Hebel im Duell:* Hält das Spiel bei Host-Netzproblemen an (Entscheidung `netz-pause`), läuft die Spielzeit des anderen Teams weiter. Die Wertung vergleicht Spielzeit, nicht Uhrzeit, also bleibt es fair; der Live-Vergleich zeigt das Team dann als "Netz weg".
+
+**Neue Entscheidungen für Till (die alten fünf sind beantwortet):**
+1. `netz-pause`: Soll das Spiel anhalten, wenn beim Host das Netz weg ist (alle Mitspieler gleichzeitig weg)? Empfehlung: ja, nur in diesem Fall; fehlt nur ein Spieler, läuft das Spiel für die anderen weiter.
+2. `netz-start`: Darf der Host den nächsten Auftrag starten, während ein Mitspieler noch weg ist? Empfehlung: ja, wie heute mit "trotzdem los"; der Abwesende bekommt seine Figur, sie steht geschützt bis zur Rückkehr, der Rest der Frist zählt weiter.
+
+## Spur B: Coop-Balance und Coop-Bot (#13)
+
+Anlass: `CFG.perPlayer` und die anderen Coop-Werte sind geschätzt, `tools/bot.js` spielt nur solo. **Plan v1 vom 4. November 2026, nichts gebaut.** Ziel: ein Bot, der mit zwei bis vier Spielern in einer Seite spielt (Host plus Clients über die Test-Leitung), Messreihen je Spielerzahl, und eine Trennung, die Solo-Werte beim Abstimmen des Coop nie verschiebt.
+
+### Bestandsaufnahme
+
+- **Bot** (`tools/bot.js`, 225 Zeilen): hängt am globalen `__dbg` (`const D=__dbg,k=D.keys,S=()=>D.get()`), steuert `S().p` (die eigene Figur) über `k.w/a/s/d`, `k[' ']`, `k.e` und den Winkel `p.a`, und treibt die Zeit selbst mit `D.update(dt)` in einer eigenen Schleife (`run`, `truck1`, `nb`). Ziele sind eine Liste (`goals`: Geldautomaten, Tresorstand, Bündel, Kassen, Material und Barrikaden), Gegner werden mit `D.los` und Reaktionszeit beschossen. Er kennt keine Mitspieler, kein Wiederbeleben (`revTarget`), keine Rollen.
+- **Coop-Aufbau für Tests** steht schon: `CT.mkGame(sc,seed,n,lat,jit,...)` in `tests/inpage/coop.js` baut Host A plus `n-1` Clients mit `mkInst` und `LoopNet`, öffnet den Raum, startet das Spiel. `step(insts,net,dt)` tickt alle Instanzen und liefert Nachrichten aus.
+- **Client-Seite für einen Bot:** `readInput` nimmt `me.a` als Winkel, solange die Maus ruht (`aim` nur bei frischer Maus), die Tasten aus `keys`. Ein Bot auf einem Client steuert also genau wie solo, sieht aber die Gegner so verzögert wie ein echter Client (Schnappschuss alle 50 ms, Glättung in `clientStep`). Das ist gewollt: die Messung enthält den Nachteil der Clients (siehe Spur L).
+- **Alle Stellen, die mit der Spielerzahl skalieren** (Kern `index.html`):
+  - Wellengröße in `spawnWave`: `(players.length-1)*CFG.perPlayer` (2 je weiterem Spieler).
+  - Verdacht: `susScale()` mit `CFG.susPer` (je weiterem Spieler 50 % länger).
+  - Transporter: `tkArrive()` mit `CFG.truck.arriveCut` (Anfahrt kürzer je weiterem Spieler).
+  - Notenbank: `CFG.nb.soloWb` und `soloMaxEn` (nur bei `nPl<2`, N5), `stormSolo` und `stormCoop` (N6), Tresor `vaultN*nPl` (N4).
+  - Nebenziel: `rollGoal(seed,sc,nPl)`; Gefängnis nur ab zwei Spielern (`PZ`).
+  - Am Boden und Wiederbeleben (`CFG.rev`, `bleed`) gibt es nur im Coop.
+  - `players.length` steht ab Rundenstart fest und zählt Gegangene (`gone`) mit: wer das Spiel verlässt, lässt seine Wellen da (docs/bugfix-plaene.md erwähnt es beim untätigen Mitspieler). Siehe Entscheidung `coop-weg`.
+
+### Entwurf in Stufen (je ein PR)
+
+**B0, Bot als Fabrik (klein, ohne Wirkung).** `mkBot(D)` statt globalem `__dbg`, `window.bot=mkBot(__dbg)` behält die heutige Schnittstelle. Der Schleifenkörper von `run` wird ein Steuerobjekt `ctl=bot.ctl(o)` mit `ctl.step()` (ein Bild: Sicht, Ziel, Tasten) und `ctl.res()` (Ergebnis), `run` ruft `ctl.step()` und `D.update(dt)` im Wechsel wie heute. `truck` und `nb` bleiben zunächst in ihrer Schleife (Coop dort erst in B4). Nachweis: `bot.batchSeeds` auf 20 festen Seeds vorher und nachher, Siegquote und Mittelwerte im Rahmen der Streuung des Bots (der Bot nutzt `Math.random`, deshalb kein Bit-Vergleich).
+
+**B1, Coop-Bot (mittel).** Neues `tools/coopbot.js`: `coop.run({n,sc,seed,lat,jit,kit,roles,maxT})` baut das Spiel wie `CT.mkGame` (Hilfe nach `tools/` ziehen oder dort laden), hängt an jede Instanz ein `mkBot(d).ctl(...)` und tickt im Wechsel `ctl.step()` aller Bots und `step(insts,net,1/30)`. Der Bot des Hosts spielt auf der Wahrheit, die Bots der Clients auf ihrer Ansicht. Neu im Steuerobjekt:
+- *Rollen* `pack` (Tresor und Bündel), `kasse` (Kassen, Automaten, Beute-Stücke), `wache` (stellt sich an den Eingang zur Tresorhalle oder an eine Barrikade und schießt). Vorgabe: Spieler 0 `pack`, 1 `wache`, 2 `kasse`, 3 `wache`. Die Bündel werden reihum geteilt, damit nicht vier Bots dasselbe Bündel suchen.
+- *Wiederbeleben:* liegt ein Mitspieler am Boden in 6 Kacheln und ist kein Gegner näher als 4 Kacheln, geht der Bot hin und hält E (Vorrang vor Beute).
+- *Flucht:* alle zum Wagen, sobald er steht; wer Beute trägt, zuerst.
+- Der Bot schleicht nicht (wie solo), der Überfall beginnt sofort.
+
+**B2, Messreihen (klein).** `tools/messung-coop.js` (Node wie `tools/messung-nb.js`, Chromium über `HOLDUP_CHROME`): `<n Seeds> <Spielerzahl 1-4> <Szenario> [lat] [cfg-JSON]`, Spielerzahl 1 nutzt den Solo-Bot auf derselben Seed-Reihe als Vergleich. **Messgrößen** je Lauf: Sieg des Teams, Dauer, Beute gesamt und je Kopf, gesicherte Beute, Entkommene, Wellen, Abschüsse, höchste und mittlere Zahl gleichzeitiger Gegner, Schaden eingesteckt je Spieler, wie oft am Boden, wiederbelebt und verblutet, Treffer je Schuss je Spieler (Host gegen Clients, Brücke zu Spur L). Vor der ersten Reihe messen, wie lange ein Lauf mit vier Instanzen dauert (jede Instanz tickt eine volle Welt; zeichnen die Instanzen bei `tick`, wird ein Schalter ohne Zeichnen für den Bot nötig, `opt.noDraw`).
+
+**B3, Coop-Werte getrennt von Solo (klein, ohne Wirkung).** Ein Block `CFG.coop` mit Tabellen je Spielerzahl, Eintrag 0 ist immer genau der heutige Solo-Wert, Zugriff nur über `byN(tab)` (`tab[Math.min(nPl,tab.length)-1]`). Vorbild ist die Notenbank (N5: `soloWb` und `soloMaxEn` über `nPl`), nur einheitlich: `wave:[0,2,4,6]` (heute `(n-1)*perPlayer`), `sus:[1,1.5,2,2.5]` (heute `susScale`), `tkCut:[...]`. Die Notenbank-Schalter bleiben vorerst, wie sie sind (N5 ist gemessen), und ziehen beim nächsten Notenbank-Ticket um. Regel für die Doku: Solo-Werte stehen nur in Eintrag 0 und ändern sich nie in einem Coop-Ticket. Test `14x-coop-werte`: mit `nPl` 1 liefern `spawnWave` (Wellen 1 bis 10), `susScale`, `tkArrive` und `rollGoal` genau die heutigen Werte, mit 2 bis 4 die heutigen Schätzwerte (bis B4 ändert sich nichts). Dazu Alt-Neu (`tests/altneu.js`) solo.
+
+**B4, Balance (mittel, `spielgefuehl`).** Reihen mit 40 Seeds je Szenario und Spielerzahl 1, 2, 3, 4 bei `lat` 30 und 80 ms. Vorschlag neuer Werte nur in `CFG.coop` nach Tills Zielbild (Entscheidung `coop-ziel`), Tabellen vorher und nachher in docs/tests-und-messwerte.md (neuer Abschnitt Coop-Bot und Balance), danach Akte für Till. Transporter und Notenbank bekommen den Coop-Bot in diesem Schritt oder einem eigenen.
+
+### Tests
+
+- B0: bestehende Bot-Aufrufe in den Tests (rund ein Dutzend Dateien laden `tools/bot.js`, zum Beispiel `26-grundrisse`, `135-transporter-bot`, `158-notenbank-bot`) laufen unverändert.
+- B1: ein kurzer Rauchtest `14x-coop-bot` (`slow: true`): Bank, zwei Spieler, 120 s, Bots machen Fortschritt (Tresor offen, Beute bei beiden), kein Fehler, Host und Client gleich (`CT.diff`).
+- B3: `14x-coop-werte` wie oben, Mutanten auf Eintrag 0.
+
+### Risiken
+
+- *B-R1 Bots spielen nicht wie Menschen im Team.* Sie sprechen sich nicht ab, flankieren nicht und schleichen nicht. Menschen im Coop sind meist stärker, die Bot-Siegquote ist deshalb eine untere Grenze. Abhilfe: die Bot-Werte als Richtung nehmen, Tills Spielgefühl entscheidet die letzten Zehntel.
+- *B-R2 Laufzeit.* Vier Welten in einer Seite sind rund vier Mal so teuer wie solo; im Container (4 Kerne, mehrere Agenten) nur kleine Reihen, die großen auf Tills Rechner oder nachts.
+- *B-R3 Streuung.* Bot und Host würfeln mit `Math.random` (Zielstreuung, KI), gleiche Seeds geben nicht dasselbe Ergebnis. 40 Seeds je Zelle, Unterschiede unter rund 10 Punkten Siegquote nicht deuten (Erfahrung aus N5: 65 und 73 % für dieselbe Strategie).
+- *B-R4 Solo verrutscht.* Ohne B3 ändert jeder Coop-Wert an gemeinsamen Formeln auch Solo. Deshalb B3 vor B4.
+
+### Entscheidungen für Till
+
+1. `coop-ziel`: Wie schwer soll Coop im Vergleich zu Solo sein? Empfehlung: gleich schwer (Siegquote des Bots je Spielerzahl wie solo, plus oder minus 10 Punkte), weil die Bots das Zusammenspiel unterschätzen und echte Teams dadurch von selbst etwas leichter haben.
+2. `coop-weg`: Soll die Polizei schwächer werden, wenn ein Mitspieler das Spiel verlässt? Empfehlung: ja, ab der nächsten Welle zählt er nicht mehr mit (wer stirbt, zählt weiter), sobald die Rückkehr (#11) gebaut ist und "verlassen" erst nach Ablauf der Frist gilt.
+
+## Spur L: Lag-Ausgleich für den eigenen Schuss (#12, nur Bestandsaufnahme)
+
+Anlass: Der Host trifft mit seiner Sicht, Clients schießen auf ein Bild, das hinterherhinkt. **Kein Plan zum Bau, erst messen** (Ticket: "Erst nach Messwerten aus dem Flugschreiber planen").
+
+### Bestandsaufnahme
+
+- **Client** (`clientStep`): sagt die eigene Bewegung voraus (`movePl`, `pend`, `seq`) und schickt jedes Bild `in` mit `fire` und dem Winkel `a`. Lokal entstehen nur Mündungsfeuer, Hülse und Ton, keine Kugel. Gegner, Zivilisten und Mitspieler bewegt der Client weich zur Position des letzten Schnappschusses (`k=1-Math.exp(-dt*16)`, Zeitkonstante rund 63 ms).
+- **Host** (`hostMsg`, `hostStep`): bewegt die Figur des Clients mit seiner Eingabe, sobald sie ankommt (`movePl(o,m)`, `o.ack`), und feuert beim nächsten `hostStep` mit dem Winkel `o.a` eine Kugel mit 720 px/s auf seine eigene, aktuelle Welt. Schnappschüsse gehen alle 50 ms raus (`netHostTick`).
+- **Verzug, den ein Client beim Zielen hat** (Schätzung, nicht gemessen): Weg Host zu Client (halbe Rundlaufzeit) plus Alter des Schnappschusses (0 bis 50 ms, im Mittel 25) plus Glättung (rund 60 ms) plus Weg der Eingabe zum Host (halbe Rundlaufzeit). Bei 50 ms Rundlaufzeit rund 135 ms. Ein Beamter, der mit 100 px/s quer läuft, ist in dieser Zeit rund 13 px weiter, das ist etwa ein Körper. Wie schnell Gegner laufen, beim Messen aus `CFG` lesen.
+- **Was der Flugschreiber schon misst:** `ping` (Rundlaufzeit, Client alle 2 s), `gap` und `gapMax` (Lücken zwischen Schnappschüssen), `corr` (Korrektur der eigenen Figur), Bildrate. Je Spieler zählt der Host Schüsse (`o.st.sh`) und Abschüsse (`o.st.k`), aber **keine Treffer**.
+
+### Was zuerst gemessen werden muss (L0, klein, ohne Spielgefühl)
+
+1. **Treffer je Schuss je Spieler:** neuer Zähler `o.st.hit` (Kugel trifft einen Gegner), am Rundenende im Flugschreiber und in der Auswertung, Host gegen Clients. Ist die Quote der Clients bei gleicher Waffe deutlich niedriger, ist der Verzug spürbar.
+2. **Knappe Fehlschüsse:** der Host notiert je Kugel eines Clients, wie nah sie am nächsten Gegner vorbeiging (kleinster Abstand auf der Flugbahn), und denselben Wert für eigene Kugeln. Viele Fehlschüsse knapp hinter einem laufenden Gegner sind die Handschrift des Verzugs.
+3. **Darstellungsverzug am Client:** mittlerer Abstand zwischen gezeichneter Gegnerposition und der im letzten Schnappschuss, als neue Spalte der Messzeile.
+4. **Automatisch vorab:** mit dem Coop-Bot (Spur B, B2) bei `lat` 0, 30, 80 und 150 ms die Trefferquote der Client-Bots gegen den Host-Bot messen. Das zeigt die Größe des Effekts, bevor Till spielt.
+5. **Danach Till:** eine Coop-Partie mit F9-Log von Host und Client (Treffer, Fehlschüsse, Ping im Gefecht).
+
+Erst mit diesen Zahlen lohnt die Wahl des Mittels (in der Reihenfolge steigender Kosten): kürzere Glättung oder leichte Vorausschau der Gegner beim Client; der Host spult beim Schuss eines Clients die Gegner um dessen Verzug zurück (klassischer Ausgleich, braucht einen kurzen Positionsverlauf der Gegner beim Host); Treffer beim Client mit Prüfung durch den Host (im Wettkampf betrugsanfällig). Keine Entscheidung für Till, bevor die Messung da ist.
+
 ## Reihenfolge und Abhängigkeiten
 
 1. **F1, F2** (Funk, Markierung): unabhängig, sofort nützlich, der kleinste Hebel für das Zusammenspiel.
@@ -400,7 +529,7 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 | W3 Wettkampf: Zuschauer im Duell (Zweitverbindung, Übersichtskarte, Umschalten, Verzögerung) | gebaut am 27. Oktober 2026 (`VER` 50, Test `124-wettkampf-zuschauer`, Einzelheiten in docs/coop-und-netz.md, Wettkampf) |
 | R1 Raum zuerst: Modus, Rollen, Überlauf, Lobby-Chat | gebaut am 27. Oktober 2026 (`VER` 52, `UI_API` 11, Test `126-raum-zuerst`, Einzelheiten in docs/coop-und-netz.md, Raum zuerst) |
 | N0 Grundlage Wiederverbinden (#11) | **gebaut** (30. Oktober 2026, `VER` 74): Host-Peer `disconnected` mit `reconnect()`, Stille-Erkennung (nur Anzeige), Marke `tok`, `rejoin()`, Test-Leitung mit `as`, `cut`, `heal`, `signalDown`, `signalUp`, Test `146-wiederverbinden` |
-| N3 Rückkehr nach dem Duell (#36) | **gebaut** (30. Oktober 2026, `VER` 74), Kachel `Zurück in den Raum`, ungespielt |
+| N3 Rückkehr nach dem Duell (#36) | **gebaut** (30. Oktober 2026, `VER` 74, nach dem Merge mit main 80), Kachel `Zurück in den Raum`, ungespielt |
 | N1, N2, N4 Wiederverbinden und Rückkehr (#11) | Plan v1 vom 29. Oktober 2026, nichts gebaut (Abschnitt Spur N). Tills Entscheidungen vom 29. Oktober: Rückkehr nach dem Duell auf Knopfdruck, Fristen 60 s im Auftrag und 5 min zwischen den Aufträgen, kein Hostwechsel |
 | R2 Wettkampf-Raum: Teams, Team-Hosts, Übergabe | gebaut am 27. Oktober 2026 (`VER` 53, Test `127-wettkampf-raum`, Einzelheiten in docs/coop-und-netz.md, Wettkampf-Raum), von Till am 27. Oktober 2026 zweimal im echten Netz gespielt (Homeoffice und Firmennetzwerk, flüssig) |
 
@@ -408,6 +537,7 @@ Schätzung in Bauschritten: F gesamt 3 bis 4, Z gesamt 4, W gesamt 4 bis 5. Netz
 
 - v1 (26. Oktober 2026): Plan aus Tills drei Wünschen, drei Messungen (Schnappschussgröße, Streuung gleicher Seeds, Bildkosten), Werkzeug `tools/messung-netz.js`. Noch nichts gebaut.
 - v1.1 (26. Oktober 2026): Till nimmt alle zehn Empfehlungen an, Bau beginnt mit F1.
+- v1.19 (4. November 2026): Plan v1 für den Rest von #11 (N1a bis N2b je PR, Tills Antworten aus den Akten `netz-*`, zwei neue Entscheidungen), Spur B (Coop-Bot und Coop-Werte, #13, zwei Entscheidungen) und Spur L (Lag-Ausgleich, #12, nur Bestandsaufnahme und Messplan). Nichts gebaut.
 - v1.2 (26. Oktober 2026): F1 gebaut (Funkspruch). Abweichung vom Plan: Die Ziffern 5 bis 9 werden bei offenem Menü verschluckt (der Plan sagte nur, dass 1 bis 4 senden), damit kein Gadget aus Versehen feuert. Die Optionen-Kachel braucht in den Optionen eine dritte Verdichtung (Abstand 4, Kacheln 36 und 46 hoch), sonst läuft das Fenster mit den Testwerkzeugen aus dem Bild. Die Anleitung rückt eine Zeile enger (20 statt 22 Pixel je Zeile).
 - v1.3 (26. Oktober 2026): F2 gebaut (Markierung). Der Randpfeil liegt auf der Linie von der Bildmitte zum Ziel, nicht in der Ecke (bei einem Ziel schräg oben rechts also am oberen Rand).
 - v1.4 (26. Oktober 2026): F3 gebaut (Textchat). Abweichungen vom Plan: (1) Die Zeitsperre läuft auf einer eigenen Uhr, weil die Spielzeit des Hosts beim Ergebnis stillsteht (der Test fand es). (2) Statt eines festen Chatfeldes in jedem Menü gibt es kurzlebige Zeilen am Rand, die in den dichten Menüs kurz über Kacheln liegen: Ein freier Platz ohne Überdeckung existiert in Shop, Auftragswahl und Ergebnis nicht. (3) Die Option Chat steht als halbe Kachel neben Funk, die Anleitung und der Spielbildschirm brauchten dafür engere Zeilen (19 Pixel).
