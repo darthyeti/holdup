@@ -39,7 +39,7 @@ module.exports = [
       t.eq(r.gb3, [['beep', 1, 2]], 'gb 3: Ablenker = SND.beep');
       t.eq(r.bx, [['boom', 11, 12]], 'bx: Explosion = SND.boom');
       t.eq(r.es, [['eshot', 30, 40, 'swat']], 'es: Gegnerschuss = SND.eshot(x, y, Art)');
-      t.eq(r.shMe, [['shot']], 'sh vom eigenen Spieler = SND.shot()');
+      t.eq(r.shMe, [['shot', 'pistol']], 'sh vom eigenen Spieler = SND.shot(Waffe)');
       t.eq(r.fremd, [], 'Ton fuer einen anderen Spieler (to) wird hier nicht gespielt');
     },
   },
@@ -90,7 +90,7 @@ module.exports = [
     },
   },
   {
-    name: 'Ton im Coop: ein Ton an alle kommt bei Host und Client an, ein Ton an einen Spieler nur bei diesem; Schuss des Hosts: shot beim Host, eshot (cop) beim Client; Glas und Explosion bei beiden',
+    name: 'Ton im Coop: ein Ton an alle kommt bei Host und Client an, ein Ton an einen Spieler nur bei diesem; Schuss des Hosts: shot beim Host, eshot (Waffe des Hosts) beim Client; Glas und Explosion bei beiden',
     async run(t) {
       await setup(t);
       const r = await t.page.evaluate(`(() => { const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0], S = ${SPY}, o = {};
@@ -110,7 +110,7 @@ module.exports = [
       t.eq(r.gl, [['glass'], ['glass']], 'Glas: Host und Client');
       t.eq(r.boom, [['boom'], ['boom']], 'Explosion: Host und Client');
       t.eq(r.hw, [['hit'], ['hit']], 'Treffer in die Wand: Host und Client');
-      t.eq(r.sh.slice().sort(), [['eshot', 'cop'], ['shot']], 'Schuss des Hosts: shot beim Host, eshot (cop) beim Client');
+      t.eq(r.sh.slice().sort(), [['eshot', 'pistol'], ['shot']], 'Schuss des Hosts: shot beim Host, eshot (Waffe des Hosts) beim Client');
     },
   },
 ];

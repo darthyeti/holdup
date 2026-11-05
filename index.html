@@ -751,7 +751,7 @@ const skBlock=(sk,id)=>{const a=skAlt(id);return a&&((sk||{})[a]|0)>0?a:null};
 const skOk=(sk,id)=>{const q=skNeed(id);return !CFG.skill[id].soon&&!skBlock(sk,id)&&(!q||((sk||{})[q]|0)>=CFG.skill.max)};
 const skDeps=id=>{const t=id[0],n=+id[1];return n===0?[t+'1',t+'2']:n===1?[t+'3']:n===2?[t+'4']:[]};
 const skCanSell=(sk,id)=>{if(!SKID.includes(id)||!SESSION.sk0)return false;const r=(sk||{})[id]|0;return r>(SESSION.sk0[id]|0)&&!skDeps(id).some(d=>((sk||{})[d]|0)>0)};
-function skillBuy(id){if(!SKID.includes(id)||SESSION.pts<1||(SESSION.sk[id]|0)>=CFG.skill.max||!skOk(SESSION.sk,id)){SND.ev('deny');return false}SESSION.sk[id]=(SESSION.sk[id]|0)+1;SESSION.pts--;SND.cash();sendKit();return true}
+function skillBuy(id){if(!SKID.includes(id)||SESSION.pts<1||(SESSION.sk[id]|0)>=CFG.skill.max||!skOk(SESSION.sk,id)){SND.ev('deny');return false}SESSION.sk[id]=(SESSION.sk[id]|0)+1;SESSION.pts--;SND.ui('buy');sendKit();return true}
 function skillSell(id){if(!skCanSell(SESSION.sk,id)){SND.ev('deny');return false}if(--SESSION.sk[id]<=0)delete SESSION.sk[id];SESSION.pts++;SND.cash();sendKit();return true}
 function curKit(){const o=SESSION.own,c=SESSION.cons,w=SESSION.wear,sh=CFG.shop,k={w:WPN_ORDER.find(q=>o[q])||'pistol',mask:o.mask?1:0,vh:null,hh:null,sk:Object.assign({},SESSION.sk)};
 for(const q of['vest','helm','pack','drill','pick','radio'])k[q]=clamp(o[q]|0,0,3);
@@ -838,13 +838,16 @@ if(chatShow){const src=chatOpen?chat.slice(-8):chat.filter(l=>chatClk-l.tm<C.lin
 const vis=rows.slice(-(chatOpen?8:C.lines));vis.forEach((r,i)=>{const y=bot-(vis.length-i)*20,w=Math.ceil(g.measureText(r.s).width)+12;plate(x0,y,w,18);g.fillStyle=r.c;g.fillText(r.s,x0+6,y+13)})}
 if(chatOpen){const w=520,x=Math.round(VW/2-w/2),y=VH-72;plate(x,y,w,26);g.fillStyle='#ffb000';g.fillText('Chat',x+8,y+17);g.fillStyle='#e6eaf0';g.fillText(chatBuf+(Math.floor(chatClk*2)%2?'|':''),x+50,y+17);g.textAlign='right';g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('Enter senden, Esc abbrechen',x+w-8,y+17)}
 g.restore()}
+/* Waffenname fuer den Schussklang (SND.tune.wpn): CFG.wpn-Eintrag -> pistol, smg, rifle. Fremde Schuetzen ohne Waffe klingen nach Pistole (frueher alle 'cop'). */
+const wpKey=w=>Object.keys(CFG.wpn).find(k=>CFG.wpn[k]===w)||'pistol';
+SND.setLos((x0,y0,x1,y1)=>los(x0,y0,x1,y1));
 function fxApply(n,a){
 if(n==='say'){feed.unshift({t:6,s:a[0]});if(feed.length>5)feed.pop();LOG.ev('say',a[0])}
 else if(n==='ban'){banner={s:a[0],t:a[1]||2.4};LOG.ev('ban',a[0])}
 else if(n==='rad')funkApply(a)
 else if(n==='fx')fx.push({x:a[0],y:a[1],t:a[3]||1.2,s:a[2]});
 else if(n==='s'){const f=SND[a[0]];if(f)f.apply(null,a.slice(1))}
-else if(n==='sh'){const o=players[a[0]];if(!o||(o===me&&NET.role==='client'))return;o.flash=.05;const ca=a[3]+1.57;cs.push({x:a[1]+Math.cos(a[3])*10,y:a[2]+Math.sin(a[3])*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});if(o===me)SND.shot();else SND.eshot(a[1],a[2],'cop')}
+else if(n==='sh'){const o=players[a[0]];if(!o||(o===me&&NET.role==='client'))return;o.flash=.05;const ca=a[3]+1.57;cs.push({x:a[1]+Math.cos(a[3])*10,y:a[2]+Math.sin(a[3])*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});if(o===me)SND.shot(wpKey(o.wp));else SND.eshot(a[1],a[2],wpKey(o.wp))}
 else if(n==='es'){const e=en.find(q=>q.id===a[0]);if(e)e.fl=.05;SND.eshot(a[1],a[2],a[3])}
 else if(n==='hw'){hole(a[0],a[1]);SND.hit(a[0],a[1],0);dust(a[0],a[1],5);sparks(a[0],a[1],3)}
 else if(n==='hf'){SND.hit(a[0],a[1],1);dust(a[0],a[1],a[2]||5,'110,30,24')}
@@ -1788,7 +1791,7 @@ checkEnd()}
 fxStep(dt);if(NET.role==='host')netHostTick(dt)}
 function clientStep(dt){time+=dt;
 if(live(me)){const c=readInput(dt);c.s=++seq;movePl(me,c);stepSnd(me,c);me.inp=c;pend.push(c);if(pend.length>90)pend.shift();
-if(me.armed&&c.fire&&me.cool<=0&&me.rl<=0&&me.mag>0){me.cool=me.wp.cool;me.flash=.05;const ca=me.a+1.57;cs.push({x:me.x+Math.cos(me.a)*10,y:me.y+Math.sin(me.a)*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});SND.shot()}
+if(me.armed&&c.fire&&me.cool<=0&&me.rl<=0&&me.mag>0){me.cool=me.wp.cool;me.flash=.05;const ca=me.a+1.57;cs.push({x:me.x+Math.cos(me.a)*10,y:me.y+Math.sin(me.a)*10,vx:Math.cos(ca)*(70+Math.random()*40),vy:Math.sin(ca)*(70+Math.random()*40),l:.3,r:Math.random()*6});SND.shot(wpKey(me.wp))}
 NET.conn&&NET.conn.send({t:'in',s:c.s,dt:c.dt,vx:c.vx,vy:c.vy,sn:c.sn,e:c.e,ln:c.ln,fire:c.fire,rl:c.rl,aim:c.aim,a:+c.a.toFixed(3),w:c.w})}
 else me.inp=IDLE;
 if(NET.spec&&specFree)specMove(dt);
@@ -1811,7 +1814,7 @@ if(selIt>=0&&!inReach(itsAll()[selIt],me))selIt=-1;
 curItem=live(me)&&!revTarget(me)&&!(LAY.truck&&capTarget(me))?pickIt(me,selIt):null;
 if(curItem&&me.inp.e)SND.work(typeof curItem.sn==='function'?curItem.sn(me):curItem.sn||'tick',dt);else if(live(me)&&me.inp.e&&(revTarget(me)||(LAY.truck&&capTarget(me))))SND.work('beep',dt);else SND.work(null,dt)}
 /* ---- Netzwerk: Host rechnet, Clients senden Eingaben und bekommen alle 50 ms einen Schnappschuss. Transport austauschbar. ---- */
-const VER=80,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
+const VER=82,CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',TR=opt.transport||peerTransport();
 const newCode=()=>Array.from({length:4},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 function peerTransport(){
 const wrap=c=>{let h=null;const buf=[],w={send:m=>{try{c.send(m)}catch(e){}},close:()=>{try{c.close()}catch(e){}},buffered:()=>{try{return (c.dataChannel?c.dataChannel.bufferedAmount|0:0)+(c.bufferSize|0)*CFG.spec.msgB}catch(e){return 0}},onclose:null};Object.defineProperty(w,'onmsg',{get:()=>h,set:f=>{h=f;if(f)while(buf.length)f(buf.shift())}});c.on('data',d=>{if(h)h(d);else buf.push(d)});c.on('close',()=>w.onclose&&w.onclose());
@@ -2179,7 +2182,7 @@ else if(m.t==='ret')retMsg(m)
 else if(m.t==='go'){NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;nPl=m.n;if(m.sc)jobSc=m.sc;PZ=Number.isInteger(m.pz)?m.pz:-1;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay()}
 else if(m.t==='snap'){if(scr==='play'&&!ended){LOG.snap();NET.lastSnap=m;applySnap(m)}}
 else if(m.t==='end'){if(scr==='play'&&!ended){NET.lastEnd=m.res;endLocal(m.res)}}
-else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
+else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.ui('buy');shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
 else if(m.t==='rst'){if(scr==='play'||scr==='shop'||NET.spec){NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;if(m.n>0)nPl=m.n|0;if(m.sc)jobSc=m.sc;PZ=Number.isInteger(m.pz)?m.pz:-1;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;restartRound()}}
 else if(m.t==='pong'){NET.ping=performance.now()-m.n;LOG.ping(NET.ping)}
 else if(m.t==='lb'){if(NET.spec)spQ=[];scr='lobby';ended=null;paused=false;clearKeys();mouse.down=0;sessReset();if(!NET.spec&&NET.conn)NET.conn.send({t:'kit',k:curKit()})}
@@ -2215,7 +2218,7 @@ gr:gr.map(q=>[q.id,r1(q.x),r1(q.y),['flash','gas','smoke','dec','shell'].indexOf
 cp:corp.map(c=>[r1(c.x),r1(c.y),r2(c.a),r1(c.t),c.row]),
 pk:pk.map(k=>[Math.round(k.x),Math.round(k.y),k.k]),
 nd:nDrop?[r1(nDrop.x),r1(nDrop.y)]:0,it:its.reduce((m,it,i)=>{if(it.done)m[i/30|0]|=1<<(i%30);return m},Array(Math.ceil(its.length/30)).fill(0)),lo:its.reduce((a,it,i)=>{if(it.lost)a.push(i);return a},[]),ip:its.map((it,i)=>it.pr>.001?[i,r2(it.pr)]:null).filter(Boolean),
-cm:cams.map(c=>(c.k?1:0)|(c.off?2:0)|(c.alert>0?4:0)),br:bars.map(b=>[b.lv,Math.ceil(b.hp),r1(b.cd),b.st==='fuse'?2:b.tk?1:0,r1(b.fz)]),pm:(LAY.pumps||[]).map(q=>q.hp>0?1:0).join(''),pd:prLk,pe:prDl?1:0,kc:LAY.prison&&prCd&&!prCd.done?(a=>[r1(a.x),r1(a.y),prCd.drop?1:0])(prCd):0,nbo:nbOpen?1:0,nbd:LAY.nb?[nbd.st,r2(nbd.p),nbd.c]:0,nbp:LAY.nb?[nbp.st,r2(nbp.paper),nbp.n,r2(nbp.care),nbp.m,nbp.dv]:0,nbh:LAY.nb?[nbh.D,r1(nbh.t)].concat(nbh.c):0,pg:LAY.prison?Object.keys(LAY.prison.pgD).map(k=>[+k,Math.round(LAY.prison.pgD[k].x),Math.round(LAY.prison.pgD[k].y)]):0,pv:LAY.prison?[LAY.prison.dv.st,r1(Math.max(0,LAY.prison.dv.end-rT))]:0,dr:LAY.lockCells.map(q=>cell(q[0],q[1])).join(''),wn:(LAY.wins||[]).map(w=>cell(w.x,w.y)).join('')}}
+cm:cams.map(c=>(c.k?1:0)|(c.off?2:0)|(c.alert>0?4:0)),br:bars.map(b=>[b.lv,Math.ceil(b.hp),r1(b.cd),b.st==='fuse'?2:b.tk?1:0,r1(b.fz)]),pm:(LAY.pumps||[]).map(q=>q.hp>0?1:0).join(''),pd:prLk,pe:prDl?1:0,kc:LAY.prison&&prCd&&!prCd.done?(a=>[r1(a.x),r1(a.y),prCd.drop?1:0])(prCd):0,nbo:nbOpen?1:0,nbd:LAY.nb?[nbd.st,r2(nbd.p),nbd.c]:0,nbp:LAY.nb?[nbp.st,r2(nbp.paper),nbp.n,r2(nbp.care),nbp.m,nbp.dv]:0,nbh:LAY.nb?[nbh.D,r1(nbh.t)].concat(nbh.c):0,pg:LAY.prison?Object.keys(LAY.prison.pgD).map(k=>[+k,Math.round(LAY.prison.pgD[k].x),Math.round(LAY.prison.pgD[k].y)]):0,pq:LAY.prison?Object.keys(LAY.prison.pgE).map(k=>[+k,Math.round(LAY.prison.pgE[k].x),Math.round(LAY.prison.pgE[k].y)]):0,pv:LAY.prison?[LAY.prison.dv.st,r1(Math.max(0,LAY.prison.dv.end-rT))]:0,dr:LAY.lockCells.map(q=>cell(q[0],q[1])).join(''),wn:(LAY.wins||[]).map(w=>cell(w.x,w.y)).join('')}}
 function applySnap(s){if(!players.length)return;if(Math.abs(time-s.T)>.2){LOG.evl('zeit',['sprung',r2(s.T-time)],.5);time=s.T}
 const g=s.g;phase=g[0];tH=g[1];waveN=g[2];waveT=g[3];policeAt=g[4];vanAt=g[5];vanArr=!!g[6];vanCalled=!!g[7];vanX=g[8];policeShown=!!g[9];sus=g[10];secured=g[11];civKills=g[12];kills=g[13];escaped=g[14];vaultOpen=!!g[15];code=!!g[16];mon=!!g[17];camDown=g[18];rT=g[19]||0;blk=g[20]||0;if(goal)goal.fail=g[21]?1:0;vanMode=g[22]|0;vanNv=g[23]||0;alarmT=g[24]||0;hostN=g[25]|0;holdX=g[26]||0;hostK=g[27]|0;shX=g[28]||0;if(ALT&&(g[29]|0)!==vanAlt)setAlt(g[29]|0);
 for(const a of s.pl){const o=players[a[0]];if(!o)continue;const f=a[10];o.hp=a[4];o.ar=a[5];o.mag=a[6];o.res=a[7];o.units=a[8];o.loot=a[9];o.armed=!!(f&1);o.dead=!!(f&2);o.out=!!(f&4);o.gone=!!(f&8);o.ln=f&32?1:0;o.dg=f&64?1:0;{const pg=f&256?1:0;if(pg!==(o.pgw|0))o.wp=pg?CFG.wpn.pistol:wpOf(o);o.pgw=pg}o.rl=a[13];o.hurt=Math.max(o.hurt,a[12]);o.jam=a[16]|0;o.med=a[17]|0;o.mat=a[18]|0;o.dn=a[19]||0;o.rv=a[20]||0;o.bl=a[21]||0;o.gs=a[22]||0;o.chipV=a[23]||0;o.bd=a[24]||0;o.hh=a[25]|0;o.sm=a[26]|0;o.dc=a[27]|0;o.ad=a[28]|0;o.bt=a[29]|0;o.trap=a[30]|0;o.c4=a[31]|0;o.sx=a[32]|0;o.ak=a[33]|0;
@@ -2234,7 +2237,7 @@ if(s.dr&&s.dr.length===LAY.lockCells.length)LAY.lockCells.forEach((q,i)=>setc(q[
 if(s.wn&&LAY.wins&&s.wn.length===LAY.wins.length)LAY.wins.forEach((w,i)=>{if(cell(w.x,w.y)!==s.wn[i])setc(w.x,w.y,s.wn[i])})
 if(LAY.prison&&(s.pd|0)!==prLk)LAY.prison.locks.forEach((l,i)=>{if((s.pd|0)>>i&1)prisonOpen(l.id)});
 if(LAY.prison&&!!s.pe!==prDl)prisonDl(!!s.pe);
-if(LAY.prison&&s.pg){const P=LAY.prison;s.pg.forEach(a=>{if(!P.pgD[a[0]])P.pgD[a[0]]={x:a[1],y:a[2]}})}if(LAY.prison&&s.pv){const P=LAY.prison;P.dv.st=s.pv[0];P.dv.end=rT+s.pv[1]}
+if(LAY.prison&&s.pg){const P=LAY.prison;s.pg.forEach(a=>{if(!P.pgD[a[0]])P.pgD[a[0]]={x:a[1],y:a[2]}})}if(LAY.prison&&s.pq){const P=LAY.prison;P.pgE={};s.pq.forEach(a=>{P.pgE[a[0]]={x:a[1],y:a[2]}})}if(LAY.prison&&s.pv){const P=LAY.prison;P.dv.st=s.pv[0];P.dv.end=rT+s.pv[1]}
 if(LAY.prison&&prCd){if(s.kc){prCd.nx={x:s.kc[0],y:s.kc[1]};if(s.kc[2]&&!prCd.drop)prCd.drop=prCd.nx}else prCd.nx=null}
 if(LAY.nb&&!!s.nbo!==nbOpen)nbHole(!!s.nbo);
 if(LAY.nb&&s.nbd){nbd.st=s.nbd[0];nbd.p=s.nbd[1];nbd.c=s.nbd[2]}
@@ -2626,7 +2629,7 @@ const lawCost=()=>{const F=CFG.fahndung.law;return F.base+F.perLv*heatLv(SESSION
 const lawState=()=>SESSION.heat<=0?'kein Bedarf':SESSION.law?'beauftragt':SESSION.wallet<lawCost()?'zu teuer':'kaufen';
 function lawHire(){const p=lawCost();SESSION.heat=heatClamp(SESSION.heat-CFG.fahndung.law.cut);SESSION.law=true;return p}
 function lawBuy(){if(NET.role==='client'){if(NET.conn){NET.conn.send({t:'law'});shopNote={s:'Anwalt wird beauftragt ...',t:3}}return}
-SESSION.wallet-=lawHire();SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2};if(NET.role==='host')bcastRoster()}
+SESSION.wallet-=lawHire();SND.ui('buy');shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2};if(NET.role==='host')bcastRoster()}
 /* Reparatur: fehlender Anteil mal CFG.shop.rep des Stufenpreises, Weste und Helm zusammen */
 function repCost(){const o=SESSION.own,w=SESSION.wear,sh=CFG.shop;let c=0;
 if(o.vest&&w.vest!=null)c+=(1-clamp(w.vest/sh.tier.vest[o.vest-1],0,1))*sh.price.vest[o.vest-1]*sh.rep;
@@ -2646,7 +2649,7 @@ if(it.r){SESSION.wear.vest=null;SESSION.wear.helm=null}
 else if(it.c)SESSION.cons[it.k]=(SESSION.cons[it.k]|0)+1;
 else if(it.t){SESSION.own[it.k]=(SESSION.own[it.k]|0)+1;if(it.k==='vest')SESSION.wear.vest=null;if(it.k==='helm')SESSION.wear.helm=null}
 else SESSION.own[it.k]=1;
-SND.cash();shopNote={s:it.r?'Repariert':it.n+(it.t?' Stufe '+SESSION.own[it.k]:'')+' gekauft',t:2};sendKit()}
+SND.ui('buy');shopNote={s:it.r?'Repariert':it.n+(it.t?' Stufe '+SESSION.own[it.k]:'')+' gekauft',t:2};sendKit()}
 else{SND.ev('deny');shopNote={s:st==='zu teuer'?'Zu teuer':st==='gekauft'?(it.t?'Schon auf der höchsten Stufe':'Schon gekauft'):st==='heil'?'Nichts zu reparieren':st==='voll'?'Vorrat voll':st==='kein Bedarf'?'Keine Fahndung, kein Anwalt nötig':st==='beauftragt'?'Der Anwalt war diesen Besuch schon dran':'Das Sturmgewehr ist besser',t:2}}}
 function openShop(){if(NET.role==='host'){NET.roster=NET.roster.filter(r=>r.id===0||NET.conns.some(c=>c.pid===r.id));bcastRoster()}scr='shop';paused=false;clearKeys();mouse.down=0;shopNote={s:'',t:0};shopConf=-9;SESSION.sk0=Object.assign({},SESSION.sk);sendKit()}
 function shopGo(){if(NET.role==='solo'){startNext();return}
