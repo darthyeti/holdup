@@ -1,0 +1,7 @@
+[
+ {"name":"20-menue-auftragswahl","sc":"bank","seed":"classic","code":"D.toTitle();const cv=document.querySelector('canvas');const k=x=>cv.dispatchEvent(new KeyboardEvent('keydown',{key:x,bubbles:true}));k('Enter');for(let i=0;i<30;i++)D.tick(1/60);out.scr=D.state().scr;"},
+ {"name":"21-menue-shop","sc":"bank","seed":"classic","code":"D.SESSION.bank=60000;D.openShop();for(let i=0;i<30;i++)D.tick(1/60);out.scr=D.state().scr;"},
+ {"name":"22-menue-pause","sc":"bank","seed":"classic","code":"H.run(1);const cv=document.querySelector('canvas');cv.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));out.st=D.state();"},
+ {"name":"23-ergebnis","sc":"bank","seed":"classic","code":"H.run(1);try{D.finish&&D.finish(true,'Entkommen')}catch(e){out.e=String(e)}H.run(0.5);out.ended=!!D.get().ended;"},
+ {"name":"24-optionen","sc":"bank","seed":"classic","code":"D.toTitle();const cv=document.querySelector('canvas');cv.dispatchEvent(new KeyboardEvent('keydown',{key:'o',bubbles:true}));for(let i=0;i<10;i++)D.tick(1/60);"}
+]

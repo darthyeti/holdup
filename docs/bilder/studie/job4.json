@@ -1,0 +1,4 @@
+[
+ {"name":"13-transporter-phase2","sc":"truck","seed":7,"lage":[],"code":"D.CFG.policeAt=2;D.CFG.policeForced=2;const g=D.get(),me=g.me;D.startHeist(true,me);H.run(55);const tk=D.tk();out.tk=tk&&[tk.x,tk.y];out.n=D.get().en.length;const e=H.near();if(tk){me.x=me.dx=me.tx=tk.x;me.y=me.dy=me.ty=tk.y+70;} H.run(1.2,i=>{const t=H.near();if(t)H.aim(t.x,t.y);D.keys[' ']=true});const c=D.get().cars.find(c=>!c.dead&&!c.civ);if(c){D.carBlow(c,0);out.blow=[c.x,c.y]}H.run(0.2,i=>{D.keys[' ']=true});out.pt=D.ptN();"},
+ {"name":"19-transporter-phase2-rauch","keep":1,"code":"D.keys[' ']=false;H.run(2);"}
+]
