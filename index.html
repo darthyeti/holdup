@@ -317,7 +317,7 @@ for(let i=cs.length-1;i>0;i--){const j=Math.floor(rn()*(i+1)),q=cs[i];cs[i]=cs[j
 const X0=WX0,Y0=WY0,NX=W,NY=H,walk=(x,y)=>{if(OOB(x,y))return false;const k=cell(x,y);if(inB(x,y))return k==='L'||!isSol(x,y);return k==='o'};
 const bfs=(x0,y0)=>{const dm=new Int16Array(NX*NY).fill(-1),q=[[x0,y0]];dm[(x0-X0)*NY+(y0-Y0)]=0;for(let i=0;i<q.length;i++){const a=q[i][0],b=q[i][1],d=dm[(a-X0)*NY+(b-Y0)];for(const v of D4){const x=a+v[0],y=b+v[1];if(OOB(x,y))continue;const k=(x-X0)*NY+(y-Y0);if(dm[k]>=0||!walk(x,y))continue;dm[k]=d+1;q.push([x,y])}}return dm};
 const dist=(dm,x,y)=>{const g=(a,b)=>OOB(a,b)?-1:dm[(a-X0)*NY+(b-Y0)],d=g(x,y);if(d>=0)return d;let m=1e9;for(const v of D4){const e=g(x+v[0],y+v[1]);if(e>=0&&e+1<m)m=e+1}return m<1e9?m:-1};
-const ga=L.exit.goal,dmA=bfs(ga[0],ga[1]),sv=lay.vault&&lay.vault.door?vaultStand(lay):null,dmV=sv?bfs(sv[0],sv[1]):null,e0=dmV?dist(dmV,ga[0],ga[1]):null,lim=e0==null||e0<0?M.eMax:Math.min(M.eMax,e0+M.extra);
+const ga=L.exit.goal,dmA=bfs(ga[0],ga[1]),sv=lay.vault&&lay.vault.door?vaultStand(lay):null,dmV=sv?bfs(sv[0],sv[1]):null,e0=dmV?dist(dmV,ga[0],ga[1]):null,ext=lay.q&&lay.q.stash&&sc==='gas'?CFG.stash.add.gas:0,lim=e0==null||e0<0?M.eMax+ext:Math.min(M.eMax+ext,e0+M.extra+ext);/* Tankstelle mit Kammer (K5): Wege zum Norden sind laenger */
 let pick=null;for(const q of cs){const gs=hiC?q.t:q.t+3,a=tile(gs,q.r-1),b=tile(gs,q.r+2),d1=dist(dmA,a[0],a[1]),d2=dist(dmA,b[0],b[1]),d=d1<0?d2:d2<0?d1:Math.min(d1,d2);if(d<M.dMin||d>M.dMax)continue;
  const g=d2>=0&&(d1<0||d2<=d1)?b:a,e=dmV?dist(dmV,g[0],g[1]):-1;if(dmV&&(e<0||e>lim))continue;pick=Object.assign({},q,{d,e,goal:g});break}
 if(!pick)return null;
