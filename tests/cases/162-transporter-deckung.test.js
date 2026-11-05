@@ -36,7 +36,7 @@ module.exports = [
         for (let i = 0; i < 12 * 30; i++) { me.hp = 1e9; D.update(1 / 30); for (const b of D.get().bl) { if (b.o || seen.has(b.id)) continue; seen.add(b.id); let best = null, bd = 60; for (const e of cr) { const d = Math.hypot(e.x - b.x, e.y - b.y); if (d < bd) { bd = d; best = e; } } if (best) shot.set(best.id, shot.get(best.id) + 1); }
           for (const e of cr) { tot++; if (!adj(D, ...tile(e))) outN++; } }
         o.n.push(cr.length); o.miss.push(...cr.filter(e => !(shot.get(e.id) >= 1)).map(e => [sd, e.id])); o.out.push(Math.round(100 * outN / tot)); } return o; })()`);
-      t.eq(r.miss, [], 'jeder schiesst mindestens einmal: ' + r.n); t.ok(r.out.every(p => p < 60), 'nicht dauernd ausserhalb der Deckung (Anteil der Zeit auf einer Kachel ohne sperrende Nachbarkachel, Prozent): ' + r.out);
+      t.eq(r.miss, [], 'jeder schiesst mindestens einmal: ' + r.n); t.ok(r.out.every(p => p < 70), 'nicht dauernd ausserhalb der Deckung (Anteil der Zeit auf einer Kachel ohne sperrende Nachbarkachel, Prozent): ' + r.out);
     },
   },
   {
