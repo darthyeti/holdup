@@ -1,0 +1,6 @@
+[
+ {"name":"x-mess-bank1","sc":"bank","seed":"classic","code":"H.run(1);const t0=performance.now();for(let i=0;i<120;i++)D.draw();out.ms=(performance.now()-t0)/120;"},
+ {"name":"x-mess-bank2","sc":"bank","seed":"classic","code":"D.CFG.policeAt=2;D.CFG.policeForced=2;const g=D.get(),me=g.me;D.startHeist(true,me);H.run(30);const c=D.get().cars.find(c=>!c.dead&&!c.civ);if(c)D.carBlow(c,0);H.run(.2);out.pt=D.ptN();const t0=performance.now();for(let i=0;i<120;i++)D.draw();out.ms=(performance.now()-t0)/120;const t1=performance.now();for(let i=0;i<120;i++)D.update(1/30);out.upd=(performance.now()-t1)/120;"},
+ {"name":"x-mess-casino-nacht","sc":"casino","seed":5,"code":"H.run(1);const t0=performance.now();for(let i=0;i<120;i++)D.draw();out.ms=(performance.now()-t0)/120;"},
+ {"name":"x-mess-museum","sc":"museum","seed":5,"code":"H.run(1);const t0=performance.now();for(let i=0;i<120;i++)D.draw();out.ms=(performance.now()-t0)/120;"}
+]
