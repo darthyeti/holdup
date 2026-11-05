@@ -59,4 +59,24 @@ module.exports = [
       t.eq(r.pv, 0, 'cop.on 0: kein Beamter mit Anker'); t.ok(!r.modes.includes('cover') && r.modes.includes('post'), 'cop.on 0: Posten statt Deckung: ' + r.modes); t.eq(r.bank, [0, 0, true], 'Bank: Beamte da, aber ohne Anker und ohne cover');
     },
   },
+  {
+    name: 'Aussteigen gefaechert: die Beamten steigen auf beiden Seiten der Streifenwagen aus (Nord- und Suedhaelfte der Fahrbahn), nicht in einer Reihe: mindestens je zwei Ausstiegspunkte nordlich und suedlich der Strassenmitte und mindestens fuenf verschiedene Spalten',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const B = ${BUILD}, STEP = ${STEP}, o = { N: [], S: [], cols: [] }; for (const sd of (${NP})(3)) { const { D, me } = B(sd); const seen = new Map(); const P = D.LANE().pos;
+        STEP(D, me, 200 * 30, () => { for (const e of (${pvs})(D)) if (!seen.has(e.id)) seen.set(e.id, [e.x, e.y]); return seen.size >= 8; });
+        const A = [...seen.values()]; o.N.push(A.filter(a => a[1] < P).length); o.S.push(A.filter(a => a[1] >= P).length); o.cols.push(new Set(A.map(a => Math.floor(a[0] / 32))).size); } return o; })()`);
+      t.ok(r.N.every(n => n >= 2) && r.S.every(n => n >= 2), 'beide Seiten: ' + r.N + ' / ' + r.S); t.ok(r.cols.every(n => n >= 5), 'mindestens fuenf verschiedene Spalten beim Aussteigen: ' + r.cols);
+    },
+  },
+  {
+    name: 'Sirene: sirCars zaehlt nur Streifenwagen, in denen noch jemand sitzt; sind alle ausgestiegen, ist die Liste leer, die Wagen bleiben (Blaulicht)',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { const B = ${BUILD}, STEP = ${STEP}, o = {}; const { D, me } = B((${NP})(1)[0]); let mx = 0;
+        STEP(D, me, 200 * 30, () => { mx = Math.max(mx, D.sirCars().length); return mx > 0 && D.sirCars().length === 0; });
+        o.mx = mx; o.nach = D.sirCars().length; o.cars = D.get().pcs ? D.get().pcs.filter(c => !c.dead && !c.civ).length : -1; return o; })()`);
+      t.ok(r.mx >= 1, 'waehrend des Ausstiegs gibt es Wagen mit Sirene: ' + r.mx); t.eq(r.nach, 0, 'danach keiner mehr');
+    },
+  },
 ];
