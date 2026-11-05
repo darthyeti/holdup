@@ -1,0 +1,11 @@
+[
+ {"name":"10-bank-phase2-feuergefecht","sc":"bank","seed":"classic","code":"D.CFG.policeAt=2;D.CFG.policeForced=2;const g=D.get(),me=g.me;D.startHeist(true,me);H.run(28);me.x=me.dx=me.tx=me.x;me.y=me.y-40;H.run(1);const e=H.near();out.e=e&&[e.x,e.y,e.kind];out.n=D.get().en.length;out.cars=D.get().cars.length;H.run(1.5,i=>{const t=H.near();if(t)H.aim(t.x,t.y);D.keys[' ']=true});out.pt=D.ptN();"},
+ {"name":"11-bank-phase2-explosion","keep":1,"code":"const g=D.get();const c=g.cars.find(c=>!c.dead);out.car=c&&[c.x,c.y];if(c){D.carBlow(c,0);} H.run(0.15,i=>{D.keys[' ']=true;const t=H.near();if(t)H.aim(t.x,t.y)});out.pt=D.ptN();"},
+ {"name":"12-bank-phase2-rauch","keep":1,"code":"D.keys[' ']=false;H.run(1.2);out.pt=D.ptN();out.smk=D.smokeN();"},
+ {"name":"13-transporter-phase2","sc":"truck","seed":7,"lage":[],"code":"D.CFG.policeAt=2;D.CFG.policeForced=2;const g=D.get(),me=g.me;D.startHeist(true,me);H.run(30);const e=H.near();if(e){me.x=me.dx=me.tx=e.x-140;me.y=me.dy=me.ty=e.y;} H.run(1.2,i=>{const t=H.near();if(t)H.aim(t.x,t.y);D.keys[' ']=true});const c=D.get().cars.find(c=>!c.dead);if(c)D.carBlow(c,0);H.run(0.2,i=>{D.keys[' ']=true});out.n=D.get().en.length;out.pt=D.ptN();"},
+ {"name":"14-bank-tag-nacht","sc":"bank","seed":11,"lage":["nacht"],"code":"H.run(3);out.lage=D.LAY().mission&&D.LAY().mission.lg;"},
+ {"name":"15-museum-tag","sc":"museum","seed":5,"lage":[],"code":"H.run(3);out.lage=D.LAY().mission&&D.LAY().mission.lg;"},
+ {"name":"16-casino-tag","sc":"casino","seed":5,"lage":[],"code":"H.run(3);"},
+ {"name":"17-juwelier-tag","sc":"jewel","seed":5,"lage":[],"code":"H.run(3);"},
+ {"name":"18-tankstelle-phase2-zapfsaeule","sc":"gas","seed":5,"lage":[],"code":"D.CFG.policeAt=2;D.CFG.policeForced=2;const g=D.get(),me=g.me;D.startHeist(true,me);H.run(20);const L=D.LAY();out.pumps=L.pumps;H.run(1,i=>{const t=H.near();if(t)H.aim(t.x,t.y);D.keys[' ']=true});D.keys[' ']=false;try{const pp=(L.gas&&L.gas.pumps)||L.pumps;out.pp=pp&&pp.length; if(pp&&pp[0]){D.pumpBlow(pp[0])}}catch(err){out.perr=String(err)}H.run(0.25);out.pt=D.ptN();"}
+]
