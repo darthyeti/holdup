@@ -255,7 +255,7 @@ const camc=[{x:1.5*T,y:(ly0+.5)*T,a0:.62,amp:.55,sp:.55,rng:270,fov:.5},{x:(mx1+
 let camsSel=camc.slice(0,7);
 if(!po){const idx=camc.map((_,i)=>i);for(let i=idx.length-1;i>0;i--){const j=Math.floor(mr()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]]}camsSel=idx.slice(0,ms.cams).sort((a,b)=>a-b).map(i=>{const c=camc[i];return Object.assign({},c,{a0:c.a0+(mr()-.5)*.3,rng:c.rng+Math.round((mr()-.5)*40)})})}
 const ev=ms.ev,evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',transport:'Geldtransport',feiertag:'Feiertag'},extra=[],bags=[],frontP=[fd,ly1];
-if(ev.includes('wache'))extra.push({ent:1,p:frontP,route:rotR(R0,3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Wachmann betritt die Halle.'});
+if(ev.includes('wache'))extra.push({p:frontP,route:rotR(R0,3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Wachmann betritt die Halle.'});
 if(ev.includes('transport')){extra.push({p:frontP,route:rotR(R0,6,false),at:ms.at.transport,msg:'Geldtransport trifft ein: Geldsäcke in der Halle, ein Wachmann sichert sie.'});for(const c of [[fd-2,ly1],[fd+3,ly1],[fd-3,ly1-1],[fd+4,ly1-1],[fd-4,ly1],[fd+5,ly1]])if(bags.length<2&&!isSol(c[0],c[1]))bags.push(c)}
 const tags=[];if(ms.vault==='drill')tags.push('Tresor nur laut');if(ms.guards===0)tags.push('keine Wache');else if(ms.guards===2)tags.push('zwei Wachen');if(!ms.west&&tp!=='W')tags.push('ohne Seitentür');if(tp==='W')tags.push('Fluchtweg: Seitentür');if(ms.civ>=8)tags.push('viel Kundschaft');else if(ms.civ<=3)tags.push('kaum Kundschaft');if(camsSel.length!==7)tags.push(camsSel.length+' Kameras');tags.unshift(...(ms.lg||[]).map(k=>lgN(ms,k)),...ev.map(e=>evTag[e]));
 const DCG=[{x:ca[0],y:by1+3,row:3,sh:'B'},{x:ca[1],y:by1+3,row:2,sh:'B'}].concat(ycars.map((c,i)=>({x:c[0],y:c[1],row:2+i,sh:'C'})));
@@ -456,7 +456,7 @@ const camsSel=idx.slice(0,nCam).sort((a,b)=>a-b).map(i=>{const c=camc[i];return 
 const ev=ms.ev,evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];
 /* Der Wachwechsel-Wachmann beginnt in den erzeugten Huellen nicht auf den Kacheln direkt an der Vordertuer (Klassik wie vorher) */
 const wp=P.classic?[vd,hd]:[[vd,hd-1],[vd+1,hd-1],[vd-1,hd-1],[vd+2,hd-1]].find(a=>!isSol(a[0],a[1]))||[vd,hd];
-if(ev.includes('wache'))extra.push({ent:1,p:wp,route:rotR(R0,3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Wachmann betritt den Laden.'});
+if(ev.includes('wache'))extra.push({p:wp,route:rotR(R0,3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Wachmann betritt den Laden.'});
 const tags=[];if(ms.vault==='drill')tags.push('Tresor nur laut');if(ms.guards===0)tags.push('keine Wache');else if(ms.guards===2)tags.push('zwei Wachen');if(ms.civ>=5)tags.push('viel Kundschaft');else if(ms.civ<=2)tags.push('kaum Kundschaft');if(camsSel.length!==6)tags.push(camsSel.length+' Kameras');tags.unshift(...(ms.lg||[]).map(k=>lgN(ms,k)),...ev.map(e=>evTag[e]));
 const deskT=[[15,4],[16,4],[17,4]].map(a=>[a[0]+dx,a[1]]),pools=ISL.map(a=>[(a[0]+a[2]/2)*T,(a[1]+a[3]/2)*T,100]).concat([[(18+dx)*T,9.5*T,120],[(21.5+dx)*T,2.5*T,80],[(17+dx)*T,3.5*T,90],[(vd+1)*T,hd*T,90]]);
 return{seed:sn,decor:decorOf(DC_JEWEL(dx,sy)),jewel:true,cone:true,hall:H.n,theme:mkThemeOf(THEME_NOIR,ms.lg.includes('nacht')?4:di,0),bld:{x0:0,y0:0,x1:23+dx,y1:13+dy},winN:[],winS,
@@ -554,7 +554,7 @@ const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
 /* Paket P1: der Wachwechsel-Wachmann beginnt in den erzeugten Huellen nicht auf den Kacheln direkt an der Vordertuer (Klassik-Huelle wie vorher) */
 const wp=P.classic?[fd,bot]:[[fd,bot-1],[fd+1,bot-1],[fd-1,bot-1],[fd+2,bot-1]].find(a=>!isSol(a[0],a[1]))||[fd,bot];
-if(ev.includes('wache'))extra.push({ent:1,p:wp,route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
+if(ev.includes('wache'))extra.push({p:wp,route:rotR(R0,NR>>1,true),at:ms.at.wache,msg:'Wachwechsel: Ein Wachmann betritt die Tankstelle.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,3);
 const deskT=[[4,1],[5,1]],goods=[];
 for(let x=Math.max(cx0,sw-4);x<=sw;x++)goods.push({k:'cig',x:x*T+16,y:T+16,rc:[x*T,T,T,T],r:46});
@@ -663,7 +663,7 @@ const camsSel=pickCamsFar(cr,camc,nCam,CM.minD,[[dd,Y1],[dd+1,Y1],[13+dx,0]],CM.
 const ev=ms.ev.filter(e=>e!=='transport'&&e!=='feiertag'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe'},extra=[];ms.ev=ev;
 /* Der Wachwechsel-Wachmann beginnt in den erzeugten Huellen nicht auf der Kachel direkt hinter der Haupttuer (Klassik wie vorher) */
 const wp=P.classic?[13,16]:[[dd,S-1],[dd+1,S-1],[dd-1,S-1],[dd+2,S-1]].find(a=>!isSol(a[0],a[1]))||[dd,S];
-if(ev.includes('wache'))extra.push({ent:1,p:wp,route:nG>1?rtAt(RW,k2,ms.rot[1]):rtAt(RA,1,false),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Nachtwächter beginnt seine Runde.'});
+if(ev.includes('wache'))extra.push({p:wp,route:nG>1?rtAt(RW,k2,ms.rot[1]):rtAt(RA,1,false),at:ms.at.wache,msg:'Wachwechsel: Ein zweiter Nachtwächter beginnt seine Runde.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,camsSel.length,['Nacht']);
 const deskT=[[16+dx,1],[16+dx,2]],goods=[];
 HT.art.filter(a=>a[2]==='W').concat(HT.art.filter(a=>a[2]!=='W')).forEach(a=>{const x=a[0],y=a[1],d=a[2];goods.push(d==='N'?{k:'art',x:(x+1)*T,y:y*T+14,rc:[x*T,y*T,2*T,12],r:50}:d==='S'?{k:'art',x:(x+1)*T,y:(y+1)*T-14,rc:[x*T,(y+1)*T-12,2*T,12],r:50}:d==='W'?{k:'art',x:x*T+14,y:(y+1)*T,rc:[x*T,y*T,12,2*T],r:50}:{k:'art',x:(x+1)*T-14,y:(y+1)*T,rc:[(x+1)*T-12,y*T,12,2*T],r:50})});
@@ -741,7 +741,7 @@ const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
 /* Der Wachwechsel-Wachmann beginnt in den erzeugten Huellen nicht auf den Kacheln direkt hinter dem Haupteingang (Klassik wie vorher) */
 const wp=P.classic?[20,22]:[[e+1,S-1],[e,S-1],[e+2,S-1],[e+3,S-1]].find(a=>!isSol(a[0],a[1]))||[e+1,S];
-if(ev.includes('wache'))extra.push({ent:1,p:wp,route:rotR(RT[1],3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zusätzlicher Sicherheitsmann betritt die Halle.'});
+if(ev.includes('wache'))extra.push({p:wp,route:rotR(RT[1],3,true),at:ms.at.wache,msg:'Wachwechsel: Ein zusätzlicher Sicherheitsmann betritt die Halle.'});
 const tags=lageTags(ms,ev,evTag,camsSel.length,8,[nG+' Wachen']);
 const deskT=[[22,1],[23,1],[27+dx,1],[28+dx,1]],goods=[];
 for(const a of tT)goods.push({k:'chips',x:(a[0]+2)*T,y:(a[1]+1)*T+16,rc:[(a[0]+1)*T,(a[1]+1)*T+3,2*T,T-6],r:46});

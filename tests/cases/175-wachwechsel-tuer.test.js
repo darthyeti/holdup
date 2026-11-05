@@ -14,7 +14,7 @@ const SOLO = `(sc, seed) => { const D = __dbg; D.sessReset(); D.setScenario(sc);
   out.start = { away: n.st, in: inB(...tile(n)) }; n.at = 0.5; const msg = n.msg, route = n.route, sees = [], feed0 = D.msgs().feed.length;
   let t = 0, spawn = null, door = false, inside = false, reach = null, msgAt = null, msgBeforeDoor = false, opened = false;
   for (let i = 0; i < 30 * (E.wait + E.max + 90) && reach == null; i++) { D.update(1 / 30); t += 1 / 30;
-    if (n.st !== 'away' && !spawn) { const tl = tile(n); spawn = { t, tl, cell: D.world().cell(tl[0], tl[1]), inB: inB(tl[0], tl[1]), seen: D.get().players.some(o => Math.hypot(o.x - n.x, o.y - n.y) < E.vis && D.los(o.x, o.y, n.x, n.y)) }; }
+    if (n.st !== 'away' && !spawn) { const tl = tile(n); spawn = { t, tl, cell: D.world().cell(tl[0], tl[1]), inB: inB(tl[0], tl[1]), seen: D.get().players.some(o => Math.hypot(o.x - (tl[0] * T + 16), o.y - (tl[1] * T + 16)) < E.vis && D.los(o.x, o.y, tl[0] * T + 16, tl[1] * T + 16)) }; }
     if (spawn) { const tl = tile(n); if (dk.has(tl[0] + ',' + tl[1])) { door = true; if (D.world().cell(tl[0], tl[1]) === 'L') out.solidDoor = true; }
       if (door && !inside && !inB(...tl)) { /* noch draussen */ } if (door && n.ent.s === 0 && !inside) inside = true;
       if (D.msgs().feed.some(m => m === msg)) { if (msgAt == null) { msgAt = t; msgBeforeDoor = !door; } }
