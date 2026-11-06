@@ -18,10 +18,10 @@ module.exports = [
       for (const [sc, seed] of [['nb', 716185], ['bank', 5]]) for (const who of [0, 1]) {
         const r = await t.page.evaluate(RUN(sc, seed, who));
         const tag = sc + ' Spieler ' + who + ': ';
-        t.eq(r.pz, [who, who], tag + 'der Zurueckgebliebene sitzt ein, auf Host und Client');
+        t.eq(r.pz, [[who], [who]], tag + 'der Zurueckgebliebene sitzt ein, auf Host und Client');
         t.eq(r.msg, [true, true], tag + 'die Ergebnisseite nennt es als eigene Zeile unter dem Titel (nicht als letzte Zeile der Liste), auf Host und Client');
         t.eq(r.next, ['prison', 'prison'], tag + 'der naechste Auftrag ist der Gefaengnisausbruch');
-        t.eq(r.pzNow, [who, who], tag + 'Host und Client kennen den Gefangenen');
+        t.eq(r.pzNow, [[who], [who]], tag + 'Host und Client kennen den Gefangenen');
       }
     },
   },
