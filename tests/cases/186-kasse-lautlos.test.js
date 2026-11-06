@@ -74,4 +74,29 @@ module.exports = [
       t.eq(r.raidOk, true, 'Überfall: alle Kassen wie bisher offen');
     },
   },
+  {
+    name: 'Kasse lautlos: Notenbank (Plündern nach Ausschalten) und Juwelier (zwei Kassierer an einer Kasse: erst beide bewusstlos gibt frei)',
+    async run(t) {
+      await setup(t);
+      const r = await t.page.evaluate(`(() => { ${PREP}
+        const o = {};
+        const nb = CT.mkGame('nb', 3, 1), pn = prep(nb), me = pn.g.me; o.nbTills = pn.g.its.filter(i => i.t === 'till').length; o.nbOps = pn.ops.length;
+        o.nbBefore = pn.it.ok(me);
+        for (const q of pn.ops) { q.st = 'idle'; q.alert = 0; nb.A.koMi(q).act(me); }
+        o.nbAfter = pn.it.ok(me); const l0 = me.loot; pn.it.act(me); o.nbGain = me.loot - l0; o.nbPhase = pn.g.phase; o.nbDone = pn.it.done; o.nbAgain = pn.it.ok(me);
+        const mu = CT.mkGame('jewel', 3, 1), pm = prep(mu), mm = pm.g.me; o.juTills = pm.g.its.filter(i => i.t === 'till').length; o.muOps = pm.ops.length;
+        o.muBefore = pm.it.ok(mm);
+        const [a, ...rest] = pm.ops; a.st = 'idle'; a.alert = 0; mu.A.koMi(a).act(mm); o.muOne = pm.it.ok(mm);
+        for (const q of rest) { q.st = 'idle'; q.alert = 0; mu.A.koMi(q).act(mm); } o.muAll = pm.it.ok(mm);
+        return o; })()`);
+      t.ok(r.nbTills >= 1 && r.nbOps >= 1, 'Notenbank: Kasse mit Kassierer: ' + JSON.stringify([r.nbTills, r.nbOps]));
+      t.eq(r.nbBefore, false, 'Notenbank: ohne Ausschalten kein Objekt');
+      t.eq(r.nbAfter, true, 'Notenbank: nach dem Ausschalten Objekt');
+      t.ok(r.nbGain > 0 && r.nbDone === true && r.nbPhase === 1 && r.nbAgain === false, 'Notenbank: geplündert ohne Alarm, danach leer: ' + JSON.stringify(r));
+      t.ok(r.juTills >= 1 && r.muOps === 2, 'Juwelier: zwei Kassierer an der Kasse: ' + r.muOps);
+      t.eq(r.muBefore, false, 'Juwelier: beide wach, kein Objekt');
+      t.eq(r.muOne, false, 'Juwelier: nur einer bewusstlos, keine Freigabe');
+      t.eq(r.muAll, true, 'Juwelier: beide bewusstlos, Freigabe');
+    },
+  },
 ];
