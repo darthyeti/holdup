@@ -28,7 +28,7 @@ module.exports = [
     name: 'N0 Test-Leitung: net.cut still (Nachrichten gehen verloren, geschlossen wird erst nach closeAfter), net.heal hebt es auf, net.cut hart schliesst sofort beide Seiten, net.stat.lost zaehlt',
     async run(t) {
       await SETUP(t);
-      const r = await t.page.evaluate(`(() => { const o = {}, G = CT.mkLobby(3, 0), [A, C, D] = G.players, net = G.net;
+      const r = await t.page.evaluate(`(() => { const o = {}, G = CT.mkLobby(3, 0), [A, C, D] = G.players, net = G.net; for (const d of G.insts) d.CFG.net.dead = 1e9;   /* hier geht es um die Test-Leitung, nicht um die Erkennung toter Leitungen */
         net.cut('c1', { silent: true, closeAfter: 20 }); C.NET.conn.send({ t: 'nm', v: 'Bo' }); D.NET.conn.send({ t: 'nm', v: 'Cy' }); G.run(.3);
         o.still = [net.stat.lost > 0, A.NET.roster.map(r => r.name).includes('Bo'), A.NET.roster.map(r => r.name).includes('Cy')];
         G.run(10); o.offen = [A.NET.conns.length, C.state().scr, D.state().scr]; net.heal('c1'); G.run(25); o.geheilt = [A.NET.conns.length, C.state().scr];
@@ -201,6 +201,7 @@ module.exports = [
       await SETUP(t);
       const r = await t.page.evaluate(`(() => { ${HELP}; const o = {}, { G, A, t1, t2 } = R2.mk(2, 3, 0), [B, M1, M2] = t2, st = d => d.state().scr, ev = d => d.flog().dump().ereignisse.map(e => JSON.stringify(e[3]));
         A.duelStart(); G.run(9); o.imSpiel = [st(M1), st(M2)];
+        for (const d of G.insts) d.CFG.net.dead = 1e9;   /* Rueckkehr-Zeitgrenze testen, nicht die tote Leitung */
         M1.NET.conn.onmsg({ t: 'ret', a: 'ZZ99', o: 1 }); G.run(2); o.weg = [st(M1), ev(M1).some(s => /ret/.test(s))];
         M2.NET.conn.onmsg({ t: 'ret', a: A.NET.code, o: 1 }); G.net.cut(M2.name, { silent: true, closeAfter: 100 }); G.run(5); o.wartet = [st(M2), M2.NET.retT > 0]; G.run(12); o.titel = [st(M2), M2.NET.role, ev(M2).some(s => /verlassen/.test(s) && /fehlgeschlagen/.test(s))];
         o.rest = [st(A), st(B), A.NET.duel && !!A.NET.duel.link]; return o; })()`);

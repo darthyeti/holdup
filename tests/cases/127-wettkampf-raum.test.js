@@ -18,7 +18,8 @@ const HELP = `
       const mv = (d, to) => { const who = d.NET.team === 2 ? 't' + d.NET.tk : d.NET.team === 1 ? d.NET.myId : 's' + d.NET.sid; A.roleSet(who, to); G.run(.5); };
       while (t1.length > n1) { const d = t1.pop(); mv(d, 2); t2.push(d); }
       while (t2.length > n2) { const d = t2.pop(); mv(d, 1); t1.push(d); }
-      G.run(1); return { G, A, t1, t2, sp };
+      G.run(1); for (const d of G.insts) d.CFG.net.dead = 1e9;   /* diese Tests pruefen den Raumbau, taube Stummschaltungen (onmsg = () => {}) sollen nicht als tote Leitung enden */
+      return { G, A, t1, t2, sp };
     },
   };`;
 

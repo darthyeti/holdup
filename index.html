@@ -1822,7 +1822,8 @@ const bcastRoster=()=>{NET.spNames=NET.specs.map(c=>c.nm);NET.t2n=NET.t2.map(c=>
 /* Zuschauer im Wettkampf (W3): Nur Zuschauer bekommen den Raumcode des Gegners (dlc, mit der Verzoegerung), Spieler nie. Der Host merkt je Zuschauer, was er zuletzt geschickt hat (c.rc), leer heisst: kein Wettkampf. */
 const duelRc=()=>{const d=NET.duel;return d&&d.link&&d.rv&&d.rv.code||''};
 function specDlc(c){const rc=duelRc();if(c.rc===rc)return;c.rc=rc;c.send({t:'dlc',c:rc,dl:rc?CFG.duel.specDelay:0})}
-function netReset(){const hostBye=NET.role==='host';if(linkJoin){linkJoin=null;nameEdit=false}duelClose();sp2Close();holdClose();p2Close();atLast='';specT=null;specFree=false;chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs,NET.t2),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',gone:'',fail:0,msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null,wkKey:'[]',tok:'',disc:0,discT:0,recN:0,wk:[],wkAll:[],hwk:0,rx:0,rj:null,ret:null,retT:0,want:null,aw:{},hEnd:null,bye:0,awRx:0});spQ=[];nPl=1;
+function netReset(){const hostBye=NET.role==='host';if(NET.role==='client'&&NET.conn&&!NET.spec&&scr==='lobby'){try{NET.conn.send({t:'lv'})}catch(e){}}   /* wer die Lobby verlaesst, meldet sich ab: kein Geist beim Host */
+if(linkJoin){linkJoin=null;nameEdit=false}duelClose();sp2Close();holdClose();p2Close();atLast='';specT=null;specFree=false;chat=[];chatOpen=false;chatBuf='';const cs0=NET.conns.concat(NET.specs,NET.t2),c0=NET.conn,s0=NET.srv;Object.assign(NET,{role:'solo',myId:0,conns:[],specs:[],sidN:0,spec:false,sid:0,spNames:[],mode:'',specOn:1,t2:[],tkN:0,t2n:[],team:0,tk:0,hp:'',ho:null,hb:null,side:'',conn:null,srv:null,code:'',gone:'',fail:0,msg:'',roster:[],chatT:{},ping:0,chkH:[],chkT:5,chkDue:false,logs:{},lgBuf:{},lgWait:0,fitN:0,fitT:-99,joinSpec:false,duel:null,du:null,sp2:null,dlDelay:0,lastGo:null,lastEnd:null,lastSnap:null,wkKey:'[]',tok:'',disc:0,discT:0,recN:0,wk:[],wkAll:[],hwk:0,rx:0,rj:null,ret:null,retT:0,want:null,aw:{},hEnd:null,bye:0,awRx:0});spQ=[];nPl=1;
 for(const c of cs0){c.onclose=null;if(hostBye&&c.ok){try{c.send({t:'bye'})}catch(e){}}c.close()}if(c0){c0.onclose=null;c0.close()}if(s0)s0.close();hostTicker(false)}
 function errTxt(e){return e==='lib'?'Coop braucht PeerJS (assets/peerjs.min.js fehlt).':e==='peer-unavailable'?'Raum nicht gefunden. Code prüfen.':e==='unavailable-id'?'Raumcode schon vergeben.':e==='network'||e==='server-error'||e==='socket-error'||e==='socket-closed'?'Vermittlungsserver nicht erreichbar.':'Verbindungsfehler: '+e}
 function hostRoom(tries){netReset();hostTicker(true);const code=newCode();NET.role='host';NET.code=code;NET.msg='Raum wird erstellt ...';NET.roster=[{id:0,name:PC[0].n}];setRoster(0,myName);scr='lobby';
@@ -2031,13 +2032,13 @@ if(NET.role==='host'){
  if(scr==='lobby')for(const k of Object.keys(NET.aw))awayEnd(+k,'lobby');   /* Wechsel in die Lobby (Rueckkehr nach dem Duell, Revanche): Abwesende fallen heraus, ihr Platz wird frei, ein Rueckkehrer tritt neu bei */
  for(const k of Object.keys(NET.aw)){const r=NET.aw[k];if(!r)continue;r.t-=dt;if(r.t<=0)awayEnd(+k)}
  if(NET.disc){NET.discT+=dt;if(NET.discT>=F.reconT){NET.discT=0;NET.recN++;try{NET.srv&&NET.srv.reconnect&&NET.srv.reconnect()}catch(e){}}}
- const bad=[];for(const c of NET.conns.concat(NET.specs,NET.t2)){if(!c.ok)continue;if(scr!=='lobby'&&chatClk-c.rx>F.dead){connDead(c);continue}const w=chatClk-c.rx>F.stall;
+ const bad=[];for(const c of NET.conns.concat(NET.specs,NET.t2)){if(!c.ok)continue;if(chatClk-c.rx>F.dead){connDead(c);continue}const w=chatClk-c.rx>F.stall;
   if(w&&!c.wk){c.wk=1;LOG.ev('netz',['wackelt',roleWho(c)])}else if(!w&&c.wk){c.wk=0;LOG.ev('netz',['zurueck',roleWho(c)])}
   if(w)bad.push([String(roleWho(c)),wkName(c)])}
  const key=JSON.stringify(bad);if(key!==NET.wkKey){NET.wkKey=key;NET.wk=bad;bcastRoster()}}
 else if(NET.role==='client'){
  const w=!!NET.conn&&!NET.rj&&chatClk-NET.rx>F.stall;if(w&&!NET.hwk){NET.hwk=1;LOG.ev('netz',['wackelt','host'])}else if(!w&&NET.hwk){NET.hwk=0;LOG.ev('netz',['zurueck','host'])}
- if(w&&scr!=='lobby'&&chatClk-NET.rx>F.dead){const c=NET.conn;LOG.ev('netz',['tot','host']);c.onclose=null;try{c.close()}catch(e){}connLost(c);return}
+ if(w&&chatClk-NET.rx>F.dead){const c=NET.conn;LOG.ev('netz',['tot','host']);c.onclose=null;try{c.close()}catch(e){}connLost(c);return}
  NET.pingT=(NET.pingT||0)-dt;if(NET.pingT<=0&&NET.conn){NET.pingT=2;NET.conn.send({t:'ping',n:performance.now()})}
  const r=NET.rj;if(r){r.t+=dt;r.wait-=dt;if(r.t>=r.max){LOG.ev('netz',['rj aufgegeben',r.n]);leaveGame('Verbindung zum Host verloren.');return}if(r.puT!=null&&r.t-r.puT>=F.goneT){LOG.ev('netz',['rj raum weg',r.n]);leaveGame('Der Raum ist nicht mehr erreichbar.');return}if(r.wait<=0&&!NET.conn)rjTry()}}
 const s2=NET.sp2;if(s2&&s2.live&&s2.conn&&NET.role==='client'){s2.pingT=(s2.pingT||0)-dt;if(s2.pingT<=0){s2.pingT=2;try{s2.conn.send({t:'ping',n:performance.now()})}catch(e){}}}   /* die Zweitverbindung pingt auch, sonst haelt der andere Host sie fuer tot (CFG.net.dead) */
@@ -2129,7 +2130,7 @@ if(!(id>0))return false;const c=NET.conns.find(q=>q.pid===id);if(!c||c.kicked)re
 function hostMsg(c,m){if(c.kicked)return;const o=players[c.pid];
 if(m.t==='hi'){if(m.ver!==VER||m.b!==BUILD.n){c.send({t:'rej',why:'Versionen passen nicht (Host: Build '+BUILD.n+', du: Build '+(m.b||'?')+'). Seite neu laden.'});setTimeout(()=>c.close(),300);return}c.kit=sanKit(m.k);c.send({t:'wel',id:c.pid,tok:c.tok,ver:VER,b:BUILD.n,code:NET.code});setRoster(c.pid,m.nm);bcastRoster()}
 else if(m.t==='nm'){setRoster(c.pid,m.v);bcastRoster()}
-else if(m.t==='lv')c.left=true
+else if(m.t==='lv'){c.left=true;if(scr==='lobby'){const f=c.onclose;c.onclose=null;c.ok=false;try{c.close()}catch(e){}if(f)f()}}   /* in der Lobby ist Verlassen sofort endgueltig */
 else if(m.t==='in'){if(!o||scr!=='play'||ended)return;m.dt=clamp(+m.dt||0,0,.05);m.vx=clamp(+m.vx||0,-1,1);m.vy=clamp(+m.vy||0,-1,1);m.ln=m.ln?1:0;m.a=+m.a||0;m.w=Number.isInteger(m.w)&&m.w>=0&&m.w<itsAll().length?m.w:-1;
 if(live(o)){movePl(o,m);o.ack=m.s}o.inp=m;o.lastIn=performance.now()}
 else if(m.t==='f'){if(scr==='play'&&!noGun(o))startHeist(false,o)}

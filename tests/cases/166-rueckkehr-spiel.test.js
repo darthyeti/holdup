@@ -269,20 +269,22 @@ module.exports = [
     },
   },
   {
-    name: 'N1 tote Leitung (Tills Spieltest): Stirbt die Verbindung still und fuer immer (WLAN weg, neue Adresse, kein onclose), erkennen Host und Client das nach CFG.net.dead (10 s) selbst: der Host macht den Spieler abwesend, der Client geht in rejoin und kommt mit demselben Platz zurueck; in der Lobby greift die Erkennung nicht',
+    name: 'N1 tote Leitung (Tills Spieltest): Stirbt die Verbindung still und fuer immer (WLAN weg, neue Adresse, kein onclose), erkennen Host und Client das nach CFG.net.dead (10 s) selbst: der Host macht den Spieler abwesend, der Client geht in rejoin und kommt mit demselben Platz zurueck; in der Lobby greift die Erkennung auch',
     async run(t) {
       await SETUP(t);
       const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(3), [A, B, C] = G.insts, ev = ${NETEV}; o.dead = A.CFG.net.dead; const f0 = (${FIG})(A, 1), tok0 = B.NET.tok;
         G.net.kill('c1'); G.run(6); o.wackelt = [!!A.get().players[1].away, !!B.NET.rj, B.state().scr];
         G.run(8); o.danach = [B.NET.rj, B.state().scr, B.NET.myId, B.NET.tok === tok0, !!A.get().players[1].away, A.get().players[1].gone, A.get().players[1].awN, (${FIG})(A, 1) === f0];
         o.evA = ev(A).filter(s => /tot|abwesend|rj ok/.test(s)); o.evB = ev(B).filter(s => /tot|rj/.test(s)); o.diff = WD(A, B);
-        /* Lobby: dort gilt die Erkennung nicht (Browser-Tabs im Hintergrund pingen nicht) */
-        const L = CT.mkLobby(2, 0), [LA, LB] = L.players; L.net.kill('c1'); L.run(20); o.lobby = [LA.state().scr, LA.NET.conns.length, LB.state().scr];
+        /* Lobby: die Erkennung gilt auch dort (versteckte Tabs pingen ueber bgPing) */
+        const L = CT.mkLobby(2, 0), [LA, LB] = L.players; L.net.kill('c1'); L.run(6); o.lobby0 = [LA.NET.conns.length, LA.NET.roster.length]; L.run(8); o.lobby = [LA.state().scr, LA.NET.conns.length + 1, LB.state().scr, LA.NET.roster.length];
+        /* Lobby verlassen: sofort weg, ein Neubeitritt mit anderem Namen belegt nur einen Platz */
+        const M = CT.mkLobby(3, 0), [MA, MB, MC] = M.players; MB.setName('Blau'); M.run(.5); const n0 = MA.NET.roster.length; MB.hostRoom(); M.run(.3); const gone = MA.NET.roster.length; const N = mkInst(M.net, 'n'); M.insts.push(N); N.setName('Bluppy'); N.joinRoom(MA.NET.code); M.run(2); o.verlassen = [n0, gone, MA.NET.roster.length, MA.NET.roster.map(r => r.name).join(',')];
         return o; })()`);
       t.eq(r.dead, 10, 'CFG.net.dead 10 s'); t.eq(r.wackelt.slice(1), [false, 'play'], 'nach 6 s ist noch nichts passiert (Anzeige wackelt genuegt)');
       t.eq(r.danach.slice(0, 5), [null, 'play', 1, true, false], 'nach 14 s: B ist ueber rejoin zurueck, gleicher Platz, gleiche Marke'); t.eq(r.danach.slice(5, 7), [false, 1], 'nicht gone, genau ein Abriss'); t.ok(r.danach[7], 'Figur unveraendert'); t.eq(r.diff, [], 'Welt gleich');
       t.ok(r.evA.some(s => /tot/.test(s)) && r.evA.some(s => /abwesend/.test(s)) && r.evA.some(s => /rj ok/.test(s)), 'Host-Flugschreiber: tot, abwesend, rj ok: ' + r.evA.join(' | ')); t.ok(r.evB.some(s => /tot/.test(s)), 'Client-Flugschreiber: tot: ' + r.evB.join(' | '));
-      t.eq(r.lobby, ['lobby', 1, 'lobby'], 'Lobby: keine Erkennung, beide bleiben');
+      t.eq(r.lobby0, [1, 2], 'Lobby nach 6 s: noch alle da'); t.eq(r.lobby, ['lobby', 1, 'title', 1], 'Lobby: die tote Leitung faellt nach 10 s heraus (Host: Eintrag weg, Client: Titel), kein Geist'); t.eq(r.verlassen.slice(0, 3), [3, 2, 3], 'Lobby verlassen: der Platz ist sofort frei, der Neubeitritt mit anderem Namen belegt nur einen Platz'); t.ok(!/Blau/.test(r.verlassen[3]) && /Bluppy/.test(r.verlassen[3]), 'ohne Geist Blau: ' + r.verlassen[3]);
     },
   },
   {
