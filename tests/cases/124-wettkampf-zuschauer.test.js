@@ -86,7 +86,7 @@ module.exports = [
           { const D3 = CT.mkDuel(2, 2), S4 = start(D3, true); S4.NET.sp2.conn.onmsg({ t: 'wel', id: 3, ver: 1, b: 'x' }); o.wel = [S4.sp2().live, S4.sp2().msg, S4.state().scr]; }
           { const D4 = CT.mkDuel(2, 2), S5 = start(D4, true); D4.B.NET.specs[0].close(); D4.run(1); o.zweitWeg = [S5.state().scr, S5.sp2().live, S5.sp2().msg, S5.get().players.length]; }
           { const D5 = CT.mkDuel(2, 2), S6 = start(D5, true); S6.specKey('t'); D5.run(.3); D5.A.NET.specs[0].close(); D5.run(1); o.zweitWegNachTausch = [S6.state().scr, S6.NET.code === D5.B.NET.code, S6.sp2().live, S6.sp2().msg];
-            D5.B.NET.specs[0].close(); D5.run(1); o.hauptWegNachTausch = [S6.state().scr, S6.sp2()]; }
+            D5.B.NET.specs[0].close(); D5.run(4); o.hauptWegNachTausch = [S6.state().scr, !!S6.NET.conn, !S6.NET.rj]; }
           const D2 = CT.mkDuel(2, 2), S3 = start(D2, true), n0 = [D2.A.NET.specs.length, D2.B.NET.specs.length]; S3.leaveGame(); D2.run(1); o.weg = [n0, D2.A.NET.specs.length, D2.B.NET.specs.length, S3.sp2(), S3.state().scr, S3.dlDelay()]; }
         return o; })()`);
       t.eq(r.aus.slice(0, 4), [false, r.aus[1], 'play', 2], 'B erlaubt keine Zuschauer: kein zweiter Strom, Hauptansicht laeuft'); t.ok(/nicht erlaubt/.test(r.aus[1]) && r.aus[4] === 0 && r.aus[5], 'Meldung Zuschauer sind nicht erlaubt (auch auf dem Bild), B hat keinen Zuschauer: ' + JSON.stringify(r.aus)); t.eq(r.ausT, [true], 'T ohne zweiten Strom bleibt bei A');
@@ -97,7 +97,7 @@ module.exports = [
       t.eq(r.wel.slice(0, 1).concat(r.wel[2]), [false, 'play'], 'ein gefaelschtes wel mit falscher Nummer oder Version beendet die Zweitverbindung, nicht das Spiel'); t.ok(/Version/.test(r.wel[1]), 'Meldung: ' + r.wel[1]);
       t.eq(r.zweitWeg.slice(0, 2), ['play', false], 'verliert die Zweitverbindung der Host, laeuft die Hauptansicht weiter'); t.ok(/verloren/.test(r.zweitWeg[2]) && r.zweitWeg[3] === 2, 'mit Meldung: ' + JSON.stringify(r.zweitWeg));
       t.eq(r.zweitWegNachTausch.slice(0, 3), ['play', true, false], 'nach dem Umschalten gilt das fuer die vertauschten Rollen (A ist jetzt die zweite Verbindung)'); t.ok(/verloren/.test(r.zweitWegNachTausch[3]), 'Meldung: ' + r.zweitWegNachTausch[3]);
-      t.eq(r.hauptWegNachTausch, ['title', null], 'verliert die Hauptverbindung (jetzt B) der Host, endet das Zuschauen mit Rueckkehr zum Titel');
+      t.eq(r.hauptWegNachTausch, ['play', true, true], 'verliert die Hauptverbindung (jetzt B) der Host, kommt der Zuschauer zurueck (N1b: Rueckkehr statt Titel) und schaut weiter');
     },
   },
   {
