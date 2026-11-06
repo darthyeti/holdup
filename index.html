@@ -640,7 +640,9 @@ const add=(sd,po)=>{if(Object.values(A).some(l=>l.some(q=>Math.abs(q.x-po.x)<2&&
 const dng=(x,y)=>(lay.pumps||[]).some(p=>Math.hypot(p.x-x,p.y-y)<V.danger);
 // Nach aussen rueckt ein Posten aus dem Gefahrenradius, bis er frei und sicher steht (hoechstens 6 Kacheln)
 const safe=(p,sd)=>{if(!p)return null;for(let k=0;k<=6;k++){const q=[p[0]+nrm[sd][0]*k,p[1]+nrm[sd][1]*k];if(free(q[0],q[1])&&!dng(q[0],q[1]))return q}return null};
-const pick=(x,y,hor,sd)=>{for(const k of[0,1,-1,2,-2]){const px=hor?x+k:x,py=hor?y:y+k;if(free(px,py))return safe([px,py],sd)}return null};
+// Ein Posten darf nicht zwischen Props und Wand eingemauert stehen (Seed 6428: Pflanzen und Kiste um die Kachel, Ticket #141): von seiner Kachel aus muessen mindestens 12 freie Kacheln erreichbar sein
+const open=q=>{const s=new Set([q[0]+','+q[1]]),st=[q];while(st.length&&s.size<12){const [a,b]=st.pop();for(const [dx,dy] of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=a+dx,ny=b+dy,kk=nx+','+ny;if(!s.has(kk)&&free(nx,ny)){s.add(kk);st.push([nx,ny])}}}return s.size>=12};
+const pick=(x,y,hor,sd)=>{for(const k of[0,1,-1,2,-2]){const px=hor?x+k:x,py=hor?y:y+k;if(free(px,py)){const r=safe([px,py],sd);if(!r||open(r))return r}}return null};
 for(const sp of lay.spots)if(sp.side&&sp.lk&&!sp.ex){const c0=sp.cells[0],p=[c0[0]-sp.iv[0],c0[1]-sp.iv[1]];if(free(p[0],p[1]))add(sp.side,{x:p[0],y:p[1],a:ang[sp.side],k:sp.side,door:[c0[0],c0[1]]})}
 // Anker an der Fluchtseite: kleine Gebaeude an den Enden der Zone und zwei Kacheln darueber, grosse (Tiefe ueber CFG.val.anchorBase, zum Beispiel das Casino) mit Abstand g um die Zone
 const dep=hz(xs)?B.x1-B.x0+1:B.y1-B.y0+1,g=Math.max(0,Math.round((dep-V.anchorBase)/V.anchorDiv)),r0=tl(ex.span[0]),r1=tl(ex.span[1])-1,ax=ex.tx+ex.dir*V.off.E;let nan=0;for(const [y0,dn] of[[r0-g,-1],[r1+g,1],[r0-2-2*g,-1]])for(let k=0;k<=6;k++){const y=y0+dn*k,p=xa?pick(ax,y,false,xs):pick(y,ax,true,xs),an=!lay.meet||nan<meetOf(scOf(lay)).anchors;if(p&&add(xs,Object.assign({x:p[0],y:p[1],a:ang[xs],k:xs},an?{anchor:true}:{}))){if(an)nan++;break}}
