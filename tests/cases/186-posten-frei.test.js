@@ -46,4 +46,17 @@ module.exports = [
       t.ok(!r.same, 'das Auto steht noch an der Stelle, die den Posten einschliesst: ' + JSON.stringify(r));
     },
   },
+  {
+    name: 'Posten frei: Bank-Seed 6428 (Strasse Ost, Treffpunkt abseits): kein Posten zwischen Pflanzen, Kiste und Wand eingemauert, validateMap ohne Fehler (Ticket #141)',
+    timeout: 60000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const D = __dbg; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]);
+        const lay = D.layoutFor(6428); D.buildLay(lay); const L = D.LAY(), W = D.world();
+        const walled = L.posts.filter(p => ![[1,0],[-1,0],[0,1],[0,-1]].some(([dx, dy]) => !W.isSol(p.x + dx, p.y + dy))).map(p => p.x + ',' + p.y);
+        return { err: D.validateMap(L).err.map(e => e.m), walled, n: L.posts.length, q: !!L.q }; })()`);
+      t.ok(r.q && r.n > 8, 'Karte gebaut ohne Rueckfall: ' + JSON.stringify(r));
+      t.eq(r.walled, [], 'Posten ohne freie Nachbarkachel');
+      t.eq(r.err, [], 'validateMap meldet Fehler');
+    },
+  },
 ];
