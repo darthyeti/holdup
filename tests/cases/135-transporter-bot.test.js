@@ -13,6 +13,8 @@ async function setup(t) {
 const FIND = `(pred, n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 1; sd < 600 && out.length < n; sd++) { const m = D.genTruckMission(sd); if (pred(m)) out.push(sd); } return out; }`;
 const OPT = `{ kit: 'full', sigma: .05, react: .35, police: false }`;
 // die ersten n Seeds ab 3000 ohne Panne und ohne Vorhut (beide haben einen anderen Ablauf und Zeitnullpunkt, eigene Tests unten)
+// fester Zufall fuer Laeufe, die auf "alle gewonnen" bestehen (Ticket 42): der Bot streut mit Math.random (gauss), und Seed 3003 verliert bei freiem Zufall gelegentlich (Gefasst, gemessen am Stand b1a0a51: 1 von 135 Laeufen; heute Rest-HP bis 24 herunter). Mit festem Zufall ist der Lauf auf jeder Maschine gleich.
+const SEEDED = `(a => { Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(20261106);`;
 const NP = `(n) => { const D = __dbg, out = []; D.setScenario('truck'); D.setSeedMode('random'); D.setLage([]); for (let sd = 3000; out.length < n; sd++) { const m = D.genTruckMission(sd); if (!m.panne && !m.vorhut) out.push(sd); } return out; }`;
 
 module.exports = [
@@ -79,7 +81,7 @@ module.exports = [
     name: 'Transporter-Bot: truckBatch gibt Siegquote, Quote gestoppter Wagen, Mittel der Meilensteine, Rest-HP und Ergebnisse, auf Wunsch je Gruppe (hier nach Strasse), die Gruppen ergeben zusammen alle Laeufe',
     async run(t) {
       await setup(t);
-      const r = await t.page.evaluate(`(() => { const b = bot.truckBatch(8, ${OPT}, 3000, x => x.street), g = Object.values(b.by); return { all: b.all, keys: Object.keys(b.by), sum: g.reduce((a, x) => a + x.n, 0), runs: b.runs.length, wins: g.reduce((a, x) => a + (x.res.WIN || 0), 0) }; })()`);
+      const r = await t.page.evaluate(`(() => { ${SEEDED} const b = bot.truckBatch(8, ${OPT}, 3000, x => x.street), g = Object.values(b.by); return { all: b.all, keys: Object.keys(b.by), sum: g.reduce((a, x) => a + x.n, 0), runs: b.runs.length, wins: g.reduce((a, x) => a + (x.res.WIN || 0), 0) }; })()`);
       t.eq(r.all.n, 8, 'acht Laeufe'); t.eq([r.all.win, r.all.stopped], [100, 100], 'alle gewonnen, alle Wagen gestoppt'); t.eq(r.sum, 8, 'die Gruppen ergeben zusammen alle Laeufe'); t.eq(r.runs, 8, 'je Lauf ein Eintrag'); t.eq(r.wins, 8, 'die Ergebnisse der Gruppen zaehlen mit');
       t.ok(r.all.offen > 0 && r.all.offen < r.all.voll && r.all.voll < r.all.zone, 'Mittel der Meilensteine in der richtigen Reihenfolge: ' + JSON.stringify([r.all.offen, r.all.voll, r.all.zone])); t.ok(r.keys.length >= 2, 'mehrere Strassenarten unter acht Seeds: ' + r.keys.join(','));
     },
