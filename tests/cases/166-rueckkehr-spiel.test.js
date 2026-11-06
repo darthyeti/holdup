@@ -324,4 +324,20 @@ module.exports = [
       t.eq(r.nach.slice(0, 3), ['lobby', 'client', 2], 'mit Namen und Enter im Raum'); t.ok(/Zed/.test(r.nach[3]), 'mit dem getippten Namen: ' + r.nach[3]); t.eq(r.nach[4], false, 'kein offener Linkbeitritt mehr'); t.eq(r.ohne, ['client', 3], 'Beitritt ueber den Code wie bisher');
     },
   },
+  {
+    name: 'N1 Tab im Hintergrund / Alt-Tab bis 30 s: Steht der Tab eines Clients still (kein tick, keine Pings aus netWatch), halten die Timer-Pings (bgPing) die Leitung am Leben, niemand wird abwesend; ohne sie waere B nach 10 s abwesend (Gegenprobe); steht der Host im Shop still (kein tick), antworten Pings trotzdem und kein Client geht in die Rueckkehr',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { const o = {}, run = (G, list, sec, each) => { for (let i = 0; i < Math.round(sec * 60); i++) { step(list, G.net, 1 / 60); if (each && i % 120 === 0) each(); } };
+        /* (a) Client B versteckt, mit Timer-Pings */
+        let G = (${MK})(3), [A, B, C] = G.insts; const nAbw = d => d.flog().dump().ereignisse.filter(e => e[2] === 'netz' && (e[3][0] === 'abwesend' || e[3][0] === 'tot')).length; run(G, [A, C], 30, () => B.bgPing()); o.a = [!!A.get().players[1].away, A.NET.conns.length + 1, !!B.NET.rj, nAbw(A)]; run(G, [A, B, C], 5); o.a2 = [!!A.get().players[1].away, !!B.NET.rj, B.state().scr, A.get().players[1].awN | 0];
+        /* Gegenprobe: ohne Pings wird B abwesend */
+        G = (${MK})(3); [A, B, C] = G.insts; run(G, [A, C], 14); o.ohne = [A.flog().dump().ereignisse.some(e => e[2] === 'netz' && e[3][0] === 'abwesend')];
+        /* (b) Host im Shop und still */
+        G = (${MK})(3); [A, B, C] = G.insts; A.openShop(); run(G, [B, C], 30); o.b = [!!B.NET.rj, !!C.NET.rj, B.state().scr, nAbw(B)]; run(G, [A, B, C], 5); o.b2 = [!!A.get().players[1].away, !!A.get().players[2].away, !!B.NET.rj, !!C.NET.rj, A.NET.conns.length + 1, nAbw(A)];
+        return o; })()`);
+      t.eq(r.a, [false, 3, false, 0], '30 s versteckt mit Timer-Pings: nicht abwesend, keine Rueckkehr'); t.eq(r.a2, [false, false, 'play', 0], 'danach weiter anwesend, kein Abriss gezaehlt');
+      t.eq(r.ohne, [true], 'Gegenprobe: ohne Pings wird B nach 10 s als tot erkannt und abwesend (die Erkennung greift; die Rueckkehr folgt sofort, weil B erreichbar ist)'); t.eq(r.b, [false, false, 'play', 0], 'Host 30 s still: kein Client geht in die Rueckkehr'); t.eq(r.b2, [false, false, false, false, 3, 0], 'Host wieder aktiv: niemand abwesend');
+    },
+  },
 ];
