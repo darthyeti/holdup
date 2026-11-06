@@ -1,0 +1,4 @@
+[
+ {"name":"00-titel","sc":"bank","seed":"classic","code":"D.toTitle(); out.scr=D.state().scr;"},
+ {"name":"01-bank-phase1","sc":"bank","seed":"classic","code":"D.startGame&&0; const g=D.get(); out.scr=D.state().scr; out.p=[g.me.x,g.me.y]; for(let i=0;i<60;i++)D.update(1/30);"}
+]
