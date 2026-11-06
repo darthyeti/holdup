@@ -725,7 +725,7 @@ while(h<q.length){const c=q[h++];if(c[0]===tx&&c[1]===ty)break;for(const v of D4
 if(!G(tx,ty))return[];const out=[];let c=[tx,ty];while(!(c[0]===s0[0]&&c[1]===s0[1])){out.push([c[0]*T+16,c[1]*T+16]);c=G(c[0],c[1])}out.reverse();return out}
 const restricted=(x,y)=>{const tx=Math.floor(x/T),ty=Math.floor(y/T);return LAY.zones.some(z=>tx>=z[0]&&tx<=z[2]&&ty>=z[1]&&ty<=z[3])};
 const inBld=(x,y)=>{const tx=Math.floor(x/T),ty=Math.floor(y/T);return tx>LAY.bld.x0&&tx<LAY.bld.x1&&ty>LAY.bld.y0&&ty<LAY.bld.y1};
-let pnH=0,nDrop=null,robN=0,hostN=0,hostK=0,holdX=0,shX=0,phase,tH,ended,players,me,p,npcs,en,pcs,fps=[],bl,pt,brn=[],shk={a:0,t:0},cs,corp,fx,feed,pk,cams,its,traps=[],aids=[],bars=[],tk=null,vh=null,capd=[],keyTaken=false,cargoOpen=false,capt=0,surKilled=0,radioDown=0,secured,code,mon,sus,banner,waveN,waveT,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,vanBk,policeShown,civKills,kills,escaped,time=0,dist,flowT,focus=false,keys=Object.create(null),mouse={x:0,y:0,sx:0,sy:0,t:-9,down:0},camX=0,camY=0,camDown=0,rT=0,blk=0,evDone={},carsLight=0,eid=0,bid=0,nPl=1,seq=0,pend=[],evq=[],titleNote=null,joinText='',gr=[],gc=[],gq=[],smk=[],dcy=[],specT=null,specFree=false,specAll=false,specChips=[],losAll=false,spQ=[];
+let pnH=0,nDrop=null,robN=0,hostN=0,hostK=0,holdX=0,shX=0,phase,tH,ended,players,me,p,npcs,en,pcs,fps=[],bl,pt,brn=[],shk={a:0,t:0},cs,corp,fx,feed,pk,cams,its,traps=[],aids=[],bars=[],tk=null,vh=null,capd=[],keyTaken=false,cargoOpen=false,capt=0,surKilled=0,radioDown=0,secured,code,mon,sus,banner,waveN,waveT,policeAt,vanAt,vanArr,vanCalled,vanX,vanMode,vanNv,vanBk,vanHk,policeShown,civKills,kills,escaped,time=0,dist,flowT,focus=false,keys=Object.create(null),mouse={x:0,y:0,sx:0,sy:0,t:-9,down:0},camX=0,camY=0,camDown=0,rT=0,blk=0,evDone={},carsLight=0,eid=0,bid=0,nPl=1,seq=0,pend=[],evq=[],titleNote=null,joinText='',gr=[],gc=[],gq=[],smk=[],dcy=[],specT=null,specFree=false,specAll=false,specChips=[],losAll=false,spQ=[];
 /* ---- Spieler, Ereignisse (evt/fxApply), Simulation. Host und Solo rechnen, Clients folgen Schnappschuessen. ---- */
 function clearKeys(){for(const q in keys)delete keys[q]}
 const PC=[{n:'Orange',c:'#ff9a3c',a:1,u:7},{n:'Blau',c:'#5aa0ff',a:9,u:12},{n:'Grün',c:'#5ad27a',a:10,u:13},{n:'Lila',c:'#b57aff',a:11,u:14}];
@@ -1002,7 +1002,7 @@ for(const b of bars)if(b.lv>0)b.cells.forEach((c,i)=>setc(c[0],c[1],b.pv[i]));ba
 if(tk&&tk.cells)for(const c of tk.cells)setc(c[0],c[1],'o');tk=null;if(vh&&vh.cells)for(const c of vh.cells)setc(c[0],c[1],'o');vh=null;
 if(mapSeed!==null&&(LAY.seed!==mapSeed||scOf(LAY)!==jobSc||(LAY.mission.lgw||[]).join(',')!==warnFor(jobSc)))buildWorld(layoutFor(mapSeed));
 LAY.lockCells.forEach(q=>setc(q[0],q[1],'L'));(LAY.wins||[]).forEach(w=>setc(w.x,w.y,'W'));camDown=0;rT=0;blk=0;evDone={};
-pnH=0;phase=1;tH=0;ended=null;vaultOpen=false;secured=0;escaped=0;code=false;nDrop=null;mon=false;sus=0;alarmT=0;alarmBy=null;banner=null;waveN=0;waveT=0;hostN=0;hostK=0;robN=0;holdX=0;shX=0;policeAt=0;vanAt=LAY.nb?1e9:CFG.vanAuto;vanArr=false;vanCalled=false;setAlt(0);altN=0;vanX=LANE.van.from;vanMode=0;vanNv=0;vanBk=0;policeShown=false;civKills=0;kills=0;flowT=0;carsLight=0;eid=0;bid=0;seq=0;pend=[];evq=[];capd=[];keyTaken=false;cargoOpen=false;capt=0;surKilled=0;radioDown=0;
+pnH=0;phase=1;tH=0;ended=null;vaultOpen=false;secured=0;escaped=0;code=false;nDrop=null;mon=false;sus=0;alarmT=0;alarmBy=null;banner=null;waveN=0;waveT=0;hostN=0;hostK=0;robN=0;holdX=0;shX=0;policeAt=0;vanAt=LAY.nb?1e9:CFG.vanAuto;vanArr=false;vanCalled=false;setAlt(0);altN=0;vanX=LANE.van.from;vanMode=0;vanNv=0;vanBk=0;vanHk=0;policeShown=false;civKills=0;kills=0;flowT=0;carsLight=0;eid=0;bid=0;seq=0;pend=[];evq=[];capd=[];keyTaken=false;cargoOpen=false;capt=0;surKilled=0;radioDown=0;
 if(NET.role!=='client')kits=buildKits();players=Array.from({length:nPl},(_,i)=>mkPl(i,nPl,kits[i]));me=NET.spec?mkGhost():players[Math.min(NET.myId,nPl-1)];p=me;if(NET.role==='host')players.forEach(o=>{if(o.id>0&&!NET.conns.some(c=>c.pid===o.id)){o.gone=true;o.dc=true}});
 en=[];pcs=[];fps=[];bl=[];gr=[];gc=[];gq=[];smk=[];dcy=[];pt=[];brn=[];shk.a=0;shk.t=0;cs=[];corp=[];fx=[];feed=[];pk=[];npcs=[];funkMk=[];pings=[];funkT=0;funkLast=null;
 if(NET.role!=='client')decorCars();
@@ -1560,13 +1560,14 @@ const vanAtStop=()=>Math.abs(vanX-LANE.van.stop)<=2;
 function copsCount(l,k){l=l||LANE;const m=l.van.mid(l.van.stop),r=CFG.van.r*(k||1);let n=0;for(const e of en)if(COPK[e.kind]&&e.hp>0&&!e.sur&&Math.hypot(e.x-m[0],e.y-m[1])<r)n++;return n}
 const copsNearVan=(l,k)=>copsCount(l,k)>0;
 function vanStep(dt){const F=CFG.van,mvTo=to=>{vanX+=clamp(to-vanX,-dt*F.spd,dt*F.spd)};
-if(vanMode===0){mvTo(LANE.van.stop);if(vanAtStop()){if(copsNearVan()){if(vanNv===0){say('Beamte am Fluchtwagen: Der Fahrer wird nervös!');snd('alert')}vanNv+=dt;if(vanNv>=F.leave){vanMode=1;vanNv=0;say('Der Fahrer haut ab!');ban('Der Fahrer haut ab!',2.4);snd('van')}}else vanNv=Math.max(0,vanNv-dt*2)}}
+if(vanMode===0){mvTo(LANE.van.stop);if(vanAtStop()){if(copsNearVan()){if(vanNv===0){say('Beamte am Fluchtwagen: Der Fahrer wird nervös!');snd('alert')}vanNv+=dt;if(vanNv>=F.leave){vanMode=1;vanNv=0;vanHk=0;say('Der Fahrer haut ab!');ban('Der Fahrer haut ab!',2.4);snd('van')}}else vanNv=Math.max(0,vanNv-dt*2)}}
 else if(vanMode===1){mvTo(LANE.van.from);if(Math.abs(vanX-LANE.van.from)<=2){vanMode=2;vanBk=0;say('Der Fahrer wartet abseits, bis die Polizei weg ist.')}}
 else if(vanMode===2){vanBk+=dt;if(vanBk>=F.back&&!copsNearVan()){vanMode=3;say('Der Fahrer kommt zurück.');snd('van')}else if(vanBk>=CFG.alt.wait&&copsNearVan()&&altCan())altSwap(false)}
-else{mvTo(LANE.van.stop);if(vanAtStop()){vanMode=0;vanNv=0;say('Der Fluchtwagen ist wieder da.')}}}
+else{mvTo(LANE.van.stop);if(vanAtStop()){vanMode=0;vanNv=0;say('Der Fluchtwagen ist wieder da.')}}
+if(vanMode===0&&!vanHk&&vanAtStop()){vanHk=1;const m=LANE.van.mid(vanX);snd('horn',m[0],m[1])}}
 /* Ausweichen (D3): Haelt die Polizei den Treffpunkt und ist der andere frei (kein Beamter naeher als CFG.van.r mal CFG.alt.free am Halt), kommt der Fahrer dort hin, hoechstens CFG.alt.max Mal je Auftrag. Beim Eintreffen (first) faehrt er gleich dort ein, sonst nach CFG.alt.wait Sekunden abseits (statt erst nach CFG.van.back). */
 const altCan=()=>!!ALT&&altN<CFG.alt.max&&!copsNearVan(vanAlt?ALT.a:ALT.lane,CFG.alt.free);
-function altSwap(first){const o=vanAlt?ALT.lane:ALT.a;setAlt(vanAlt?0:1);altN++;vanX=LANE.van.from;vanMode=first?0:3;vanNv=0;
+function altSwap(first){const o=vanAlt?ALT.lane:ALT.a;setAlt(vanAlt?0:1);altN++;vanX=LANE.van.from;vanMode=first?0:3;vanNv=0;vanHk=0;
 const d=LANE.van.pos-o.van.pos,w=LANE.axis==='x'?(d<0?'Norden':'Süden'):(d<0?'Westen':'Osten');LOG.ev('fahrer',['ausweichen',vanAlt,altN]);snd('van');
 ban('Der Fahrer weicht aus: weiter im '+w+'!',3.2);say(first?'Fluchtwagen ist da, aber die Polizei hält den Treffpunkt. Der Fahrer weicht aus: weiter im '+w+', der grüne Pfeil zeigt hin':'Fahrer: Ich weiche aus! Neuer Treffpunkt weiter im '+w+', der grüne Pfeil zeigt hin')}
 function vanBoard(act,dt){const F=CFG.van,open=vanMode===0&&vanAtStop()&&vanNv===0;
