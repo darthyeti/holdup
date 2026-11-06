@@ -11,6 +11,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Spieltest (ungespielt, kurz)
 
+- **Kasse lautlos** (Ticket #134): Kassierer von hinten ausschalten, dann lässt sich seine Kasse leise leeren (2,6 s, 2.500). Lohnt es sich, ist der leise Weg zu stark oder zu knapp?
 - **Grafikregler** (Ticket #118): Optionen, Kachel Grafik (niedrig, mittel, hoch, Voreinstellung mittel). Mittel und hoch: weichere Sichtkante, leichte Farbe und Vignette je Tageszeit. Wirkt es realistisch und dezent, ruckelt es auf deinem Rechner?
 - **Spuren und Wucht** (Ticket #119, Vorschau im PR): Blutlachen, Einschüsse, Glas, Ruß und Hülsen bleiben liegen; Kamera wackelt bei Schuss, Treffer und Schaden, roter Rand bei Schaden, Gegner zucken. Kacheln Wackeln und Blut in den Optionen. Zu viel oder zu wenig, stört das Wackeln beim Zielen? (Spuren und Zucken erst ab Grafik mittel.)
 - **Ton mit Wucht** (Ticket #120, Paket A3 der Studie): Klingen Pistole, SMG und Sturmgewehr verschieden, hat jeder Schuss einen tiefen Schlag mit kurzem Nachhall? Explosionen mit langem Tiefton, Nachgrollen und Trümmerprasseln, ohne zu übersteuern? Klingt Feuer hinter einer Wand dumpf und leiser (Polizei draußen orten)? Menütöne: Fokus tickt, Bestätigen, Zurück, Kauf, Gesperrt. Werte in `SND.tune` (`js/snd.js`).
