@@ -85,11 +85,11 @@ module.exports = [
     async run(t) {
       await SETUP(t);
       const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(2), [A, B] = G.insts;
-        G.net.cut('c1', { silent: true, closeAfter: 30 }); G.run(20); o.still = [!!A.get().players[1].away, A.NET.conns.length + 1, !!B.NET.rj]; G.net.heal('c1'); G.run(40); o.heal = [!!A.get().players[1].away, A.NET.conns.length + 1, !!B.NET.rj, B.state().scr];
+        G.net.cut('c1', { silent: true, closeAfter: 30 }); G.run(8); o.still = [!!A.get().players[1].away, A.NET.conns.length + 1, !!B.NET.rj]; G.net.heal('c1'); G.run(40); o.heal = [!!A.get().players[1].away, A.NET.conns.length + 1, !!B.NET.rj, B.state().scr];
         G.net.cut('c1', { silent: true, closeAfter: 5 }); G.run(8); o.zu = [!!A.get().players[1].away, !!B.NET.rj, B.state().scr, A.NET.aw[1] && Math.round(A.NET.aw[1].t)]; G.run(20); o.blockiert = [!!A.get().players[1].away, !!B.NET.rj];
         G.net.heal('c1'); G.run(8); o.zurueck = [!!A.get().players[1].away, B.NET.rj, B.state().scr, A.NET.conns.length + 1, A.get().players[1].gone];
         return o; })()`);
-      t.eq(r.still, [false, 2, false], 'still, vor closeAfter: keine Abwesenheit, keine Rueckkehr'); t.eq(r.heal, [false, 2, false, 'play'], 'nach heal bleibt alles offen');
+      t.eq(r.still, [false, 2, false], 'still, vor closeAfter und vor CFG.net.dead (8 s): keine Abwesenheit, keine Rueckkehr'); t.eq(r.heal, [false, 2, false, 'play'], 'nach heal bleibt alles offen');
       t.eq(r.zu.slice(0, 3), [true, true, 'play'], 'nach closeAfter: B abwesend, in der Rueckkehr'); t.ok(r.zu[3] > 40, 'Rest der Frist laeuft: ' + r.zu[3]);
       t.eq(r.blockiert, [true, true], 'solange die Leitung weg ist, bleibt es so'); t.eq(r.zurueck, [false, null, 'play', 2, false], 'nach heal: B ist zurueck');
     },
@@ -266,6 +266,62 @@ module.exports = [
         const H = (${MK})(2), [A2, B2] = H.insts; H.net.signalDown(A2.NET.code, { hold: true }); H.net.cut('c1'); H.run(12); H.net.signalUp(A2.NET.code); H.run(8); o.zurueck = [B2.state().scr, B2.NET.rj, A2.get().players[1].away];
         return o; })()`);
       t.eq(r.t, 20, 'CFG.net.goneT 20 s'); t.eq(r.mitte, ['play', true], 'nach 12 s wartet B noch'); t.eq(r.ende, ['title', null, 'solo'], 'nach rund 20 s steht B auf dem Titel'); t.eq(r.zurueck, ['play', null, null], 'kommt der Raum vor Ablauf zurueck, kehrt B zurueck');
+    },
+  },
+  {
+    name: 'N1 tote Leitung (Tills Spieltest): Stirbt die Verbindung still und fuer immer (WLAN weg, neue Adresse, kein onclose), erkennen Host und Client das nach CFG.net.dead (10 s) selbst: der Host macht den Spieler abwesend, der Client geht in rejoin und kommt mit demselben Platz zurueck; in der Lobby greift die Erkennung nicht',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(3), [A, B, C] = G.insts, ev = ${NETEV}; o.dead = A.CFG.net.dead; const f0 = (${FIG})(A, 1), tok0 = B.NET.tok;
+        G.net.kill('c1'); G.run(6); o.wackelt = [!!A.get().players[1].away, !!B.NET.rj, B.state().scr];
+        G.run(8); o.danach = [B.NET.rj, B.state().scr, B.NET.myId, B.NET.tok === tok0, !!A.get().players[1].away, A.get().players[1].gone, A.get().players[1].awN, (${FIG})(A, 1) === f0];
+        o.evA = ev(A).filter(s => /tot|abwesend|rj ok/.test(s)); o.evB = ev(B).filter(s => /tot|rj/.test(s)); o.diff = WD(A, B);
+        /* Lobby: dort gilt die Erkennung nicht (Browser-Tabs im Hintergrund pingen nicht) */
+        const L = CT.mkLobby(2, 0), [LA, LB] = L.players; L.net.kill('c1'); L.run(20); o.lobby = [LA.state().scr, LA.NET.conns.length, LB.state().scr];
+        return o; })()`);
+      t.eq(r.dead, 10, 'CFG.net.dead 10 s'); t.eq(r.wackelt.slice(1), [false, 'play'], 'nach 6 s ist noch nichts passiert (Anzeige wackelt genuegt)');
+      t.eq(r.danach.slice(0, 5), [null, 'play', 1, true, false], 'nach 14 s: B ist ueber rejoin zurueck, gleicher Platz, gleiche Marke'); t.eq(r.danach.slice(5, 7), [false, 1], 'nicht gone, genau ein Abriss'); t.ok(r.danach[7], 'Figur unveraendert'); t.eq(r.diff, [], 'Welt gleich');
+      t.ok(r.evA.some(s => /tot/.test(s)) && r.evA.some(s => /abwesend/.test(s)) && r.evA.some(s => /rj ok/.test(s)), 'Host-Flugschreiber: tot, abwesend, rj ok: ' + r.evA.join(' | ')); t.ok(r.evB.some(s => /tot/.test(s)), 'Client-Flugschreiber: tot: ' + r.evB.join(' | '));
+      t.eq(r.lobby, ['lobby', 1, 'lobby'], 'Lobby: keine Erkennung, beide bleiben');
+    },
+  },
+  {
+    name: 'N1 Neuladen (Marke weg): Ein neuer Tab mit dem Namen des Spielers kommt auf dessen Platz zurueck, solange der Platz abwesend ist oder die alte Leitung wackelt; ein fremder Name wird abgewiesen; zwei gleichnamige Treffer gelten nicht',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { const o = {}, G = (${MK})(3), [A, B, C] = G.insts; B.setName('Bo'); C.setName('Cy'); G.run(1); const f0 = (${FIG})(A, 1);
+        /* (a) Leitung wackelt, der Host hat B noch nicht abgeschrieben */
+        G.net.kill('c1'); G.run(5); o.wackelt = [!!A.get().players[1].away, A.NET.conns.length + 1]; const tok0 = B.NET.tok;
+        const X = mkInst(G.net, 'x'); G.insts.push(X); X.setName('Bo'); X.joinRoom(A.NET.code); G.run(3);
+        o.alt = [B.NET.rj ? 1 : 0, B.state().scr, X.NET.tok !== tok0]; o.a = [X.state().scr, X.NET.myId, X.NET.role, !!A.get().players[1].away, A.NET.conns.length + 1, (${FIG})(A, 1) === f0, WD(A, X).length];
+        /* (b) B ist abwesend (Reload nach der Frist von 10 s) */
+        (${DOWN})(G, 'x'); G.run(14); o.abw = [!!A.get().players[1].away, Object.keys(A.NET.aw).join(',')];
+        const Y = mkInst(G.net, 'y'); G.insts.push(Y); Y.setName('bo'); Y.joinRoom(A.NET.code); G.run(3);
+        o.b = [Y.state().scr, Y.NET.myId, !!A.get().players[1].away, Object.keys(A.NET.aw).length, (${FIG})(A, 1) === f0];
+        /* (c) fremder Name: abgewiesen */
+        const Z = mkInst(G.net, 'z'); G.insts.push(Z); Z.setName('Dora'); Z.joinRoom(A.NET.code); G.run(3); o.c = [Z.state().scr, Z.NET.role, A.NET.conns.length + 1];
+        return o; })()`);
+      t.eq(r.wackelt, [false, 3], 'vorher: Leitung tot, Host hat B noch nicht abgeschrieben');
+      t.eq(r.a.slice(0, 3), ['play', 1, 'client'], 'Neuladen bei wackelnder Leitung: neuer Tab auf Platz 1'); t.eq(r.a.slice(3, 6), [false, 3, true], 'B nicht abwesend, drei Spieler, Figur unveraendert'); t.eq(r.a[6], 0, 'Welt gleich');
+      t.eq(r.abw, [true, '1'], 'B ist abwesend'); t.eq(r.b.slice(0, 2), ['play', 1], 'Neuladen bei abwesendem Platz (Name gross/klein egal): Platz 1'); t.eq(r.b.slice(2), [false, 0, true], 'nicht mehr abwesend, Figur unveraendert');
+      t.eq(r.c.slice(0, 2), ['title', 'solo'], 'fremder Name: abgewiesen'); t.eq(r.c[2], 3, 'kein neuer Spieler');
+    },
+  },
+  {
+    name: 'N1 Beitritt per Link verlangt einen selbst getippten Namen: Der Link startet den Beitritt nicht, der Bildschirm zeigt die Aufforderung, Enter ohne Namen tut nichts, ein getippter Name plus Enter tritt bei (Esc und Tab brechen nicht ab); ohne Link (Raum beitreten ueber den Code) bleibt alles wie bisher',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { const o = {}, G = CT.mkLobby(1, 0), A = G.A, txt = ${TEXTS}; A.setName('Anna'); G.run(.3);
+        const X = mkInst(G.net, 'x'); G.insts.push(X); X.setName('Gespeichert'); X.linkBegin(A.NET.code, false); G.run(3);
+        const key = (d, k) => d.cv.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+        o.vor = [X.state().scr, X.NET.role, A.NET.roster.length, !!X.linkJoin(), txt(X).some(s => /Du trittst Raum/.test(s))];
+        key(X, 'Enter'); G.run(2); o.leer = [X.NET.role, A.NET.roster.length, !!X.linkJoin()]; key(X, 'Escape'); key(X, 'Tab'); G.run(.2); o.esc = [X.NET.role, !!X.linkJoin()];
+        for (const ch of 'Zed') key(X, ch); G.run(.2); o.tippt = txt(X).some(s => /Enter: beitreten als Zed/.test(s)); key(X, 'Enter'); G.run(3);
+        o.nach = [X.state().scr, X.NET.role, A.NET.roster.length, A.NET.roster.map(r => r.name).join(','), !!X.linkJoin()];
+        const Y = mkInst(G.net, 'y'); G.insts.push(Y); Y.setName('Yvo'); Y.joinRoom(A.NET.code); G.run(2); o.ohne = [Y.NET.role, A.NET.roster.length];
+        return o; })()`);
+      t.eq(r.vor, ['coop', 'solo', 1, true, true], 'der Link allein tritt nicht bei, die Aufforderung steht da'); t.eq(r.leer, ['solo', 1, true], 'Enter ohne Namen: nichts'); t.eq(r.esc, ['solo', true], 'Esc und Tab brechen nicht ab'); t.ok(r.tippt, 'Hinweis zeigt den getippten Namen');
+      t.eq(r.nach.slice(0, 3), ['lobby', 'client', 2], 'mit Namen und Enter im Raum'); t.ok(/Zed/.test(r.nach[3]), 'mit dem getippten Namen: ' + r.nach[3]); t.eq(r.nach[4], false, 'kein offener Linkbeitritt mehr'); t.eq(r.ohne, ['client', 3], 'Beitritt ueber den Code wie bisher');
     },
   },
 ];
