@@ -1674,7 +1674,7 @@ if(civKills>0){const pn=civKills*5000;score-=pn;lines.push('Zivilisten getroffen
 if(lost>0)lines.push('Beute verloren: '+fmt(lost));
 score=Math.max(0,score);lines.push('Ausgeschaltet: '+kills);if(phase===2)lines.push('Dauer: '+tm(tH));if(LAY.nb&&phase===2)lines.push('Gebäude gehalten: '+tm(nbh.t)+' ('+Math.round(100*nbh.t/Math.max(1,tH))+' %)');
 const hi=lines.length;lines.push('Ergebnis: '+fmt(score));
-const lf=win&&!LAY.prison&&!NET.duel&&players.length>1&&players.some(o=>o.out)?pzNorm(players.filter(o=>!o.out&&!o.dc).map(o=>o.id),players.length):[],res={pz:lf,win,title,extra:extra||'',lines,hi,score,n:players.length,soft:!!soft,sp:win?{goal:!!goal&&goalOk(),quiet:phase===1,tr:!!LAY.truck}:null};if(win||soft)res.fh=heatCalc(win);if(players.length>1){const aw=awards();if(aw.length)res.aw=aw}
+const lf=win&&!LAY.prison&&!NET.duel&&players.length>1&&players.some(o=>o.out)?pzNorm(players.filter(o=>!o.out&&!o.gone).map(o=>o.id),players.length):[],res={pz:lf,win,title,extra:extra||'',lines,hi,score,n:players.length,soft:!!soft,sp:win?{goal:!!goal&&goalOk(),quiet:phase===1,tr:!!LAY.truck}:null};if(win||soft)res.fh=heatCalc(win);if(players.length>1){const aw=awards();if(aw.length)res.aw=aw}
 duelRound(res);if(NET.role==='host'){NET.hEnd=res;bcast({t:'end',res})}endLocal(res)}
 /* Nach einem Auftrag bleibt, was uebrig ist: Vorraete, Westenrest und Helmtreffer */
 function keepKit(){for(const q of CONS)SESSION.cons[q]=me[q]|0;if(SESSION.own.vest)SESSION.wear.vest=Math.max(0,Math.round(me.ar));if(SESSION.own.helm)SESSION.wear.helm=Math.max(0,me.hh|0)}

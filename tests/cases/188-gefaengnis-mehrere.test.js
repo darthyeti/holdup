@@ -18,7 +18,7 @@ module.exports = [
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
       const r = await t.page.evaluate(`(() => {
         const H = ${HELP}, o = {}, M = H.mk('bank', 5, 3), A = M.A, G = M.G, C1 = G.clients[0], C2 = G.clients[1];
-        A.get().players[0].out = true; A.finish(true, 'Teilweise entkommen', 'x'); G.run(1);
+        A.get().players[0].out = true; A.get().players[1].dc = 2; A.get().players[2].dc = 1; /* dc ist die Zahl der Ablenker im Rucksack, kein Trennungs-Merker */ A.finish(true, 'Teilweise entkommen', 'x'); G.run(1);
         o.pz = [A.SESSION.pz, C1.SESSION.pz, C2.SESSION.pz];
         o.msg = [A, C1, C2].map(d => /Spieler \\d und Spieler \\d sitzen im Gefängnis/.test((d.get().ended || {}).pz || '') || /sitzen im Gefängnis/.test((d.get().ended || {}).pz || ''));
         A.startNext(); G.run(2.5);
