@@ -389,7 +389,7 @@ export function mkView3d(X) {
     ren.render(scene, cam);
     g2d.drawImage(ren.domElement, 0, 0, VW, VH);
     const ms = performance.now() - t0; st.ms = st.msN ? st.ms * .9 + ms * .1 : ms; st.msN++; st.last = { ms, calls: ren.info.render.calls, tris: ren.info.render.triangles };
-    ui();
+    ui(); if (box.style.display === 'none') box.style.display = 'flex';
   }
 
   // Bedienung: Schieber am Bildrand, Tasten Bild hoch/runter (Kippung), Pos1 (senkrecht), Ende (Schatten), Plus/Minus und Mausrad (Zoom)

@@ -2489,7 +2489,7 @@ S0();g.globalCompositeOperation='source-over';V3.render(poly,g)}
 function draw(){draw1();netHud()}
 function draw1(){let ox=0,oy=0;if(scr==='play'&&shk.t>0&&shk.a>.3&&FXO.shake){const am=shk.a*Math.min(1,shk.t/CFG.fx.boom.shakeT);kkN++;ox=Math.round((trR(kkN,11,1)-.5)*4*am)/2;oy=Math.round((trR(kkN,13,2)-.5)*4*am)/2}const ko=kickOff();if(ko){ox+=ko[0];oy+=ko[1]}if(ox||oy){camX+=ox;camY+=oy;try{draw0()}finally{camX-=ox;camY-=oy;mw()}}else draw0()}
 function draw0(){
-if(scr!=='play'){drawMenu();drawChat();return}
+if(scr!=='play'){if(V3&&V3.on)V3.show(0);drawMenu();drawChat();return}
 mw();
 if(V3&&V3.on){v3Draw()}else{
 W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(camX-2,camY-2,VW+4,VH+4);{const sx=(camX-WX0*T)*2,sy=(camY-WY0*T)*2;g.drawImage(st,sx,sy,VW*2,VH*2,camX,camY,VW,VH);g.drawImage(so,sx,sy,VW*2,VH*2,camX,camY,VW,VH);g.drawImage(dcv,sx,sy,VW*2,VH*2,camX,camY,VW,VH)}
