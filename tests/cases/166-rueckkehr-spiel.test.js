@@ -342,4 +342,20 @@ module.exports = [
       t.eq(r.ohne, [true], 'Gegenprobe: ohne Pings wird B nach 10 s als tot erkannt und abwesend (die Erkennung greift; die Rueckkehr folgt sofort, weil B erreichbar ist)'); t.eq(r.b, [false, false, 'play', 0], 'Host 30 s still: kein Client geht in die Rueckkehr'); t.eq(r.b2, [false, false, false, false, 3, 0], 'Host wieder aktiv: niemand abwesend');
     },
   },
+  {
+    name: 'N1 Platzluecken beim Start (Tills Log): Geht oder wird ein Mitspieler in der Lobby entfernt, waehrend ein hoeherer bleibt (Plaetze 0, 2), bekommt jeder Verbleibende eine Figur: die Plaetze ruecken auf, go traegt die alten Nummern, der Client nimmt seinen Index; der Entfernte ist kein Spieler',
+    async run(t) {
+      await SETUP(t);
+      const r = await t.page.evaluate(`(() => { const o = {}, res = [];
+        for (const how of ['kick', 'leave']) {
+          const G = CT.mkLobby(3, 0), [A, B, C] = G.players; B.setName('Blau'); C.setName('Bluppy'); G.run(.5); o.vor = A.NET.roster.map(r => r.id).join(',');
+          if (how === 'kick') A.kickPlayer(1); else B.leaveGame('weg'); G.run(1); const ids = A.NET.roster.map(r => r.id).join(',');
+          A.startCoop(); G.run(3); const pl = A.get().players;
+          res.push({ how, ids, np: pl.length, gone: pl.map(p => !!p.gone), names: A.NET.roster.map(r => r.id + ':' + r.name).join(','), cId: C.NET.myId, cMe: C.get().me && C.get().me.id, cPl: C.get().players.length, cGone: C.get().players.map(p => !!p.gone), conn: A.NET.conns.map(c => c.pid).join(','), bScr: B.state().scr, kit: pl.length });
+        }
+        o.res = res; return o; })()`);
+      t.eq(r.vor, '0,1,2', 'drei im Raum');
+      for (const x of r.res) { t.eq(x.ids, '0,2', x.how + ': nach dem Entfernen bleiben die Plaetze 0 und 2'); t.eq(x.np, 2, x.how + ': zwei Figuren'); t.eq(x.gone, [false, false], x.how + ': keine Figur ist weg'); t.eq(x.cId, 1, x.how + ': Bluppy ist jetzt Platz 1'); t.eq(x.cMe, 1, x.how + ': seine Figur ist die auf Platz 1'); t.eq(x.cGone, [false, false], x.how + ': auch beim Client ist niemand weg'); t.eq(x.conn, '1', x.how + ': die Verbindung gehoert zu Platz 1'); t.ok(/1:Bluppy/.test(x.names) && !/Blau/.test(x.names), x.how + ': Liste ' + x.names); t.eq(x.bScr, 'title', x.how + ': der Entfernte steht auf dem Titel'); }
+    },
+  },
 ];

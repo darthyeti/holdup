@@ -2145,7 +2145,10 @@ else if(m.t==='at'){const r=NET.roster.find(q=>q.id===c.pid);if(r&&'lsmep'.inclu
 else if(m.t==='ping')c.send({t:'pong',n:m.n})
 else if(m.t==='lg')flogRecv(c.pid,m)
 else if(m.t==='chk')flogChk(c.pid,m)}
-function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;for(const c of NET.t2.slice())kickPlayer('t'+c.tk);if(NET.duel&&!NET.duel.jobs.length)duelEnd('Wettkampf beendet.',true);nPl=NET.roster.length;mapSeed=seedFor();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,pz:PZ,h:SESSION.heat,q:SESSION.quiet|0});beginPlay()}
+function startCoop(){if(NET.role!=='host'||scr!=='lobby')return;for(const c of NET.t2.slice())kickPlayer('t'+c.tk);if(NET.duel&&!NET.duel.jobs.length)duelEnd('Wettkampf beendet.',true);
+/* Luecken in den Platznummern (ein Mitspieler ging oder wurde entfernt, ein hoeherer blieb): Die Figuren entstehen fuer 0 bis n-1, also rueckt der Rest auf. go traegt die alten Nummern (ids), jeder Client sucht seine und nimmt den Index. */
+const old=NET.roster.map(r=>r.id).sort((a,b)=>a-b),gap=old.some((id,i)=>id!==i);if(gap){for(const c of NET.conns)c.pid=old.indexOf(c.pid);for(const r of NET.roster)r.id=old.indexOf(r.id);NET.roster.sort((a,b)=>a.id-b.id);LOG.ev('netz',['plaetze neu',old.join(',')])}
+nPl=NET.roster.length;mapSeed=seedFor();bcastRoster();bcast({t:'go',n:nPl,k:buildKits(),sd:mapSeed,sc:jobSc,pz:PZ,h:SESSION.heat,q:SESSION.quiet|0,ids:gap?old:undefined});beginPlay()}
 function joinRoom(code,opt){netReset();NET.role='client';NET.spec=!!(opt&&opt.spec);NET.joinSpec=NET.spec;NET.code=code;NET.want=opt&&opt.want||null;NET.retT=opt&&opt.ret?CFG.net.retJoin:0;NET.rx=chatClk;NET.msg='Verbinde mit '+code+' ...';scr='lobby';const my=NET;
 NET.srv=TR.join(code,{onOpen(c){NET.conn=c;NET.gone='';LOG.ev('netz','verbunden mit dem Host');c.onmsg=m=>clientMsg(m,c);c.onclose=()=>connLost(c);c.send({t:'hi',ver:VER,b:BUILD.n,k:BASEKIT,nm:myName,sp:NET.spec?1:0,tm:NET.want?NET.want.team:undefined,o:NET.want?NET.want.o:undefined})},onError(e){if(NET.retT>0){leaveGame(errTxt(e));return}if(e==='peer-unavailable')roomGone(code);else{NET.msg=errTxt(e);NET.fail=1}}});
 setTimeout(()=>{if(NET.role==='client'&&!NET.conn&&!NET.fail&&scr==='lobby')roomGone(code)},15000)}
@@ -2207,7 +2210,7 @@ else if(m.t==='rej'){const w=m.why;leaveGame(w)}
 else if(m.t==='dlc')dlcMsg(m)
 else if(m.t==='bye')NET.bye=1
 else if(m.t==='ret')retMsg(m)
-else if(m.t==='go'){NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;nPl=m.n;if(m.sc)jobSc=m.sc;PZ=Number.isInteger(m.pz)?m.pz:-1;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay();if(m.rl===2){pend=[];seq=0}}
+else if(m.t==='go'){if(Array.isArray(m.ids)&&!NET.spec&&NET.myId>0){const i=m.ids.indexOf(NET.myId);if(i>0)NET.myId=i}NET.lastGo=m;NET.lastEnd=null;NET.lastSnap=null;nPl=m.n;if(m.sc)jobSc=m.sc;PZ=Number.isInteger(m.pz)?m.pz:-1;if(m.h!=null)SESSION.heat=heatClamp(m.h);if(m.q!=null)SESSION.quiet=quietClamp(m.q);kits=(m.k||[]).map(sanKit);if(m.sd!==undefined)mapSeed=m.sd;beginPlay();if(m.rl===2){pend=[];seq=0}}
 else if(m.t==='snap'){if(scr==='play'&&!ended){LOG.snap();NET.lastSnap=m;applySnap(m)}}
 else if(m.t==='end'){if(scr==='play'&&!ended){NET.lastEnd=m.res;endLocal(m.res)}}
 else if(m.t==='lawr'){if(m.ok){SESSION.wallet=Math.max(0,SESSION.wallet-clamp(+m.p||0,0,1e6));SND.cash();shopNote={s:'Anwalt beauftragt: Fahndung -'+CFG.fahndung.law.cut+' Punkte',t:2}}else{SND.ev('deny');shopNote={s:'Der Anwalt war schon beauftragt',t:2}}}
