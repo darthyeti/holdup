@@ -64,6 +64,8 @@ async function openGame(env, opts) {
   if (opts.random) await ctx.addInitScript(() => { delete window.__holdupSeed; });
   // Notenbank-Varianten (N7, CFG.nb.var.on) sind in den Tests aus (feste Koordinaten der Klassik-Karte, gesetzt in launch), opts.nbvar schaltet sie ein
   if (opts.nbvar) await ctx.addInitScript(() => { delete window.__nbVarOff; });
+  // opts.gfx: Grafikstufe ('niedrig', 'mittel', 'hoch') statt der Teststufe niedrig (das Spiel liest sie beim Laden)
+  if (opts.gfx) await ctx.addInitScript(g => { window.__holdupGfx = g; }, opts.gfx);
   const page = await ctx.newPage();
   page.errors = [];
   page.on('pageerror', e => page.errors.push(String(e && e.stack || e)));
@@ -71,6 +73,8 @@ async function openGame(env, opts) {
   await page.goto(env.url + '/index.html' + (opts.hash || '#debug'));
   await page.waitForFunction(() => window.__dbg && window.__dbg.get && window.__dbg.get().players, null, { timeout: 30000 });
   await page.evaluate(() => { __dbg.setFocus(true); });
+  // opts.still: die Spielschleife steht still (requestAnimationFrame ist leer), nichts rechnet oder zeichnet zwischen den Aufrufen des Tests (Pixel-Hash, Bildzeit)
+  if (opts.still) { await page.evaluate(() => { window.requestAnimationFrame = () => 0; }); await page.waitForTimeout(150); }
   // Die Sperrfrist fuers Rufen des Fluchtwagens (CFG.vanLock) gilt in den Tests nicht, die meisten rufen sofort (opts.lock behaelt sie, 32-fluchtwagen prueft sie)
   if (!opts.lock) await page.evaluate(() => { __dbg.CFG.vanLock = 0; });
   page.ctx = ctx;
