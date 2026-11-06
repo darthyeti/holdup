@@ -20,7 +20,7 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | S1 bis S3 mit Befund | gebaut (26. Oktober 2026), wartet auf Tills Spieltest (Till ergänzt weitere Punkte) |
 | P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
 | P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
-| P7 | Bank-Seed 5305: Posten von parkenden Autos eingeschlossen (Ticket #7) | v1 (4. November 2026) | Plan steht, wartet auf Till (Akte `posten-autos`) |
+| P7 | Bank-Seed 5305: Posten von parkenden Autos eingeschlossen (Ticket #7) | v2 (6. November 2026) | gebaut (Lösung B Teil 1, Prüfung in `deriveDecor`), `freePost`/`toPost` unberührt |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -265,4 +265,5 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 
 **Änderungsprotokoll**
 - v1 (4. November 2026): Befund mit Messung, zwei Lösungen, Empfehlung B, Akte `posten-autos` für Till.
+- v2 (6. November 2026): Till hat freigegeben. Gebaut: Lösung B Teil 1 (Prüfung `postsOk` in `deriveDecor`, Test `tests/cases/186-posten-frei.test.js`, `KNOWN` in `tests/long/91-treffpunkt-bank.test.js` bleibt, weil Seed 5305 ohnehin frei ist). Teil 2 (`freePost`/`toPost` robust machen) nicht gebaut, eigenes Ticket falls gewünscht.
 
