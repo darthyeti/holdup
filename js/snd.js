@@ -19,7 +19,8 @@ smg:{th:[64,42],td:.07,tg:.7,cr:[3400,420],cd:.08,cg:.75,bd:[240,90],bg:.5,tl:[1
 rifle:{th:[58,40],td:.14,tg:1,cr:[2400,220],cd:.15,cg:.85,bd:[150,48],bg:.85,tl:[1200,160],tld:1,tlg:.4},
 cop:'pistol',swat:'rifle',shield:'pistol',sniper:'rifle',grd:'pistol'},
 boom:{lo:[52,24,1.3,1.1],rb:[500,70,2.6,.9],deb:[16,.25,1.5,.3]},
-occ:{lp:650,g:.45,ttl:300,bud:6,win:100}};
+occ:{lp:650,g:.45,ttl:300,bud:6,win:100},
+horn:{f:[415,523],n:2,d:.2,gap:.13,g:.09,lp:1700,vol:1.1}};
 let losFn=null,bw=0,bc=0;const oc=new Map();
 /* Wand zwischen Quelle und Hoerer? 1 = ja. Gedrosselt: Ergebnis je Kachelpaar zwischengespeichert, bei vielen Klaengen in einem Bild nur bud neue Pruefungen je win ms (dann gilt der alte Wert oder frei). */
 function occl(x,y){if(!losFn)return 0;const O=TUNE.occ,k=(x>>4)+','+(y>>4)+','+(lx>>4)+','+(ly>>4),n=performance.now(),c=oc.get(k);if(c&&n-c.t<O.ttl)return c.v;
@@ -98,6 +99,7 @@ else if(n==='atm'){nz(t,.4,{f:1500,f2:400,g:.6});tn(t,.3,{f:900,f2:200,w:'square
 else if(n==='start'){tn(t,.5,{f:196,f2:392,w:'triangle',g:.18});tn(t+.12,.6,{f:294,f2:588,w:'triangle',g:.12})}}
 function alarm(forced){if(!ac)return;const t=T0();for(let i=0;i<(forced?14:9);i++)tn(t+i*.17,.15,{f:i%2?1040:880,w:'triangle',g:.2});if(forced)nz(t,.4,{t:'lowpass',f:500,g:.3});tn(t,.5,{f:90,f2:60,g:.5})}
 function wave(ns){if(!ac)return;boost=7;const t=T0();nz(t,.5,{f:1500,q:.5,g:.22,a:.02});tn(t+.05,.2,{f:900,w:'square',g:.04});if(ns)tn(t,.7,{f:70,f2:52,w:'sawtooth',g:.22,lp:300})}
+function horn(x,y){if(!ac)return;const H=TUNE.horn,d=sp(x,y,H.vol);if(!d)return;const t=T0();for(let i=0;i<H.n;i++){const t0=t+i*(H.d+H.gap);for(const f of H.f){tn(t0,H.d,{f,w:'sawtooth',g:H.g,lp:H.lp,a:.012,dst:d});tn(t0,H.d,{f:f*1.006,w:'square',g:H.g*.5,lp:H.lp,a:.012,dst:d})}}}
 function van(){if(!ac)return;const t=T0();tn(t,1,{f:62,f2:42,w:'sawtooth',g:.3,lp:260});nz(t+.4,.55,{f:3000,f2:1400,q:5,g:.06});tn(t+1,.15,{f:420,w:'square',g:.12,lp:900});tn(t+1.22,.3,{f:420,w:'square',g:.12,lp:900})}
 function end(win){if(!ac)return;const t=T0();mOn=0;
 if(win){[523,659,784,1047].forEach((f,i)=>tn(t+i*.13,.5,{f,w:'triangle',g:.22,dst:sfx}));tn(t+.5,1.2,{f:1047,w:'triangle',g:.12});tn(t+.5,1.2,{f:784,w:'triangle',g:.1})}
@@ -159,4 +161,4 @@ function applyVol(){if(!ac)return;const t=ac.currentTime;if(sfx)sfx.gain.setTarg
 function setVol(k,v){if(k!=='mus'&&k!=='sfx')return;vol[k]=Math.round(cl(v)*20)/20;applyVol();try{localStorage.setItem('holdup.vol',JSON.stringify(vol))}catch(e){}}
 function toggleMute(){muted=!muted;try{localStorage.setItem('holdup.mute',muted?'1':'0')}catch(e){}if(mg)mg.gain.setTargetAtTime(muted?0:1.3,T0(),.05);return muted}
 return{ui,tune:TUNE,setLos:f=>{losFn=typeof f==='function'?f:null;oc.clear()},_occ:occl,init,resume,pause,frame,toggleMute,isMuted:()=>muted,vol:k=>vol[k],setVol,blip,skid,_gains:()=>({sfx:sfx&&sfx.gain.value,mus:mus&&mus.gain.value}),on:()=>!!ac,listen:(x,y)=>{lx=x;ly=y},
-shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,rad,chat,ev,alarm,wave,van,end,work,snshot,snlock,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;oc.clear();bw=bc=0;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();
+shot,eshot,boom,beep,thud,hit,kill,hurt,reload,reloaded,empty,cash,pick,step,alert,found,radio,rad,chat,ev,alarm,wave,van,end,work,snshot,snlock,horn,glass,gthrow,bang,hiss,ring,cough,_seq:seq,_ctx:()=>ac,_clock:v=>{ck=v},_reinit:c=>{ac=null;oc.clear();bw=bc=0;dr=tz=sr=wk=null;mOn=0;sNext=0;sIdx=0;boost=0;pz=false;init(c)}}})();

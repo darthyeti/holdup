@@ -63,7 +63,7 @@ module.exports = [
       const r = await t.page.evaluate(`(() => { (${SETUP.toString()})(); const D = __dbg, o = {}; ${OFFER}; ${ACCEPT};
         const ln = D.laneOf(D.LAY()), d = D.get().dl, sd = d.sd; window.__step(30, m => { m.x = window.__spot[0]; m.y = window.__spot[1]; });
         const q = ln.pt(ln.van.stop + 128 + 150, ln.van.pos + sd * 46), c = window.__mkcop(q[0], q[1]); c.hp = c.mhp = 100;
-        window.__step(30 * 4, m => { m.x = window.__spot[0]; m.y = window.__spot[1]; c.x = q[0]; c.y = q[1]; });
+        window.__step(30 * 4, m => { m.x = window.__spot[0]; m.y = window.__spot[1]; c.x = q[0]; c.y = q[1]; d.sdT = 1e9; });
         o.hp = c.hp; o.dist = Math.round(Math.hypot(d.dv.x - q[0], d.dv.y - q[1])); const cross = ln.axis === 'x' ? d.dv.y : d.dv.x; o.quer = Math.round(Math.abs(cross - ln.van.pos)); return o; })()`);
       t.ok(r.hp < 100, 'der Beamte hat Schrot abbekommen: ' + JSON.stringify(r));
       t.ok(r.quer >= 40, 'der Fahrer steht neben dem Wagen: ' + JSON.stringify(r));
@@ -120,6 +120,28 @@ module.exports = [
     },
   },
   {
+    name: 'Fahrer-Deal: Fahrerkugeln treffen keine Zivilisten und zählen nicht als Spielerkill; steht beide Seiten zu, bleibt er auf begehbarem Boden',
+    timeout: 120000,
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { (${SETUP.toString()})(); const D = __dbg, o = {}; ${OFFER}; ${ACCEPT};
+        const ln = D.laneOf(D.LAY()), d = D.get().dl, sd = d.sd; window.__step(30, m => { m.x = window.__spot[0]; m.y = window.__spot[1]; });
+        const q = ln.pt(ln.van.stop + 128 + 150, ln.van.pos + sd * 46), c = window.__mkcop(q[0], q[1]); c.hp = c.mhp = 100;
+        const mid = ln.pt(ln.van.stop + 128 + 75, ln.van.pos + sd * 46), n = D.get().npcs[0]; n.st = 'cower'; n.hp = 100;
+        const k0 = D.get().kills;
+        window.__step(30 * 4, m => { m.x = window.__spot[0]; m.y = window.__spot[1]; c.x = q[0]; c.y = q[1]; n.x = mid[0]; n.y = mid[1]; d.sdT = 1e9; });
+        o.civ = D.get().civKills; o.npcHp = n.hp; o.cop = c.hp; o.kills = D.get().kills - k0; return o; })()`);
+      t.eq([r.civ, r.npcHp], [0, 100], 'Zivilist in der Schusslinie bleibt unverletzt: ' + JSON.stringify(r));
+      t.ok(r.cop < 100 || r.kills === 0, 'Beamter wurde getroffen, ohne Spielerkill: ' + JSON.stringify(r));
+      t.eq(r.kills, 0, 'Fahrerkills zählen nicht als Ausgeschaltet');
+      const r2 = await t.page.evaluate(`(() => { (${SETUP.toString()})(); const D = __dbg, o = {}; ${OFFER}; ${ACCEPT};
+        const ln = D.laneOf(D.LAY()), cl = p => [Math.floor(p[0] / 32), Math.floor(p[1] / 32)];
+        for (const sd of [1, -1]) for (let du = 0; du <= 1; du++) { const c = cl(ln.pt(ln.van.stop + 64 + du * 32, ln.van.pos + sd * 46)); D.world().setc(c[0], c[1], '#'); }
+        window.__step(30 * 4, m => { m.x = window.__spot[0]; m.y = window.__spot[1]; }); const v = D.get().dl.dv;
+        o.dv = !!v; if (v) { o.sol = D.isSol(Math.floor(v.x / 32), Math.floor(v.y / 32)); } return o; })()`);
+      t.ok(r2.dv && r2.sol === false, 'Fahrer steht nicht in der Wand: ' + JSON.stringify(r2));
+    },
+  },
+  {
     name: 'Fahrer-Deal Coop: der Client sieht Angebot und Fahrerfigur, nimmt per E an, Host und Client stimmen überein',
     timeout: 200000,
     async run(t) {
@@ -128,7 +150,7 @@ module.exports = [
         const o = {}, pre = insts => { for (const d of insts) { const C = d.CFG; C.alt.on = 0; C.vanLock = 0; C.policeAt = 1e6; C.policeForced = 1e6; C.vanStay = 1e6; C.vanCall = 1; C.meet.p = 0; } };
         const G = CT.mkGame('bank', 1, 2, 40, 0, null, 'S', pre), { A, clients } = G, B = clients[0];
         A.startHeist(false, A.get().me); A.callVan(); G.run(40);
-        const ln = A.LANE(), vm = ln.van.mid(ln.van.stop), ps = A.get().players, far = () => ps.forEach(p => { p.hp = 1e9; p.x = 5 * 32; p.y = 5 * 32; });
+        const ln = A.LANE(), vm = ln.van.mid(ln.van.stop), ps = A.get().players, far = () => ps.forEach(p => { p.hp = 1e9; p.dead = false; p.x = 5 * 32; p.y = 5 * 32; });
         const cyc = () => {
           const c = A.mkCop(vm[0] + 60, vm[1] + 20, false); c.mode = 'post'; c.post = { x: 0, y: 0, a: 0 }; c.rt = 1e9; c.cool = 1e9; A.get().en.push(c);
           for (let i = 0; i < 20 * 60 && A.get().vanMode !== 1; i++) { far(); c.x = vm[0] + 60; c.y = vm[1] + 20; G.run(1 / 60); }
@@ -142,15 +164,16 @@ module.exports = [
           const x = vm[0] + Math.cos(k * .3927) * r, y = vm[1] + Math.sin(k * .3927) * r;
           if (!A.isSol(Math.floor(x / 32), Math.floor(y / 32)) && !ln.exit.has(x, y)) spot = [x, y];
         }
-        const hold = () => { ps.forEach(p => { p.hp = 1e9; }); p1.x = spot[0]; p1.y = spot[1]; p1.vx = p1.vy = 0; };
+        const hold = () => { ps.forEach(p => { p.hp = 1e9; p.dead = false; }); p1.x = spot[0]; p1.y = spot[1]; p1.vx = p1.vy = 0; };
         for (let i = 0; i < 60; i++) { hold(); G.run(1 / 60); }   // erst ankommen lassen: der Client wählt E-Objekte mit seiner eigenen Position
         B.keys.e = 1; for (let i = 0; i < 3 * 60; i++) { hold(); G.run(1 / 60); } B.keys.e = 0; G.run(1);
+        o.dbg = [Math.round(A.get().vanX - ln.van.stop), A.get().ended && A.get().ended.title, p1.dead, p1.out, p1.gone, p1.dn, A.get().phase, !!A.get().ended, A.get().its.find(i => i.t === 'deal').pr, A.get().its.find(i => i.t === 'deal').ok(p1), p1.x - spot[0], p1.y - spot[1], B.get().me.x - spot[0], A.get().vanMode, A.get().vanNv];
         o.st = [A.get().dl.st, B.get().dl.st]; const dv = A.get().dl.dv, dvB = B.get().dl.dv;
         o.fig = [!!dv, !!dvB, dv && dvB ? Math.round(Math.hypot(dv.x - dvB.x, dv.y - dvB.y)) : -1];
         return o;
       });
       t.eq(r.angebot, [1, 1], 'Angebot steht auf Host und Client');
-      t.eq(r.st, [2, 2], 'der Client hat angenommen, beide sehen den Einsatz');
+      t.eq(r.st, [2, 2], JSON.stringify(r.dbg) + ' der Client hat angenommen, beide sehen den Einsatz');
       t.eq(r.fig.slice(0, 2), [true, true], 'Fahrerfigur auf Host und Client');
       t.ok(r.fig[2] >= 0 && r.fig[2] < 12, 'Figur an fast gleicher Stelle: ' + JSON.stringify(r.fig));
     },
