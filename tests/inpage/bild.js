@@ -1,4 +1,4 @@
-// Seitenskript fuer den Pixel-Hash-Test (tests/cases/180-pixelhash.test.js) und die Bildzeit-Messung (tools/messung-bildzeit.js).
+// Seitenskript fuer den Pixel-Hash-Test (tests/cases/189-pixelhash.test.js) und die Bildzeit-Messung (tools/messung-bildzeit.js).
 // Stellt ein Bild reproduzierbar her: Seite mit openGame(env, { still: true, gfx }) (die Spielschleife steht still), dann PX.scene(sc, seed) und PX.phase(name) fuer jede Phase der Reihe nach.
 // Eingefroren wird, was das Zeichnen sonst von Lauf zu Lauf verschieden macht: der Zufall (Math.random, je Szene neu mit festem Startwert), die Spielzeit `time` (zaehlt ueber reset() hinweg weiter, __dbg.setTime),
 // die Mausspur (mouse.t, sonst dreht sich die Spielfigur zur zuletzt bewegten Maus), Partikel (ptClear), die Spielschleife (requestAnimationFrame) und die Aufloesung der Eingabe (feste Fenstergroesse kommt vom Test).

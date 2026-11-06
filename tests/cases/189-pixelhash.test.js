@@ -1,5 +1,5 @@
 // Pixel-Hash des gezeichneten Bildes (Ticket 143, Auslagern Schritt 4a): je Szenario (Bank, Transporter, Juwelier, Tankstelle, Museum, Casino, Notenbank, Gefaengnis), Phase (Erkundung, Ueberfall, Polizei) und Grafikstufe
-// (niedrig, mittel, hoch) ein Hash der 1920x1088 Pixel in tests/golden/180-pixelhash.json. Netz fuers Auslagern des Zeichnens (js/draw.js) und den spaeteren 3D-Unterbau: Jede Umstellung muss Pixel fuer Pixel dasselbe Bild liefern.
+// (niedrig, mittel, hoch) ein Hash der 1920x1088 Pixel in tests/golden/189-pixelhash.json. Netz fuers Auslagern des Zeichnens (js/draw.js) und den spaeteren 3D-Unterbau: Jede Umstellung muss Pixel fuer Pixel dasselbe Bild liefern.
 // Eingefroren ist alles, was das Bild sonst verschieden macht (siehe tests/inpage/bild.js und docs/tests-und-messwerte.md): Zufall, Spielzeit, Maus, Partikel, Spielschleife, Fenstergroesse. Die Hashes haengen an Chromium ohne GPU
 // (lib.js startet mit --disable-accelerated-2d-canvas) und an der Systemschrift: auf einer anderen Maschine oder Chromium-Version koennen sie abweichen, dann mit npm run test:update neu schreiben und im PR sagen, warum.
 // Aktualisieren nur bewusst (npm run test:update), nie um einen roten Lauf gruen zu machen. Der schnelle Lauf prueft Stufe mittel (alle Szenarien und Phasen) und die Bank auf allen drei Stufen, der volle Lauf die ganze Matrix.
