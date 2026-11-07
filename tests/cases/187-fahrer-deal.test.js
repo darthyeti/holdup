@@ -1,6 +1,8 @@
 // Fahrer-Deal (Ticket 133, CFG.deal): Nach dem zweiten Wegfahren bietet der Fahrer an, gegen die Hälfte der Beute auszusteigen und mit der Schrotflinte zu helfen.
 // Aufbau wie 32-fluchtwagen: Bank klassisch, Überfall, keine Polizei, Wagen sofort gerufen, der Spieler unverwundbar.
 const SETUP = () => {
+  // fester Zufall: die Schrotstreuung nutzt Math.random, auf rund 210 px verfehlten in der CI einmal alle Kugeln den Beamten (7. November, PR 162)
+  (a => { Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(20261107);
   const D = __dbg; D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.CFG.vanCall = 1; D.CFG.vanStay = 6000;
   D.reset(); D.startHeist(false, D.get().me); D.callVan();
   const step = (n, f) => { for (let i = 0; i < n; i++) { const m = D.get().me; m.hp = 1e9; if (f) f(m, i); D.update(1 / 30); } };
