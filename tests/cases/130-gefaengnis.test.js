@@ -96,7 +96,7 @@ module.exports = [
       t.ok(r.det && r.vary, 'gleicher Seed gleiche Anlage, anderer Seed andere Variante');
       t.eq(r.gate, ['V', 'V'], 'Tor (V) steht');
       t.ok(r.walk >= 3 * 200, 'begehbare Flaeche mindestens das Dreifache von v1 (200): ' + r.walk);
-      t.ok(r.locked.every(s => /^[a-z]+:L+$/.test(s)), 'alle verriegelten Stellen sind zu: ' + r.locked.join(' '));
+      t.ok(r.locked.every(s => /^[a-z0-9]+:L+$/.test(s)), 'alle verriegelten Stellen sind zu: ' + r.locked.join(' '));
       t.ok(r.names.includes('prison'), 'MAP_FIELDS kennt prison');
       const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'szenarien.md'), 'utf8');
       t.ok(/## Gefängnis/.test(doc), 'die Doku hat den Abschnitt Gefaengnis');
@@ -175,15 +175,15 @@ module.exports = [
         // solo: kein Ausloeser
         const D = __dbg; D.sessReset(); D.setScenario('bank'); D.setSeedMode('random'); D.buildSeed(5017); D.reset(); D.finish(true, 'Test', 'x'); o.solo = D.SESSION.pz;
         return o; })()`);
-      t.eq(r.pz, [1, 1], 'Spieler 1 (der Client) blieb zurueck und sitzt ein, auf Host und Client');
+      t.eq(r.pz, [[1], [1]], 'Spieler 1 (der Client) blieb zurueck und sitzt ein, auf Host und Client');
       t.ok(r.msg, 'das Ergebnis nennt es');
       t.eq(r.next, ['prison', 'prison'], 'der naechste Auftrag ist der Gefaengnisausbruch');
-      t.eq(r.pzNow, [1, 1], 'Host und Client kennen den Gefangenen (Nachricht go oder rst)');
+      t.eq(r.pzNow, [[1], [1]], 'Host und Client kennen den Gefangenen (Nachricht go oder rst)');
       t.eq(r.map, [], 'Karte, Items und Welt sind auf Host und Client gleich');
       t.ok(Math.hypot(r.pos[1][0] - r.cell[0], r.pos[1][1] - r.cell[1]) < 40, 'der Gefangene steht in seiner Zelle: ' + JSON.stringify([r.pos, r.cell]));
       t.ok(r.pos[0][0] > 50 * 32, 'der andere steht draussen vor der Mauer: ' + JSON.stringify(r.pos));
-      t.eq(r.after, -1, 'nach einem gelungenen Ausbruch ist niemand mehr gefangen');
-      t.eq(r.solo, -1, 'solo gibt es den Ausloeser nicht');
+      t.eq(r.after, [], 'nach einem gelungenen Ausbruch ist niemand mehr gefangen');
+      t.eq(r.solo, [], 'solo gibt es den Ausloeser nicht');
     },
   },
   {
@@ -209,11 +209,11 @@ module.exports = [
         o.gate = [gate.ok(p1), gate.ok(p0), A.get().vaultOpen];
         gate.act(p0); H.both(1); o.open = [A.get().vaultOpen, B.get().vaultOpen, A.get().phase, B.get().phase, H.cl(A, 49, 6), A.isSol(49, 6)];
         return o; })()`);
-      t.eq(r.start, [0, 0, 0, true, 1, 1], 'Gefangener: Tasche 0, Magazin 0, Reserve 0, die anderen bewaffnet, Phase 1, Gefangener ist Spieler 1');
+      t.eq(r.start, [0, 0, 0, true, 1, [1]], 'Gefangener: Tasche 0, Magazin 0, Reserve 0, die anderen bewaffnet, Phase 1, Gefangener ist Spieler 1');
       t.eq(r.f, [1, 1], 'F des Gefangenen startet keinen Ueberfall (keine Pistole)');
       t.eq(r.sw, [true, false, true, false, true], 'Schalter: Mitspieler ja, Gefangener nie; es sind zwei verschiedene Schalter');
-      t.eq(r.before, ['L', 'LLLLLLL', 'LL', 'LLLLLLL'], 'vorher: alle Stellen zu');
-      t.eq(r.zi, ['l', 'lllllll', 'l', 'lllllll', true, true], 'Schalter mit E gehalten: alle Zellentueren offen, auf Host und Client, Schalter erledigt');
+      t.eq(r.before, ['L', 'LLLLL', 'LL', 'LLLLL'], 'vorher: alle Stellen zu');
+      t.eq(r.zi, ['l', 'lllll', 'l', 'lllll', true, true], 'Schalter mit E gehalten: alle Zellentueren offen, auf Host und Client, Schalter erledigt');
       t.eq(r.gii0, ['LL', 'LL'], 'Gitter II bleibt zu, solange sein Schalter nicht benutzt ist');
       t.eq(r.gii, ['ll', 'll', 1], 'der andere Schalter oeffnet Gitter II, auf Host und Client, ohne Alarm');
       t.eq(r.gate, [false, true, false], 'das Tor geht von innen nicht (Coop), von aussen ja');
@@ -251,7 +251,7 @@ module.exports = [
       t.eq(r.n, [1, 1, 1, 1], 'je ein Aufhebeln, eine Karte, ein Leser (auch auf dem Client)');
       t.eq(r.pry.slice(0, 3), [true, false, true], 'Aufhebeln: der Gefangene in der Zelle ja, die anderen nie');
       t.ok(r.pry[3] && r.pry[4] >= 10, 'Aufhebeln dauert lange (Dauer ' + r.pry[4] + ' s)');
-      t.eq([r.z[0], r.z[1], r.z[2], r.z[3]], ['l', 'l', 'LLLLLLL', 'LL'], 'Zellentuer offen auf Host und Client, die anderen Zellen und das Gitter I bleiben zu');
+      t.eq([r.z[0], r.z[1], r.z[2], r.z[3]], ['l', 'l', 'LLLLL', 'LL'], 'Zellentuer offen auf Host und Client, die anderen Zellen und das Gitter I bleiben zu');
       t.ok(r.cardGuardInTrakt, 'die Wache mit der Karte steht im Trakt des Gefangenen');
       t.eq(r.cardBefore, [false, false], 'Karte: vor dem Ausschalten nicht');
       t.eq(r.cardKo, [true, false], 'Karte: nach dem Ausschalten nur der Gefangene');
@@ -361,8 +361,8 @@ module.exports = [
         A.get().players.forEach(p => { p.out = true; }); A.finish(true, 'Ausbruch', 'x'); G.run(1); A.startNext(); G.run(2.5); o.next = [A.sc(), G.clients[0].sc(), A.getPz()];
         const D = __dbg; D.sessReset(); D.setScenario('prison'); D.newSeed(); o.solo = D.sc();
         return o; })()`);
-      t.eq(r.first, ['prison', 1], 'die Kachel startet das Gefaengnis');
-      t.eq(r.next, ['bank', 'bank', -1], 'nach dem gewonnenen Ausbruch ist der naechste Auftrag kein Gefaengnis');
+      t.eq(r.first, ['prison', [1]], 'die Kachel startet das Gefaengnis');
+      t.eq(r.next, ['bank', 'bank', []], 'nach dem gewonnenen Ausbruch ist der naechste Auftrag kein Gefaengnis');
       t.eq(r.solo, 'bank', 'solo wird aus scenario prison die Bank');
     },
   },
@@ -457,8 +457,8 @@ module.exports = [
         return o; })()`);
       t.eq(r.n, [3, 3, 3], 'drei Mithaeftlinge auf Host und Client (CFG.prison.inm)');
       t.eq(r.kind, 'civ,civ,civ', 'es sind Zivilisten (Treffer-Regeln wie bei Zivilisten)');
-      t.eq(r.cells, ['LLLLLLL', 'LLLLLLL'], 'die Zellentueren sind vorher zu');
-      t.eq(r.cellsAfter, ['lllllll', 'lllllll'], 'nach dem Schalter auf beiden offen');
+      t.eq(r.cells, ['LLLLL', 'LLLLL'], 'die Zellentueren sind vorher zu');
+      t.eq(r.cellsAfter, ['lllll', 'lllll'], 'nach dem Schalter auf beiden offen');
       t.ok(r.moved[0] >= 2 && r.moved[1] >= 2, 'die Mithaeftlinge laufen los, auch auf dem Client: ' + JSON.stringify(r.moved));
       t.ok(r.look >= 1, 'mindestens eine Wache schaut hin');
     },
