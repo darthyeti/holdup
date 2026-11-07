@@ -81,6 +81,9 @@ module.exports = [
           // ohne Aenderung: weitere Bilder bauen nichts neu, auch nicht nach setc mit demselben Zeichen
           const g0 = D.view3d.V; let x0 = 0, y0 = 0; for (let y = 0; y < M.length && !x0; y++) { const i = M[y].indexOf('#'); if (i >= 0) { x0 = i + w.WX0; y0 = y + w.WY0; } }
           w.setc(x0, y0, '#'); for (let i = 0; i < 5; i++) D.draw(); const b = D.view3d.info();
+          // haltendes Fahrzeug (o -> v, wie stampOn): Zaehler laeuft, aber die Welt bleibt gleich, also kein Neubau
+          const O = (() => { for (let y = 0; y < M.length; y++) { const i = M[y].indexOf('o'); if (i >= 0) return [i + w.WX0, y + w.WY0]; } })();
+          w.setc(O[0], O[1], 'v'); D.draw(); const bv = D.view3d.info(); w.setc(O[0], O[1], 'o'); D.draw();
           // Hintertuer auf: L -> l
           const find = ch => { for (let y = 0; y < M.length; y++) { const i = M[y].indexOf(ch); if (i >= 0) return [i + w.WX0, y + w.WY0]; } return null; };
           const L = find('L'); w.setc(L[0], L[1], 'l'); D.draw(); const c = D.view3d.info();
@@ -91,7 +94,7 @@ module.exports = [
           // Tresor auf (wie im Spiel ueber das Objekt), danach wieder zu per reset
           const vt = D.get().its.find(o => o.t === 'vault'); vt.act(D.get().me); D.draw(); const v = D.view3d.info();
           D.reset(); D.draw(); const v2 = D.view3d.info();
-          return { a, b, c, c2, e, e2, f, v, v2, want, parts };
+          return { a, b, bv, c, c2, e, e2, f, v, v2, want, parts };
         });
         if (!r.a) { t.ok(false, '3D nicht an: ' + JSON.stringify(r.i0)); return; }
         const a = r.a; t.note(a.calls + ' Draw Calls, ' + a.tris + ' Dreiecke, ' + a.inst + ' Kloetze, ' + a.ms.toFixed(1) + ' ms (Software)');
@@ -103,6 +106,7 @@ module.exports = [
         t.ok(a.calls >= 3 && a.calls < 30, 'statische Welt unter 30 Draw Calls: ' + a.calls);
         t.ok(a.tris > 1000 && a.tris < 150000, 'Dreiecke im Budget: ' + a.tris);
         t.eq([r.b.statBuilds, r.b.builds, r.b.groundUp], [a.statBuilds, a.builds, a.groundUp], 'ohne Rasteraenderung kein Neubau (auch nicht bei setc mit demselben Zeichen)');
+        t.eq([r.bv.statBuilds, r.bv.groundUp], [a.statBuilds, a.groundUp], 'haltendes Fahrzeug (o zu v) baut die Welt nicht neu (Abgleich nach dem Zaehler)');
         t.ok(r.c.statBuilds === a.statBuilds + 1 && r.c.cells.L === a.cells.L - 1 && r.c.cells.l === (a.cells.l || 0) + 1 && r.c.vol < a.vol && r.c.groundUp === a.groundUp + 1, 'Tuer auf aendert die Geometrie: ' + JSON.stringify([r.c.cells.L, r.c.cells.l, a.vol - r.c.vol]));
         t.ok(r.c2.cells.L === a.cells.L && r.c2.vol === a.vol && r.c2.tris === a.tris, 'Tuer zu: wie vorher');
         const dp = (i, k) => i.parts[k] - a.parts[k];
