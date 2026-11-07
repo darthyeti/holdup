@@ -281,7 +281,8 @@ g.textAlign='center';if(du.fin){const win=du.fin==='m'?'SIEGER: Dein Team':du.fi
 else{g.font='bold 22px monospace';g.fillStyle=Y;g.fillText('Zwischenstand '+du.mw+' : '+du.rw,480,368);g.font='12px monospace';g.fillStyle=MU;g.fillText('Wertung: gewonnene Aufträge, dann Beute, dann Zeit.',480,396)}g.textAlign='left'}
 /* ---------- Modals: Optionen, Anleitung, Rueckfrage ---------- */
 function mOptions(){const{scr,DBG,unlockAll,myName,nameEdit,time,CFG}=X,title=scr==='title',rows=[];
-rows.push({id:'vmus',slider:0,title:'Musik',paint:paintSlider},{id:'vsfx',slider:1,title:'Effekte',paint:paintSlider});
+/* Regler als halbe Kacheln (Ticket 149): Musik und Effekte in einer Zeile, damit Ansicht und Winkel ohne neue Zeile Platz haben */
+rows.push({id:'vmus',slider:0,half:0,title:'Musik',paint:paintSlider},{id:'vsfx',slider:1,half:1,title:'Effekte',paint:paintSlider});
 /* Ton und Maus fangen (MLOCK aus index.html): zwei halbe Kacheln nebeneinander, ohne Pointer-Lock-Unterstuetzung nur der Ton in voller Breite */
 rows.push({id:'mute',key:'m',act:'mute',half:MLOCK.can?0:undefined,title:'Ton: '+(SND.isMuted()?'aus':'an'),sub:MLOCK.can?'Musik und Effekte':'',nochip:false});
 if(MLOCK.can)rows.push({id:'lock',key:'f',act:'mlock',half:1,title:'Maus fangen: '+(MLOCK.on?'an':'aus'),sub:MLOCK.on?'Esc gibt die Maus frei':'Zeiger bleibt beweglich'});
@@ -330,12 +331,13 @@ return{def:'close',back:'ui:close',t,deco(){panelFrame(px,y0,pw,h,'TESTWERKZEUGE
 /* Regler: 0 Musik, 1 Effekte (SND), 2 Kamerawinkel der 3D-Ansicht (V3OPT, 20 bis 30 Grad, halbe Kachel) */
 function slVal(i){return i===2?(V3OPT.angle-V3OPT.amin)/(V3OPT.amax-V3OPT.amin):SND.vol(i?'sfx':'mus')}
 function slAdj(t,v,abs){if(t.slider!==2){X.volAdj(t.slider,v,abs);return}const a0=V3OPT.amin,a1=V3OPT.amax;V3OPT.setAngle(abs?a0+v*(a1-a0):V3OPT.angle+(v>0?1:-1))}
-function paintSlider(t){const{g}=X,i=t.slider,v=slVal(i);if(i===2){paintAngle(t,v);return}g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText(t.title,t.x+12,t.y+27);const bx=t.x+130,bw=t.w-200;
+function paintSlider(t){const{g}=X,i=t.slider,v=slVal(i);if(t.half!=null){paintHalf(t,v);return}g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText(t.title,t.x+12,t.y+27);const bx=t.x+130,bw=t.w-200;
 g.fillStyle='rgba(0,0,0,.65)';g.fillRect(bx,t.y+19,bw,8);g.fillStyle=focus===t.id?A:'#b07a00';g.fillRect(bx,t.y+19,bw*v,8);g.fillStyle='#f4f1e6';g.fillRect(bx+bw*v-2,t.y+16,4,14);
 g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(Math.round(v*100)+'%',t.x+t.w-12,t.y+27)}
-function paintAngle(t,v){const{g}=X,bx=t.x+76,bw=t.w-130,y=t.y+Math.round(t.h/2)-4;g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText(t.title,t.x+12,y+9);
+/* Halber Regler: Titel links, Balken mittig (x+76 bis x+w-76, ein Klick in die Kachelmitte ist die Mitte des Bereichs), Wert rechts, Unterzeile unter dem Balken */
+function paintHalf(t,v){const{g}=X,bx=t.x+76,bw=t.w-152,y=t.y+Math.round(t.h/2)-(t.sub?8:4);g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText(t.title,t.x+12,y+9);
 g.fillStyle='rgba(0,0,0,.65)';g.fillRect(bx,y,bw,8);g.fillStyle=focus===t.id?A:'#b07a00';g.fillRect(bx,y,bw*v,8);g.fillStyle='#f4f1e6';g.fillRect(bx+bw*v-2,y-3,4,14);
-g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(V3OPT.angle+'°',t.x+t.w-12,y+9);if(t.sub){g.textAlign='left';g.font='11px monospace';g.fillStyle=MU;g.fillText(t.sub,bx,y+24)}}
+g.textAlign='right';g.font='12px monospace';g.fillStyle=TX;g.fillText(t.slider===2?V3OPT.angle+'°':Math.round(v*100)+'%',t.x+t.w-12,y+9);if(t.sub){g.textAlign='left';g.font='11px monospace';g.fillStyle=MU;g.fillText(t.sub,bx,y+24)}}
 function panelFrame(x,y,w,h,title){const{g,VW,VH}=X;g.fillStyle='rgba(8,10,16,.78)';g.fillRect(0,0,VW,VH);g.fillStyle='rgba(14,16,22,.96)';g.fillRect(x,y,w,h);g.strokeStyle='rgba(255,176,0,.45)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,w-1,h-1);g.textAlign='left';g.font='bold 15px monospace';g.fillStyle=A;g.fillText(title,x+20,y+34)}
 function mHelp(){const px=70,pw=820,py=24,ph=496;
 return{def:'close',back:'ui:close',t:[{id:'close',x:480-90,y:py+ph-52,w:180,h:40,kind:'p',act:'ui:close',title:'Schließen',chip:'Esc'}],
@@ -426,7 +428,7 @@ return c}
 
 /* ---------- Eingabe ---------- */
 function tileAt(x,y){const c=cur();if(!c)return null;for(let i=c.t.length-1;i>=0;i--){const t=c.t[i];if(x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h)return t}return null}
-function setSlider(t,x){const o=t.slider===2?[76,130]:[130,200];slAdj(t,Math.max(0,Math.min(1,(x-(t.x+o[0]))/(t.w-o[1]))),true)}
+function setSlider(t,x){const o=t.half!=null?[76,152]:[130,200];slAdj(t,Math.max(0,Math.min(1,(x-(t.x+o[0]))/(t.w-o[1]))),true)}
 /* Menuetoene (T8, SND.ui): Fokuswechsel, Bestaetigen, Zurueck; Kauf und Fehlschlag spielt der Shop selbst (index.html), Regler haben ihren Piep (volAdj). */
 function setF(id){if(id!==focus){focus=id;SND.ui('focus')}}
 function activate(t){if(!t||!t.act)return;if(t.lock){SND.ui('deny');return}const a=t.act;{const c=cur();if(c&&a===c.back)SND.ui('back');else if(a!=='buy'&&a!=='skill'&&a!=='skillsell'&&a!=='mute'&&a!=='name'&&a!=='paste')SND.ui('ok')}
