@@ -47,7 +47,9 @@ async function launch(opts) {
   const { srv, url } = await serve(opts && opts.root && path.resolve(opts.root));
   // --disable-accelerated-2d-canvas: Chrome rastert sonst je Leinwand zur Laufzeit auf der GPU oder der CPU (Speicher, Zahl der Leinwaende), Verlaeufe, Alpha-Rechtecke und Linien sehen auf beiden Wegen
   // verschieden aus, die Pixeltests flackerten (Ticket #6). Mit dem Flag laeuft jede 2D-Leinwand auf der CPU, das Spiel selbst bleibt unveraendert.
-  const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-accelerated-2d-canvas'] });
+  // opts.webgl oder HOLDUP_WEBGL=1 (3D-Ansicht, Ticket 149): WebGL ueber SwiftShader erzwingen, falls das Chromium es sonst nicht anbietet (im Container laeuft WebGL 2 auch ohne, Test 190 versucht es nur bei Bedarf)
+  const gl = (opts && opts.webgl) || process.env.HOLDUP_WEBGL === '1' ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : [];
+  const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-accelerated-2d-canvas', ...gl] });
   // Mit #debug allein wuerfelt das Spiel zufaellige Karten. Die Tests brauchen die feste Klassikkarte und setzen sie hier ausdruecklich, fuer jeden Kontext (auch die eigenen Seiten einzelner Tests)
   const newCtx = browser.newContext.bind(browser);
   browser.newContext = async (o) => { const c = await newCtx(o); await c.addInitScript(() => { window.__holdupSeed = 'classic'; window.__nbVarOff = 1; if (!window.__holdupGfx) window.__holdupGfx = 'niedrig'; }); return c; };
