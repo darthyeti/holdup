@@ -4,7 +4,7 @@
    waehrend einer Partie aendert, Setter nur fuer die wenigen Namen, die das Zeichnen selbst schreibt (Kamera, Zaehler). Das Zeichnen liest den Spielzustand nur.
    Jede Instanz (auch die Coop-Tests mit mehreren Instanzen in einer Seite) ruft die Fabrik selbst auf, auf Modulebene liegt kein Zustand.
    Neue Namen aus dem Kern: im Kontextobjekt von mkDraw(...) in index.html nachtragen. Bei geaendertem Kontext oder geaenderter Rueckgabe DRAW_API in index.html
-   und mkDraw.api hier erhoehen. Spaeter dockt hier die 3D-Ansicht an (docs/plan-3d.md, Abschnitt Architektur). */
+   und mkDraw.api hier erhoehen. Die 3D-Ansicht (js/view3d.js, Ticket 149) dockt in draw0 an: v3Frame liefert sie, dann ersetzt sie lyWorld, das HUD bleibt hier (docs/plan-3d.md, Abschnitt Architektur). */
 function mkDraw(X){
 const DX=X;//Kontext: Getter und Setter (lokale Variablen X gibt es im Zeichencode)
 const {CFG,FUNK,GOALS,NB_C,NB_RING,NET,PC,PLACE,SESSION,T,THROW,TKH,TKL,VH,VHH,VHL,VW,aimPoint,aimRaw,altIt,awLeft,camAng,capTarget,cars,cell,chF,chatCol,chatWho,clamp,d,dk,fmt,g,goalDone,goalLim,goalNeed,holdCap,inBld,isBul,isOpq,leanAt,lgA,lgM,live,los,lsp,nbBun,nbLvl,nd,nightOn,nk,noGun,noteAtOf,p2,plRow,pn,pr,rcl,revTarget,rjLeft,scOf,specLegend,specMapData,specMapR,sperre,spwCan,spwKind,staffBlind,susScale,teamLoot,throwPoint,tkArrive,tkD,tm,trR,trapKind,trapSpot,twd,ucHintOn,vanT,waveGap}=X;
@@ -282,11 +282,12 @@ for(const q of DX.pings){const e=edgePt(q.x,q.y,14);if(!e)continue;g.save();g.gl
 if(!(DX.funkT>0))return;const set=FUNK.slice(DX.phase===2?4:0,DX.phase===2?8:4),x=VW-258,y=250,w=248,h=30+set.length*20;plate(x,y,w,h);g.textAlign='left';g.font='bold 11px monospace';g.fillStyle='#ffb000';g.fillText('Funk',x+10,y+17);g.textAlign='right';g.font='10px monospace';g.fillStyle='#8d95a1';g.fillText('X oder Esc: zu',x+w-10,y+17);g.textAlign='left';
 set.forEach((d,i)=>{g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText((i+1)+'  '+d.t,x+10,y+38+i*20)});g.fillStyle='#ffb000';g.fillRect(x,y+h-3,w*Math.max(0,DX.funkT)/CFG.funk.menuT,3)}
 function linkHud(){if(!DX.linkJoin||DX.scr!=='coop')return;S0();g.fillStyle='rgba(10,12,18,.88)';g.fillRect(150,92,660,112);g.strokeStyle='#ffb000';g.lineWidth=1;g.strokeRect(150.5,92.5,659,111);g.textAlign='center';g.fillStyle='#ffb000';g.font='bold 16px monospace';g.fillText('Du trittst Raum '+DX.linkJoin.code+(DX.linkJoin.spec?' als Zuschauer':'')+' bei',480,124);g.fillStyle='#e6eaf0';g.font='13px monospace';g.fillText('Tippe deinen Namen (unten) und bestätige mit Enter.',480,152);g.fillStyle='#c9d0da';g.fillText(DX.myName?'Enter: beitreten als '+DX.myName:'Ohne selbst getippten Namen geht es nicht weiter.',480,176);g.textAlign='left'}
-function draw(){draw1();linkHud();netHud()}
-function draw1(){let ox=0,oy=0;if(DX.scr==='play'&&DX.shk.t>0&&DX.shk.a>.3&&FXO.shake){const am=DX.shk.a*Math.min(1,DX.shk.t/CFG.fx.boom.shakeT);DX.kkN++;ox=Math.round((trR(DX.kkN,11,1)-.5)*4*am)/2;oy=Math.round((trR(DX.kkN,13,2)-.5)*4*am)/2}const ko=kickOff();if(ko){ox+=ko[0];oy+=ko[1]}if(ox||oy){DX.camX+=ox;DX.camY+=oy;try{draw0()}finally{DX.camX-=ox;DX.camY-=oy;DX.mouse.x=DX.mouse.sx+DX.camX;DX.mouse.y=DX.mouse.sy+DX.camY}}else draw0()}
-function draw0(){
-if(DX.scr!=='play'){DX.drawMenu();drawChat();return}
-DX.mouse.x=DX.mouse.sx+DX.camX;DX.mouse.y=DX.mouse.sy+DX.camY;
+function draw(){draw1();linkHud();netHud();v3Note()}
+/* Meldung beim Rueckfall von 3D auf 2D (Ticket 149), einige Sekunden oben in der Mitte, auch im Menue */
+function v3Note(){const m=DX.v3Msg;if(!m||performance.now()>m.until)return;g.save();S0();g.font='bold 12px monospace';g.textAlign='left';const w=Math.ceil(g.measureText(m.s).width)+24,x=Math.round(VW/2-w/2);plate(x,8,w,24);g.fillStyle='#ffd27a';g.fillText(m.s,x+12,24);g.restore()}
+function draw1(){let ox=0,oy=0;if(DX.scr==='play'&&DX.shk.t>0&&DX.shk.a>.3&&FXO.shake){const am=DX.shk.a*Math.min(1,DX.shk.t/CFG.fx.boom.shakeT);DX.kkN++;ox=Math.round((trR(DX.kkN,11,1)-.5)*4*am)/2;oy=Math.round((trR(DX.kkN,13,2)-.5)*4*am)/2}const ko=kickOff();if(ko){ox+=ko[0];oy+=ko[1]}if(ox||oy){DX.camX+=ox;DX.camY+=oy;try{draw0()}finally{DX.camX-=ox;DX.camY-=oy;DX.mw()}}else draw0()}
+/* Welt in 2D (Boden, statische Ebene, Dinge, Figuren, Fahrzeuge, Effekte, Nacht, Sicht, Weltmarken): aus draw0 herausgezogen (Ticket 149), unveraendert, damit die 3D-Ansicht sie ersetzen kann */
+function lyWorld(){
 W1();g.globalCompositeOperation='source-over';g.fillStyle='#0e1014';g.fillRect(DX.camX-2,DX.camY-2,VW+4,VH+4);{const sx=(DX.camX-DX.WX0*T)*2,sy=(DX.camY-DX.WY0*T)*2;g.drawImage(DX.st,sx,sy,VW*2,VH*2,DX.camX,DX.camY,VW,VH);g.drawImage(DX.so,sx,sy,VW*2,VH*2,DX.camX,DX.camY,VW,VH);g.drawImage(DX.dcv,sx,sy,VW*2,VH*2,DX.camX,DX.camY,VW,VH)}
 const seeAll=NET.spec&&(DX.specAll||DX.specFree),poly=seeAll?null:visPoly();DX.losAll=seeAll;
 g.globalCompositeOperation='lighter';
@@ -352,7 +353,13 @@ else{g.fillStyle='#ffd27a';g.fillText('BELAGERT '+tm(b.cd),b.x,b.y-30)}g.textAli
 for(const e of DX.en){if(!e.sur||e.cap)continue;g.textAlign='center';g.font='bold 11px monospace';g.fillStyle='#fff3c2';g.fillText('ergibt sich',e.x,e.y-24);if(e.cp>0){g.fillStyle='#10161f';g.fillRect(e.x-18,e.y-20,36,5);g.fillStyle='#7ee34a';g.fillRect(e.x-18,e.y-20,36*Math.min(1,e.cp),5)}g.textAlign='left'}
 for(const o of DX.players){if(!(o.dead&&o.dn>0))continue;const bl2=Math.floor(DX.time*3)%2;g.strokeStyle='rgba(255,70,60,'+(bl2?.9:.4)+')';g.lineWidth=2;g.beginPath();g.arc(o.x,o.y,CFG.rev.r*.55,0,6.283);g.stroke();g.textAlign='center';g.font='bold 12px monospace';g.fillStyle=PC[o.id].c;g.fillText((DX.players.length>1?pn(o.id)+' ':'')+Math.ceil(o.dn)+' s',o.x,o.y-26);if(o.rv>0){g.fillStyle='#10161f';g.fillRect(o.x-18,o.y-20,36,5);g.fillStyle='#7ee34a';g.fillRect(o.x-18,o.y-20,36*Math.min(1,o.rv),5)}g.textAlign='left'}
 for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;g.save();g.setLineDash([6,6]);g.lineDashOffset=-DX.time*14;g.strokeStyle=q.k==='grd'?'rgba(255,179,71,.7)':'rgba(138,208,255,.7)';g.lineWidth=2;g.beginPath();q.line.forEach((pp,i)=>i?g.lineTo(pp[0],pp[1]):g.moveTo(pp[0],pp[1]));g.closePath();g.stroke();g.restore();
-g.fillStyle=q.k==='grd'?'#ffb347':'#8ad0ff';g.font='11px monospace';g.fillText(q.k==='grd'?'WACHE':'MANAGER',q.x-18,q.y-24)}
+g.fillStyle=q.k==='grd'?'#ffb347':'#8ad0ff';g.font='11px monospace';g.fillText(q.k==='grd'?'WACHE':'MANAGER',q.x-18,q.y-24)}}
+function draw0(){
+const V3=DX.v3Frame(DX.scr==='play');
+if(DX.scr!=='play'){DX.drawMenu();drawChat();return}
+DX.mw();
+/* 3D an (Ticket 149): die Ansicht zeichnet die Welt in ihre WebGL-Leinwand unter diesem Canvas, hier bleibt nur das HUD auf durchsichtigem Grund. Scheitert das Bild, zeichnet lyWorld wie in 2D */
+if(V3&&V3.render()){S0();g.clearRect(0,0,VW,VH)}else lyWorld();
 S0();
 const v=g.createRadialGradient(480,272,260,480,272,620);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.4)');g.fillStyle=v;g.fillRect(0,0,VW,VH);
 if(DX.p.hurt>.2){g.fillStyle='rgba(200,20,30,'+(DX.p.hurt-.2)*.5+')';g.fillRect(0,0,VW,VH)}
@@ -427,4 +434,4 @@ if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&DX.LAY.prison.dv&&(DX.LAY.prison.dv.s
 if(DX.phase===1&&DX.alarmT>0&&!DX.ended){const cd='ENTDECKT! Alarm in '+DX.alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(DX.time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(DX.banner&&!DX.paused){g.globalAlpha=Math.min(1,DX.banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(DX.banner.s,482,154);g.fillStyle=DX.phase===2?'#ff8a6a':'#ffd27a';g.fillText(DX.banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
 return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,kickOff,leanLine,pinfo}}
-mkDraw.api=1;
+mkDraw.api=2;
