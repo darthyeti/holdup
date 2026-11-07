@@ -44,11 +44,11 @@ module.exports = [
       const r = await t.page.evaluate(async () => {
         const html = await (await fetch('index.html', { cache: 'no-store' })).text();
         const tags = [...html.matchAll(/<script src="js\/([\w-]+\.js)\?v=(\d+)"><\/script>/g)].map(m => ({ f: m[1], v: +m[2] }));
-        const loaded = { 'ui.js': typeof mkUI === 'function', 'snd.js': typeof SND === 'object' && typeof SND.init === 'function', 'flog.js': typeof mkFlog === 'function' && typeof FL_SINKS === 'object', 'maps.js': typeof mkMaps === 'function' && mkMaps.api === 1 };
+        const loaded = { 'ui.js': typeof mkUI === 'function', 'snd.js': typeof SND === 'object' && typeof SND.init === 'function', 'flog.js': typeof mkFlog === 'function' && typeof FL_SINKS === 'object', 'maps.js': typeof mkMaps === 'function' && mkMaps.api === 1, 'draw.js': typeof mkDraw === 'function' && mkDraw.api === 1 };
         return { tags, build: __dbg.BUILD.n, loaded, bare: (html.match(/<script src="js\/[^"?]+"/g) || []).length };
       });
       const files = r.tags.map(x => x.f);
-      for (const f of ['ui.js', 'snd.js', 'flog.js', 'maps.js']) t.ok(files.includes(f), 'Skript-Tag fehlt: js/' + f);
+      for (const f of ['ui.js', 'snd.js', 'flog.js', 'maps.js', 'draw.js']) t.ok(files.includes(f), 'Skript-Tag fehlt: js/' + f);
       for (const x of r.tags) {
         t.eq(x.v, r.build, 'js/' + x.f + '?v=N muss die Build-Nummer tragen');
         t.ok(r.loaded[x.f] !== false, 'js/' + x.f + ' nicht geladen');
@@ -58,9 +58,9 @@ module.exports = [
     },
   },
   {
-    name: 'Start: fehlt js/snd.js, js/flog.js oder js/maps.js, kommt eine klare Meldung',
+    name: 'Start: fehlt js/snd.js, js/flog.js, js/maps.js oder js/draw.js, kommt eine klare Meldung',
     async run(t) {
-      for (const f of ['snd', 'flog', 'maps']) {
+      for (const f of ['snd', 'flog', 'maps', 'draw']) {
         const page = await t.env.browser.newContext({ viewport: { width: 1000, height: 640 } }).then(c => c.newPage());
         await page.route('**/js/' + f + '.js*', r => r.fulfill({ status: 404, body: '' }));
         await page.goto(t.env.url + '/index.html');
@@ -104,5 +104,22 @@ module.exports = [
       t.ok(/js\/maps\.js/.test(msg) && /veraltet/.test(msg) && /neu laden/.test(msg), 'Meldung: ' + msg);
     },
   },
+  {
+    name: 'Start: js/draw.js und index.html gehoeren zusammen (mkDraw.api gleich DRAW_API), eine veraltete Datei gibt eine klare Meldung',
+    async run(t) {
+      const r = await t.page.evaluate(async () => {
+        const html = await (await fetch('index.html', { cache: 'no-store' })).text(), src = await (await fetch('js/draw.js', { cache: 'no-store' })).text();
+        return { apiInFile: /mkDraw\.api=(\d+)/.exec(src), apiInCore: /const DRAW_API=(\d+)/.exec(html), api: typeof mkDraw === 'function' ? mkDraw.api : null, global: Object.prototype.hasOwnProperty.call(window, 'DRAW_API') };
+      });
+      t.ok(r.apiInFile && r.apiInCore && r.apiInFile[1] === r.apiInCore[1] && r.api === +r.apiInCore[1], 'mkDraw.api und DRAW_API muessen gleich sein');
+      t.ok(!r.global, 'DRAW_API ist ein const im Kernskript, kein window-Name');
+      const page = await t.env.browser.newContext({ viewport: { width: 1000, height: 640 } }).then(c => c.newPage());
+      await page.route('**/js/draw.js*', rt => rt.fulfill({ body: 'function mkDraw(){}', contentType: 'text/javascript' }));   // alte Datei ohne mkDraw.api
+      await page.goto(t.env.url + '/index.html');
+      await page.waitForFunction(() => !document.getElementById('err').hidden, null, { timeout: 15000 });
+      const msg = await page.evaluate(() => document.getElementById('err').textContent);
+      await page.context().close();
+      t.ok(/js\/draw\.js/.test(msg) && /veraltet/.test(msg) && /neu laden/.test(msg), 'Meldung: ' + msg);
+    },
+  },
 ];
-
