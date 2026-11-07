@@ -12,6 +12,7 @@ Teil der Projektdoku, der Kern steht in `CLAUDE.md`. Hier stehen die Einzelheite
 - `assets/cars.png` (256x128 pro Zeile): 0 Fluchtwagen, 1 Polizeiauto, 2 rotes Auto, 3 blaues Auto, 4 Panzerwagen (wird 192x96 gezeichnet, Fahrerhaus rechts), alle nach +x. Die Panzerwagen-Zeile wurde wie die SWAT-Zeile nur angespleißt (Pillow-Abweichung), `gen_sprites.py` erzeugt sie in `truck()`.
 - `gen_sprites.py`: erzeugt die Sprites (PIL, numpy), Aufruf `python3 gen_sprites.py <Zielordner>`. Platzhalter-Grafik, selbst gezeichnet, jederzeit austauschbar. Neugenerieren weicht in `chars.png` minimal (bis 12/255) von den eingecheckten Dateien ab (Pillow-Version), deshalb wurde die SWAT-Zeile nur angespleißt statt alles zu überschreiben.
 - `assets/peerjs.min.js`: PeerJS 1.5.4 (MIT), unverändert von unpkg.com, 92.865 Bytes, SHA-256 `ad5d8870d1e389914f9cba8d35be313c4327c69ee0a221e482e9bf7621136fe5`. Setzt `window.Peer`. Fehlt die Datei, bleibt Solo voll spielbar, nur Coop meldet den Fehler. Verbindungsvermittler ist der öffentliche Gratisdienst `0.peerjs.com`, STUN von Google, die Spieldaten laufen direkt zwischen den Browsern.
+- `assets/three.module.min.js`: Three.js 0.170.0 (MIT), unverändert aus dem npm-Paket `three@0.170.0` (`build/three.module.min.js`), 691.648 Bytes, SHA-256 `08fd7545d13d2c7fb65ab691530a802dafefd638596501854f267d0fb13c39e7`. Lädt nur, wenn die 3D-Ansicht an ist, über `js/view3d.js` (ES-Modul, Ticket 149, docs/plan-3d.md, Abschnitt 2.8).
 
 ## Werkzeuge, Menüs und Tests
 
