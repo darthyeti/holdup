@@ -11,6 +11,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Spieltest (ungespielt, kurz)
 
+- **Fahrer-Deal** (Ticket 133, ungespielt): Lass den Fahrer zweimal wegfahren (Beamte nah am Wagen), nimm dann am Wagen mit E sein Angebot an: Er schießt mit der Schrotflinte, das Einsteigen klappt trotz Polizei, kostet aber die Hälfte der Beute. Achte auf Schussstärke, Dauer (40 s) und ob er zu schnell fällt.
 - **Kasse lautlos** (Ticket #134): Kassierer von hinten ausschalten, dann lässt sich seine Kasse leise leeren (2,6 s, 2.500). Lohnt es sich, ist der leise Weg zu stark oder zu knapp?
 - **Grafikregler** (Ticket #118): Optionen, Kachel Grafik (niedrig, mittel, hoch, Voreinstellung mittel). Mittel und hoch: weichere Sichtkante, leichte Farbe und Vignette je Tageszeit. Wirkt es realistisch und dezent, ruckelt es auf deinem Rechner?
 - **Spuren und Wucht** (Ticket #119, Vorschau im PR): Blutlachen, Einschüsse, Glas, Ruß und Hülsen bleiben liegen; Kamera wackelt bei Schuss, Treffer und Schaden, roter Rand bei Schaden, Gegner zucken. Kacheln Wackeln und Blut in den Optionen. Zu viel oder zu wenig, stört das Wackeln beim Zielen? (Spuren und Zucken erst ab Grafik mittel.)
