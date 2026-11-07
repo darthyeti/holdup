@@ -27,9 +27,10 @@ window.PX = (() => {
       for (let i = 0; i < d.length; i++) { h = Math.imul(h ^ d[i], 16777619); h ^= h >>> 15; }
       return (h >>> 0).toString(16).padStart(8, '0');
     },
-    // Bildzeit: Median und 90. Perzentil von n Aufrufen draw() (ms) bei unveraendertem Zustand
+    // Bildzeit: Median und 90. Perzentil von n Aufrufen draw() (ms) bei unveraendertem Zustand. window.PX_SYNC (gesetzt von tools/messung-bildzeit.js --3d) wartet je Bild auf die Grafikkarte
     ms(n) {
-      D.draw(); const a = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); D.draw(); a.push(performance.now() - t0); }
+      const sy = window.PX_SYNC || (() => {});
+      D.draw(); sy(); const a = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); D.draw(); sy(); a.push(performance.now() - t0); }
       a.sort((x, y) => x - y); return { med: +a[a.length >> 1].toFixed(2), p90: +a[Math.floor(a.length * .9)].toFixed(2) };
     },
   };
