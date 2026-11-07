@@ -5,6 +5,8 @@
    Stand 3D-0: Szene, Kamera fest gekippt (X.angle, 20 bis 30 Grad, Standard 25), Boden als Flaeche mit der Textur der statischen 2D-Ebene (X.st, X.so).
    Stand 3D-1 (Ticket 150): statische Welt aus dem Raster (Hoehentabelle V3CFG.cells, ein InstancedMesh je Material), Neubau nur bei Rasteraenderung (X.gRev, Abgleich), Spuren (X.dcv) als Ebene ueber dem Boden.
    Stand 3D-2a (Ticket 151): Figuren und Fahrzeuge als Aufsteller aus den Sprites (X.figs aus js/draw.js, Tabellen V3CFG.figs und V3CFG.cars), fuenf InstancedMesh, Marken ueber den Koepfen zeichnet das HUD (toScr).
+   Stand 3D-3 (Ticket 152): Kamera mit Vorlauf (Spieler unter der Bildmitte, camLead), Schnitt durch Waende und Moebel vor dem Spieler (uCut im Shader der statischen Welt),
+   Silhouette fuer Spieler, Team und sichtbare Gegner hinter Waenden (zweiter Durchgang mit Tiefentest "groesser"), Bodenring am Zielpunkt zeichnet das HUD (js/draw.js).
    Einheiten: 1 Einheit = 1 Weltpixel, 2D x -> 3D x, 2D y -> 3D z, oben ist +y. Simulation, Netz und VER bleiben unberuehrt.
    Uebernommen aus dem Prototyp (Ticket 125, PR 130): Kontext mit Gettern, Perspektive mit schmalem Blickwinkel, camSet, Boden aus der 2D-Textur, pick-Strahl, Rueckfall {on:false,err}.
    Bei geaendertem Kontext oder geaenderter Rueckgabe mkView3d.api hier und VIEW3D_API in index.html erhoehen. */
@@ -13,6 +15,10 @@ import * as THREE from '../assets/three.module.min.js';
 export const V3CFG = {
   fov: 30, aimH: 24, near: 10, far: 9000, clear: 0x0e1014,
   wallH: 64, decalT: .3, decalDiv: 2, edge: 1.5,
+  // 3D-3 (Ticket 152) Kamera: Blickpunkt camLead Weltpixel noerdlich der 2D-Bildmitte, so steht der Spieler unter der Bildmitte und vorn (oben im Bild) ist mehr zu sehen.
+  // Schnitt: Waende und Moebel suedlich des Spielers (zur Kamera hin) innerhalb von cutR Bildpunkten um ihn werden oberhalb cutH ausgeblendet (wie auf Tischhoehe abgesenkt),
+  // weicher Rand ab cutSoft des Radius (gerastert). Silhouette: Figuren mit Silhouettenfarbe (Spieler, Team, Gegner in Sicht) erscheinen hinter Verdeckung einfarbig mit silA.
+  camLead: 40, cutR: 56, cutH: 22, cutSoft: .7, sil: true, silA: .8,
   // 3D-2a (Ticket 151) Figuren als Aufsteller: Koerper (Zylinder, Farbe aus der Sprite-Zeile) bis bodyH, darauf das 2D-Sprite liegend (die Sprites sind Draufsichten, aufrecht gestellt
   // saehe man den Kopf von oben an einer senkrechten Tafel). Geduckt (Spalte 8) mit cowerK der Hoehe, liegend (am Boden, bewusstlos, tot) nur das Sprite knapp ueber dem Boden (lieH).
   // headH: Hoehe der HUD-Marken ueber dem Kopf (Namen, Balken, js/draw.js marks3d). Schatten wie in 2D versetzt (shOff), Deckkraft shA.
@@ -48,9 +54,9 @@ export const V3CFG = {
 
 // Shader der statischen Welt: Kloetze als Instanzen eines Einheitswuerfels, Bild-Koordinate aus der Weltlage (Seiten um edge nach innen versetzt, sie zeigen den Randpixel der Kachel),
 // Helligkeit je Flaechenrichtung aus V3CFG.shade. Farbraum wie MeshBasicMaterial (sRGB-Textur, Ausgabe ueber colorspace_fragment).
-const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; varying vec2 vUv; varying float vSh;
+const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; varying vec2 vUv; varying float vSh; varying vec3 vW;
 void main() {
-  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0);
+  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz;
   vec2 q = wp.xz - normal.xz * uEdge;
   vUv = vec2((q.x - uOrg.x) * uOrg.z, 1.0 - (q.y - uOrg.y) * uOrg.w);
   float s = normal.y > 0.5 ? uSh.x : normal.z > 0.5 ? uSh.y : normal.z < -0.5 ? uSh.z : uSh.w;
@@ -58,8 +64,12 @@ void main() {
   vSh = s;
   gl_Position = projectionMatrix * viewMatrix * wp;
 }`;
-const FS = `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; varying vec2 vUv; varying float vSh;
+// Schnitt (3D-3): uCut = Bildpunkt des Spielers (gl_FragCoord), Radius in Bildpunkten, Suedgrenze (Welt z des Spielers); uCutH Hoehe, ab der geschnitten wird, uCutS weicher Rand.
+// Geschnitten wird nur, was zwischen Kamera und Spieler liegt (suedlich von ihm), Waende hinter ihm bleiben stehen.
+const FS = `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying vec2 vUv; varying float vSh; varying vec3 vW;
 void main() {
+  if (uCut.z > 0.0 && vW.y > uCutH + 0.01 && vW.z > uCut.w) { float d = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
+    if (d < uCutS || (d < 1.0 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > (d - uCutS) / (1.0 - uCutS))) discard; }
   vec3 c = uMap > 0.5 ? texture2D(map, vUv).rgb : uCol;
   gl_FragColor = vec4(c * vSh, uA);
   #include <colorspace_fragment>
@@ -96,7 +106,7 @@ export function mkView3d(X) {
   function refreshDecal() { decG.clearRect(0, 0, decCv.width, decCv.height); if (X.dcv) decG.drawImage(X.dcv, 0, 0, decCv.width, decCv.height); decTex.needsUpdate = true; st.decUp++; decT = performance.now() }
 
   // Materialien der statischen Welt (ein Draw Call je Material)
-  const U0 = { uOrg: { value: new THREE.Vector4() }, uSh: { value: new THREE.Vector4(C.shade.top, C.shade.s, C.shade.n, C.shade.ew) }, uFoot: { value: C.shade.foot }, uWallH: { value: C.wallH }, uEdge: { value: C.edge } };
+  const U0 = { uOrg: { value: new THREE.Vector4() }, uSh: { value: new THREE.Vector4(C.shade.top, C.shade.s, C.shade.n, C.shade.ew) }, uFoot: { value: C.shade.foot }, uWallH: { value: C.wallH }, uEdge: { value: C.edge }, uCut: { value: new THREE.Vector4() }, uCutH: { value: C.cutH }, uCutS: { value: C.cutSoft } };
   const mkMat = (o) => new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS, transparent: !!o.tr, depthWrite: !o.tr,
     uniforms: Object.assign({}, U0, { map: { value: o.map || null }, uMap: { value: o.map ? 1 : 0 }, uCol: { value: new THREE.Color(o.col || 0xffffff) }, uA: { value: o.a == null ? 1 : o.a } }) });
   const mats = C.mats.map(c => c === null ? mkMat({ map: groundTex }) : mkMat({ col: c })), glassMat = mkMat({ col: C.glass, a: C.glassA, tr: 1 });
@@ -178,6 +188,10 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
 }`;
   const sprMat = (m, f, gx, gy) => new THREE.ShaderMaterial({ vertexShader: SVS, fragmentShader: SFS, side: THREE.DoubleSide, uniforms: { map: { value: m }, mapF: { value: f }, uGrid: { value: new THREE.Vector2(gx, gy) } } });
   const figMat = sprMat(chTex, chFTex, CH_C, CH_R), topMat = sprMat(carTex, carTex, 1, CAR_R);
+  // 3D-3 Silhouette: dasselbe Sprite als einfarbige Flaeche, nur wo etwas davor liegt (Tiefentest groesser, schreibt keine Tiefe), nach allem anderen gezeichnet
+  const silMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthFunc: THREE.GreaterDepth, side: THREE.DoubleSide, uniforms: { map: { value: chTex }, uGrid: { value: new THREE.Vector2(CH_C, CH_R) }, uA: { value: C.silA } },
+    vertexShader: 'attribute vec4 iCell; attribute vec3 iCol; uniform vec2 uGrid; varying vec2 vUv; varying vec3 vC; void main() { vUv = vec2((iCell.x + uv.x) / uGrid.x, 1.0 - (iCell.y + 1.0 - uv.y) / uGrid.y); vC = iCol; gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform sampler2D map; uniform float uA; varying vec2 vUv; varying vec3 vC; void main() { if (texture2D(map, vUv).a < 0.5) discard; gl_FragColor = vec4(vC, uA);\n#include <colorspace_fragment>\n}' });
   // Schatten: weiche Ellipse (iS 0) oder abgerundetes Rechteck (iS 1, Fahrzeuge), Deckkraft je Instanz
   const shMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false,
     vertexShader: 'attribute vec2 iSA; varying vec2 vUv; varying vec2 vSA; void main() { vUv = uv * 2.0 - 1.0; vSA = iSA; gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0); }',
@@ -202,27 +216,30 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     return P;
   }
   const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1), pBody = pool('koerper', bodyGeo, colMat, {}, true, 2), pSpr = pool('figuren', flatGeo, figMat, { iCell: 4, iDim: 1 }, false, 4),
-    pBox = pool('kloetze', cubeGeo, colMat, {}, true, 2), pTop = pool('daecher', flatGeo, topMat, { iCell: 4, iDim: 1 }, false, 4), pools = [pSh, pBody, pSpr, pBox, pTop];
+    pBox = pool('kloetze', cubeGeo, colMat, {}, true, 2), pTop = pool('daecher', flatGeo, topMat, { iCell: 4, iDim: 1 }, false, 4),
+    pSil = pool('silhouetten', flatGeo, silMat, { iCell: 4, iCol: 3 }, false, 9), pools = [pSh, pBody, pSpr, pBox, pTop, pSil];
+  const silCol = {}, silOf = c => silCol[c] || (silCol[c] = new THREE.Color(c));
   const qr = new THREE.Quaternion(), yAx = new THREE.Vector3(0, 1, 0), tc = new THREE.Color();
   // Instanz i einer Gruppe setzen: Lage (x,z) in Weltpixeln, Hoehe y, Drehung a (2D-Winkel, um die Hochachse), Groesse; Ortsversatz lx, lz im Figurenrahmen wie g.translate nach g.rotate
   function put(P, i, x, y, h, a, sx, sy, sz, lx, lz) { const c = Math.cos(a), s = Math.sin(a); lx = lx || 0; lz = lz || 0; pos.set(x + c * lx - s * lz, h, y + s * lx + c * lz); qr.setFromAxisAngle(yAx, -a); scl.set(sx, sy, sz); P.im.setMatrixAt(i, mtx.compose(pos, qr, scl)) }
   const kinds = (o, L, T) => { const k = T[L.k] ? L.k : '?' + L.k; o[k] = (o[k] || 0) + 1; return T[L.k] };
-  let dynLast = { f: [], c: [] };
+  let dynLast = { f: [], c: [] }, hide = null;
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
-    for (const o of D.f) { const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
+    for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
     let nB = 0, nX = 0;
     for (const [o, e] of F) { if (!(e.lie || o.lie)) nB++; if (o.sh >= 0) nX++; if (o.rf) nX++; if (o.bag) nX++ }
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
-    pSh.size(F.length + Cs.length); pBody.size(nB); pSpr.size(F.length); pBox.size(nX); pTop.size(Cs.length);
+    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
+    pSh.size(F.length + Cs.length); pBody.size(nB); pSpr.size(F.length); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
     let iS = 0, iB = 0, iX = 0, lie = 0, hit = 0;
     const shA = pSh.a.iSA, cel = pSpr.a.iCell, dim = pSpr.a.iDim, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
     F.forEach(([o, e], i) => {
       const lying = !!(e.lie || o.lie), cw = o.col === 8, hb = (e.h || C.bodyH) * (cw ? C.cowerK : 1), hs = lying ? C.lieH : hb + C.spriteH - C.bodyH;
       if (lying) { put(pSh, iS, o.x, o.y, .4, o.a, 52, 1, 28, 3, 4); shA.setXY(iS++, 0, .3 * o.al); lie++ }
       else { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA); put(pBody, iB, o.x, o.y, 0, o.a, e.r, hb, e.r); pBody.im.setColorAt(iB++, chCol[o.row] || chCol[0]) }
-      put(pSpr, i, o.x, o.y, hs, o.a, 64, 1, 64); cel.setXYZW(i, o.col, o.row, o.hit, o.al); dim.setX(i, 0); if (o.hit) hit++;
+      put(pSpr, i, o.x, o.y, hs, o.a, 64, 1, 64); cel.setXYZW(i, o.col, o.row, o.hit, o.al); dim.setX(i, 0); if (o.hit) hit++; o._hs = hs;
       if (o.sh >= 0) box(o.x, o.y, 0, o.a, 3, hb + 4, 26, 15, 0, xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]);
       if (o.rf) box(o.x, o.y, hs + .6, o.a, 26, 2.5, 2.5, 21, 3, xcol.rf[0]);
       if (o.bag) box(o.x, o.y, hb * .45, o.a, 14, 13, 16, -13, 0, xcol.bag[0]);
@@ -234,16 +251,19 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       if (e.bar && o.bl) { const r = o.bl === 1; box(o.x, o.y, h, o.a, 5, 4, 9, -4, -6, r ? xcol.red[0] : xcol.blue[0]); box(o.x, o.y, h, o.a, 5, 4, 9, -4, 6, r ? xcol.blue[0] : xcol.red[0]) }
       put(pTop, j, o.x, o.y, h + .5, o.a, o.L * o.fx, 1, o.W * o.fy); pTop.a.iCell.setXYZW(j, 0, o.row, 0, 1); pTop.a.iDim.setX(j, dimK); void i;
     });
+    const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, o._hs, o.a, 64, 1, 64); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
+    st.sil = S.length; st.sk = sk;
     st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
     dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
   }
 
-  // Kamera: Ziel ist die Mitte des 2D-Ausschnitts (camX/camY folgen dem Spieler wie in 2D), Kippung X.angle um die Ost-West-Achse nach Sueden.
+  // Kamera: Ziel ist die Mitte des 2D-Ausschnitts (camX/camY folgen dem Spieler wie in 2D, mit Glaettung, Kamerawackeln und Rueckstoss verschiebt draw1 camX/camY,
+  // also auch die Kamera), um camLead nach Norden versetzt (3D-3), Kippung X.angle um die Ost-West-Achse nach Sueden.
   // Abstand so, dass die Bildhoehe am Ziel der 2D-Hoehe (VH) entspricht, die sichtbare Bodenbreite ist dort wie in 2D.
   const tgt = new THREE.Vector3();
   function angle() { const a = +X.angle; return a >= 20 && a <= 30 ? a : 25 }
   function camSet() {
-    tgt.set(X.camX + VW / 2, 0, X.camY + VH / 2);
+    tgt.set(X.camX + VW / 2, 0, X.camY + VH / 2 - C.camLead);
     const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180), a = angle() * Math.PI / 180;
     cam.position.set(tgt.x, D * Math.cos(a), tgt.z + D * Math.sin(a)); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
   }
@@ -256,6 +276,27 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   }
   // Welt zu Bildschirm (logisch), h Hoehe ueber dem Boden
   function toScr(x, y, h) { camSet(); v3.set(x, h || 0, y).project(cam); return [(v3.x + 1) / 2 * VW, (1 - v3.y) / 2 * VH] }
+
+  // Schnitt um den eigenen Spieler (X.me: lebend und gezeichnet), Mitte in Koerperhoehe, in Bildpunkten der Leinwand (y von unten wie gl_FragCoord)
+  function setCut() {
+    const P = X.me, u = U0.uCut.value;
+    if (!P || !(C.cutR > 0)) { u.set(0, 0, 0, 0); return }
+    const s = toScr(P.x, P.y, C.bodyH / 2), q = st.q || 1; u.set(s[0] * q, (VH - s[1]) * q, C.cutR * q, P.y); U0.uCutH.value = C.cutH; U0.uCutS.value = C.cutSoft;
+  }
+  // Fuer Tests und Bilder: Anteil der Bildpunkte im Kasten um die Figur bei (x,y), die sich aendern, wenn die Figuren in r Weltpixeln um (x,y) fehlen (wie gut ist sie zu sehen).
+  // Liefert { vis (0 bis 1), n (Bildpunkte im Kasten), box }. Zwei Bilder im selben Takt, nur Lesen (keine Zustandsaenderung).
+  function seen(x, y, r) {
+    const q = st.q || 1, a = toScr(x, y, 0), b = toScr(x, y, C.spriteH), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, hw = 20, hh = 24 + Math.abs(a[1] - b[1]) / 2;
+    const bx = [Math.max(0, cx - hw), Math.max(0, cy - hh), Math.min(VW, cx + hw), Math.min(VH, cy + hh)].map(v => Math.round(v * q)), w = bx[2] - bx[0], h = bx[3] - bx[1];
+    if (w <= 0 || h <= 0) return { vis: 0, n: 0, box: bx };
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g2 = c.getContext('2d', { willReadFrequently: true });
+    const grab = () => { g2.clearRect(0, 0, w, h); g2.drawImage(el, bx[0], bx[1], w, h, 0, 0, w, h); return g2.getImageData(0, 0, w, h).data };
+    r = r == null ? 12 : r;
+    if (!render()) return null; const A = grab();
+    hide = o => Math.hypot(o.x - x, o.y - y) <= r; let B; try { render(); B = grab() } finally { hide = null }
+    let n = 0; for (let i = 0; i < A.length; i += 4) if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) > 24) n++;
+    render(); return { vis: n / (w * h), n: w * h, box: bx };
+  }
 
   // Leinwand unter das 2D-Canvas legen: beide in dieselbe Zelle des Rasters von <main> (das 2D-Canvas liegt oben, faengt die Maus, Grund durchsichtig)
   let shown = false;
@@ -277,7 +318,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       if (X.LAY !== curLay || X.st !== curSt) buildLay();
       else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      buildDyn(); camSet(); ren.render(scene, cam); show(true);
+      buildDyn(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -287,7 +328,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -298,8 +339,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, colMat, chTex, chFTex, carTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
-  return Object.assign(api, { render, show, pick, toScr, info, probe, dispose, dyn: () => dynLast, el, cam, scene, cfg: C });
+  return Object.assign(api, { render, show, pick, toScr, info, probe, seen, dispose, dyn: () => dynLast, el, cam, scene, cfg: C });
 }
-mkView3d.api = 3;
+mkView3d.api = 4;

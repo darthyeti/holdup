@@ -356,7 +356,9 @@ for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;g.save();g.set
 g.fillStyle=q.k==='grd'?'#ffb347':'#8ad0ff';g.font='11px monospace';g.fillText(q.k==='grd'?'WACHE':'MANAGER',q.x-18,q.y-24)}}
 /* 3D-2a (Ticket 151): Figuren und Fahrzeuge fuer die 3D-Ansicht. Dieselbe Auswahl wie lyWorld (Sichtpruefung los, Zustaende, Versatz durch twd, Lehnen und Rueckstoss), nur gelesen, kein Zustand.
    f: Figuren {k Art (V3CFG.figs), x, y, a, row, col (Zelle in chars.png), hit (chars_flash), lie (liegt am Boden), al (Deckkraft), sh (Schild 0 bis 1), rf (Gewehr), bag (traegt Beute)}.
+   sc: Silhouettenfarbe hinter Verdeckung (3D-3, Ticket 152): Spieler und Team in ihrer Farbe (PC), Gegner in Sicht rot (SIL_EN), sonst keine.
    c: Fahrzeuge {k Art (V3CFG.cars), x, y, a, row (Zeile in cars.png), L, W (Laenge, Breite), fx, fy (gespiegelt wie in 2D), dim (Wrack), bl (Blaulicht 0, 1, 2)}. */
+const SIL_EN='#ff5a48';
 function figs3d(){
 const P=DX.p,seeAll=NET.spec&&(DX.specAll||DX.specFree),F=[],C=[],see=(x,y)=>los(P.x,P.y,x,y);DX.losAll=seeAll;
 const fg=(k,x,y,a,row,col,hit,lie,al)=>{const o={k,x,y,a,row,col,hit:hit>0?1:0,lie:lie?1:0,al:al==null?1:al,sh:-1,rf:0,bag:0};F.push(o);return o};
@@ -369,9 +371,9 @@ for(const c of DX.corp)if(see(c.x,c.y))fg('tot',c.x,c.y,c.a,c.row,7,0,1,Math.min
 for(const c of DX.capd)if(see(c.x,c.y))fg('cap',c.x,c.y,c.a,2,8,0,0);
 for(const o of DX.players)if(o.dead&&o.dn>0&&(o===DX.me||see(o.x,o.y)))fg('down',o.x,o.y,o.a+3.1,plRow(o),7,0,1);
 for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0)}
-for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0);if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1}
+for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0);o.sc=SIL_EN;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1}
 {const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8))fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0)}}
-const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0);f.bag=o.units>0?1:0};
+const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0);f.bag=o.units>0?1:0;f.sc=PC[o.id].c};
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
@@ -395,12 +397,14 @@ for(const o of DX.players){if(!(o.bd>0)||o.out||o.gone)continue;gnd(o.x,o.y);g.l
 for(const o of DX.players){if(!(o.dead&&o.dn>0))continue;const bl2=Math.floor(DX.time*3)%2;gnd(o.x,o.y);g.strokeStyle='rgba(255,70,60,'+(bl2?.9:.4)+')';g.lineWidth=2;g.beginPath();g.arc(o.x,o.y,CFG.rev.r*.55,0,6.283);g.stroke();up(o.x,o.y,0);g.textAlign='center';g.font='bold 12px monospace';g.fillStyle=PC[o.id].c;g.fillText((DX.players.length>1?pn(o.id)+' ':'')+Math.ceil(o.dn)+' s',o.x,o.y-26);if(o.rv>0){g.fillStyle='#10161f';g.fillRect(o.x-18,o.y-20,36,5);g.fillStyle='#7ee34a';g.fillRect(o.x-18,o.y-20,36*Math.min(1,o.rv),5)}g.textAlign='left'}
 for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;up(q.x,q.y,H);g.fillStyle=q.k==='grd'?'#ffb347':'#8ad0ff';g.font='11px monospace';g.fillText(q.k==='grd'?'WACHE':'MANAGER',q.x-18,q.y-24)}
 g.restore()}
+let ring3dAt=null;//letzter Bodenring (Welt x, y, Bild x, y), nur fuer Tests (ring3d())
+function ring3d(V,x,y){const s=V.toScr(x,y,0),a=V.toScr(x+16,y,0),b=V.toScr(x,y+16,0);g.save();g.setTransform(2*(a[0]-s[0])/16,2*(a[1]-s[1])/16,2*(b[0]-s[0])/16,2*(b[1]-s[1])/16,2*s[0],2*s[1]);g.lineWidth=1.6;g.strokeStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(0,0,10,0,6.283);g.stroke();g.strokeStyle='rgba(120,255,140,.8)';g.lineWidth=1;g.beginPath();g.arc(0,0,10,0,6.283);g.stroke();g.restore();ring3dAt=[x,y,s[0],s[1]]}
 function draw0(){
 const V3=DX.v3Frame(DX.scr==='play');
 if(DX.scr!=='play'){DX.drawMenu();drawChat();return}
 DX.mw();
 /* 3D an (Ticket 149): die Ansicht zeichnet die Welt in ihre WebGL-Leinwand unter diesem Canvas, hier bleibt nur das HUD auf durchsichtigem Grund. Scheitert das Bild, zeichnet lyWorld wie in 2D */
-if(V3&&V3.render()){S0();g.clearRect(0,0,VW,VH);marks3d(V3)}else lyWorld();
+const v3=!!V3&&V3.render();ring3dAt=null;if(v3){S0();g.clearRect(0,0,VW,VH);marks3d(V3)}else lyWorld();
 S0();
 const v=g.createRadialGradient(480,272,260,480,272,620);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.4)');g.fillStyle=v;g.fillRect(0,0,VW,VH);
 if(DX.p.hurt>.2){g.fillStyle='rgba(200,20,30,'+(DX.p.hurt-.2)*.5+')';g.fillRect(0,0,VW,VH)}
@@ -410,7 +414,10 @@ if(DX.p.gs>.05){g.fillStyle='rgba(120,140,40,'+Math.min(.5,DX.p.gs*(DX.p.mask?.1
 if(DX.p.bl>0){g.fillStyle='rgba(255,255,244,'+Math.min(1,DX.p.bl/CFG.gren.flash.fade)+')';g.fillRect(0,0,VW,VH)}
 drawFunkHud();for(const f of DX.fx){g.globalAlpha=Math.min(1,f.t);g.fillStyle='#7ee34a';g.font='bold 14px monospace';g.fillText(f.s,f.x-24-DX.camX,f.y-DX.camY);g.globalAlpha=1}
 let ax=DX.p.x-DX.camX+Math.cos(DX.p.a)*90,ay=DX.p.y-DX.camY+Math.sin(DX.p.a)*90;if(DX.time-DX.mouse.t<4){ax=DX.mouse.sx;ay=DX.mouse.sy}
+if(v3&&DX.time-DX.mouse.t>=4){const q=V3.toScr(DX.p.x+Math.cos(DX.p.a)*90,DX.p.y+Math.sin(DX.p.a)*90,V3.cfg.aimH);ax=q[0];ay=q[1]}
 if(DX.focus&&DX.p===DX.me&&live(DX.me)&&DX.me.armed){const sw=DX.spwOn&&spwCan(),gp=sw?5:4+(DX.p.wp.spread+.05*DX.p.mv+DX.p.rec+lsp(DX.p))*180;g.strokeStyle=sw?(spwKind(DX.me)==='rifle'?'rgba(150,215,255,.95)':'rgba(255,170,60,.95)'):'rgba(120,255,140,.95)';g.lineWidth=1.6;g.beginPath();g.moveTo(ax-gp-6,ay);g.lineTo(ax-gp,ay);g.moveTo(ax+gp,ay);g.lineTo(ax+gp+6,ay);g.moveTo(ax,ay-gp-6);g.lineTo(ax,ay-gp);g.moveTo(ax,ay+gp);g.lineTo(ax,ay+gp+6);g.stroke()}
+/* 3D-3 (Ticket 152): Bodenring am Zielpunkt, der Weltpunkt der Maus (Waffenhoehe) senkrecht auf den Boden, Zeichnung folgt der Bodenebene (ring3d) */
+if(v3&&DX.focus&&DX.p===DX.me&&live(DX.me)&&DX.me.armed)ring3d(V3,DX.mouse.x,DX.mouse.y)
 if(!DX.ended)hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('TON AUS (M)',VW-12,VH-52);g.textAlign='left'}
 if(MLOCK.on&&MLOCK.can&&DX.plWant()&&!DX.plHeld()&&DX.focus&&!DX.paused&&!DX.ended){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('KLICKEN: MAUS FANGEN',VW-12,VH-(SND.isMuted()?68:52));g.textAlign='left'}
 if(DX.paused&&!DX.ended){DX.drawPause()}else if(!DX.focus&&!DX.ended){g.fillStyle='rgba(8,10,16,.74)';g.fillRect(0,0,VW,VH);g.textAlign='center';g.fillStyle='#ffd27a';g.font='bold 22px monospace';g.fillText('Ins Bild klicken zum Spielen',480,244);g.fillStyle='#cfd6de';g.font='14px monospace';g.fillText(PLACE[scOf(DX.LAY)].focus,480,274);g.fillText('WASD laufen   Shift schleichen   E halten: Interaktion',480,296);if(SESSION.round>0){g.fillStyle='#ffd27a';g.fillText('Serie: Auftrag '+(SESSION.round+1)+'   Konto '+fmt(SESSION.wallet),480,328)}DX.fhBadge(480,352,'c');g.textAlign='left'}
@@ -474,5 +481,5 @@ if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&!DX.prDl&&DX.rT<DX.LAY.prison.dl.at){
 if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&DX.LAY.prison.dv&&(DX.LAY.prison.dv.st===1||(DX.LAY.prison.dv.st===2&&DX.LAY.prison.dv.end>DX.rT))){g.textAlign='right';g.font='bold 12px monospace';g.fillStyle='#ffd27a';g.fillText(DX.LAY.prison.dv.st===1?'Lieferant kommt: Servicetür offen':'Servicetür schließt in '+Math.ceil(DX.LAY.prison.dv.end-DX.rT)+' s',VW-12,VH-78);g.textAlign='left'}
 if(DX.phase===1&&DX.alarmT>0&&!DX.ended){const cd='ENTDECKT! Alarm in '+DX.alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(DX.time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(DX.banner&&!DX.paused){g.globalAlpha=Math.min(1,DX.banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(DX.banner.s,482,154);g.fillStyle=DX.phase===2?'#ff8a6a':'#ffd27a';g.fillText(DX.banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
-return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,kickOff,leanLine,pinfo}}
-mkDraw.api=3;
+return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,kickOff,leanLine,pinfo,ring3d:()=>ring3dAt}}
+mkDraw.api=4;
