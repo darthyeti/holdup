@@ -2,6 +2,8 @@
 // Mutanten laufen mit HOLDUP_BOT=<Kopie von tools/bot.js>.
 const fs = require('fs');
 const path = require('path');
+// fester Zufall: der Bot streut mit Math.random (gauss), Seed 7008 raeumte in der CI einmal nur 20000 (7. November, PR 166); wie 135-transporter-bot
+const SEEDED = `(a => { Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(20261107);`;
 const STRAT = `{ kit: 'old', sigma: .05, post: 'gate', bar: 'treppe', press: false, gier: 0, maxT: 400 }`;
 module.exports = [
   {
@@ -9,7 +11,7 @@ module.exports = [
     timeout: 240000,
     async run(t) {
       await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
-      const r = await t.page.evaluate(`(() => { __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = []; for (const sd of [7003, 7005, 7006, 7008]) { const x = bot.nb(Object.assign({ seed: sd }, o)); out.push({ sd, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, maxD: x.maxD, hold: x.hold, kills: x.kills, dstop: x.dstop }); } return out; })()`);
+      const r = await t.page.evaluate(`(() => { ${SEEDED} __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = []; for (const sd of [7003, 7005, 7006, 7008]) { const x = bot.nb(Object.assign({ seed: sd }, o)); out.push({ sd, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, maxD: x.maxD, hold: x.hold, kills: x.kills, dstop: x.dstop }); } return out; })()`);
       t.eq(r.filter(x => x.res === 'TIMEOUT').map(x => x.sd), [], 'kein Lauf haengt bis zum Zeitlimit: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.t])));
       t.eq(r.filter(x => !(x.vault >= 45000)).map(x => [x.sd, x.vault]), [], 'der Bot raeumt den Tresor fast ganz (mindestens 45000 von 60000)');
       t.ok(r.every(x => x.kills >= 1 && x.maxD >= 1), 'die Polizei kommt, der Bot schiesst: ' + JSON.stringify(r.map(x => [x.kills, x.maxD])));
@@ -23,7 +25,7 @@ module.exports = [
     timeout: 300000,
     async run(t) {
       await t.page.addScriptTag({ content: fs.readFileSync(process.env.HOLDUP_BOT || path.join(__dirname, '..', '..', 'tools', 'bot.js'), 'utf8') });
-      const r = await t.page.evaluate(`(() => { __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = [], seen = new Set(); for (const sd of [7003, 7005, 7006, 7008, 7010, 7012, 7014, 7016, 7018, 7020, 7022, 7024]) { if (out.length >= 4 && out.some(q => q.res === 'WIN' && q.secured >= 45000 && q.holeT > 0)) break; const x = bot.nb(Object.assign({ seed: sd }, o)), L = __dbg.LAY().nb, st = L.gates.treppe[0], v = JSON.stringify(L.var); if (seen.has(v)) continue; seen.add(v); out.push({ sd, v, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, site: __dbg.bars().some(b => Math.floor(b.x / 32) === st[0] && Math.floor(b.y / 32) === st[1]) }); } return out; })()`);
+      const r = await t.page.evaluate(`(() => { ${SEEDED} __dbg.CFG.nb.stormSolo = 1e6; const o = ${STRAT}, out = [], seen = new Set(); for (const sd of [7003, 7005, 7006, 7008, 7010, 7012, 7014, 7016, 7018, 7020, 7022, 7024]) { if (out.length >= 4 && out.some(q => q.res === 'WIN' && q.secured >= 45000 && q.holeT > 0)) break; const x = bot.nb(Object.assign({ seed: sd }, o)), L = __dbg.LAY().nb, st = L.gates.treppe[0], v = JSON.stringify(L.var); if (seen.has(v)) continue; seen.add(v); out.push({ sd, v, res: x.res, t: x.t, holeT: x.holeT, vault: x.vault, secured: x.secured, site: __dbg.bars().some(b => Math.floor(b.x / 32) === st[0] && Math.floor(b.y / 32) === st[1]) }); } return out; })()`);
       t.ok(r.length >= 4, 'mindestens vier verschiedene Anordnungen gespielt (weitere Seeds, bis ein Lauf durchkommt, der Bot streut zufaellig): ' + JSON.stringify(r.map(x => x.v)));
       t.eq(r.filter(x => x.res === 'TIMEOUT').map(x => x.sd), [], 'kein Lauf haengt bis zum Zeitlimit: ' + JSON.stringify(r.map(x => [x.sd, x.res, x.t])));
       t.eq(r.filter(x => !(x.vault >= 45000)).map(x => [x.sd, x.vault]), [], 'der Bot raeumt den Tresor fast ganz in jeder Anordnung');
