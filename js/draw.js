@@ -377,11 +377,31 @@ const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.si
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
+/* 3D-4 (Ticket 153): Sicht fuer die 3D-Ansicht, dieselbe Quelle wie die 2D-Dunkelzone in lyWorld (visPoly um DX.p, nur lokale Daten, beim Client also seine eigene Sicht), nur gelesen.
+   null: alles sehen (Zuschauer mit B oder freier Kamera, wie seeAll in lyWorld). Sonst k Schluessel (Lage auf 1 px und Reichweite; die Ansicht haengt Raster und Tresortuer an und malt die Maske nur bei Aenderung),
+   dark Deckkraft der Dunkelzone wie 2D, edge die weiche Kante wie 2D (Breite, Deckkraft), poly das Sichtpolygon in Weltpixeln. */
+function vis3d(){if(NET.spec&&(DX.specAll||DX.specFree))return null;const P=DX.p,lim=Math.min(DX.blk>0?CFG.ev.vis:900,Math.round(900*lgM('vis')));
+return{k:Math.round(P.x)+','+Math.round(P.y)+','+lim,dark:DX.LAY.theme.dark+(DX.blk>0?.2:0)+lgA('dark'),edge:GFX.edge[GFX.lv].concat([[8,.28]]),poly:visPoly}}
+/* 3D-4: zuletzt gesehene Zustaende wie 2D (prSeen: Gitter, Tueren und Schloesser im Gefaengnis zeigen ausserhalb der Sicht den zuletzt gesehenen Stand). Liefert die Kacheln, die anders als das Raster
+   gezeigt werden ({'x,y': Zeichen}), oder null ohne Gefaengnis. Dieselbe Liste wie in lyWorld. */
+function seen3d(){const R=DX.LAY.prison;if(!R)return null;const o={};
+for(const q of R.locks.reduce((a,l)=>a.concat(l.cells.map(c=>[c[0],c[1]])),[]).concat(R.open0,R.dl.cells,DX.LAY.lockCells)){const k=q[0]+','+q[1],real=cell(q[0],q[1]),c=prSeen(k,real,q[0]*T+16,q[1]*T+16);if(c!==real)o[k]=c}
+return o}
+/* 3D-4: Ueberwachungskameras und Wachrouten wie in 2D (lyWorld): eine Kamera ist zu sehen, wenn sie bekannt ist (Monitore geprueft, c.k) oder in Sicht liegt, ausserhalb der Sicht abgedunkelt
+   wie unter der 2D-Dunkelzone; Kegel bekannter Kameras und aufgedeckte Routen liegen wie in 2D ueber der Dunkelzone. Am Boden (gnd), Kameras in Hoehe camH, auf dem HUD vor allen anderen Marken.
+   Zaehlt die gezeichneten Kameras (cams3dN, nur Tests). */
+let cams3dN=0;
+function cams3d(V,gnd){const P=DX.p,dk3=V.fogA(),H=56;cams3dN=0;
+DX.cams.forEach((c,i)=>{if(!(c.k||DX.losAll||los(P.x,P.y,c.x,c.y)))return;const a=camAng(c,i);gnd(c.x,c.y,H);g.save();g.translate(c.x,c.y);g.rotate(a);g.drawImage(p2,3*64,0,64,64,-14,-14,28,28);g.restore();cams3dN++;
+if(c.off||DX.camDown>0){g.fillStyle='rgba(20,22,26,.6)';g.beginPath();g.arc(c.x,c.y,10,0,6.283);g.fill()}
+if(dk3>0&&!DX.losAll&&!los(P.x,P.y,c.x,c.y)){g.globalCompositeOperation='source-atop';g.fillStyle='rgba(10,12,20,'+Math.min(1,dk3)+')';g.fillRect(c.x-16,c.y-16,32,32);g.globalCompositeOperation='source-over'}});
+DX.cams.forEach((c,i)=>{if(!c.k||c.off||DX.camDown>0)return;const a=camAng(c,i),al=DX.phase===1?(c.alert>0?.45:.2):.08;gnd(c.x,c.y,0);wedge(c.x,c.y,a,c.fov,c.rng,c.alert>0?'255,40,40':'255,90,70',al);g.strokeStyle='rgba(255,90,70,'+(DX.phase===1?.5:.2)+')';g.lineWidth=1;g.beginPath();g.moveTo(c.x,c.y);g.arc(c.x,c.y,c.rng,a-c.fov,a+c.fov);g.closePath();g.stroke()});
+S0();for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;g.save();g.setLineDash([6,6]);g.lineDashOffset=-DX.time*14;g.strokeStyle=q.k==='grd'?'rgba(255,179,71,.7)':'rgba(138,208,255,.7)';g.lineWidth=2;g.beginPath();q.line.forEach((pp,i)=>{const s=V.toScr(pp[0],pp[1],0);i?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1])});g.closePath();g.stroke();g.restore()}}
 /* 3D-2a: was in 2D ueber oder an den Figuren steht (Namen, Balken, Ausrufe, Ringe), in 3D als HUD. up: die Weltstelle (x,y) liegt am Bildpunkt von (x,y,h), die 2D-Zeichnung wird nur verschoben (aufrecht);
    gnd: Bodenmarke, die Zeichnung folgt der Bodenebene (lineare Naeherung von toScr um den Punkt). Gleiche Sicht wie figs3d (DX.losAll steht noch). */
 function marks3d(V){const P=DX.p,see=(x,y)=>los(P.x,P.y,x,y),H=V.cfg.headH,cH=k=>(V.cfg.cars[k]||{}).h||26;
-const up=(x,y,h)=>{const s=V.toScr(x,y,h);g.setTransform(2,0,0,2,2*(s[0]-x),2*(s[1]-y))},gnd=(x,y)=>{const s=V.toScr(x,y,0),a=V.toScr(x+16,y,0),b=V.toScr(x,y+16,0),m=[(a[0]-s[0])/16,(a[1]-s[1])/16,(b[0]-s[0])/16,(b[1]-s[1])/16];g.setTransform(2*m[0],2*m[1],2*m[2],2*m[3],2*(s[0]-m[0]*x-m[2]*y),2*(s[1]-m[1]*x-m[3]*y))};
-g.save();
+const up=(x,y,h)=>{const s=V.toScr(x,y,h);g.setTransform(2,0,0,2,2*(s[0]-x),2*(s[1]-y))},gnd=(x,y,h)=>{const s=V.toScr(x,y,h),a=V.toScr(x+16,y,h),b=V.toScr(x,y+16,h),m=[(a[0]-s[0])/16,(a[1]-s[1])/16,(b[0]-s[0])/16,(b[1]-s[1])/16];g.setTransform(2*m[0],2*m[1],2*m[2],2*m[3],2*(s[0]-m[0]*x-m[2]*y),2*(s[1]-m[1]*x-m[3]*y))};
+g.save();cams3d(V,gnd);
 for(const c of DX.pcs){if(c.dead)continue;const mx=c.civ?CFG.dec.hp:CFG.pol.car.hp;if(c.hp<mx){up(c.x,c.y,cH(c.civ?'civ':'pol'));const f=Math.max(0,c.hp/mx);g.fillStyle='rgba(0,0,0,.6)';g.fillRect(c.x-30,c.y-46,60,6);g.fillStyle=f>.5?'#7ee34a':f>.25?'#ffb000':'#ff5040';g.fillRect(c.x-29,c.y-45,58*f,4)}}
 for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;
 if(q.st==='ko'){up(q.x,q.y,0);const left=Math.max(0,q.kt|0);g.font='bold 11px monospace';g.fillStyle=left<=10?'#ff6a5a':'#bcd4ee';g.textAlign='center';g.fillText('Zzz '+left+' s',q.x,q.y+36);g.textAlign='left';continue}
@@ -481,5 +501,5 @@ if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&!DX.prDl&&DX.rT<DX.LAY.prison.dl.at){
 if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&DX.LAY.prison.dv&&(DX.LAY.prison.dv.st===1||(DX.LAY.prison.dv.st===2&&DX.LAY.prison.dv.end>DX.rT))){g.textAlign='right';g.font='bold 12px monospace';g.fillStyle='#ffd27a';g.fillText(DX.LAY.prison.dv.st===1?'Lieferant kommt: Servicetür offen':'Servicetür schließt in '+Math.ceil(DX.LAY.prison.dv.end-DX.rT)+' s',VW-12,VH-78);g.textAlign='left'}
 if(DX.phase===1&&DX.alarmT>0&&!DX.ended){const cd='ENTDECKT! Alarm in '+DX.alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(DX.time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(DX.banner&&!DX.paused){g.globalAlpha=Math.min(1,DX.banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(DX.banner.s,482,154);g.fillStyle=DX.phase===2?'#ff8a6a':'#ffd27a';g.fillText(DX.banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
-return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,kickOff,leanLine,pinfo,ring3d:()=>ring3dAt}}
-mkDraw.api=4;
+return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,kickOff,leanLine,pinfo,ring3d:()=>ring3dAt,vis3d,seen3d,cams3d:()=>cams3dN}}
+mkDraw.api=5;
