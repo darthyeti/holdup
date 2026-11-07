@@ -68,8 +68,6 @@ module.exports = [
           // Spieler vor die Tuer auf die Strasse: Polizei, Autos und Leute in der Halle in Sicht
           const g = D.get(), m = g.me, cop = g.en.find(e => e.kind === 'cop'); if (cop) { m.x = cop.x; m.y = cop.y - 40; }
           run(3); o.a = await C(D); o.en = g.en.length;
-          // ohne Figuren (alle unsichtbar: niemand in Sicht) zum Vergleich der Draw Calls
-          o.world = o.a.i.calls - o.a.i.dynCalls;
           return o; })()`);
         if (!r.a) { t.ok(false, '3D nicht an: ' + JSON.stringify(r.i0)); return; }
         const i = r.a.i;
@@ -79,7 +77,9 @@ module.exports = [
         t.ok(r.a.ch >= 5 && (i.fk.cop || 0) >= 1 && i.fk.pl === 1 && (i.ck.pol || 0) >= 1, 'Szene mit Polizei, Spieler und Streifenwagen: ' + JSON.stringify([r.a.ch, i.fk, i.ck]));
         t.eq(i.figs, r.a.ch, 'Zahl der Aufsteller gleich Zahl der in 2D gezeichneten Figuren');
         t.eq(i.cars, r.a.car, 'Zahl der Fahrzeuge gleich Zahl der in 2D gezeichneten Fahrzeuge');
-        t.ok(i.dynCalls >= 4 && i.dynCalls < 60, 'Figuren und Fahrzeuge unter 60 Draw Calls: ' + i.dynCalls);
+        // Budget aus den echten Aufrufen: alle Draw Calls minus statische Welt (Boden plus ein InstancedMesh je belegtem Material und Glas, Test 191)
+        const stat = 1 + i.parts.filter(n => n > 0).length, dyn = i.calls - stat;
+        t.ok(i.dynCalls >= 4 && dyn === i.dynCalls && dyn < 60, 'Figuren und Fahrzeuge unter 60 Draw Calls: ' + dyn + ' (Gruppen ' + i.dynCalls + ', statisch ' + stat + ')');
         t.ok(i.calls < 120 && i.tris < 150000, 'gesamt unter 120 Draw Calls und 150.000 Dreiecken: ' + i.calls + ', ' + i.tris);
         await page.evaluate(() => __dbg.view3d.reset());
         if (page !== t.page && page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
