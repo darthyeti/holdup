@@ -20,7 +20,8 @@ Hier stehen Fehler und Verhaltenswünsche, die Till im Spiel findet, als Pakete 
 | P4 | Balancing-Patch 1 (Sammlung von Tills Punkten) | S1 bis S3 mit Befund | gebaut (26. Oktober 2026), wartet auf Tills Spieltest (Till ergänzt weitere Punkte) |
 | P5 | Geiselschild: Beamter klebt am Spieler | v1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
 | P6 | Coop: Serienstand im neuen Raum und Mitspieler entfernen | v1.1 (26. Oktober 2026) | gebaut (26. Oktober 2026), wartet auf Tills Spieltest |
-| P7 | Bank-Seed 5305: Posten von parkenden Autos eingeschlossen (Ticket #7) | v1 (4. November 2026) | Plan steht, wartet auf Till (Akte `posten-autos`) |
+| P7 | Bank-Seed 5305: Posten von parkenden Autos eingeschlossen (Ticket #7) | v2 (6. November 2026) | gebaut (Lösung B Teil 1, Prüfung in `deriveDecor`), `freePost`/`toPost` unberührt |
+| P8 | Bank-Seed 6428: Posten von Props eingemauert (Ticket #141) | v1 (6. November 2026) | gebaut, wartet auf CI |
 
 ## P1 Tankstelle: zu enge Verkaufsräume
 
@@ -265,4 +266,16 @@ Till sammelt hier Punkte für den nächsten Balancing-Patch. Jeder Punkt bekommt
 
 **Änderungsprotokoll**
 - v1 (4. November 2026): Befund mit Messung, zwei Lösungen, Empfehlung B, Akte `posten-autos` für Till.
+- v2 (6. November 2026): Till hat freigegeben. Gebaut: Lösung B Teil 1 (Prüfung `postsOk` in `deriveDecor`, Test `tests/cases/186-posten-frei.test.js`, `KNOWN` in `tests/long/91-treffpunkt-bank.test.js` bleibt, weil Seed 5305 ohnehin frei ist). Teil 2 (`freePost`/`toPost` robust machen) nicht gebaut, eigenes Ticket falls gewünscht.
 
+## P8 Bank-Seed 6428: Posten von Props eingemauert (Ticket #141)
+
+**Bug.** Der lange Test 91 (`validateMap` über 3000 Seeds) meldete auf `main` `E#6428 posten: Posten 18,-1 von der Strasse nicht erreichbar`. Bank, Straße Ost, Treffpunkt abseits, Straße im Norden der Basis (Reihe -2, `van.y` -64).
+
+**Befund.** `autoPosts` wählt Posten mit `free` (nur die Kachel selbst darf nicht fest sein). Der Hof der Bank trägt aber schon Props aus dem Generator: Bei (18,-1) standen links und rechts Pflanzen (17,-1), (19,-1), darüber eine Kiste (18,-2) und darunter die Außenwand, die Kachel war also ringsum eingemauert. Mit `soft` rechnen nur die Wagenplätze (Einzelkachel-Props dürfen dort stehen, `clearLane` räumt sie), für Posten gilt das nicht. Mit #7 (parkende Autos) hat es nichts zu tun, das ist ein anderer Weg zum selben Zustand.
+
+**Lösung.** In `autoPosts` prüft `pick` jede Kandidatenkachel nach dem Abstand zur Zapfsäule zusätzlich mit `open`: von der Kachel aus müssen mindestens 12 freie Kacheln erreichbar sein (kleine Flutung über `free`), sonst probiert `pick` die nächste Verschiebung (0, +1, -1, +2, -2) entlang der Wand. In Seed 6428 rückt der Posten von (18,-1) nach (20,-1).
+
+**Messung.** Posten vor und nach der Änderung verglichen für Bank 5000 bis 7999 und je Juwelier, Tankstelle, Museum, Casino Seeds 1 bis 199 (3796 Karten, jeweils mit dem Lage-Würfel des Seeds): genau eine Karte ändert sich, Bank 6428. Keine Goldene Datei betroffen.
+
+**Test.** `tests/cases/186-posten-frei.test.js`, dritter Fall: Seed 6428 gebaut, kein Posten ohne freie Nachbarkachel, `validateMap` ohne Fehler. Gegenprobe: mit dem alten `pick` schlägt er an (`18,-1`).
