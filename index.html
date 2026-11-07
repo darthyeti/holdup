@@ -38,7 +38,7 @@ canvas:focus-visible{border-color:var(--accent)}
 const BUILD={n:211,d:'2026-10-29'};//BUILD
 const MAPS_API=1;//Vertrag mit js/maps.js (mkMaps.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkMaps aendern
 const DRAW_API=2;//Vertrag mit js/draw.js (mkDraw.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkDraw aendern
-const VIEW3D_API=1;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
+const VIEW3D_API=2;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
 const UI_API=13;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -235,9 +235,10 @@ lgM=k=>{let v=1;for(const t of lgList()){const x=lgv(t,k);if(x!=null&&!lgSkip(t,
 lgA=k=>{let v=0;for(const t of lgList()){const x=lgv(t,k);if(x!=null&&!lgSkip(t,k))v+=x}return v};
 const OOB=(x,y)=>y<WY0||y>=WY0+H||x<WX0||x>=WX0+W;
 const cell=(x,y)=>OOB(x,y)?'#':M[y-WY0][x-WX0];
-const setc=(x,y,c)=>{M[y-WY0][x-WX0]=c};
+let gRev=0;//Aenderungszaehler des Rasters (setc, newGrid), liest nur die 3D-Ansicht (V3X.gRev), um die statische Welt nur bei Aenderung neu zu bauen
+const setc=(x,y,c)=>{const r=M[y-WY0];if(r[x-WX0]!==c){r[x-WX0]=c;gRev++}};
 const fill=(x0,y0,x1,y1,c)=>{for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)setc(x,y,c)};
-function newGrid(w,h,x0,y0){stm.clear();gone=[];vanSt=null;W=w;H=h;WX0=x0;WY0=y0;WPX=W*T;WPY=H*T;M=[];for(let y=0;y<H;y++){const r=[];for(let x=0;x<W;x++)r.push('o');M.push(r)}TILES=[];for(let y=WY0;y<WY0+H;y++)for(let x=WX0;x<WX0+W;x++)TILES.push([x,y])}
+function newGrid(w,h,x0,y0){gRev++;stm.clear();gone=[];vanSt=null;W=w;H=h;WX0=x0;WY0=y0;WPX=W*T;WPY=H*T;M=[];for(let y=0;y<H;y++){const r=[];for(let x=0;x<W;x++)r.push('o');M.push(r)}TILES=[];for(let y=WY0;y<WY0+H;y++)for(let x=WX0;x<WX0+W;x++)TILES.push([x,y])}
 let vaultOpen=false;
 const SOLID='#WCPpbAremkqfLvXwYuN';
 const isSol=(x,y)=>{if(OOB(x,y))return true;const c=cell(x,y);if(c==='V')return !vaultOpen;return SOLID.indexOf(c)>=0};
@@ -2337,7 +2338,7 @@ const reqHeist=()=>{if(!live(me))return;if(noGun(me)){ban('Keine Waffe: erst ein
 const reqRad=c=>{if(NET.role==='solo'||!canRad(me))return;const[x,y]=aimRaw();NET.role==='client'?NET.conn&&NET.conn.send({t:'rad',c,x:Math.round(x),y:Math.round(y)}):radHost(me,c,x,y)};
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
 /* Zeichnen: js/draw.js (mkDraw). Der Kontext liest den Spielzustand (Konstanten entpackt, veraenderliche Namen als Getter), geschrieben werden nur camX, camY, kkN, losAll, specChips, ucHintN. Neue Namen im Kontext ergaenzen, sobald draw.js sie braucht. */
-const V3X={T,VW,VH,cv,cell,get angle(){return V3OPT.angle},get gfx(){return GFX.lv},get camX(){return camX},get camY(){return camY},get W(){return W},get H(){return H},get WX0(){return WX0},get WY0(){return WY0},get LAY(){return LAY},get LANE(){return LANE},get st(){return st},get so(){return so}};
+const V3X={T,VW,VH,cv,cell,get angle(){return V3OPT.angle},get gfx(){return GFX.lv},get camX(){return camX},get camY(){return camY},get W(){return W},get H(){return H},get WX0(){return WX0},get WY0(){return WY0},get LAY(){return LAY},get LANE(){return LANE},get st(){return st},get so(){return so},get dcv(){return dcv},get gRev(){return gRev},get vaultOpen(){return vaultOpen}};
 function v3Want(){return !opt.cv&&(v3F!==null?v3F:V3OPT.want)}
 function v3Fail(e){v3L=3;v3E=e;V3OPT.err=e;if(V3){V3.dispose();V3=null}v3Msg={s:'3D-Ansicht: '+e+', weiter in 2D',until:performance.now()+8000};console.warn('3D-Ansicht: '+e+', Rueckfall auf 2D')}
 function v3Load(){if(v3L)return;if(location.protocol==='file:'){v3Fail('3D braucht einen Webserver');return}if(typeof WebGL2RenderingContext==='undefined'){v3Fail('kein WebGL 2 im Browser');return}v3L=1;
