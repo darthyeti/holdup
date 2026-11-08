@@ -90,16 +90,17 @@ const VISF = `uniform sampler2D uVis; uniform vec4 uVisO; uniform vec4 uDark;
 vec3 fogC(vec3 c, vec2 w) { if (uDark.w <= 0.0) return c; float v = texture2D(uVis, vec2((w.x - uVisO.x) * uVisO.z, 1.0 - (w.y - uVisO.y) * uVisO.w)).r; return mix(c, uDark.rgb, uDark.w * (1.0 - v)); }
 `;
 // 3D-5 Licht: litC (linear, vor colorspace_fragment): Himmelslicht nach Flaechenrichtung, Sonne mit Schattenkarte (5 Proben), Taschenlampe (Spot und Lichtkreis), NPL Punktlichter ohne Schatten.
+// Schalter im Shader (neu uebersetzt nur beim Umschalten, setDefs): L_SH Schattenkarte, L_SP Taschenlampe; die Schleife der Punktlichter endet bei uPlN (in Software kostete jede Abfrage zur Laufzeit mit).
 // gradeC (sRGB, danach): Toenung und Farbkorrektur wie GFX.overlay, Vignette um die Bildmitte. uLit 0: unveraendert (wie 3D-4).
 const NPL = V3CFG.light.pl.max;
 const LITF = `#define NPL ${NPL}
 uniform float uLit; uniform vec3 uSunD; uniform vec3 uSunC; uniform vec3 uSky; uniform vec3 uGnd;
 uniform float uShOn; uniform sampler2D uShM; uniform mat4 uShMat; uniform vec3 uShP;
 uniform vec4 uSpP; uniform vec4 uSpD; uniform vec2 uSpK; uniform vec3 uSpC; uniform vec4 uHalo;
-uniform vec4 uPlP[NPL]; uniform vec3 uPlC[NPL];
+uniform vec4 uPlP[NPL]; uniform vec3 uPlC[NPL]; uniform int uPlN;
 uniform vec4 uTint; uniform vec4 uGrade; uniform vec4 uVig; uniform float uVigA;
+#ifdef L_SH
 float shadowAt(vec3 w, vec3 n) {
-  if (uShOn < 0.5) return 1.0;
   vec4 s = uShMat * vec4(w + n * uShP.z, 1.0);
   if (s.x <= 0.0 || s.x >= 1.0 || s.y <= 0.0 || s.y >= 1.0 || s.z >= 1.0) return 1.0;
   float z = s.z - uShP.y, t = uShP.x, r = step(z, texture2D(uShM, s.xy).r);
@@ -107,17 +108,26 @@ float shadowAt(vec3 w, vec3 n) {
   r += step(z, texture2D(uShM, s.xy + vec2(0.0, t)).r) + step(z, texture2D(uShM, s.xy - vec2(0.0, t)).r);
   return r * 0.2;
 }
+#endif
 vec3 litC(vec3 c, vec3 w, vec3 n) {
   if (uLit < 0.5) return c;
   vec3 L = mix(uGnd, uSky, n.y * 0.5 + 0.5);
-  float sd = dot(n, uSunD); if (sd > 0.0) L += uSunC * (sd * shadowAt(w, n));
-  if (uSpD.w > 0.0) {
+  float sd = dot(n, uSunD);
+#ifdef L_SH
+  if (sd > 0.0) L += uSunC * (sd * shadowAt(w, n));
+#else
+  L += uSunC * max(sd, 0.0);
+#endif
+#ifdef L_SP
+  {
     vec3 d = w - uSpP.xyz; float r = length(d);
     if (r < uSpP.w) { vec3 l = d / max(r, 0.001); float a = 1.0 - r / uSpP.w; L += uSpC * (smoothstep(uSpK.x, uSpK.y, dot(l, uSpD.xyz)) * a * a * (0.4 + 0.6 * max(dot(n, -l), 0.0))); }
     float h = 1.0 - length(w.xz - uHalo.xy) / uHalo.z; if (h > 0.0) L += uSpC * (uHalo.w * h * h);
   }
+#endif
   for (int i = 0; i < NPL; i++) {
-    vec4 p = uPlP[i]; if (p.w <= 0.0) continue;
+    if (i >= uPlN) break;
+    vec4 p = uPlP[i];
     vec3 d = p.xyz - w; float r = length(d); if (r >= p.w) continue;
     float a = 1.0 - r / p.w; L += uPlC[i] * (a * a * (0.35 + 0.65 * max(dot(n, d / max(r, 0.001)), 0.0)));
   }
@@ -187,7 +197,7 @@ export function mkView3d(X) {
   const UL = { uLit: { value: 0 }, uSunD: { value: new THREE.Vector3(0, 1, 0) }, uSunC: { value: new THREE.Vector3() }, uSky: { value: new THREE.Vector3(1, 1, 1) }, uGnd: { value: new THREE.Vector3(1, 1, 1) },
     uShOn: { value: 0 }, uShM: { value: shRT.depthTexture }, uShMat: { value: new THREE.Matrix4() }, uShP: { value: new THREE.Vector3() },
     uSpP: { value: new THREE.Vector4() }, uSpD: { value: new THREE.Vector4() }, uSpK: { value: new THREE.Vector2() }, uSpC: { value: new THREE.Vector3() }, uHalo: { value: new THREE.Vector4() },
-    uPlP: { value: v4s(NPL) }, uPlC: { value: v3s(NPL) }, uTint: { value: new THREE.Vector4() }, uGrade: { value: new THREE.Vector4() }, uVig: { value: new THREE.Vector4() }, uVigA: { value: 0 } };
+    uPlP: { value: v4s(NPL) }, uPlC: { value: v3s(NPL) }, uPlN: { value: 0 }, uTint: { value: new THREE.Vector4() }, uGrade: { value: new THREE.Vector4() }, uVig: { value: new THREE.Vector4() }, uVigA: { value: 0 } };
   Object.assign(UV, UL);
   // Boden in einem Durchgang: Bodenbild, darueber die Spuren nach ihrem Alpha gemischt (eine durchsichtige Ebene ueber dem ganzen Bild kostete in Software rund 45 ms je Bild)
   const groundMat = new THREE.ShaderMaterial({ uniforms: Object.assign({ map: { value: groundTex }, dmap: { value: decTex } }, UV),
@@ -451,6 +461,13 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     sh.on = lit && X.shadow ? 1 : 0; UL.uShOn.value = sh.on;
     lt = { tod: tn, night, lit, sun: UL.uSunC.value.toArray(), dir: UL.uSunD.value.toArray(), sky: UL.uSky.value.toArray(), gnd: UL.uGnd.value.toArray(), tint: UL.uTint.value.toArray(), grade: UL.uGrade.value.w, lamps: !!(D.lamps || night) };
   }
+  // Shader-Schalter aller beleuchteten Materialien (litMats, nach deren Bau gefuellt): nur bei Aenderung neu uebersetzen (st.relink zaehlt)
+  let defKey = '';
+  const litMats = mats.concat([glassMat, groundMat, figMat, topMat, colMat]);
+  function setDefs(shOn, spOn) {
+    const k = (shOn ? 'S' : '') + (spOn ? 'P' : ''); if (k === defKey) return; defKey = k; st.relink = (st.relink || 0) + 1;
+    for (const m of litMats) { const d = m.defines || (m.defines = {}); if (shOn) d.L_SH = ''; else delete d.L_SH; if (spOn) d.L_SP = ''; else delete d.L_SP; m.needsUpdate = true }
+  }
   const shV = new THREE.Vector3(), shB = new THREE.Matrix4().set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1);
   function shadowPass() {
     const S = LC.shadow, size = S.size[X.gfx | 0] || S.size[1], a = S.area / 2;
@@ -459,9 +476,9 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     shV.copy(UL.uSunD.value).multiplyScalar(S.far / 2); shCam.position.set(cx + shV.x, shV.y, cz + shV.z); shCam.lookAt(cx, 0, cz);
     shCam.left = -a; shCam.right = a; shCam.top = a; shCam.bottom = -a; shCam.updateProjectionMatrix(); shCam.updateMatrixWorld();
     UL.uShMat.value.copy(shB).multiply(shCam.projectionMatrix).multiply(shCam.matrixWorldInverse); UL.uShP.value.set(S.soft / size, S.bias, S.nrm);
-    const ov0 = scene.overrideMaterial; scene.overrideMaterial = shDepth; UL.uShOn.value = 0;
+    const ov0 = scene.overrideMaterial; scene.overrideMaterial = shDepth;
     ren.setRenderTarget(shRT); ren.clear(); ren.render(scene, shCam); ren.setRenderTarget(null);
-    scene.overrideMaterial = ov0; UL.uShOn.value = 1; sh.ups++; sh.calls = ren.info.render.calls;
+    scene.overrideMaterial = ov0; sh.ups++; sh.calls = ren.info.render.calls;
   }
   function lightB() {
     if (sh.on) shadowPass();
@@ -471,10 +488,12 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       UL.uSpP.value.set(P.x, sp.h, P.y, sp.r); shV.set(ca, -sp.dn, sa).normalize(); UL.uSpD.value.set(shV.x, shV.y, shV.z, 1); UL.uSpK.value.set(sp.c0, sp.c1);
       UL.uSpC.value.fromArray(sp.col).multiplyScalar(sp.i); UL.uHalo.value.set(P.x, P.y, Math.max(1, (+N.lamp || 300) * sp.haloK), sp.halo / sp.i);
     } else UL.uSpD.value.set(0, 0, 0, 0);
+    setDefs(!!sh.on, on);
     lt.spot = on ? { x: P.x, y: P.y, a: P.a, dir: UL.uSpD.value.toArray().slice(0, 3), r: sp.r, halo: UL.uHalo.value.z } : null;
     // Punktlichter: Muendungsfeuer zuerst, dann Blaulicht, dann Lampen (wenn an), je nach Abstand zum Blickpunkt, hoechstens max
     const L = LC.pl, d2 = o => (o.x - tgt.x) * (o.x - tgt.x) + (o.y - tgt.z) * (o.y - tgt.z), by = (A) => A.slice().sort((p, q) => d2(p) - d2(q));
     const cand = by(dynL.filter(o => o.k === 'muz')).concat(by(dynL.filter(o => o.k !== 'muz')), lt.lamps ? by(lamps) : []), out = cand.slice(0, lt.lit ? L.max : 0);
+    UL.uPlN.value = Math.min(NPL, out.length);
     for (let i = 0; i < NPL; i++) {
       const o = out[i], pp = UL.uPlP.value[i], pc = UL.uPlC.value[i];
       if (!o) { pp.set(0, 0, 0, 0); continue }
@@ -516,7 +535,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)

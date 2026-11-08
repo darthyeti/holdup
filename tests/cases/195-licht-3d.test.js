@@ -80,8 +80,8 @@ module.exports = [
           const st = () => { D.draw(); const i = V.info(); return { sh: i.light.shadow, calls: i.calls, sp: V.scene.children.filter(m => m.name === 'schatten' && m.visible).map(m => m.count)[0] || 0 }; };
           const gfx = n => { GFX.set(n); };
           L5.shadow('auto'); gfx('niedrig'); o.autoLo = st(); gfx('mittel'); o.autoMid = st(); gfx('hoch'); o.autoHi = st();
-          gfx('mittel'); L5.shadow('aus'); o.aus = st(); const u0 = o.aus.sh.ups; D.draw(); D.draw(); o.ausUps = V.info().light.shadow.ups - u0;
-          L5.shadow('an'); gfx('niedrig'); o.anLo = st(); gfx('mittel'); o.an = st();
+          gfx('mittel'); L5.shadow('aus'); o.aus = st(); const u0 = o.aus.sh.ups, k0 = V.info().relink; D.draw(); D.draw(); o.ausUps = V.info().light.shadow.ups - u0; o.relink0 = V.info().relink - k0; o.defsAus = V.info().defs;
+          L5.shadow('an'); gfx('niedrig'); o.anLo = st(); gfx('mittel'); o.an = st(); o.defsAn = V.info().defs; o.relink1 = V.info().relink - k0;
           // Boden suedoestlich der Wand (die Sonne steht im Nordwesten) mit und ohne Schatten: Stichpunkte im Bild, an denen der Schatten etwas aendert
           const me = D.get().me, W = D.world(), pts = [];
           for (let y = me.y - 260; y <= me.y + 80; y += 8) for (let x = me.x - 300; x <= me.x + 300; x += 8) { const c = W.cell(Math.floor(x / 32), Math.floor(y / 32)); if (c !== '.' && c !== 'o') continue; const s = V.toScr(x, y, 0); if (s[0] > 20 && s[0] < 940 && s[1] > 20 && s[1] < 524) pts.push([x, y, s]); }
@@ -95,6 +95,7 @@ module.exports = [
         t.eq([r.autoMid.sh.size, r.autoHi.sh.size], [1024, 2048], 'Schattenkarte 1024 in mittel, 2048 in hoch (hoechstens 2048)');
         t.ok(!r.aus.sh.on && r.aus.sh.size === 0 && r.ausUps === 0, 'aus: keine Schattenkarte, kein Schatten-Durchgang');
         t.ok(r.anLo.sh.on && r.an.sh.on && r.an.sh.calls > 0 && r.an.sh.calls <= 12, 'an: auch in niedrig, Schatten-Durchgang mit ' + r.an.sh.calls + ' Draw Calls (statische Welt, Koerper, Kloetze)');
+        t.ok(r.relink0 === 0 && r.relink1 === 1 && r.defsAus === '' && r.defsAn === 'S', 'Shader-Schalter: ohne Aenderung kein neues Uebersetzen, an schaltet L_SH (' + JSON.stringify([r.relink0, r.relink1, r.defsAus, r.defsAn]) + ')');
         t.ok(r.aus.sp > 0 && r.an.sp === 0, 'aus: Figuren mit Schattenfleck wie 2D (' + r.aus.sp + '), an: Schatten aus der Schattenkarte statt Fleck');
         t.ok(r.dark >= 15 && r.dark > r.light * 3, 'Schatten dunkeln den Boden ab: ' + r.dark + ' Stichpunkte dunkler, ' + r.light + ' heller');
         t.ok(r.lumA < r.lumB, 'Bild mit Schatten insgesamt dunkler');
