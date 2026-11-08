@@ -44,7 +44,7 @@ module.exports = [
       const r = await t.page.evaluate(async () => {
         const html = await (await fetch('index.html', { cache: 'no-store' })).text();
         const tags = [...html.matchAll(/<script src="js\/([\w-]+\.js)\?v=(\d+)"><\/script>/g)].map(m => ({ f: m[1], v: +m[2] }));
-        const loaded = { 'ui.js': typeof mkUI === 'function', 'snd.js': typeof SND === 'object' && typeof SND.init === 'function', 'flog.js': typeof mkFlog === 'function' && typeof FL_SINKS === 'object', 'maps.js': typeof mkMaps === 'function' && mkMaps.api === 1, 'draw.js': typeof mkDraw === 'function' && mkDraw.api === 1 };
+        const loaded = { 'ui.js': typeof mkUI === 'function', 'snd.js': typeof SND === 'object' && typeof SND.init === 'function', 'flog.js': typeof mkFlog === 'function' && typeof FL_SINKS === 'object', 'maps.js': typeof mkMaps === 'function' && mkMaps.api === 1, 'draw.js': typeof mkDraw === 'function' && mkDraw.api === +(/const DRAW_API=(\d+)/.exec(html) || [])[1] };
         return { tags, build: __dbg.BUILD.n, loaded, bare: (html.match(/<script src="js\/[^"?]+"/g) || []).length };
       });
       const files = r.tags.map(x => x.f);
@@ -120,6 +120,39 @@ module.exports = [
       const msg = await page.evaluate(() => document.getElementById('err').textContent);
       await page.context().close();
       t.ok(/js\/draw\.js/.test(msg) && /veraltet/.test(msg) && /neu laden/.test(msg), 'Meldung: ' + msg);
+    },
+  },
+  {
+    name: 'Start: 3D-Modul js/view3d.js (Ticket 149): import im Kern traegt die Build-Nummer, mkView3d.api passt zu VIEW3D_API, three liegt in assets/',
+    async run(t) {
+      const r = await t.page.evaluate(async () => {
+        const html = await (await fetch('index.html', { cache: 'no-store' })).text(), src = await (await fetch('js/view3d.js', { cache: 'no-store' })).text();
+        const th = await fetch('assets/three.module.min.js', { cache: 'no-store' }), tb = await th.text();
+        return { imp: [...html.matchAll(/import\('\.\/js\/view3d\.js\?v=(\d+)'\)/g)].map(m => +m[1]), build: __dbg.BUILD.n, api: (/mkView3d\.api = (\d+);/.exec(src) || [])[1], core: (/const VIEW3D_API=(\d+);/.exec(html) || [])[1],
+          from: /from '\.\.\/assets\/three\.module\.min\.js'/.test(src), three: th.ok && /const t="170"/.test(tb.slice(0, 400)), n: tb.length };
+      });
+      t.eq(r.imp, [r.build], 'genau ein import(\'./js/view3d.js?v=N\') mit der Build-Nummer (stamp-build setzt sie)');
+      t.ok(r.api && r.api === r.core, 'mkView3d.api und VIEW3D_API gleich: ' + r.api + ' / ' + r.core);
+      t.ok(r.from && r.three && r.n === 691648, 'js/view3d.js laedt assets/three.module.min.js (Three.js 0.170.0, 691.648 Bytes): ' + r.n);
+    },
+  },
+  {
+    name: 'Start: fehlt js/view3d.js oder ist es veraltet, faellt 3D mit klarer Meldung auf 2D zurueck und das Spiel laeuft',
+    async run(t) {
+      for (const k of ['404', 'alt']) {
+        const ctx = await t.env.browser.newContext({ viewport: { width: 1000, height: 640 } });
+        await ctx.route('**/js/view3d.js*', r => k === '404' ? r.fulfill({ status: 404, body: '' }) : r.fulfill({ body: 'export function mkView3d(){return{on:true}}', contentType: 'text/javascript' }));
+        const page = await ctx.newPage(), errs = []; page.on('pageerror', e => errs.push(String(e)));
+        await page.goto(t.env.url + '/index.html#debug');
+        await page.waitForFunction(() => window.__dbg && __dbg.get && __dbg.get().players, null, { timeout: 30000 });
+        const r = await page.evaluate(async () => { const D = __dbg; D.setFocus(true); const i = await D.view3d.set(true); for (let n = 0; n < 10; n++) D.update(1 / 30); D.draw(); const c = document.getElementById('c');
+          return { st: i.state, err: i.err, msg: D.view3d.msg, mid: c.getContext('2d').getImageData(960, 500, 1, 1).data[3] }; });
+        await ctx.close();
+        t.eq(r.st, 'rueckfall', k + ': Zustand');
+        t.ok(/js\/view3d\.js/.test(r.err) && (k === '404' ? /nicht ladbar/ : /veraltet/).test(r.err) && /weiter in 2D/.test(r.msg), k + ': Meldung: ' + r.msg);
+        t.ok(r.mid === 255, k + ': Welt weiter in 2D gezeichnet');
+        t.eq(errs, [], k + ': keine JS-Fehler');
+      }
     },
   },
 ];
