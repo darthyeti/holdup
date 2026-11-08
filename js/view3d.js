@@ -557,7 +557,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
 
   // 3D-7 (Ticket 156): Effekte. X.fx() (js/draw.js fx3d) liefert je Bild Teilchen, Kugeln, Muendungsfeuer, Granaten, Wolken, Aufnahmen und Dinge am Boden, hier wird nur gezeichnet (nichts geschrieben).
   // Teilchen in zwei Puffern (ein InstancedMesh je Mischung: additiv fuer Feuer, Funken, Schein, Kugeln; normal fuer Staub, Rauch, Truemmer, Wolken), je Instanz Lage und Groesse (iA), Strichrichtung oder
-  // Ringbreite und Form (iB), Farbe linear und Deckkraft (iC). Der Shader stellt die Flaeche zur Kamera (Schein, Rauch), legt sie flach (Ringe) oder spannt sie entlang der Bahn (Kugeln, Feuerzunge).
+  // Ringbreite und Form (iB), Farbe linear und Deckkraft (iC). Additiv wird die Deckkraft nach der Farbraum-Umrechnung angewandt (wie 2D 'lighter' im sRGB-Raum, sonst hebt die Umrechnung schwache Raender stark an). Der Shader stellt die Flaeche zur Kamera (Schein, Rauch), legt sie flach (Ringe) oder spannt sie entlang der Bahn (Kugeln, Feuerzunge).
   // Dinge (Granaten, Fallen, Notfallkoffer, Ablenker) als Kloetze, Aufnahmen als 2D-Bild aus props.png. Dazu Explosionen als Punktlicht (dynL boom). Abdunklung ausserhalb der Sicht wie 3D-4.
   const FXV = `attribute vec4 iA; attribute vec4 iB; attribute vec4 iC; varying vec4 vC; varying vec2 vQ; varying float vS; varying float vT; varying vec2 vM;
 void main() { vec2 q = position.xz * 2.0; vQ = q; vC = iC; float fl = step(3.5, iB.w); vS = iB.w - 4.0 * fl; vT = iB.x; vec3 c = iA.xyz, w;
@@ -573,7 +573,7 @@ float fxA() { float r = length(vQ), a;
 float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2((w.x - uVisO.x) * uVisO.z, 1.0 - (w.y - uVisO.y) * uVisO.w)).r; }
 `;
   const fxMat = add => new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, uniforms: Object.assign({}, UV), vertexShader: FXV,
-    fragmentShader: VISF + FXA + (add ? 'void main() { float a = fxA(); if (a <= 0.004) discard; gl_FragColor = vec4(vC.rgb * a, 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb *= 1.0 - uDark.w * (1.0 - visV(vM));\n}'
+    fragmentShader: VISF + FXA + (add ? 'void main() { float a = fxA(); if (a <= 0.004) discard; gl_FragColor = vec4(vC.rgb, 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb *= a * (1.0 - uDark.w * (1.0 - visV(vM)));\n}'
       : 'void main() { float a = fxA(); if (a <= 0.004) discard; gl_FragColor = vec4(vC.rgb, a);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);\n}') });
   const fxAddMat = fxMat(1), fxNrmMat = fxMat(0), prTex = tex(X.pr), PR_C = Math.max(1, Math.round(X.pr.width / 64)), PR_R = Math.max(1, Math.round(X.pr.height / 64)), pkMat = sprMat(prTex, prTex, PR_C, PR_R);
   const FXA4 = { iA: 4, iB: 4, iC: 4 };

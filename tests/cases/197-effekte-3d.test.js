@@ -157,7 +157,7 @@ module.exports = [
     },
   },
   {
-    name: '3D-Effekte: Spielzustand nach 600 Schritten im Gefecht (Schiessen, Explosion) ist mit und ohne 3D gleich (fx3d liest nur)',
+    name: '3D-Effekte: Spielzustand nach 600 Schritten im Gefecht mit der Polizei (Schiessen, Explosionen) ist mit und ohne 3D gleich (fx3d liest nur)',
     timeout: 300000,
     async run(t) {
       const P = await glPage(t); if (!P) return;
@@ -168,25 +168,26 @@ module.exports = [
           const D = __dbg, R0 = Math.random;
           const mb = s => () => { s = s + 0x6D2B79F5 | 0; let q = Math.imul(s ^ s >>> 15, 1 | s); q = q + Math.imul(q ^ q >>> 7, 61 | q) ^ q; return ((q ^ q >>> 14) >>> 0) / 4294967296; };
           async function run(on) {
-            await D.view3d.set(on); PX.scene('bank', 5); const rs = mb(42), rd = mb(7); Math.random = rs; D.setTime(0); D.setFocus(true);
+            await D.view3d.set(on); PX.scene('bank', 5); PX.phase('ueberfall'); PX.phase('polizei'); PX.phase('polizei'); const rs = mb(42), rd = mb(7); Math.random = rs; D.setFocus(true);
             const V = D.view3d.V; if (on && V) V.pick = (sx, sy) => [sx + D.cam()[0], sy + D.cam()[1]];
-            const K = D.keys, M = D.mouse; M.sx = 640; M.sy = 200; let mx = 0;
+            const K = D.keys, M = D.mouse; M.sx = 640; M.sy = 200; let mx = 0, bm = 0;
             for (let i = 0; i < 600; i++) {
               for (const k of 'wasd') delete K[k]; K[['d', 'w', 'a', 's'][Math.floor(i / 50) % 4]] = 1;
-              if (i === 60) D.startHeist();
-              M.down = i > 120 && i % 20 < 8; if (i === 200 || i === 400) { const m = D.get().me; D.evt('bx', [m.x + 90, m.y - 60, 90, 1]); }
+              M.down = i % 20 < 8; if (i === 100 || i === 400) { const m = D.get().me; D.evt('bx', [m.x + 90, m.y - 60, 90, 1]); }
+              { const m = D.get().me, e = D.get().en[0]; if (m && e) { M.sx = e.x - D.cam()[0]; M.sy = e.y - D.cam()[1]; } bm = Math.max(bm, D.get().bl.length); }
               const m = D.get().me; if (m) { m.hp = 100; if (m.mag <= 0) m.mag = 12; }
               D.update(1 / 30); if (i % 5 === 4) { Math.random = rd; D.draw(); Math.random = rs; if (on && V) mx = Math.max(mx, V.info().fx.add + V.info().fx.nrm); }
             }
             Math.random = R0; for (const k of 'wasd') delete K[k]; M.down = false;
             const g = D.get(); const s = JSON.stringify({ t: g.time, ph: g.phase, me: g.me ? [g.me.x, g.me.y, g.me.a, g.me.hp, g.me.mag] : 0, en: g.en.map(e => [e.x, e.y, e.hp]), npc: g.npcs.map(n => [n.x, n.y, n.st]), bl: g.bl.length, pt: D.ptN(), its: g.its.map(o => [o.t, !!o.done, o.pr]), M: D.world().M.join(''), cars: g.cars.map(c => [c.x, c.y, c.hp]) });
             let h = 0; for (let i = 0; i < s.length; i++) h = Math.imul(h, 31) + s.charCodeAt(i) | 0;
-            return { h, ph: g.phase, en: g.en.length, fr: on ? D.view3d.info().frames : 0, errs: on ? D.view3d.info().errs : 0, mx };
+            return { h, ph: g.phase, en: g.en.length, bm, fr: on ? D.view3d.info().frames : 0, errs: on ? D.view3d.info().errs : 0, mx };
           }
           const o = { off: await run(false), on: await run(true), off2: await run(false) };
           D.view3d.reset(); return o;
         });
         t.eq(r.off.h, r.off2.h, 'ohne 3D zweimal gleich');
+        t.ok(r.off.bm >= 3 && r.off.en >= 2, 'Gefecht: bis ' + r.off.bm + ' Kugeln gleichzeitig, ' + r.off.en + ' Gegner');
         t.ok(r.on.fr >= 100 && r.on.errs === 0 && r.on.mx > 10, '3D hat gezeichnet (' + r.on.fr + ' Bilder, bis ' + r.on.mx + ' Teilchen im Puffer)');
         t.eq(r.on.h, r.off.h, 'Zustandshash gleich mit und ohne 3D (Phase ' + r.off.ph + ', ' + r.off.en + ' Gegner)');
         if (page !== t.page && page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));

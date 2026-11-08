@@ -384,6 +384,7 @@ return{f:F,c:C}}
 function fx3d(){const P=DX.p,see=(x,y)=>los(P.x,P.y,x,y),t=DX.time,muz=[],gr=[],pk=[],tr=[],aid=[],dcy=[],burn=[];
 for(const o of DX.players){if(o.flash<=0||!live(o)||(o!==P&&!see(o.x,o.y)))continue;muz.push({x:o.x+Math.cos(o.a)*34,y:o.y+Math.sin(o.a)*34,a:o.a,r:34,pl:1,fv:GFX.lv>0?o.fv|0:0})}
 for(const e of DX.en)if(e.fl>0&&see(e.x,e.y))muz.push({x:e.x+Math.cos(e.a)*(e.muz+2),y:e.y+Math.sin(e.a)*(e.muz+2),a:e.a,r:22,pl:0,fv:0});
+{const v=DX.dl.dv;if(v&&v.fl>0&&see(v.x,v.y))muz.push({x:v.x+Math.cos(v.a)*24,y:v.y+Math.sin(v.a)*24,a:v.a,r:10,pl:0,fv:0})}
 for(const q of DX.gr){if(!see(q.x,q.y))continue;gr.push({id:q.id,k:q.k,x:q.x,y:q.y,st:q.st,t:q.t,bk:q.st==='rest'&&Math.floor(t*(q.tm<.5?14:7))%2?1:0})}
 for(const k of DX.pk)if(see(k.x,k.y))pk.push({x:k.x,y:k.y,k:k.k,b:Math.sin(t*3+k.x)*1.5});
 for(const q of DX.traps){const C=CFG.trap[q.k],armed=q.armed!=null?q.armed:q.a>=C.arm;tr.push({k:q.k,x:q.x,y:q.y,r:C.r,armed:armed?1:0,bl:Math.floor(t*(armed?6:2.5))%2})}
