@@ -131,7 +131,7 @@ module.exports = [
           H6.scene('prison'); H6.look(H6.target('prison')); a = H6.info();
           const rd = D.get().its.find(i => i.t === 'rdr'); rd.act(me()); for (let k = 0; k < 5; k++) D.update(1 / 30); D.draw(); D.draw(); b = H6.info();
           const R = D.LAY().prison, gl = R.locks.find(l => l.id === 'gi'), gc = gl.cells[0], W = D.world();
-          o.grille = { grl: [a.grl, b.grl], cell: W.cell(gc[0], gc[1]), parts: [a.parts, b.parts], vol: [a.vol, b.vol], builds: [a.statBuilds, b.statBuilds], reader: [a.list.includes('reader'), b.list.includes('reader')], sum: [a.sum, b.sum] };
+          o.grille = { grl: [a.grl, b.grl], cell: W.cell(gc[0], gc[1]), parts: [a.parts, b.parts], vol: [a.vol, b.vol], builds: [a.statBuilds, b.statBuilds], reader: [a.list.includes('reader'), b.list.includes('reader')], sum: [a.sum, b.sum], st: [a.n[0], b.n[0]], sc: [a.scen.grille || 0, b.scen.grille || 0] };
           // Notenbank: Bohrer, dann Loch offen
           H6.scene('nb', 'ueberfall'); H6.look(H6.target('nb')); a = H6.info(); D.nbHole(true); D.update(1 / 30); D.draw(); b = H6.info();
           o.hole = { a: [a.scen.nbRig || 0, a.scen.nbHole || 0], b: [b.scen.nbRig || 0, b.scen.nbHole || 0], zone: b.scen.zone || 0, sum: [a.sum, b.sum] };
@@ -152,7 +152,7 @@ module.exports = [
         t.ok(o.laser.on >= 1 && o.laser.on === o.laser.off && o.laser.l[0] > o.laser.l[1] && o.laser.f[1] > o.laser.f[0], 'Laser: an leuchtend (' + o.laser.l[0] + ' Leuchten), aus matt (' + o.laser.f[1] + ' Flaechen), gleich viele Laser ' + o.laser.on);
         t.ok(o.vault.open && ne(o.vault.sum[0], o.vault.sum[1]) && o.vault.vol[1] < o.vault.vol[0] && o.vault.f[1] > o.vault.f[0], 'Tresor offen: Block weg (Rauminhalt ' + o.vault.vol.join(' > ') + '), Blatt und Licht (Flaechen ' + o.vault.f.join(' -> ') + ')');
         t.ok(o.vault.bundle[1] > 0 && o.vault.bundle[0] === 0, 'Geldstapel erst im offenen Tresor in Sicht: ' + o.vault.bundle.join(' -> '));
-        t.ok(o.grille.grl[0] > 0 && o.grille.grl[1] < o.grille.grl[0] && o.grille.cell === 'l' && o.grille.builds[1] > o.grille.builds[0] && ne(o.grille.vol[0], o.grille.vol[1]), 'Gitter: zu als Staebe (' + o.grille.grl[0] + ' Kacheln), mit der Karte auf (' + o.grille.grl[1] + '), statische Welt neu gebaut');
+        t.ok(o.grille.grl[0] > 0 && o.grille.grl[1] < o.grille.grl[0] && o.grille.cell === 'l' && o.grille.builds[1] > o.grille.builds[0] && o.grille.parts[0][2] - o.grille.parts[1][2] === o.grille.grl[0] - o.grille.grl[1] && o.grille.st[0] > o.grille.st[1] && o.grille.sc[0] === o.grille.grl[0] && o.grille.sc[1] === o.grille.grl[1], 'Gitter: zu als Staebe (statisch je Kachel ein Riegel, ' + o.grille.parts.map(q => q[2]).join(' -> ') + ' Metallkloetze; dazu 4 Staebe und 2 Riegel als Teile, ' + o.grille.st.join(' -> ') + '; ' + o.grille.grl[0] + ' Kacheln), mit der Karte auf (' + o.grille.grl[1] + '), statische Welt neu gebaut ('  + o.grille.grl[0] + ' Kacheln), mit der Karte auf (' + o.grille.grl[1] + '), statische Welt neu gebaut');
         t.ok(o.grille.reader[0] && o.grille.reader[1] && ne(o.grille.sum[0], o.grille.sum[1]), 'Kartenleser wechselt die Lampe');
         t.ok(o.hole.a[0] === 1 && o.hole.a[1] === 0 && o.hole.b[0] === 0 && o.hole.b[1] === 1 && o.hole.zone === 1, 'Notenbank: Bohrer, dann Loch und Ausstieg ' + JSON.stringify(o.hole));
         t.ok(ne(o.pump.sum[0], o.pump.sum[1]) && o.pump.l[1] < o.pump.l[0], 'Zapfsaeule: Anzeige aus, Stumpf statt Saeule ' + JSON.stringify(o.pump));

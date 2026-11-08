@@ -82,7 +82,7 @@ export const V3CFG = {
     laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
     kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
       pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, card: { g: 's' },
-      frame: { g: 'l' }, exit: { g: 'l' }, tk: { g: 's l f' }, parked: { g: 'i' } },
+      frame: { g: 'l' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
     src: {
       rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'boden', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
       guards: 'figur', cams: 'hud', vit: 'vit', goods: 'good', cage: 'raster', pumps: 'pump', lasers: 'laser', bn: 'logik', polAt: 'logik', wb: 'logik', stl: 'logik', gAll: 'logik', cone: 'cone',
@@ -266,6 +266,9 @@ export function mkView3d(X) {
   // 3D-4: zuletzt gesehene Zustaende wie 2D (prSeen, Gitter und Tueren im Gefaengnis): X.seen liefert je Bild die Kacheln, die anders gezeigt werden als das Raster ({'x,y': Zeichen} oder null)
   let ov = null, ovKey = '';
   const cellAt = (x, y) => { const o = ov && ov[x + ',' + y]; return o || X.cell(x, y) };
+  // Laeuft eine Wand oder Tuerreihe an der Kachel (x,y) in Ost-West-Richtung? (Gitter und Scheiben stehen quer dazu)
+  const wallAt = c => { const e = C.cells[c]; return !!e && !e.ins && !e.fence && e.s.some(q => q[0] === 0 && q[1] >= C.wallH) };
+  const gridHz = (x, y) => { const c = cellAt(x, y); return cellAt(x - 1, y) === c || cellAt(x + 1, y) === c || wallAt(cellAt(x - 1, y)) || wallAt(cellAt(x + 1, y)) };
   function keyOfGrid() { let s = (X.vaultOpen ? '1' : '0') + scKey + '|'; const x0 = X.WX0, y0 = X.WY0; for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) { const c = cellAt(x, y); s += c === 'v' ? 'o' : c } return s }
 
   // Statische Welt aus dem Raster: je Kachel und Scheibe der Hoehentabelle ein Kloetzchen (Instanz eines Einheitswuerfels), ein InstancedMesh je Material plus Glas.
@@ -281,11 +284,8 @@ export function mkView3d(X) {
       if (!s) { cells['?' + c] = (cells['?' + c] || 0) + 1; continue }
       if (!s.s.length || (s.open && vo)) continue;
       cells[c] = (cells[c] || 0) + 1;
-      // 3D-6 Gefaengnis: geschlossenes Gitter (scen3d grl) als Staebe und Querriegel statt Block, quer zur Wandrichtung wie die Glasscheibe
-      if (c === 'L' && grl.has(x + ',' + y)) { const G = C.scen.grille, hz = wallish(cell(x - 1, y)) || wallish(cell(x + 1, y)) || cell(x - 1, y) === 'L' || cell(x + 1, y) === 'L', m = T / 2, w2 = G.w / 2;
-        for (let i = 0; i < G.n; i++) { const u = 4 + i * 8 + 1.5; if (hz) add(lists[2], x * T + u - w2, y * T + m - w2, x * T + u + w2, y * T + m + w2, 0, 64); else add(lists[2], x * T + m - w2, y * T + u - w2, x * T + m + w2, y * T + u + w2, 0, 64) }
-        for (const r of G.rail) { if (hz) add(lists[2], x * T, y * T + m - w2, x * T + T, y * T + m + w2, r[0], r[1]); else add(lists[2], x * T + m - w2, y * T, x * T + m + w2, y * T + T, r[0], r[1]) }
-        continue }
+      // 3D-6 Gefaengnis: geschlossenes Gitter (scen3d grl) statt Block nur der untere Riegel (ein Kloetzchen wie die Tabelle, die Zaehlung bleibt), Staebe und uebrige Riegel zeichnet SCEN.grille
+      if (c === 'L' && grl.has(x + ',' + y)) { const r = C.scen.grille.rail[0], w2 = C.scen.grille.w / 2, m = T / 2; if (gridHz(x, y)) add(lists[2], x * T, y * T + m - w2, x * T + T, y * T + m + w2, r[0], r[1]); else add(lists[2], x * T + m - w2, y * T, x * T + m + w2, y * T + T, r[0], r[1]); continue }
       let X0 = x * T, Z0 = y * T, X1 = X0 + T, Z1 = Z0 + T; const ins = s.ins || 0; X0 += ins; Z0 += ins; X1 -= ins; Z1 -= ins;
       const hz = cell(x - 1, y) === c || cell(x + 1, y) === c || wallish(cell(x - 1, y)) || wallish(cell(x + 1, y));
       if (s.fence) { if (cell(x - 1, y) === 'f' || cell(x + 1, y) === 'f') { Z0 = y * T + 12; Z1 = y * T + 19 } else { X0 = x * T + 12; X1 = x * T + 19 } }
@@ -505,6 +505,10 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       if (o.smoke) sb('f', o.x - o.fx * (o.L / 2 - 40), o.y + o.W / 2 + 4, 2, 18, 14, 18, 0, 0x464646, .35);
     },
     cone() { /* Faecher-Netz in buildScen */ },
+    // Gitter (Gefaengnis, zu): Staebe und Querriegel quer zur Wand, der untere Riegel steht in der statischen Welt
+    grille(o) { const G = C.scen.grille, tx = Math.floor(o.x / T), ty = Math.floor(o.y / T), hz = gridHz(tx, ty), X0 = tx * T, Y0 = ty * T, m = T / 2;
+      for (let i = 0; i < G.n; i++) { const u = 4 + i * 8 + 1.5; sb('s', hz ? X0 + u : X0 + m, hz ? Y0 + m : Y0 + u, 0, G.w, 64, G.w, 0, 0x8f97a2) }
+      for (const r of G.rail.slice(1)) sb('s', X0 + m, Y0 + m, r[0], hz ? T : G.w, r[1] - r[0], hz ? G.w : T, 0, 0x30343b) },
     parked(o) { sb('i', o.x + 64, o.y + 32, 0, 4 * T - 4, C.cars.civ.h, 2 * T - 6, 0, 0xffffff) },
   };
   let scenLast = [], scKey = '';

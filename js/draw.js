@@ -407,7 +407,7 @@ if(L.prison){const R=L.prison;if(DX.phase===1&&!DX.ended){const pk=R.pick;q('rin
 const gl=R.locks.find(l=>l.id==='gi'),rd=gl.ops[0].at;q('reader',{x:(rd[0]+1)*T-6,y:(rd[1]+1)*T,open:prSeen('rd',cell(gl.cells[0][0],gl.cells[0][1]),(rd[0]+1)*T-6,(rd[1]+1)*T)!=='L'?1:0});
 const cc=DX.its.find(i=>i.t==='crd');if(cc&&!cc.done&&see(cc.x,cc.y))q('card',{x:cc.x+10,y:cc.y-7})}
 for(const c of (L.prison?L.prison.locks.reduce((a,l)=>a.concat(l.cells.map(c=>[c[0],c[1],0,l.kind])),[]).concat(L.prison.open0.map(c=>[c[0],c[1],0,'grille']),L.prison.dl.cells):[]).concat(L.lockCells)){const s=prSeen(c[0]+','+c[1],cell(c[0],c[1]),c[0]*T+16,c[1]*T+16);
-if(s==='L'&&c[3]==='grille')grl.push(c[0]+','+c[1]);else if(s==='L')q('lock',{x:c[0]*T+16,y:c[1]*T+16,open:0});else if(!c[2])q('lock',{x:c[0]*T+16,y:c[1]*T+16,open:1})}
+if(s==='L'&&c[3]==='grille'){grl.push(c[0]+','+c[1]);q('grille',{x:c[0]*T+16,y:c[1]*T+16})}else if(s==='L')q('lock',{x:c[0]*T+16,y:c[1]*T+16,open:0});else if(!c[2])q('lock',{x:c[0]*T+16,y:c[1]*T+16,open:1})}
 // Strasse: Ausweichpunkt des Fluchtwagens, Fluchtzone, Sperrstellen am Transporter; Panzerwagen (Ladetuer, Warnblinker), geparkte Autos am Transporter
 if(DX.vanAlt&&DX.vanArr){for(const k of[-1,0]){const a=DX.LANE.pt(DX.LANE.van.stop+4,DX.LANE.van.pos+k*T+4),w=DX.LANE.axis==='x'?[4*T-8,T-8]:[T-8,4*T-8];q('frame',{x0:a[0],y0:a[1],x1:a[0]+w[0],y1:a[1]+w[1],c:0,f:.7})}}
 if((DX.vanArr||pnZone())&&!DX.ended){const e0=DX.LANE.pt(DX.LANE.exit.line,DX.LANE.exit.span[0]),e1=DX.LANE.pt(DX.LANE.exit.line,DX.LANE.exit.span[1]);q('exit',{x0:e0[0],y0:e0[1],x1:e1[0],y1:e1[1]})}
