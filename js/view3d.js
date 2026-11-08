@@ -14,6 +14,8 @@
    die naechsten zum Blickpunkt), Toenung, Farbkorrektur und Vignette wie GFX.overlay in 2D (litC vor, gradeC nach der Farbraum-Umrechnung, vor der Abdunklung fogC).
    Stand 3D-6 (Ticket 155): Szenario-Besonderheiten (X.scen aus js/draw.js scen3d, Bauplaene SCEN und V3CFG.scen): Tresortuer, Laser, Zapfsaeulen, Notenbank (Bohrer, Loch, Presse), Gefaengnis (Gitter als Staebe,
    Tueren, Leser), Beute im Zustand, Panzerwagen, Fluchtzone, geparkte Autos, Sichtkegel der Wachen; vier Instanz-Gruppen und ein Faecher-Netz.
+   Stand 3D-7 (Ticket 156): Effekte (X.fx aus js/draw.js fx3d, V3CFG.fx): Teilchen in zwei Puffern (additiv, normal), Kugeln als Leuchtspur, Muendungsfeuer, Granaten im Bogen, Gas- und Rauchwolken,
+   Fallen, Notfallkoffer, Ablenker, Aufnahmen aus props.png, Explosionen als Punktlicht. Spuren am Boden (Blut, Einschuesse, Scherben, Russ) kommen seit 3D-1 ueber X.dcv, Kamerawackeln ueber camX/camY.
    Einheiten: 1 Einheit = 1 Weltpixel, 2D x -> 3D x, 2D y -> 3D z, oben ist +y. Simulation, Netz und VER bleiben unberuehrt.
    Uebernommen aus dem Prototyp (Ticket 125, PR 130): Kontext mit Gettern, Perspektive mit schmalem Blickwinkel, camSet, Boden aus der 2D-Textur, pick-Strahl, Rueckfall {on:false,err}.
    Bei geaendertem Kontext oder geaenderter Rueckgabe mkView3d.api hier und VIEW3D_API in index.html erhoehen. */
@@ -36,7 +38,8 @@ export const V3CFG = {
   // shadow: Schattenkarte size je Grafikstufe (hoechstens 2048, Plan Abschnitt 5), Bereich area Weltpixel um den Blickpunkt, bias Tiefe, nrm Versatz entlang der Flaechennormale, soft Abstand der Proben in Texeln.
   // spot (Taschenlampe, nur Nacht): Hoehe h, Reichweite r, Kegel cos aussen und innen (c0, c1), Neigung nach unten dn, Farbe col mal i, dazu der Lichtkreis um den Spieler wie 2D (Radius CFG.night.lamp mal haloK, Staerke halo).
   // pl Punktlichter: max gleichzeitig (Shader-Feld), Lampen der Karte im Raster lampStep Kacheln im Gebaeude (Decke, h 60) und streetStep draussen (Laterne, h 80) auf begehbaren Kacheln,
-  // Blaulicht (blue, red) ueber dem Dach, Muendungsfeuer (muz) vor der Waffe. Reihenfolge der Wahl: Muendungsfeuer, Blaulicht, Lampen, je nach Abstand zum Blickpunkt.
+  // Blaulicht (blue, red) ueber dem Dach, Muendungsfeuer (muz) vor der Waffe, Explosionen (boom, 3D-7: Radius aus dem Lichtschein bis r, Staerke mit dem Verloeschen).
+  // Reihenfolge der Wahl: Muendungsfeuer, Explosionen, Blaulicht, Lampen, je nach Abstand zum Blickpunkt.
   light: {
     lit: true,
     tod: {
@@ -51,7 +54,7 @@ export const V3CFG = {
     shadow: { size: [1024, 1024, 2048], area: 1280, bias: .0006, nrm: 1.5, soft: 1, far: 4000 },
     spot: { h: 24, r: 470, c0: .83, c1: .94, dn: .22, col: [1, .94, .82], i: 2.8, haloK: 1, halo: .6 },
     pl: { max: 6, lampStep: 5, streetStep: 8, lamp: { h: 60, r: 190, col: [1, .84, .58], i: 2.2 }, street: { h: 80, r: 240, col: [1, .8, .5], i: 2.4 },
-      blue: { h: 34, r: 200, col: [.25, .42, 1], i: 3.2 }, red: { h: 34, r: 200, col: [1, .22, .18], i: 3.2 }, muz: { d: 30, h: 24, r: 140, col: [1, .74, .4], i: 2.2 } },
+      boom: { h: 40, r: 320, col: [1, .66, .32], i: 4 }, blue: { h: 34, r: 200, col: [.25, .42, 1], i: 3.2 }, red: { h: 34, r: 200, col: [1, .22, .18], i: 3.2 }, muz: { d: 30, h: 24, r: 140, col: [1, .74, .4], i: 2.2 } },
   },
   // 3D-2a (Ticket 151) Figuren als Aufsteller: Koerper (Zylinder, Farbe aus der Sprite-Zeile) bis bodyH, darauf das 2D-Sprite liegend (die Sprites sind Draufsichten, aufrecht gestellt
   // saehe man den Kopf von oben an einer senkrechten Tafel). Geduckt (Spalte 8) mit cowerK der Hoehe, liegend (am Boden, bewusstlos, tot) nur das Sprite knapp ueber dem Boden (lieH).
@@ -94,6 +97,19 @@ export const V3CFG = {
       'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
       'it:dlx': 'lock', 'it:lsw:wach': 'boden', 'it:lsw:kon': 'boden', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur',
     },
+  },
+  // 3D-7 (Ticket 156) Effekte: fx3d in js/draw.js liefert je Bild Teilchen, Kugeln, Muendungsfeuer, Granaten, Wolken, Aufnahmen und Dinge am Boden (dieselbe Auswahl wie lyWorld), hier stehen Zuordnung und Masse.
+  // evt: jeder Name aus fxApply (index.html) und woraus er in 3D entsteht, Kanaele aus chan (Test 197, neuer Name ohne Eintrag: rot). pt: jede Teilchenart (pt.push t) mit Puffer b (a additiv, n normal),
+  // Form sh (0 weich rund, 1 hart, 2 Ring flach am Boden, 3 Strich), Hoehe h [Start, Zuwachs bis zum Verloeschen], Groesse k (Faktor auf die 2D-Groesse), arc (Bogen der Truemmer).
+  // Kugeln in Waffenhoehe aimH als Strich (Kern und Schein), Muendungsfeuer als Schein in muzH, Granaten im Flug im Bogen grArc (Granatwerfer shell flacher), Wolken als weiche Flecken in Hoehe, Aufnahmen
+  // als 2D-Bild (props.png) liegend in pkH, Licht der Explosionen ueber die Punktlichter (light.pl.boom). Budget Plan 5: Effekte unter 20 Draw Calls (heute 4: zwei Teilchenpuffer, Dinge, Aufnahmen).
+  fx: {
+    chan: ['pt', 'muz', 'dcv', 'cam', 'licht', 'hud', 'ton'],
+    evt: { say: 'hud', ban: 'hud', rad: 'hud', fx: 'hud', s: 'ton', sh: 'muz pt dcv cam', es: 'muz', hw: 'pt dcv', hf: 'pt dcv cam', sp: 'pt', gl: 'pt dcv', gb: 'pt licht', sk: 'pt', bx: 'pt licht dcv cam' },
+    pt: { s: { b: 'a', sh: 1, h: [4, 20], k: .6 }, g: { b: 'a', sh: 0, h: [18, 0], k: 1 }, f: { b: 'a', sh: 0, h: [8, 30], k: 1 }, w: { b: 'a', sh: 2, h: [.8, 0], k: 1 },
+      d: { b: 'n', sh: 0, h: [4, 12], k: 1.3 }, c: { b: 'n', sh: 1, h: [2, 0], k: 1, arc: 36 }, k: { b: 'n', sh: 0, h: [20, 50], k: 1 } },
+    bul: { glow: 2.6, glowA: .35 }, muzH: 24, grArc: 40, shellArc: 16, pkH: 3, pkS: 34, cloudH: [8, 14],
+    gr: { flash: 0xe9e6d2, smoke: 0xa9b0bc, dec: 0xffc446, shell: 0xff8a3a, gas: 0x7a8a3c },
   },
   // Hoehentabelle je Kachelzeichen (jedes Zeichen des Rasters braucht einen Eintrag, Test 191): s Scheiben [unten, oben, Material] in Weltpixeln, ins Einzug je Seite,
   // fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
@@ -539,6 +555,106 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     st.scenSum = ['s', 'l', 'f', 'i'].map(g => Math.round(SB[g].reduce((a, q) => a + q[3] * q[4] * q[5] + q[2] * 7 + (q[7] % 4099) * .01 + q[8] * 13, 0)));
   }
 
+  // 3D-7 (Ticket 156): Effekte. X.fx() (js/draw.js fx3d) liefert je Bild Teilchen, Kugeln, Muendungsfeuer, Granaten, Wolken, Aufnahmen und Dinge am Boden, hier wird nur gezeichnet (nichts geschrieben).
+  // Teilchen in zwei Puffern (ein InstancedMesh je Mischung: additiv fuer Feuer, Funken, Schein, Kugeln; normal fuer Staub, Rauch, Truemmer, Wolken), je Instanz Lage und Groesse (iA), Strichrichtung oder
+  // Ringbreite und Form (iB), Farbe linear und Deckkraft (iC). Der Shader stellt die Flaeche zur Kamera (Schein, Rauch), legt sie flach (Ringe) oder spannt sie entlang der Bahn (Kugeln, Feuerzunge).
+  // Dinge (Granaten, Fallen, Notfallkoffer, Ablenker) als Kloetze, Aufnahmen als 2D-Bild aus props.png. Dazu Explosionen als Punktlicht (dynL boom). Abdunklung ausserhalb der Sicht wie 3D-4.
+  const FXV = `attribute vec4 iA; attribute vec4 iB; attribute vec4 iC; varying vec4 vC; varying vec2 vQ; varying float vS; varying float vT; varying vec2 vM;
+void main() { vec2 q = position.xz * 2.0; vQ = q; vC = iC; float fl = step(3.5, iB.w); vS = iB.w - 4.0 * fl; vT = iB.x; vec3 c = iA.xyz, w;
+  if (fl > 0.5) w = c + vec3(q.x, 0.0, q.y) * iA.w;
+  else if (dot(iB.xyz, iB.xyz) > 0.0) { vec3 s = normalize(cross(iB.xyz, normalize(cameraPosition - c))); w = c + iB.xyz * q.x + s * (iA.w * q.y); }
+  else w = c + (vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]) * q.x + vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]) * q.y) * iA.w;
+  vM = w.xz; gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0); }`;
+  const FXA = `varying vec4 vC; varying vec2 vQ; varying float vS; varying float vT; varying vec2 vM;
+float fxA() { float r = length(vQ), a;
+  if (vS < 0.5) { a = max(0.0, 1.0 - r); a *= a; } else if (vS < 1.5) a = step(max(abs(vQ.x), abs(vQ.y)), 1.0);
+  else if (vS < 2.5) a = 1.0 - smoothstep(0.0, vT, abs(r - 1.0 + vT)); else a = (1.0 - abs(vQ.y)) * (1.0 - smoothstep(0.7, 1.0, abs(vQ.x)));
+  return a * vC.a; }
+float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2((w.x - uVisO.x) * uVisO.z, 1.0 - (w.y - uVisO.y) * uVisO.w)).r; }
+`;
+  const fxMat = add => new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, uniforms: Object.assign({}, UV), vertexShader: FXV,
+    fragmentShader: VISF + FXA + (add ? 'void main() { float a = fxA(); if (a <= 0.004) discard; gl_FragColor = vec4(vC.rgb * a, 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb *= 1.0 - uDark.w * (1.0 - visV(vM));\n}'
+      : 'void main() { float a = fxA(); if (a <= 0.004) discard; gl_FragColor = vec4(vC.rgb, a);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);\n}') });
+  const fxAddMat = fxMat(1), fxNrmMat = fxMat(0), prTex = tex(X.pr), PR_C = Math.max(1, Math.round(X.pr.width / 64)), PR_R = Math.max(1, Math.round(X.pr.height / 64)), pkMat = sprMat(prTex, prTex, PR_C, PR_R);
+  const FXA4 = { iA: 4, iB: 4, iC: 4 };
+  const pFxN = pool('effekte', flatGeo, fxNrmMat, FXA4, false, 8), pFxA = pool('effekte-licht', flatGeo, fxAddMat, FXA4, false, 8.5), pThg = pool('dinge', cubeGeo, colMat, {}, true, 2, 1),
+    pPk = pool('aufnahmen', flatGeo, pkMat, { iCell: 4, iDim: 1 }, false, 4);
+  pools.push(pFxN, pFxA, pThg, pPk);
+  const FC = C.fx, strC = {}, lc = s => { let c = strC[s]; if (!c) { const v = String(s).split(',').map(n => (+n || 0) / 255); const q = new THREE.Color().setRGB(v[0] || 0, v[1] || 0, v[2] || 0, THREE.SRGBColorSpace); c = strC[s] = [q.r, q.g, q.b] } return c };
+  const hc = h => linC(h);
+  const grT = new Map(); // Granaten im Flug: Flugzeit beim ersten Sehen (nur Darstellung, fuer den Bogen)
+  let FA = [], FN = [], TH = [], fxSt = {}, fxLast = null;
+  // Teilchen: Lage (x, z) in Weltpixeln, Hoehe h, halbe Groesse s, Strich (dx, dz) oder Ringbreite, Form sh, flach, Farbe (linear), Deckkraft
+  const fp = (L, x, z, h, s, sh, col, a, dx, dz, fl, dy) => { if (!(a > .004) || !(s > 0)) return; L.push(x, h, z, s, dx || 0, dy || 0, dz || 0, sh + (fl ? 4 : 0), col[0], col[1], col[2], Math.min(1, a)) };
+  const ring = (L, x, z, h, r, w, col, a) => { const s = r + w / 2; fp(L, x, z, h, s, 2, col, a, Math.min(1, w / s), 0, 1) };
+  const thing = (x, z, y0, sx, sy, sz, a, col) => TH.push([x, z, y0, sx, sy, sz, a || 0, col]);
+  function buildFx() {
+    const D = X.fx ? X.fx() : null; FA = []; FN = []; TH = []; const n = {};
+    if (!D) { for (const P of [pFxA, pFxN, pThg, pPk]) P.size(0); fxSt = { n }; return }
+    const cnt = k => { n[k] = (n[k] || 0) + 1 };
+    // Teilchen aus pt (Art je V3CFG.fx.pt, unbekannte zaehlen als ?art)
+    for (const q of D.pt) {
+      const e = FC.pt[q.t]; if (!e) { cnt('?' + q.t); continue } cnt(q.t);
+      const a = Math.max(0, Math.min(1, q.l / q.m)), L = e.b === 'a' ? FA : FN, h = e.h[0] + e.h[1] * (1 - a) + (e.arc ? e.arc * 4 * a * (1 - a) : 0);
+      if (q.t === 's') fp(L, q.x, q.y, h, e.k * 2, e.sh, lc(q.c), a);
+      else if (q.t === 'g') fp(L, q.x, q.y, h, q.r * e.k, e.sh, lc(q.c), a * .9);
+      else if (q.t === 'f') fp(L, q.x, q.y, h, q.r * (1 + (1 - a) * 1.1) * e.k, e.sh, lc(a > .62 ? '255,214,125' : a > .3 ? '255,140,45' : '190,60,20'), Math.min(1, a * 1.1));
+      else if (q.t === 'w') ring(L, q.x, q.y, h, q.r * (1 - a), 1.5 + a * 4, lc('255,232,190'), a * .75);
+      else if (q.t === 'd') fp(L, q.x, q.y, h, (2 + (1 - a) * 5) * e.k, e.sh, lc(q.c), a * .45);
+      else if (q.t === 'c') fp(L, q.x, q.y, h, q.s * e.k, e.sh, lc(q.c), Math.min(1, a * 1.8));
+      else if (q.t === 'k') fp(L, q.x, q.y, h, (q.r + (1 - a) * 34) * e.k, e.sh, lc('50,46,44'), Math.min(.6, a * .95));
+      if (q.t === 'g' && (q.lt || q.r >= 200)) dynL.push({ k: 'boom', x: q.x, y: q.y, r: Math.min(LC.pl.boom.r, q.r), i: a });
+    }
+    // Kugeln als Strich in Waffenhoehe (Richtung gegen die Flugbahn wie 2D), Kern hart und Schein weich
+    for (const b of D.bl) {
+      const k = b.sn || b.pr ? .05 : b.o ? .03 : .02, col = lc(b.pr ? '170,225,255' : b.sn ? '255,245,235' : b.o ? '255,225,150' : '255,150,90'), al = b.pr || b.sn ? .95 : b.o ? .9 : .8, lw = b.sn || b.pr ? 2.4 : b.o ? 2 : 1.5, hx = -b.vx * k / 2, hz = -b.vy * k / 2;
+      fp(FA, b.x + hx, b.y + hz, C.aimH, lw * .6, 3, col, al, hx, hz); fp(FA, b.x + hx, b.y + hz, C.aimH, lw * FC.bul.glow, 3, col, al * FC.bul.glowA, hx, hz); cnt('bl');
+    }
+    // Muendungsfeuer: Schein vor der Waffe, beim Spieler dazu die Feuerzunge (Form nach fv wie 2D)
+    for (const m of D.muz) {
+      fp(FA, m.x, m.y, FC.muzH, m.r * .8, 0, lc(m.pl ? '255,200,110' : '255,170,90'), m.pl ? .9 : .8); cnt('muz');
+      if (m.pl) { const L = [9, 12, 7][m.fv] || 9, ca = Math.cos(m.a), sa = Math.sin(m.a); fp(FA, m.x + ca * L, m.y + sa * L, FC.muzH, m.fv === 2 ? 4 : 2.6, 3, lc('255,235,170'), .9, ca * L, sa * L) }
+    }
+    // Granaten: Dose im Flug im Bogen (Flugzeit beim ersten Sehen), liegend am Boden mit Zuendlicht
+    const seenG = new Set(), grL = [];
+    for (const q of D.gr) {
+      seenG.add(q.id); let h = 0; if (q.st === 'fly') { if (!grT.has(q.id) || grT.get(q.id) < q.t) grT.set(q.id, Math.max(q.t, .01)); const f = Math.max(0, Math.min(1, 1 - q.t / grT.get(q.id))); h = (q.k === 'shell' ? FC.shellArc : FC.grArc) * 4 * f * (1 - f) }
+      thing(q.x, q.y, h, 7, 6, 7, 0, FC.gr[q.k] || FC.gr.gas); if (q.bk) fp(FA, q.x, q.y, h + 7, 3, 0, hc(0xff4a3a), 1); cnt('gr'); grL.push([q.id, q.k, q.st, Math.round(h * 10) / 10]);
+    }
+    for (const id of grT.keys()) if (!seenG.has(id)) grT.delete(id);
+    // Wolken: Gas (gruen, Rand als Ring wie die Wirkung) und Rauch (grau, als Wand in die Hoehe), weiche Flecken wie die 2D-Flecken
+    for (const c of D.gc) {
+      for (let i = 0; i < 9; i++) { const a = i * .7 + c.id + D.t * (.15 + i * .02) * (i % 2 ? 1 : -1), rr = c.r * (.25 + .5 * ((i * 37 + c.id * 13) % 10) / 10); fp(FN, c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr, FC.cloudH[0] + (i % 3) * FC.cloudH[1], c.r * (.42 + .12 * Math.sin(D.t * .8 + i)) * 1.3, 0, lc('150,176,52'), .5 * c.al) }
+      ring(FA, c.x, c.y, .7, c.r, 2, lc('205,225,80'), .8 * c.al); cnt('gc');
+    }
+    for (const c of D.smk) {
+      for (let i = 0; i < 10; i++) { const a = i * .63 + c.id + D.t * (.12 + i * .015) * (i % 2 ? 1 : -1), rr = c.r * (.2 + .55 * ((i * 37 + c.id * 13) % 10) / 10); fp(FN, c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr, FC.cloudH[0] + (i % 4) * FC.cloudH[1], c.r * (.45 + .1 * Math.sin(D.t * .7 + i)) * 1.3, 0, lc('196,202,212'), .7 * c.al) }
+      cnt('smk');
+    }
+    // Dinge am Boden: Fallen (Wirkradius als Ring, Zuendlicht), Notfallkoffer (Kreuz, Puls), Ablenker (Puls, Blinklicht), brennende Wracks (Schein)
+    for (const q of D.tr) {
+      ring(FA, q.x, q.y, .6, q.r, 1.5, lc(q.armed ? '255,90,70' : '255,210,90'), q.armed ? .28 : .22);
+      if (q.k === 'mine') thing(q.x, q.y, 0, 14, 3, 14, 0, 0x2a2d33); else { thing(q.x, q.y, 0, 18, 8, 8, 0, 0x3a4034); thing(q.x, q.y - 3, 8, 14, 2, 2, 0, 0x2a2d33) }
+      if (q.bl) fp(FA, q.x, q.y, q.k === 'mine' ? 4 : 10, 3, 0, hc(q.armed ? 0xff4a3a : 0xffc446), 1); cnt('tr');
+    }
+    for (const q of D.aid) {
+      ring(FA, q.x, q.y, .6, q.r, 1.5, lc('110,235,130'), .3 * q.al); ring(FA, q.x, q.y, .7, 10 + q.ph * (q.r - 10), 2, lc('110,235,130'), .45 * (1 - q.ph) * q.al);
+      thing(q.x, q.y, 0, 16, 8, 12, 0, 0xe9efe9); thing(q.x, q.y, 8, 3, .6, 9, 0, 0x2fbf52); thing(q.x, q.y, 8, 9, .6, 3, 0, 0x2fbf52); cnt('aid');
+    }
+    for (const q of D.dcy) { ring(FA, q.x, q.y, .7, 8 + q.ph * 40, 2, lc('255,196,70'), .8 * (1 - q.ph)); thing(q.x, q.y, 0, 10, 6, 8, 0, 0x2a2d33); if (q.bl) fp(FA, q.x, q.y, 7, 3, 0, hc(0xffc446), 1); cnt('dcy') }
+    for (const q of D.burn) { fp(FA, q.x, q.y, 20, 64, 0, lc('255,120,40'), q.f); cnt('burn') }
+    // Puffer belegen
+    for (const [P, L] of [[pFxA, FA], [pFxN, FN]]) {
+      const m = L.length / 12; P.size(m); if (!m) continue; const A = P.a.iA.array, B = P.a.iB.array, Cc = P.a.iC.array;
+      for (let i = 0; i < m; i++) { const k = i * 12, j = i * 4; A[j] = L[k]; A[j + 1] = L[k + 1]; A[j + 2] = L[k + 2]; A[j + 3] = L[k + 3]; B[j] = L[k + 4]; B[j + 1] = L[k + 5]; B[j + 2] = L[k + 6]; B[j + 3] = L[k + 7]; Cc[j] = L[k + 8]; Cc[j + 1] = L[k + 9]; Cc[j + 2] = L[k + 10]; Cc[j + 3] = L[k + 11] }
+    }
+    pThg.size(TH.length); TH.forEach((q, i) => { put(pThg, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); pThg.im.setColorAt(i, colOf(q[7])) });
+    // Aufnahmen (Munition, Verbandszeug): 2D-Bild aus props.png liegend, wippt wie in 2D
+    pPk.size(D.pk.length); D.pk.forEach((k, i) => { put(pPk, i, k.x, k.y, FC.pkH + 1.5 + k.b, 0, FC.pkS, 1, FC.pkS); pPk.a.iCell.setXYZW(i, k.k, 0, 0, 1); pPk.a.iDim.setX(i, 0) }); n.pk = D.pk.length;
+    fxSt = { n, add: FA.length / 12, nrm: FN.length / 12, th: TH.length, pk: D.pk.length, calls: [pFxA, pFxN, pThg, pPk].filter(P => P.im && P.im.visible).length };
+    fxLast = { pk: D.pk.map(k => [Math.round(k.x), Math.round(k.y), k.k]), gr: grL };
+  }
+
   // Kamera: Ziel ist die Mitte des 2D-Ausschnitts (camX/camY folgen dem Spieler wie in 2D, mit Glaettung, Kamerawackeln und Rueckstoss verschiebt draw1 camX/camY,
   // also auch die Kamera), um camLead nach Norden versetzt (3D-3), Kippung X.angle um die Ost-West-Achse nach Sueden.
   // Abstand so, dass die Bildhoehe am Ziel der 2D-Hoehe (VH) entspricht, die sichtbare Bodenbreite ist dort wie in 2D.
@@ -650,14 +766,14 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     } else UL.uSpD.value.set(0, 0, 0, 0);
     setDefs(!!sh.on, on);
     lt.spot = on ? { x: P.x, y: P.y, a: P.a, dir: UL.uSpD.value.toArray().slice(0, 3), r: sp.r, halo: UL.uHalo.value.z } : null;
-    // Punktlichter: Muendungsfeuer zuerst, dann Blaulicht, dann Lampen (wenn an), je nach Abstand zum Blickpunkt, hoechstens max
+    // Punktlichter: Muendungsfeuer zuerst, dann Explosionen (3D-7), dann Blaulicht, dann Lampen (wenn an), je nach Abstand zum Blickpunkt, hoechstens max
     const L = LC.pl, d2 = o => (o.x - tgt.x) * (o.x - tgt.x) + (o.y - tgt.z) * (o.y - tgt.z), by = (A) => A.slice().sort((p, q) => d2(p) - d2(q));
-    const cand = by(dynL.filter(o => o.k === 'muz')).concat(by(dynL.filter(o => o.k !== 'muz')), lt.lamps ? by(lamps) : []), out = cand.slice(0, lt.lit ? L.max : 0);
+    const cand = by(dynL.filter(o => o.k === 'muz')).concat(by(dynL.filter(o => o.k === 'boom')), by(dynL.filter(o => o.k !== 'muz' && o.k !== 'boom')), lt.lamps ? by(lamps) : []), out = cand.slice(0, lt.lit ? L.max : 0);
     UL.uPlN.value = Math.min(NPL, out.length);
     for (let i = 0; i < NPL; i++) {
       const o = out[i], pp = UL.uPlP.value[i], pc = UL.uPlC.value[i];
       if (!o) { pp.set(0, 0, 0, 0); continue }
-      const e = L[o.k]; pp.set(o.x, e.h, o.y, e.r); pc.fromArray(e.col).multiplyScalar(e.i);
+      const e = L[o.k]; pp.set(o.x, e.h, o.y, o.r || e.r); pc.fromArray(e.col).multiplyScalar(e.i * (o.i == null ? 1 : o.i));
     }
     lt.pl = out.map(o => [o.k, Math.round(o.x), Math.round(o.y)]); lt.cand = cand.length; lt.nBlue = dynL.filter(o => o.k === 'red' || o.k === 'blue').length; lt.nLamps = lamps.length;
     lt.shadow = { on: sh.on, size: sh.on ? sh.size : 0, ups: sh.ups, calls: sh.on ? sh.calls : 0 };
@@ -686,7 +802,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
       updVis();
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      lightA(); buildDyn(); buildScen(SC); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); ren.render(scene, cam); show(true);
+      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -696,7 +812,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -707,8 +823,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex, glowMat, flatMat, coneMat, coneGeo]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
-  return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), el, cam, scene, cfg: C });
+  return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 7;
+mkView3d.api = 8;
