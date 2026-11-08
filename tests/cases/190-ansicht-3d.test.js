@@ -156,4 +156,25 @@ module.exports = [
       t.eq(errs, [], 'keine JS-Fehler');
     },
   },
+  {
+    name: '3D: #3d in der Adresse setzt nur den Start auf 3D, der Schalter in den Optionen schaltet danach auf 2D und wieder zurueck (Tills Haltepunkt-Test)',
+    timeout: 180000,
+    async run(t) {
+      const env = await lib.launch({ webgl: true });
+      try {
+        const page = await lib.openGame(env, { hash: '#debug&3d' });
+        if (!await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'))) { t.note('kein WebGL 2, uebersprungen'); return; }
+        const st = () => page.evaluate(async () => { const D = __dbg; for (let i = 0; i < 20; i++) { D.update(1 / 30); D.draw(); await new Promise(r => setTimeout(r, 20)); } const i = D.view3d.info(); return [V3OPT.mode, i.state, !!i.shown, localStorage.getItem('holdup.ansicht')]; });
+        await page.evaluate(() => { const D = __dbg; D.reset(); D.startHeist(false, D.get().me); });
+        t.eq(await st(), ['3d', 'an', true, null], 'mit #3d startet 3D, ohne etwas zu speichern');
+        await page.evaluate(() => { while (V3OPT.mode !== '2d') V3OPT.cycle(); });
+        t.eq(await st(), ['2d', 'an', false, '2d'], 'Schalter auf 2D blendet die 3D-Ansicht aus, obwohl #3d in der Adresse steht');
+        await page.evaluate(() => { while (V3OPT.mode !== '3d') V3OPT.cycle(); });
+        t.eq(await st(), ['3d', 'an', true, '3d'], 'Schalter auf 3D blendet sie wieder ein');
+        const a = await page.evaluate(() => { V3OPT.setAngle(20); __dbg.draw(); const y0 = __dbg.view3d.info().camY; V3OPT.setAngle(30); __dbg.draw(); return [y0, __dbg.view3d.info().camY]; });
+        t.ok(a[0] !== a[1], 'der Winkel aendert die Kamera auch mit #3d: ' + a);
+        await page.evaluate(() => { localStorage.removeItem('holdup.ansicht'); localStorage.removeItem('holdup.winkel'); });
+      } finally { await env.browser.close().catch(() => {}); env.srv.close(); }
+    },
+  },
 ];

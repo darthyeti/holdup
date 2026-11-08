@@ -70,8 +70,8 @@ overlay(tt,tod,w,h){const k=GFX_K(tt,tod,lv);let c=ov.get(k);if(!c){c=document.c
 /* Ansicht 2D oder 3D (Ticket 149, 3D-0, docs/plan-3d.md; localStorage 'holdup.ansicht' und 'holdup.winkel'): Auto, 3D, 2D, Voreinstellung 2D bis zur Abnahme (3D-10), Auto waehlt vorerst 2D.
    Kamerawinkel der 3D-Ansicht 20 bis 30 Grad (Voreinstellung 25, Entscheidung E2). #3d in der Adresse (auch #debug&3d) schaltet 3D an (Vorschau, Tests). err: Grund des letzten Rueckfalls auf 2D. Nur das Zeichnen liest es, nie die Simulation. */
 const V3OPT=(()=>{const M=['auto','3d','2d'],a0=20,a1=30;let mode='2d',ang=25;try{const v=localStorage.getItem('holdup.ansicht');if(M.includes(v))mode=v;const w=+localStorage.getItem('holdup.winkel');if(w>=a0&&w<=a1)ang=w}catch(e){}
-const hash=/(^#|&)3d$/.test(location.hash);
-return{modes:M,amin:a0,amax:a1,hash,err:'',get mode(){return mode},get angle(){return ang},get want(){return hash||mode==='3d'},
+const hash=/(^#|&)3d$/.test(location.hash);if(hash)mode='3d';//#3d setzt nur den Start auf 3D (nicht gespeichert), der Schalter in den Optionen gilt danach (Tills Haltepunkt-Test, 8. November)
+return{modes:M,amin:a0,amax:a1,hash,err:'',get mode(){return mode},get angle(){return ang},get want(){return mode==='3d'},
 cycle(){mode=M[(M.indexOf(mode)+1)%M.length];this.err='';try{localStorage.setItem('holdup.ansicht',mode)}catch(e){}return mode},
 setAngle(v){ang=Math.max(a0,Math.min(a1,Math.round(+v||25)));try{localStorage.setItem('holdup.winkel',String(ang))}catch(e){}return ang}}})();
 const FXO=(()=>{const rd=k=>{try{return localStorage.getItem('holdup.'+k)!=='0'}catch(e){return true}},v={shake:rd('shake'),blood:rd('blood')};
