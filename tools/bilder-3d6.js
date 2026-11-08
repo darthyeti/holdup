@@ -16,6 +16,7 @@ const PH = process.argv[4] || '';
       const D = __dbg, T = 32; PX.scene(sc, 5);
       const ph = PH || { truck: 'ueberfall', nb: 'ueberfall' }[sc] || 'erkundung'; PX.phase(ph);
       const L = D.LAY(), g = D.get(), me = g.me, W = D.world();
+      if (sc === 'bank') { g.its.find(i => i.t === 'vault').act(me); D.update(1 / 30); } // Bank mit offenem Tresor (Blatt, Licht, Geldstapel)
       // Ziel je Szenario: die Besonderheit, auf die das Bild schaut
       let tg;
       if (L.truck) { const t = D.tk(); tg = [t.x, t.y]; }
