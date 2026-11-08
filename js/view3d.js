@@ -16,13 +16,15 @@
    Tueren, Leser), Beute im Zustand, Panzerwagen, Fluchtzone, geparkte Autos, Sichtkegel der Wachen; vier Instanz-Gruppen und ein Faecher-Netz.
    Stand 3D-7 (Ticket 156): Effekte (X.fx aus js/draw.js fx3d, V3CFG.fx): Teilchen in zwei Puffern (additiv, normal), Kugeln als Leuchtspur, Muendungsfeuer, Granaten im Bogen, Gas- und Rauchwolken,
    Fallen, Notfallkoffer, Ablenker, Aufnahmen aus props.png, Explosionen als Punktlicht. Spuren am Boden (Blut, Einschuesse, Scherben, Russ) kommen seit 3D-1 ueber X.dcv, Kamerawackeln ueber camX/camY.
+   Stand 3D-9 (Ticket 158): Selbstregelung liest X.lod (Stufe aus dem Kern, V3REG in index.html): ab 1 Schatten aus (ueber X.shadow), ab 2 Renderaufloesung mal lodRes, ab 3 jedes zweite Teilchen (ausser Explosionen mit Licht).
+   Verlorener WebGL-Kontext (webglcontextlost) meldet die Ansicht ab (dead), der Kern faellt mit Meldung auf 2D zurueck.
    Einheiten: 1 Einheit = 1 Weltpixel, 2D x -> 3D x, 2D y -> 3D z, oben ist +y. Simulation, Netz und VER bleiben unberuehrt.
    Uebernommen aus dem Prototyp (Ticket 125, PR 130): Kontext mit Gettern, Perspektive mit schmalem Blickwinkel, camSet, Boden aus der 2D-Textur, pick-Strahl, Rueckfall {on:false,err}.
    Bei geaendertem Kontext oder geaenderter Rueckgabe mkView3d.api hier und VIEW3D_API in index.html erhoehen. */
 import * as THREE from '../assets/three.module.min.js';
 
 export const V3CFG = {
-  fov: 30, aimH: 24, near: 10, far: 9000, clear: 0x0e1014,
+  fov: 30, aimH: 24, near: 10, far: 9000, clear: 0x0e1014, lodRes: .75,
   wallH: 64, decalT: .3, decalDiv: 2, edge: 1.5,
   // 3D-3 (Ticket 152) Kamera: Blickpunkt camLead Weltpixel noerdlich der 2D-Bildmitte, so steht der Spieler unter der Bildmitte und vorn (oben im Bild) ist mehr zu sehen.
   // Schnitt: Waende und Moebel suedlich des Spielers (zur Kamera hin) innerhalb von cutR Bildpunkten um ihn werden oberhalb cutH ausgeblendet (wie auf Tischhoehe abgesenkt),
@@ -213,7 +215,10 @@ export function mkView3d(X) {
   const glc = ren.getContext(), dbgInfo = glc.getExtension('WEBGL_debug_renderer_info');
   const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
   ren.setPixelRatio(1); ren.outputColorSpace = THREE.SRGBColorSpace; ren.setClearColor(C.clear);
-  const el = ren.domElement; el.id = 'c3d'; el.setAttribute('aria-hidden', 'true'); el.style.pointerEvents = 'none'; el.style.display = 'none';
+  const el = ren.domElement;
+  // 3D-9 (Ticket 158): Kontextverlust (Treiber, GPU-Reset, zu viele Kontexte) ist kein Absturz: die Ansicht meldet sich ab, der Kern zeichnet in 2D weiter
+  el.addEventListener('webglcontextlost', () => { st.lost = (st.lost || 0) + 1; if (!api.dead) api.dead = 'WebGL-Kontext verloren'; }, false);
+  el.id = 'c3d'; el.setAttribute('aria-hidden', 'true'); el.style.pointerEvents = 'none'; el.style.display = 'none';
   const setQ = q => { if (q === st.q) return; st.q = q; ren.setSize(VW * q, VH * q, false) };
 
   const scene = new THREE.Scene();
@@ -593,7 +598,9 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     if (!D) { for (const P of [pFxA, pFxN, pThg, pPk]) P.size(0); fxSt = { n }; return }
     const cnt = k => { n[k] = (n[k] || 0) + 1 };
     // Teilchen aus pt (Art je V3CFG.fx.pt, unbekannte zaehlen als ?art)
+    const half = (X.lod | 0) >= 3; let pi = 0, skip = 0;
     for (const q of D.pt) {
+      if (half && (pi++ & 1) && !(q.t === 'g' && (q.lt || q.r >= 200))) { skip++; continue } // 3D-9: Teilchen halbiert (Explosionen mit Licht bleiben)
       const e = FC.pt[q.t]; if (!e) { cnt('?' + q.t); continue } cnt(q.t);
       const a = Math.max(0, Math.min(1, q.l / q.m)), L = e.b === 'a' ? FA : FN, h = e.h[0] + e.h[1] * (1 - a) + (e.arc ? e.arc * 4 * a * (1 - a) : 0);
       if (q.t === 's') fp(L, q.x, q.y, h, e.k * 2, e.sh, lc(q.c), a);
@@ -651,7 +658,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     pThg.size(TH.length); TH.forEach((q, i) => { put(pThg, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); pThg.im.setColorAt(i, colOf(q[7])) });
     // Aufnahmen (Munition, Verbandszeug): 2D-Bild aus props.png liegend, wippt wie in 2D
     pPk.size(D.pk.length); D.pk.forEach((k, i) => { put(pPk, i, k.x, k.y, FC.pkH + 1.5 + k.b, 0, FC.pkS, 1, FC.pkS); pPk.a.iCell.setXYZW(i, k.k, 0, 0, 1); pPk.a.iDim.setX(i, 0) }); n.pk = D.pk.length;
-    fxSt = { n, add: FA.length / 12, nrm: FN.length / 12, th: TH.length, pk: D.pk.length, calls: [pFxA, pFxN, pThg, pPk].filter(P => P.im && P.im.visible).length };
+    fxSt = { n, skip, add: FA.length / 12, nrm: FN.length / 12, th: TH.length, pk: D.pk.length, calls: [pFxA, pFxN, pThg, pPk].filter(P => P.im && P.im.visible).length };
     fxLast = { pk: D.pk.map(k => [Math.round(k.x), Math.round(k.y), k.k]), gr: grL };
   }
 
@@ -795,7 +802,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     if (api.dead) return false;
     const t0 = performance.now();
     try {
-      setQ(X.gfx > 0 ? 2 : 1);
+      setQ((X.gfx > 0 ? 2 : 1) * ((X.lod | 0) >= 2 ? C.lodRes : 1));
       { ov = X.seen ? X.seen() : null; const ok = ov ? JSON.stringify(ov) : ''; if (ok !== ovKey) { ovKey = ok; rev = -1 } }
       const SC = X.scen ? X.scen() : null; { const k = SC ? SC.key : ''; if (k !== scKey) { scKey = k; grl = new Set(SC ? SC.grl : []); rev = -1 } }
       if (X.LAY !== curLay || X.st !== curSt) buildLay();
@@ -812,7 +819,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -827,4 +834,4 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
 
   return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 8;
+mkView3d.api = 9;
