@@ -37,8 +37,8 @@ canvas:focus-visible{border-color:var(--accent)}
 <script>
 const BUILD={n:211,d:'2026-10-29'};//BUILD
 const MAPS_API=1;//Vertrag mit js/maps.js (mkMaps.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkMaps aendern
-const DRAW_API=5;//Vertrag mit js/draw.js (mkDraw.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkDraw aendern
-const VIEW3D_API=6;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
+const DRAW_API=6;//Vertrag mit js/draw.js (mkDraw.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkDraw aendern
+const VIEW3D_API=7;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
 const UI_API=13;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -2340,7 +2340,7 @@ const reqHeist=()=>{if(!live(me))return;if(noGun(me)){ban('Keine Waffe: erst ein
 const reqRad=c=>{if(NET.role==='solo'||!canRad(me))return;const[x,y]=aimRaw();NET.role==='client'?NET.conn&&NET.conn.send({t:'rad',c,x:Math.round(x),y:Math.round(y)}):radHost(me,c,x,y)};
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
 /* Zeichnen: js/draw.js (mkDraw). Der Kontext liest den Spielzustand (Konstanten entpackt, veraenderliche Namen als Getter), geschrieben werden nur camX, camY, kkN, losAll, specChips, ucHintN. Neue Namen im Kontext ergaenzen, sobald draw.js sie braucht. */
-const V3X={T,VW,VH,cv,cell,ch,chF,cars,figs:()=>DRAW.figs3d(),vis:()=>DRAW.vis3d(),seen:()=>DRAW.seen3d(),get angle(){return V3OPT.angle},get gfx(){return GFX.lv},get camX(){return camX},get camY(){return camY},get W(){return W},get H(){return H},get WX0(){return WX0},get WY0(){return WY0},get LAY(){return LAY},get LANE(){return LANE},get st(){return st},get so(){return so},get dcv(){return dcv},get gRev(){return gRev},get vaultOpen(){return vaultOpen},get me(){return p&&live(p)?p:null},get night(){return nightOn()},get nightCfg(){return CFG.night},get shadow(){return V3OPT.shadowOn}};//3D-5 (Ticket 154): Nacht, Lichtkreis und Schatten-Regler
+const V3X={T,VW,VH,cv,cell,ch,chF,cars,figs:()=>DRAW.figs3d(),vis:()=>DRAW.vis3d(),seen:()=>DRAW.seen3d(),scen:()=>DRAW.scen3d(),get angle(){return V3OPT.angle},get gfx(){return GFX.lv},get camX(){return camX},get camY(){return camY},get W(){return W},get H(){return H},get WX0(){return WX0},get WY0(){return WY0},get LAY(){return LAY},get LANE(){return LANE},get st(){return st},get so(){return so},get dcv(){return dcv},get gRev(){return gRev},get vaultOpen(){return vaultOpen},get me(){return p&&live(p)?p:null},get night(){return nightOn()},get nightCfg(){return CFG.night},get shadow(){return V3OPT.shadowOn}};//3D-5 (Ticket 154): Nacht, Lichtkreis und Schatten-Regler
 function v3Want(){return v3F!==null?v3F:!opt.cv&&V3OPT.want}//Test-Instanzen (opt.cv, Coop ueber die Test-Leitung) nur auf ausdruecklichen Wunsch des Debug-Hooks (Ticket 151, Test 192)
 function v3Fail(e){v3L=3;v3E=e;V3OPT.err=e;if(V3){V3.dispose();V3=null}v3Msg={s:'3D-Ansicht: '+e+', weiter in 2D',until:performance.now()+8000};console.warn('3D-Ansicht: '+e+', Rueckfall auf 2D')}
 function v3Load(){if(v3L)return;if(location.protocol==='file:'){v3Fail('3D braucht einen Webserver');return}if(typeof WebGL2RenderingContext==='undefined'){v3Fail('kein WebGL 2 im Browser');return}v3L=1;

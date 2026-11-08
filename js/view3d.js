@@ -12,6 +12,8 @@
    Stand 3D-5 (Ticket 154): Licht. Himmel (oben und unten) und Sonne je Tageszeit (V3CFG.light.tod, Richtung und Farbe aus LAY.theme.sun wie 2D), Schattenkarte der Sonne (eigener Tiefen-Durchgang
    aus Sicht der Sonne um den Blickpunkt, Regler X.shadow), Taschenlampe als Spot mit Lichtkreis bei Nacht (X.night), Punktlichter (Lampen der Karte, Blaulicht, Muendungsfeuer, hoechstens light.pl.max,
    die naechsten zum Blickpunkt), Toenung, Farbkorrektur und Vignette wie GFX.overlay in 2D (litC vor, gradeC nach der Farbraum-Umrechnung, vor der Abdunklung fogC).
+   Stand 3D-6 (Ticket 155): Szenario-Besonderheiten (X.scen aus js/draw.js scen3d, Bauplaene SCEN und V3CFG.scen): Tresortuer, Laser, Zapfsaeulen, Notenbank (Bohrer, Loch, Presse), Gefaengnis (Gitter als Staebe,
+   Tueren, Leser), Beute im Zustand, Panzerwagen, Fluchtzone, geparkte Autos, Sichtkegel der Wachen; vier Instanz-Gruppen und ein Faecher-Netz.
    Einheiten: 1 Einheit = 1 Weltpixel, 2D x -> 3D x, 2D y -> 3D z, oben ist +y. Simulation, Netz und VER bleiben unberuehrt.
    Uebernommen aus dem Prototyp (Ticket 125, PR 130): Kontext mit Gettern, Perspektive mit schmalem Blickwinkel, camSet, Boden aus der 2D-Textur, pick-Strahl, Rueckfall {on:false,err}.
    Bei geaendertem Kontext oder geaenderter Rueckgabe mkView3d.api hier und VIEW3D_API in index.html erhoehen. */
@@ -71,6 +73,28 @@ export const V3CFG = {
   shade: { top: 1, s: .84, n: .62, ew: .72, foot: .74 },
   // Materialien der Kloetze: 0 Bild (Bodentextur, Deckel zeigen die 2D-Zeichnung, Seiten strecken die Randpixel), 1 Holz, 2 Metall, 3 Zaun; Glas eigens (durchsichtig)
   mats: [null, 0x8a6a45, 0x5f6772, 0x8d959e], glass: 0xbfe6ff, glassA: .3,
+  // 3D-6 (Ticket 155) Szenario-Besonderheiten: scen3d in js/draw.js liefert je Bild die Teile (dieselbe Auswahl wie lyWorld), hier stehen die Bauplaene je Art (SCEN unten, Masse in Weltpixeln).
+  // kinds: jede Art, die scen3d liefert, braucht einen Eintrag (Test 196, sonst zaehlt info().scen ?art und zeichnet nichts); g: Gruppe(n) der Teile (s Koerper beleuchtet, l Leuchten additiv, f Flaechen
+  // durchsichtig, i Bildkloetze mit der 2D-Zeichnung als Deckel, c Sichtkegel). laserH Hoehe der Laser (Knie bis Huefte), cone Deckkraft der Sichtkegel wie 2D (ruhig, Alarm), grille Gitterstaebe je Kachel.
+  // src: woraus jedes szenario-eigene Feld der Karte (MAP_FIELDS ausser Pflicht) und jede Art von Beute- und Aktionsobjekt (its, t oder t:k) in 3D entsteht. Werte: eine Art aus kinds oder
+  // raster (Hoehentabelle cells), boden (Bodentextur aus st und so), figur und fahrzeug (figs3d), hud (Marken, Kameras), logik (unsichtbar, nur Spielregel). Neues Feld oder neue Art ohne Eintrag: Test 196 rot.
+  scen: {
+    laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
+    kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
+      pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, card: { g: 's' },
+      frame: { g: 'l' }, exit: { g: 'l' }, tk: { g: 's l f' }, parked: { g: 'i' } },
+    src: {
+      rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'boden', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
+      guards: 'figur', cams: 'hud', vit: 'vit', goods: 'good', cage: 'raster', pumps: 'pump', lasers: 'laser', bn: 'logik', polAt: 'logik', wb: 'logik', stl: 'logik', gAll: 'logik', cone: 'cone',
+      hall: 'logik', jewel: 'logik', gas: 'logik', nb: 'nbRig', prison: 'lock', museum: 'logik', casino: 'logik', road: 'exit', stash: 'raster', meet: 'logik', turned: 'logik', q: 'logik', tries: 'logik',
+      truck: 'tk', parked: 'parked', decor: 'fahrzeug', decorReal: 'fahrzeug', spots: 'raster', lockCells: 'lock', wins: 'raster', snp: 'figur',
+      'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'hud', 'it:lock': 'lock', 'it:sw': 'boden',
+      'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:tbag': 'bag',
+      'it:vit': 'vit', 'it:good:cig': 'good', 'it:good:shelf': 'good', 'it:good:art': 'good', 'it:good:statue': 'good', 'it:good:relic': 'good', 'it:good:chips': 'good', 'it:good:slot': 'good', 'it:good:vip': 'good',
+      'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
+      'it:dlx': 'lock', 'it:lsw:wach': 'boden', 'it:lsw:kon': 'boden', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur',
+    },
+  },
   // Hoehentabelle je Kachelzeichen (jedes Zeichen des Rasters braucht einen Eintrag, Test 191): s Scheiben [unten, oben, Material] in Weltpixeln, ins Einzug je Seite,
   // fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
   cells: {
@@ -213,7 +237,7 @@ export function mkView3d(X) {
   const mats = C.mats.map(c => c === null ? mkMat({ map: groundTex }) : mkMat({ col: c })), glassMat = mkMat({ col: C.glass, a: C.glassA, tr: 1 });
   const box = new THREE.BoxGeometry(1, 1, 1);
 
-  let ground = null, curLay = null, curSt = null, gridKey = '', rev = -1, stat = [], cells = {};
+  let ground = null, curLay = null, curSt = null, gridKey = '', rev = -1, stat = [], cells = {}, grl = new Set();
   function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
@@ -242,7 +266,7 @@ export function mkView3d(X) {
   // 3D-4: zuletzt gesehene Zustaende wie 2D (prSeen, Gitter und Tueren im Gefaengnis): X.seen liefert je Bild die Kacheln, die anders gezeigt werden als das Raster ({'x,y': Zeichen} oder null)
   let ov = null, ovKey = '';
   const cellAt = (x, y) => { const o = ov && ov[x + ',' + y]; return o || X.cell(x, y) };
-  function keyOfGrid() { let s = X.vaultOpen ? '1' : '0'; const x0 = X.WX0, y0 = X.WY0; for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) { const c = cellAt(x, y); s += c === 'v' ? 'o' : c } return s }
+  function keyOfGrid() { let s = (X.vaultOpen ? '1' : '0') + scKey + '|'; const x0 = X.WX0, y0 = X.WY0; for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) { const c = cellAt(x, y); s += c === 'v' ? 'o' : c } return s }
 
   // Statische Welt aus dem Raster: je Kachel und Scheibe der Hoehentabelle ein Kloetzchen (Instanz eines Einheitswuerfels), ein InstancedMesh je Material plus Glas.
   // cells zaehlt die Kacheln mit Koerper je Zeichen (Test: Wandkoerper gleich Wandkacheln), Zeichen ohne Eintrag landen in cells['?'+c] und zeichnen nichts.
@@ -257,6 +281,11 @@ export function mkView3d(X) {
       if (!s) { cells['?' + c] = (cells['?' + c] || 0) + 1; continue }
       if (!s.s.length || (s.open && vo)) continue;
       cells[c] = (cells[c] || 0) + 1;
+      // 3D-6 Gefaengnis: geschlossenes Gitter (scen3d grl) als Staebe und Querriegel statt Block, quer zur Wandrichtung wie die Glasscheibe
+      if (c === 'L' && grl.has(x + ',' + y)) { const G = C.scen.grille, hz = wallish(cell(x - 1, y)) || wallish(cell(x + 1, y)) || cell(x - 1, y) === 'L' || cell(x + 1, y) === 'L', m = T / 2, w2 = G.w / 2;
+        for (let i = 0; i < G.n; i++) { const u = 4 + i * 8 + 1.5; if (hz) add(lists[2], x * T + u - w2, y * T + m - w2, x * T + u + w2, y * T + m + w2, 0, 64); else add(lists[2], x * T + m - w2, y * T + u - w2, x * T + m + w2, y * T + u + w2, 0, 64) }
+        for (const r of G.rail) { if (hz) add(lists[2], x * T, y * T + m - w2, x * T + T, y * T + m + w2, r[0], r[1]); else add(lists[2], x * T + m - w2, y * T, x * T + m + w2, y * T + T, r[0], r[1]) }
+        continue }
       let X0 = x * T, Z0 = y * T, X1 = X0 + T, Z1 = Z0 + T; const ins = s.ins || 0; X0 += ins; Z0 += ins; X1 -= ins; Z1 -= ins;
       const hz = cell(x - 1, y) === c || cell(x + 1, y) === c || wallish(cell(x - 1, y)) || wallish(cell(x + 1, y));
       if (s.fence) { if (cell(x - 1, y) === 'f' || cell(x + 1, y) === 'f') { Z0 = y * T + 12; Z1 = y * T + 19 } else { X0 = x * T + 12; X1 = x * T + 19 } }
@@ -377,6 +406,133 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     st.sil = S.length; st.sk = sk;
     st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
     dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
+  }
+
+  // 3D-6 (Ticket 155): Szenario-Besonderheiten. X.scen() (js/draw.js scen3d) liefert je Bild die Teile mit Zustand (dieselbe Auswahl wie lyWorld), SCEN baut daraus Kloetze in vier Gruppen:
+  // s Koerper (beleuchtet, werfen Schatten), l Leuchten (additiv, unbeleuchtet: Laser, Lampen, Markierungen), f Flaechen (durchsichtig: Glas, dunkle Flecken genommener Beute), i Bildkloetze (Deckel zeigt die
+  // 2D-Zeichnung wie die statische Welt: geparkte Autos am Transporter), dazu c die Sichtkegel der Wachen als ein Faecher-Netz. Hoechstens fuenf Draw Calls fuer alles.
+  const glowMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: Object.assign({}, UV),
+    vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; void main() { vC = vec3(1.0);\n#ifdef USE_INSTANCING_COLOR\nvC = instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: 'varying vec3 vC; varying float vA; varying vec2 vM; void main() { gl_FragColor = vec4(vC * vA, 1.0);\n#include <colorspace_fragment>\n}' });
+  const flatMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: Object.assign({}, UV),
+    vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; void main() { vC = vec3(1.0);\n#ifdef USE_INSTANCING_COLOR\nvC = instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: VISF + 'varying vec3 vC; varying float vA; varying vec2 vM; void main() { gl_FragColor = vec4(vC, vA);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);\n}' });
+  const coneMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: 'attribute vec4 cc; varying vec4 vC; void main() { vC = cc; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'varying vec4 vC; void main() { if (vC.a <= 0.002) discard; gl_FragColor = vC;\n#include <colorspace_fragment>\n}' });
+  const pSc = pool('szenario', cubeGeo, colMat, {}, true, 2, 1), pScL = pool('szenario-licht', cubeGeo, glowMat, { iA: 1 }, true, 6), pScF = pool('szenario-flaeche', cubeGeo, flatMat, { iA: 1 }, true, 5),
+    pScI = pool('szenario-bild', box, mats[0], {}, false, -1, 1);
+  pools.push(pSc, pScL, pScF, pScI);
+  const CONE_MAX = 16 * 42; // Dreiecke: 16 Wachen zu je 41 Strahlen
+  const coneGeo = new THREE.BufferGeometry(); coneGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CONE_MAX * 9), 3).setUsage(THREE.DynamicDrawUsage)); coneGeo.setAttribute('cc', new THREE.BufferAttribute(new Float32Array(CONE_MAX * 12), 4).setUsage(THREE.DynamicDrawUsage));
+  const coneMesh = new THREE.Mesh(coneGeo, coneMat); coneMesh.frustumCulled = false; coneMesh.renderOrder = 7; coneMesh.name = 'sichtkegel'; coneMesh.visible = false; scene.add(coneMesh);
+  const hexC = {}, colOf = h => hexC[h] || (hexC[h] = new THREE.Color(h)), linC = h => { const c = colOf(h); return [c.r, c.g, c.b] };
+  // Deckelhoehe der Kachel unter (x,y): oberstes Ende der am Boden stehenden Scheiben (Tresen 24, Wand 64), fuer Flecken und Dinge, die auf Moebeln liegen
+  const topAt = (x, y) => { const e = C.cells[cellAt(Math.floor(x / T), Math.floor(y / T))]; if (!e || (e.open && X.vaultOpen)) return 0; let h = 0; for (const q of e.s) if (q[0] === 0) h = Math.max(h, q[1]); return h };
+  // Sammler je Gruppe: Kasten mit Mitte (x,z), Unterkante y0, Groesse (sx Laenge entlang a, sy Hoehe, sz Breite), Drehung a, Farbe, Staerke oder Deckkraft
+  let SB = null;
+  const sb = (G, x, z, y0, sx, sy, sz, a, col, k) => SB[G].push([x, z, y0, sx, sy, sz, a || 0, col, k == null ? 1 : k]);
+  // Linie als Kasten (Laser, Raender), d Dicke, y0 Unterkante, h Hoehe
+  const line = (G, x0, y0, x1, y1, d, h0, h, col, k) => { const L = Math.hypot(x1 - x0, y1 - y0); if (L < .5) return; sb(G, (x0 + x1) / 2, (y0 + y1) / 2, h0, L, h, d, Math.atan2(y1 - y0, x1 - x0), col, k) };
+  const frame = (G, x0, y0, x1, y1, d, h0, col, k) => { line(G, x0, y0, x1, y0, d, h0, .5, col, k); line(G, x0, y1, x1, y1, d, h0, .5, col, k); line(G, x0, y0, x0, y1, d, h0, .5, col, k); line(G, x1, y0, x1, y1, d, h0, .5, col, k) };
+  // Rechteck rc [x, y, w, h] (Weltpixel) als Kasten, Einzug n
+  const rect = (G, rc, n, y0, h, col, k) => sb(G, rc[0] + rc[2] / 2, rc[1] + rc[3] / 2, y0, Math.max(1, rc[2] - 2 * n), h, Math.max(1, rc[3] - 2 * n), 0, col, k);
+  // Glashaube ueber einer Auslage: durchsichtiger Kasten und hellere Oberkante (Vitrinen, Reliquien)
+  const hood = (r, t, h) => { rect('f', r, 3, t, h, C.glass, .22); frame('f', r[0] + 3, r[1] + 3, r[0] + r[2] - 3, r[1] + r[3] - 3, 1, t + h - .5, 0xe1ebfa, .55) };
+  const NOTE = { bin: [[16, 16, 0, 18, 0x8a929c]], copy: [[24, 16, 0, 24, 0xc9ced4]], coffee: [[26, 12, 0, 24, 0x8c7a66], [10, 10, 24, 12, 0x2d3238]], file: [[24, 22, 0, 38, 0x6f7882]],
+    pin: [[22, 4, 6, 30, 0xb98f5a]], coat: [[2, 2, 0, 46, 0x4a3b2d], [7, 5, 18, 22, 0x5b6d83, -4], [7, 5, 18, 20, 0x8a5a3c, 4]], locker: [[18, 26, 0, 56, 0x4f6a86]] };
+  const SCEN = {
+    // Tresortuer: zu der Block der Hoehentabelle (V) mit Handrad zum Gang, offen das aufgeschwenkte Blatt am Gang und warmes Licht im Tresorraum. Lage im Rahmen der Tuer (u quer, v laengs) wie die 2D-Zeichnung
+    vault(o) {
+      const X0 = o.x, Y0 = o.y, h = o.h, m = u => o.dir < 0 ? 2 * X0 + T - u : u, w = (u, v) => h ? [X0 + (v - Y0), Y0 + (u - X0)] : [u, v];
+      const bx = (G, u0, u1, v0, v1, y0, hh, col, k) => { const a = w(m(u0), v0), b = w(m(u1), v1); sb(G, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, y0, Math.abs(b[0] - a[0]), hh, Math.abs(b[1] - a[1]), 0, col, k) };
+      if (o.open) { bx('s', X0 - 2, X0 + 3, Y0 - 2, Y0 + 2 * T + 2, 0, 60, 0x5a626d); bx('f', X0 + T, X0 + 2 * T, Y0, Y0 + 2 * T, .3, .2, 0xffd264, .14) }
+      else { const c = Y0 + T; bx('s', X0 - 3, X0, c - 3, c + 3, 27, 6, 0x2a2e34); bx('s', X0 - 2, X0, c - 11, c + 11, 39, 2, 0x2a2e34); bx('s', X0 - 2, X0, c - 11, c + 11, 19, 2, 0x2a2e34); bx('s', X0 - 2, X0, c - 11, c - 9, 19, 22, 0x2a2e34); bx('s', X0 - 2, X0, c + 9, c + 11, 19, 22, 0x2a2e34); bx('l', X0 - 1, X0, Y0 + 3, Y0 + 2 * T - 3, 62, 1, 0xffffff, .12) }
+    },
+    pad(o) { sb('s', o.x, o.y, 0, 8, 34, 8, 0, 0x2d3640); sb('l', o.x, o.y, 34, 6, .6, 6, 0, 0x7ee34a, .8) },
+    note(o) {
+      let top = o.n === 'desk' || o.n === 'mon' ? topAt(o.x, o.y) : 0; const P = NOTE[o.n] || (o.n === 'desk' || o.n === 'mon' || o.n === 'mgr' ? [] : NOTE.locker);
+      for (const q of P) { sb('s', o.x + (q[5] || 0), o.y, q[2], q[0], q[3], q[1], 0, q[4]); top = Math.max(top, q[2] + q[3]) }
+      if (o.paper) sb('s', o.x, o.y, top, 9, .6, 9, 0, 0xe8e4d8);
+    },
+    dark(o) { sb('f', o.x, o.y, topAt(o.x, o.y) + .3, 28, .2, 28, 0, 0x000000, .4) },
+    bundle(o) { const t = topAt(o.x, o.y); sb('s', o.x, o.y, t, 13, 7, 8, 0, 0x3d7a46); sb('s', o.x, o.y, t + 7, 3, .5, 8.4, 0, 0xd9d2b0) },
+    bag(o) { sb('s', o.x, o.y, topAt(o.x, o.y), 16, 10, 11, 0, 0x6a5536) },
+    // Beute-Stuecke: Statue auf dem Sockel, Glashaube ueber Reliquien und VIP-Auslagen; genommen ein Fleck in der 2D-Farbe auf dem Deckel darunter
+    good(o) {
+      const r = o.rc, t = topAt(r[0] + r[2] / 2, r[1] + r[3] / 2);
+      if (!o.done) { if (o.n === 'statue') sb('s', r[0] + r[2] / 2, r[1] + r[3] / 2, t, 16, 30, 16, 0, 0x8e8a92); else if (o.n === 'relic' || o.n === 'vip') hood(r, t, 14); return }
+      const G = { art: [0, 0x2f2a24, 1], statue: [2, 0x121014, .85], chips: [0, 0x1c5a3a, 1], slot: [3, 0x080808, .88], relic: [3, 0x10080c, .82], vip: [3, 0x10080c, .82] }[o.n] || [2, 0x16110c, .72];
+      rect('f', r, G[0], t + .3, .2, G[1], G[2]);
+    },
+    vit(o) { const r = o.rc, t = topAt(r[0] + r[2] / 2, r[1] + r[3] / 2); if (o.done) rect('f', r, 3, t + .3, .2, 0x10080c, .82); else hood(r, t, 12) },
+    // Laser: Strahl in laserH (Kern und Schein, pulsierend aus der Spielzeit), Sender an beiden Enden; aus nur ein matter Strich und graue Sender
+    laser(o) {
+      const H = C.scen.laserH;
+      for (const [x, y] of [[o.x0, o.y0], [o.x1, o.y1]]) { sb('s', x, y, 0, 6, H + 4, 6, 0, o.on ? 0xcc3333 : 0x555566); if (o.on) sb('l', x, y, H + 4, 4, .6, 4, 0, 0xff4040, 1) }
+      if (o.on) { line('l', o.x0, o.y0, o.x1, o.y1, 1.6, H - .8, 1.6, 0xff6e78, o.f); line('l', o.x0, o.y0, o.x1, o.y1, 7, H - 3, 6, 0xff2832, o.f * .35) }
+      else line('f', o.x0, o.y0, o.x1, o.y1, 1, H - .5, 1, 0x969aaa, .3);
+    },
+    // Zapfsaeule: heil der Koerper aus der Hoehentabelle (u) mit leuchtender Anzeige zur Strasse hin, ausgebrannt ein verkohlter Stumpf (das Raster wird o)
+    pump(o) { if (o.ok) { sb('l', o.x, o.y + 12.6, 24, 14, 7, 1, 0, 0x7ee34a, .55); sb('s', o.x, o.y, 40, 20, 2, 20, 0, 0xc4402f) } else { sb('s', o.x, o.y, 0, 20, 6, 18, 0, 0x28221e); sb('s', o.x - 5, o.y + 3, 6, 6, 4, 5, .4, 0x1a1512) } },
+    // Bohrer der Notenbank: Gestell aus der Hoehentabelle (N), Motor und Bohrstange (dreht, wird mit dem Fortschritt kuerzer), Lampe nach Zustand, Fortschritt, Krater im Boden
+    nbRig(o) {
+      const col = o.st === 1 ? 0x7ee34a : o.st === 2 ? 0xd4452f : 0xe0b020, p = o.p;
+      sb('s', o.x, o.y, 36, 14, 10, 14, 0, 0x2c3036); sb('s', o.x, o.y, 0, 5, 36 + 8 * (1 - p), 5, o.r, 0x9aa2ac); sb('s', o.x, o.y, 0, 9, 5 * (1 - .45 * p), 9, o.r, 0x6b7280);
+      sb('l', o.lx, o.ly, 36, 4, 1.5, 4, 0, col, o.on ? 1 : .35); if (p > 0) { sb('l', o.x - T + 10 + (2 * T - 20) * p / 2, o.y + T - 40, 36, (2 * T - 20) * p, .6, 3, 0, col, .8); sb('f', o.x, o.y + 3, .4, T * (.6 + 1.1 * p), .2, T * (.44 + .8 * p), 0, 0x0c0a09, .25 + .5 * p) }
+    },
+    // Loch der Notenbank (Ausstieg in den Tunnel): Rand, Schacht und Tiefe als flache Schichten, deckend
+    nbHole(o) { sb('s', o.x, o.y, 0, 62, 1, 56, 0, 0x6b6152); sb('s', o.x, o.y, 0, 58, 1.2, 52, 0, 0x17130f); sb('s', o.x, o.y + 3, 0, 42, 1.4, 36, 0, 0x050403) },
+    zone(o) { frame('l', o.x0, o.y0, o.x1, o.y1, 2, .4, 0x7ee34a, .5 + .4 * o.f) },
+    // Notenpresse: Gehaeuse aus der Hoehentabelle (N), Papiervorrat (schrumpft), Lampe nach Zustand, Fortschritt des Drucks
+    nbPress(o) {
+      const X0 = o.x, Y0 = o.y, col = o.st === 1 ? 0x7ee34a : o.st === 0 ? 0xe0b020 : o.st === 6 ? 0xffb000 : 0xd4452f;
+      if (o.paper > 0) sb('s', X0 + 16, Y0 + 32, 36, 16, 14 * o.paper, 28, 0, 0xf0ead8);
+      sb('l', X0 + 56, Y0 + 52, 36, 5, 1.5, 5, 0, col, o.on ? 1 : .35); if (o.pr > 0) sb('l', X0 + 32 + 9 * o.pr, Y0 + 53, 36, 18 * o.pr, .6, 4, 0, 0x7ee34a, .8);
+    },
+    ring(o) { const n = 24; for (let i = 0; i < n; i++) { if (i % 2) continue; const a = i / n * 6.283, b = (i + 1) / n * 6.283; line('l', o.x + Math.cos(a) * o.r, o.y + Math.sin(a) * o.r, o.x + Math.cos(b) * o.r, o.y + Math.sin(b) * o.r, 2, .4, .5, 0x7ee34a, .5 + .4 * o.f) } },
+    // Tueren mit Schloss (Hintertueren, Zellen, Servicetuer): zu eine rote Lampe beidseits am Block (L), offen das zur Seite geschobene Blatt und eine gruene Lampe
+    lock(o) { if (!o.open) { sb('l', o.x, o.y - 16.4, 30, 6, 6, .8, 0, 0xd4452f, .9); sb('l', o.x, o.y + 16.4, 30, 6, 6, .8, 0, 0xd4452f, .9) } else { sb('s', o.x - 12.5, o.y, 0, 5, 50, T - 4, 0, 0x30343b); sb('l', o.x + 9.5, o.y, 46, 5, 2, 5, 0, 0x7ee34a, .9) } },
+    reader(o) { sb('s', o.x, o.y, 18, 8, 20, 16, 0, 0x1d2026); sb('l', o.x, o.y + 8.4, 30, 4, 3, .8, 0, o.open ? 0x7ee34a : 0xd4452f, 1) },
+    card(o) { sb('s', o.x, o.y, topAt(o.x, o.y), 9, 1, 6, 0, 0x7ee34a) },
+    frame(o) { frame('l', o.x0, o.y0, o.x1, o.y1, 2, .4, o.c ? 0xffd27a : 0xffffff, o.f) },
+    exit(o) { const L = Math.hypot(o.x1 - o.x0, o.y1 - o.y0), ux = (o.x1 - o.x0) / L, uy = (o.y1 - o.y0) / L; for (let s = 0; s < L; s += 14) { const e = Math.min(L, s + 8); line('l', o.x0 + ux * s, o.y0 + uy * s, o.x0 + ux * e, o.y0 + uy * e, 2, .4, .5, 0x7ee34a, .6) } },
+    // Panzerwagen (Kasten und Dach zeichnet figs3d): offene Ladetuer hinten mit Licht, Warnblinker bei Panne, Rauch am platten Reifen
+    tk(o) {
+      const b = o.x - o.fx * o.L / 2, H = C.cars.tk.h;
+      if (o.cargo) { sb('s', b - o.fx * 1, o.y, 0, 6, H - 4, o.W - 12, 0, 0x14171c); sb('f', b - o.fx * 9, o.y, .3, 12, .2, o.W - 16, 0, 0xffd264, .18) }
+      if (o.blink) for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) sb('l', o.x + u * (o.L / 2 - 8), o.y + v * (o.W / 2 - 3), H - 2, 6, 6, 6, 0, 0xffaa28, 1);
+      if (o.smoke) sb('f', o.x - o.fx * (o.L / 2 - 40), o.y + o.W / 2 + 4, 2, 18, 14, 18, 0, 0x464646, .35);
+    },
+    cone() { /* Faecher-Netz in buildScen */ },
+    parked(o) { sb('i', o.x + 64, o.y + 32, 0, 4 * T - 4, C.cars.civ.h, 2 * T - 6, 0, 0xffffff) },
+  };
+  let scenLast = [], scKey = '';
+  const scenPools = { s: pSc, l: pScL, f: pScF, i: pScI };
+  function buildScen(S) {
+    const P = S ? S.p : [], kk = {}; SB = { s: [], l: [], f: [], i: [] }; scenLast = [];
+    const cones = [];
+    for (const o of P) {
+      const e = C.scen.kinds[o.k], b = SCEN[o.k], k = e && b ? o.k : '?' + o.k; kk[k] = (kk[k] || 0) + 1; if (!e || !b) continue;
+      if (o.k === 'cone') cones.push(o); else b(o); scenLast.push(o.k);
+    }
+    for (const g in SB) {
+      const L = SB[g], Pl = scenPools[g]; Pl.size(L.length);
+      L.forEach((q, i) => { if (g === 'i') put(Pl, i, q[0], q[1], q[2] + q[4] / 2, q[6], q[3], q[4], q[5]); else { put(Pl, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); Pl.im.setColorAt(i, colOf(q[7])); if (Pl.a.iA) Pl.a.iA.setX(i, q[8]) } });
+    }
+    // Sichtkegel: Faecher aus den Strahlen von coneRays (endet an blickdichten Kacheln wie 2D), Mitte deckend nach aussen durchsichtig (2D-Verlauf), knapp ueber dem Boden
+    const pa = coneGeo.attributes.position.array, ca = coneGeo.attributes.cc.array; let n = 0;
+    for (const o of cones) {
+      const c = C.scen.cone[o.al ? 1 : 0], p = o.pts, r = Math.max(1, ...p.map(q => Math.hypot(q[0] - o.x, q[1] - o.y)));
+      for (let i = 1; i < p.length - 1 && n < CONE_MAX; i++, n++) {
+        const v = [[o.x, o.y], p[i], p[i + 1]];
+        v.forEach((q, j) => { const f = n * 9 + j * 3, a = c[3] * Math.max(0, 1 - Math.hypot(q[0] - o.x, q[1] - o.y) / r); pa[f] = q[0]; pa[f + 1] = .5; pa[f + 2] = q[1]; const h = n * 12 + j * 4; ca[h] = c[0]; ca[h + 1] = c[1]; ca[h + 2] = c[2]; ca[h + 3] = a });
+      }
+    }
+    coneGeo.setDrawRange(0, n * 3); coneGeo.attributes.position.needsUpdate = true; coneGeo.attributes.cc.needsUpdate = true; coneMesh.visible = n > 0;
+    st.scen = kk; st.scenN = [SB.s.length, SB.l.length, SB.f.length, SB.i.length, n];
+    // Pruefsumme fuer Tests: Rauminhalt und Farbsumme je Gruppe (aendert sich mit jedem Zustandswechsel)
+    st.scenSum = ['s', 'l', 'f', 'i'].map(g => Math.round(SB[g].reduce((a, q) => a + q[3] * q[4] * q[5] + q[2] * 7 + (q[7] % 4099) * .01 + q[8] * 13, 0)));
   }
 
   // Kamera: Ziel ist die Mitte des 2D-Ausschnitts (camX/camY folgen dem Spieler wie in 2D, mit Glaettung, Kamerawackeln und Rueckstoss verschiebt draw1 camX/camY,
@@ -521,11 +677,12 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     try {
       setQ(X.gfx > 0 ? 2 : 1);
       { ov = X.seen ? X.seen() : null; const ok = ov ? JSON.stringify(ov) : ''; if (ok !== ovKey) { ovKey = ok; rev = -1 } }
+      const SC = X.scen ? X.scen() : null; { const k = SC ? SC.key : ''; if (k !== scKey) { scKey = k; grl = new Set(SC ? SC.grl : []); rev = -1 } }
       if (X.LAY !== curLay || X.st !== curSt) buildLay();
       else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
       updVis();
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      lightA(); buildDyn(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); ren.render(scene, cam); show(true);
+      lightA(); buildDyn(); buildScen(SC); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -535,7 +692,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -546,8 +703,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex, glowMat, flatMat, coneMat, coneGeo]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
-  return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, el, cam, scene, cfg: C });
+  return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), el, cam, scene, cfg: C });
 }
-mkView3d.api = 6;
+mkView3d.api = 7;

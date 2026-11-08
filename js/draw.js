@@ -377,6 +377,44 @@ const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.si
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
+/* 3D-6 (Ticket 155): Szenario-Besonderheiten fuer die 3D-Ansicht, dieselbe Auswahl und dieselben Zustaende wie lyWorld (Sicht ueber los, zuletzt gesehen ueber prSeen, Phase), nur gelesen.
+   Liefert {p, grl, key}: p Teile {k Art (V3CFG.scen.kinds in js/view3d.js, jede Art braucht dort einen Bauplan, sonst zaehlt info().scen ?art), Lage in Weltpixeln, Zustand},
+   grl die Gitterkacheln des Gefaengnisses, die gerade zu (L) gezeigt werden (Stabe statt Block in der statischen Welt), key Schluessel fuer den Neubau der statischen Welt (Gitter, abgebaute geparkte Autos). */
+function scen3d(){const P=DX.p,L=DX.LAY,see=(x,y)=>los(P.x,P.y,x,y),o=[],t=DX.time,q=(k,a)=>{a.k=k;o.push(a);return a};
+// Tresortuer (offen, zu) und Tastenfeld, Fundort des Codes (Moebelstueck je Art, Zettel bis der Code bekannt ist)
+if(!L.truck&&L.vault){const v=L.vault;q('vault',{x:v.door[0]*T,y:v.door[1]*T,h:v.o==='h'?1:0,dir:v.dir,open:DX.vaultOpen?1:0});q('pad',{x:v.pad[0]*T+16,y:v.pad[1]*T+16})}
+if(!L.truck&&L.mission.vault==='code'){const A=noteAtOf(L),pa=!DX.code;if(A.k==='mgr'){if(DX.nDrop&&pa)q('note',{n:'mgr',x:DX.nDrop.x,y:DX.nDrop.y,paper:1})}else q('note',{n:A.k,x:A.x*T+16,y:A.y*T+16,paper:pa?1:0})}
+// Beute im Zustand: Kassen und Automaten leer, Geldstapel im offenen Tresor, Taschen, Ladung des Transporters, genommene Stuecke und Vitrinen
+for(const it of DX.its){if((it.done===true&&(it.t==='till'||it.t==='atm'))||it.lost)q('dark',{x:it.x,y:it.y});else if(it.done===false&&it.t==='bundle'&&DX.vaultOpen&&see(it.x,it.y))q('bundle',{x:it.x,y:it.y});
+else if(it.t==='bag'&&!it.done&&DX.rT>=it.at&&see(it.x,it.y))q('bag',{x:it.x,y:it.y});else if(it.t==='tbag'&&!it.done&&DX.cargoOpen&&see(it.x,it.y))q('bag',{x:it.x,y:it.y});
+else if(it.t==='good'&&it.rc)q('good',{n:it.k,rc:it.rc,done:it.done?1:0});else if(it.t==='vit'&&it.rc)q('vit',{rc:it.rc,done:it.done?1:0})}
+// Laser und Sichtkegel der Wachen wie drawNight (nur Erkundung)
+if(DX.phase===1&&!DX.ended){
+if(L.cone)for(const n of DX.npcs)if(n.k==='grd'&&n.st!=='away'&&n.st!=='dead'&&n.st!=='ko'&&see(n.x,n.y))q('cone',{x:n.x,y:n.y,pts:coneRays(n.x,n.y,n.a,n.fov,n.rng*(DX.blk>0?CFG.ev.sight:1)*lgM('sight')),al:n.alert>0?1:0});
+if(L.lasers){const on=DX.camDown<=0;for(const l of L.lasers){const x0=l[0]*T,y0=l[1]*T,x1=l[2]*T,y1=l[3]*T;if(!see(x0,y0)&&!see(x1,y1)&&!see((x0+x1)/2,(y0+y1)/2))continue;q('laser',{x0,y0,x1,y1,on:on?1:0,f:on?.6+.25*Math.sin(t*9+x0*.1):0})}}}
+// Zapfsaeulen: heil (Anzeige) oder ausgebrannt (Raster u wird o)
+for(const p of L.pumps||[])q('pump',{x:p.x*T+16,y:p.y*T+16,ok:cell(p.x,p.y)==='u'?1:0});
+// Notenbank: Bohrer (laeuft, steht, Fortschritt), Loch und Ausstieg, Notenpresse mit Papier, gedruckte Buendel, Abgabe
+if(L.nb){const R=L.nb,rr=R.rig,X=rr[0]*T,Y=rr[1]*T,st=DX.nbd.st;
+if(st===3||DX.nbOpen)q('nbHole',{x:X+T,y:Y+T});else q('nbRig',{x:X+T,y:Y+39,lx:X+49,ly:Y+26,st,p:DX.nbd.p,r:st===1?t*CFG.nb.rpm:0,on:st===1?(Math.sin(t*8)>-.4?1:0):1});
+if(DX.nbOpen&&!DX.ended){const z=R.zone;q('zone',{x0:z[0]*T+2,y0:z[1]*T+2,x1:(z[2]+1)*T-2,y1:(z[3]+1)*T-2,f:.5+.5*Math.sin(t*3)})}
+const z=R.press,ps=DX.nbp.st;q('nbPress',{x:z[0]*T,y:z[1]*T,st:ps,paper:DX.nbp.paper,pr:DX.nbp.t/CFG.nb.printT,on:ps===1?(Math.sin(t*8)>-.4?1:0):1});
+for(let i=0;i<nbBun.length;i++)if(DX.nbp.m>>i&1)q('bundle',{x:nbBun[i].x,y:nbBun[i].y});
+{const D=R.dep,k=Math.min(10,Math.floor((DX.nbp.dv||0)/CFG.nb.bundleV));for(let i=0;i<k;i++)q('bundle',{x:D[0]*T+10+(i%5)*11+1,y:D[1]*T+(i<5?20:12)-(i%5)%2*2})}}
+// Gefaengnis: Abholpunkt, Gitter, Tueren und Schloesser (zuletzt gesehen wie 2D), Kartenleser, Schluesselkarte
+const grl=[];
+if(L.prison){const R=L.prison;if(DX.phase===1&&!DX.ended){const pk=R.pick;q('ring',{x:pk[0]*T+16,y:pk[1]*T+16,r:CFG.prison.pickR,f:.5+.5*Math.sin(t*3)})}
+const gl=R.locks.find(l=>l.id==='gi'),rd=gl.ops[0].at;q('reader',{x:(rd[0]+1)*T-6,y:(rd[1]+1)*T,open:prSeen('rd',cell(gl.cells[0][0],gl.cells[0][1]),(rd[0]+1)*T-6,(rd[1]+1)*T)!=='L'?1:0});
+const cc=DX.its.find(i=>i.t==='crd');if(cc&&!cc.done&&see(cc.x,cc.y))q('card',{x:cc.x+10,y:cc.y-7})}
+for(const c of (L.prison?L.prison.locks.reduce((a,l)=>a.concat(l.cells.map(c=>[c[0],c[1],0,l.kind])),[]).concat(L.prison.open0.map(c=>[c[0],c[1],0,'grille']),L.prison.dl.cells):[]).concat(L.lockCells)){const s=prSeen(c[0]+','+c[1],cell(c[0],c[1]),c[0]*T+16,c[1]*T+16);
+if(s==='L'&&c[3]==='grille')grl.push(c[0]+','+c[1]);else if(s==='L')q('lock',{x:c[0]*T+16,y:c[1]*T+16,open:0});else if(!c[2])q('lock',{x:c[0]*T+16,y:c[1]*T+16,open:1})}
+// Strasse: Ausweichpunkt des Fluchtwagens, Fluchtzone, Sperrstellen am Transporter; Panzerwagen (Ladetuer, Warnblinker), geparkte Autos am Transporter
+if(DX.vanAlt&&DX.vanArr){for(const k of[-1,0]){const a=DX.LANE.pt(DX.LANE.van.stop+4,DX.LANE.van.pos+k*T+4),w=DX.LANE.axis==='x'?[4*T-8,T-8]:[T-8,4*T-8];q('frame',{x0:a[0],y0:a[1],x1:a[0]+w[0],y1:a[1]+w[1],c:0,f:.7})}}
+if((DX.vanArr||pnZone())&&!DX.ended){const e0=DX.LANE.pt(DX.LANE.exit.line,DX.LANE.exit.span[0]),e1=DX.LANE.pt(DX.LANE.exit.line,DX.LANE.exit.span[1]);q('exit',{x0:e0[0],y0:e0[1],x1:e1[0],y1:e1[1]})}
+for(const b of DX.bars)if(!(b.lv>0)&&b.rd&&DX.tk&&(DX.tk.st==='wait'||DX.tk.st==='drive')&&(DX.p.mat>0||sperre(b.g).k>0)){const c=b.cells[0];q('frame',{x0:c[0]*T+2,y0:c[1]*T+2,x1:c[0]*T+T-2,y1:c[1]*T+T-2,c:1,f:.4})}
+{const k=DX.tk;if(k&&k.st!=='wait'&&k.st!=='gone')q('tk',{x:k.x,y:k.y,L:TKL,W:TKH,fx:tkD()<0?-1:1,cargo:DX.cargoOpen?1:0,blink:L.mission.panne&&k.st==='stopped'&&!DX.ended?(((t*2.2)%1)<.5?1:0):0,smoke:k.tire<=0&&k.st==='drive'?1:0})}
+const pk=[];for(const c of L.parked||[]){if(c.gone)continue;pk.push(c.x+','+c.y);q('parked',{x:c.x*T,y:c.y*T})}
+return{p:o,grl,key:grl.join(';')+'|'+pk.join(';')}}
 /* 3D-4 (Ticket 153): Sicht fuer die 3D-Ansicht, dieselbe Quelle wie die 2D-Dunkelzone in lyWorld (visPoly um DX.p, nur lokale Daten, beim Client also seine eigene Sicht), nur gelesen.
    null: alles sehen (Zuschauer mit B oder freier Kamera, wie seeAll in lyWorld). Sonst k Schluessel (Lage auf 1 px und Reichweite; die Ansicht haengt Raster und Tresortuer an und malt die Maske nur bei Aenderung),
    dark Deckkraft der Dunkelzone wie 2D, edge die weiche Kante wie 2D (Breite, Deckkraft), poly das Sichtpolygon in Weltpixeln. */
@@ -501,5 +539,5 @@ if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&!DX.prDl&&DX.rT<DX.LAY.prison.dl.at){
 if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&DX.LAY.prison.dv&&(DX.LAY.prison.dv.st===1||(DX.LAY.prison.dv.st===2&&DX.LAY.prison.dv.end>DX.rT))){g.textAlign='right';g.font='bold 12px monospace';g.fillStyle='#ffd27a';g.fillText(DX.LAY.prison.dv.st===1?'Lieferant kommt: Servicetür offen':'Servicetür schließt in '+Math.ceil(DX.LAY.prison.dv.end-DX.rT)+' s',VW-12,VH-78);g.textAlign='left'}
 if(DX.phase===1&&DX.alarmT>0&&!DX.ended){const cd='ENTDECKT! Alarm in '+DX.alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(DX.time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(DX.banner&&!DX.paused){g.globalAlpha=Math.min(1,DX.banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(DX.banner.s,482,154);g.fillStyle=DX.phase===2?'#ff8a6a':'#ffd27a';g.fillText(DX.banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
-return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,kickOff,leanLine,pinfo,ring3d:()=>ring3dAt,vis3d,seen3d,cams3d:()=>cams3dN}}
-mkDraw.api=5;
+return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,kickOff,leanLine,pinfo,ring3d:()=>ring3dAt,vis3d,seen3d,scen3d,cams3d:()=>cams3dN}}
+mkDraw.api=6;
