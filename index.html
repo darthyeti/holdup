@@ -2494,7 +2494,10 @@ if(NET.role==='host'){const pe={};for(const k of Object.keys(NET.logs))pe[k]=Obj
 const r=LOG.save(ex);flogNote('Flugschreiber gespeichert: '+r.name+(ex.peers?' (mit '+Object.keys(ex.peers).length+' Mitspielern)':''))}
 function flogSave(){if(NET.lgWait>0)return;if(NET.role==='host'&&NET.conns.length){for(const c of NET.conns)if(c.ok)c.send({t:'lgq'});NET.lgWait=1.5;flogNote('Flugschreiber: sammle die Logs der Mitspieler ...');return}
 if(NET.role==='client')flogSend();flogSaveNow()}
-function loop(){const a=performance.now();stepReal();const b=performance.now();draw();LOG.cost(b-a,performance.now()-b);requestAnimationFrame(loop)}
+/* Bildzeit-Anzeige (nur mit #debug, Tills Messung am Haltepunkt 3D): Rechenzeit je Bild (Schritt und Zeichnen) und Bilder je Sekunde aus dem Abstand der Aufrufe, gleitend gemittelt. Steht nur im Spiel unten rechts, nicht in Tests ohne Schleife. */
+const PERF={ms:0,gap:0,t:0};
+function perfHud(){if(!DBG||scr!=='play')return;g.setTransform(2,0,0,2,0,0);g.font='11px monospace';g.textAlign='right';const s=(V3DBG.state==='an'&&v3Want()?'3D ':'2D ')+PERF.ms.toFixed(1)+' ms, '+Math.round(1000/Math.max(1,PERF.gap))+' Bilder/s';g.fillStyle='rgba(0,0,0,.55)';const w=g.measureText(s).width+10;g.fillRect(VW-8-w,VH-92,w,16);g.fillStyle='#e8d27a';g.fillText(s,VW-13,VH-80);g.textAlign='left'}
+function loop(){const a=performance.now();if(PERF.t)PERF.gap+=(a-PERF.t-PERF.gap)*.05;PERF.t=a;stepReal();const b=performance.now();draw();const c=performance.now();PERF.ms+=(c-a-PERF.ms)*.05;perfHud();LOG.cost(b-a,c-b);requestAnimationFrame(loop)}
 function hostTicker(on){if(on&&!hostWk){try{hostWk=new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),16)'],{type:'text/javascript'})));hostWk.onmessage=()=>{if(document.hidden&&NET.role==='host'&&scr==='play')stepReal()}}catch(e){hostWk=null}}else if(!on&&hostWk){hostWk.terminate();hostWk=null}}
 /* Bildschirm-Status fuer die Team-Leiste (js/ui.js, teamStrip): Jeder Spieler meldet, auf welchem Bildschirm er ist (l Lobby, s Shop, m Auftragswahl, e Ergebnis, p im Spiel), der Host traegt es in roster[].at ein
    und verteilt die Liste (bcastRoster). Der eigene Eintrag kommt in der Leiste aus dem lokalen Zustand. Gesendet wird nur bei Aenderung (atSync in tick). */
