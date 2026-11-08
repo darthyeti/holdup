@@ -361,7 +361,7 @@ g.fillStyle=q.k==='grd'?'#ffb347':'#8ad0ff';g.font='11px monospace';g.fillText(q
 const SIL_EN='#ff5a48';
 function figs3d(){
 const P=DX.p,seeAll=NET.spec&&(DX.specAll||DX.specFree),F=[],C=[],see=(x,y)=>los(P.x,P.y,x,y);DX.losAll=seeAll;
-const fg=(k,x,y,a,row,col,hit,lie,al)=>{const o={k,x,y,a,row,col,hit:hit>0?1:0,lie:lie?1:0,al:al==null?1:al,sh:-1,rf:0,bag:0};F.push(o);return o};
+const fg=(k,x,y,a,row,col,hit,lie,al)=>{const o={k,x,y,a,row,col,hit:hit>0?1:0,lie:lie?1:0,al:al==null?1:al,sh:-1,rf:0,bag:0,fl:0};F.push(o);return o};
 const pol=c=>c.civ||c.dead?0:1+(Math.floor(DX.time*5+c.id)%2);
 if(DX.vanArr||DX.vanX!==DX.LANE.van.from){const m=DX.LANE.van.mid(DX.vanX),vd=DX.LANE.van.dir,ay=DX.LANE.axis==='y';C.push({k:'van',x:m[0],y:m[1],a:ay?(vd<0?-Math.PI/2:Math.PI/2):0,row:0,L:128,W:64,fx:!ay&&vd<0?-1:1,fy:ay&&vd<0?-1:1,dim:0,bl:0})}
 for(const c of DX.pcs){const w=DX.LANE.axis==='x'?Math.cos(c.a)<0:Math.sin(c.a)<0;C.push({k:c.dead?'wreck':c.civ?'civ':'pol',x:c.x,y:c.y,a:w?c.a-Math.PI:c.a,row:c.cv||1,L:128,W:64,fx:w?-1:1,fy:1,dim:c.dead?1:0,bl:pol(c)})}
@@ -371,9 +371,9 @@ for(const c of DX.corp)if(see(c.x,c.y))fg('tot',c.x,c.y,c.a,c.row,7,0,1,Math.min
 for(const c of DX.capd)if(see(c.x,c.y))fg('cap',c.x,c.y,c.a,2,8,0,0);
 for(const o of DX.players)if(o.dead&&o.dn>0&&(o===DX.me||see(o.x,o.y)))fg('down',o.x,o.y,o.a+3.1,plRow(o),7,0,1);
 for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0)}
-for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0);o.sc=SIL_EN;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1}
-{const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8))fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0)}}
-const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0);f.bag=o.units>0?1:0;f.sc=PC[o.id].c};
+for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0);o.sc=SIL_EN;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1;if(e.fl>0)o.fl=1}
+{const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8)){const o=fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0);if(v.fl>0)o.fl=1}}}
+const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0);f.bag=o.units>0?1:0;f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}

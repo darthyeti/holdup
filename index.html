@@ -38,7 +38,7 @@ canvas:focus-visible{border-color:var(--accent)}
 const BUILD={n:211,d:'2026-10-29'};//BUILD
 const MAPS_API=1;//Vertrag mit js/maps.js (mkMaps.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkMaps aendern
 const DRAW_API=5;//Vertrag mit js/draw.js (mkDraw.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkDraw aendern
-const VIEW3D_API=5;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
+const VIEW3D_API=6;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
 const UI_API=13;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
@@ -69,9 +69,11 @@ overlay(tt,tod,w,h){const k=GFX_K(tt,tod,lv);let c=ov.get(k);if(!c){c=document.c
 /* Wucht-Schalter (Ticket 119, localStorage 'holdup.shake' und 'holdup.blood', Voreinstellung an): Wackeln (Kamera bei Schuss, Treffer, Schaden, Explosion) und Blut (Lachen, rote Staubwolke) einzeln abschaltbar. Nur Zeichnen, nie die Simulation. */
 /* Ansicht 2D oder 3D (Ticket 149, 3D-0, docs/plan-3d.md; localStorage 'holdup.ansicht' und 'holdup.winkel'): Auto, 3D, 2D, Voreinstellung 2D bis zur Abnahme (3D-10), Auto waehlt vorerst 2D.
    Kamerawinkel der 3D-Ansicht 20 bis 30 Grad (Voreinstellung 25, Entscheidung E2). #3d in der Adresse (auch #debug&3d) schaltet 3D an (Vorschau, Tests). err: Grund des letzten Rueckfalls auf 2D. Nur das Zeichnen liest es, nie die Simulation. */
-const V3OPT=(()=>{const M=['auto','3d','2d'],a0=20,a1=30;let mode='2d',ang=25;try{const v=localStorage.getItem('holdup.ansicht');if(M.includes(v))mode=v;const w=+localStorage.getItem('holdup.winkel');if(w>=a0&&w<=a1)ang=w}catch(e){}
+const V3OPT=(()=>{const M=['auto','3d','2d'],SM=['auto','an','aus'],a0=20,a1=30;let mode='2d',ang=25,shm='auto';try{const v=localStorage.getItem('holdup.ansicht');if(M.includes(v))mode=v;const w=+localStorage.getItem('holdup.winkel');if(w>=a0&&w<=a1)ang=w;const s=localStorage.getItem('holdup.schatten');if(SM.includes(s))shm=s}catch(e){}
 const hash=/(^#|&)3d$/.test(location.hash);if(hash)mode='3d';//#3d setzt nur den Start auf 3D (nicht gespeichert), der Schalter in den Optionen gilt danach (Tills Haltepunkt-Test, 8. November)
 return{modes:M,amin:a0,amax:a1,hash,err:'',get mode(){return mode},get angle(){return ang},get want(){return mode==='3d'},
+shModes:SM,get shadow(){return shm},get shadowOn(){return shm==='an'||(shm==='auto'&&GFX.lv>0)},//Schatten der 3D-Ansicht (Ticket 154): Auto (an ab Grafik mittel, aus in niedrig), an, aus
+cycleShadow(){shm=SM[(SM.indexOf(shm)+1)%SM.length];try{localStorage.setItem('holdup.schatten',shm)}catch(e){}return shm},
 cycle(){mode=M[(M.indexOf(mode)+1)%M.length];this.err='';try{localStorage.setItem('holdup.ansicht',mode)}catch(e){}return mode},
 setAngle(v){ang=Math.max(a0,Math.min(a1,Math.round(+v||25)));try{localStorage.setItem('holdup.winkel',String(ang))}catch(e){}return ang}}})();
 const FXO=(()=>{const rd=k=>{try{return localStorage.getItem('holdup.'+k)!=='0'}catch(e){return true}},v={shake:rd('shake'),blood:rd('blood')};
@@ -2338,7 +2340,7 @@ const reqHeist=()=>{if(!live(me))return;if(noGun(me)){ban('Keine Waffe: erst ein
 const reqRad=c=>{if(NET.role==='solo'||!canRad(me))return;const[x,y]=aimRaw();NET.role==='client'?NET.conn&&NET.conn.send({t:'rad',c,x:Math.round(x),y:Math.round(y)}):radHost(me,c,x,y)};
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
 /* Zeichnen: js/draw.js (mkDraw). Der Kontext liest den Spielzustand (Konstanten entpackt, veraenderliche Namen als Getter), geschrieben werden nur camX, camY, kkN, losAll, specChips, ucHintN. Neue Namen im Kontext ergaenzen, sobald draw.js sie braucht. */
-const V3X={T,VW,VH,cv,cell,ch,chF,cars,figs:()=>DRAW.figs3d(),vis:()=>DRAW.vis3d(),seen:()=>DRAW.seen3d(),get angle(){return V3OPT.angle},get gfx(){return GFX.lv},get camX(){return camX},get camY(){return camY},get W(){return W},get H(){return H},get WX0(){return WX0},get WY0(){return WY0},get LAY(){return LAY},get LANE(){return LANE},get st(){return st},get so(){return so},get dcv(){return dcv},get gRev(){return gRev},get vaultOpen(){return vaultOpen},get me(){return p&&live(p)?p:null}};
+const V3X={T,VW,VH,cv,cell,ch,chF,cars,figs:()=>DRAW.figs3d(),vis:()=>DRAW.vis3d(),seen:()=>DRAW.seen3d(),get angle(){return V3OPT.angle},get gfx(){return GFX.lv},get camX(){return camX},get camY(){return camY},get W(){return W},get H(){return H},get WX0(){return WX0},get WY0(){return WY0},get LAY(){return LAY},get LANE(){return LANE},get st(){return st},get so(){return so},get dcv(){return dcv},get gRev(){return gRev},get vaultOpen(){return vaultOpen},get me(){return p&&live(p)?p:null},get night(){return nightOn()},get nightCfg(){return CFG.night},get shadow(){return V3OPT.shadowOn}};//3D-5 (Ticket 154): Nacht, Lichtkreis und Schatten-Regler
 function v3Want(){return v3F!==null?v3F:!opt.cv&&V3OPT.want}//Test-Instanzen (opt.cv, Coop ueber die Test-Leitung) nur auf ausdruecklichen Wunsch des Debug-Hooks (Ticket 151, Test 192)
 function v3Fail(e){v3L=3;v3E=e;V3OPT.err=e;if(V3){V3.dispose();V3=null}v3Msg={s:'3D-Ansicht: '+e+', weiter in 2D',until:performance.now()+8000};console.warn('3D-Ansicht: '+e+', Rueckfall auf 2D')}
 function v3Load(){if(v3L)return;if(location.protocol==='file:'){v3Fail('3D braucht einen Webserver');return}if(typeof WebGL2RenderingContext==='undefined'){v3Fail('kein WebGL 2 im Browser');return}v3L=1;
@@ -2404,7 +2406,7 @@ case'shopBack':if(NET.role==='solo')toTitle();else leaveGame('');break;
 case'resume':paused=false;break;
 case'leave':if(NET.role==='solo')toTitle();else leaveGame('Du hast das Spiel verlassen.');break;
 case'mute':SND.toggleMute();break;case'funk':cycleFunk();break;case'chat':toggleChat();break;
-case'view':VIEW.cycle();break;case'gfx':GFX.cycle();break;case'ansicht':V3OPT.cycle();if(v3L===3){v3L=0;v3E=''}break;case'shake':FXO.toggle('shake');break;case'blood':FXO.toggle('blood');break;case'mlock':MLOCK.toggle();break;
+case'view':VIEW.cycle();break;case'gfx':GFX.cycle();break;case'ansicht':V3OPT.cycle();if(v3L===3){v3L=0;v3E=''}break;case'schatten':V3OPT.cycleShadow();break;case'shake':FXO.toggle('shake');break;case'blood':FXO.toggle('blood');break;case'mlock':MLOCK.toggle();break;
 case'full':VIEW.toggleFull();break;
 case'newSeries':sessReset();titleNote={s:'Neue Serie begonnen.',t:3};break;
 case'unlock':unlockAll=!unlockAll;break;case'flogSave':flogSave();break;case'flogMark':flogMark();break;

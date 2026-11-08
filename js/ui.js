@@ -296,7 +296,9 @@ rows.push({id:'view',key:'b',act:'view',half:1,title:'Bildgröße',sub:VIEW.mode
 /* Ansicht 2D oder 3D und Kamerawinkel (V3OPT aus index.html, Ticket 149): Auto, 3D, 2D; der Winkel 20 bis 30 Grad gilt nur in 3D. Nach einem Rueckfall steht der Grund in der Unterzeile */
 rows.push({id:'ansicht',key:'a',act:'ansicht',half:0,title:'Ansicht: '+({auto:'Auto','3d':'3D','2d':'2D'}[V3OPT.mode]),sub:V3OPT.err&&V3OPT.mode==='3d'?'2D, '+V3OPT.err:V3OPT.mode==='auto'?'wählt vorerst 2D':V3OPT.mode==='3d'?'3D an, Winkel rechts':'Wie bisher'},{id:'winkel',slider:2,half:1,title:'Winkel',sub:'nur 3D',paint:paintSlider});
 rows.push({id:'shake',key:'w',act:'shake',half:0,title:'Wackeln: '+(FXO.shake?'an':'aus'),sub:FXO.shake?'Kamera bei Schuss und Treffer':'Kamera bleibt ruhig'},{id:'blood',key:'u',act:'blood',half:1,title:'Blut: '+(FXO.blood?'an':'aus'),sub:FXO.blood?'Lachen und rote Wolken':'Kein Blut'});
-if(VIEW.can)rows.push({id:'full',key:'v',act:'full',title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'});
+/* Schatten der 3D-Ansicht (V3OPT, Ticket 154) neben dem Vollbild: Auto (an ab Grafik mittel), an, aus */
+{const sh={id:'schatten',key:'s',act:'schatten',half:VIEW.can?1:undefined,title:'Schatten: '+({auto:'Auto',an:'an',aus:'aus'}[V3OPT.shadow]),sub:V3OPT.shadow==='auto'?'nur 3D, an ab Grafik mittel':'nur 3D'};
+if(VIEW.can)rows.push({id:'full',key:'v',act:'full',half:0,title:'Vollbild: '+(VIEW.full?'an':'aus'),sub:VIEW.full?'Esc beendet das Vollbild':'Ganzer Bildschirm'},sh);else rows.push(sh)}
 if(title)rows.push({id:'name',key:'n',act:'name',paint(t){const{g}=X;g.textAlign='left';g.font='bold 14px monospace';g.fillStyle=Y;g.fillText('Dein Name',t.x+12,t.y+26);g.textAlign='right';g.font='bold 14px monospace';g.fillStyle=myName||nameEdit?TX:'#6c7480';g.fillText((myName||(nameEdit?'':'ohne Namen'))+(nameEdit&&Math.floor(time*2)%2?'|':''),t.x+t.w-52,t.y+26)}});
 if(title)rows.push({id:'series',kind:'x',act:'ui:confirm',arg:{k:'series'},title:'Neue Serie beginnen',sub:'Konto und Ausrüstung gehen verloren.'});
 /* Flugschreiber (Session-Log, F9 und F8): Log speichern und Markieren nebeneinander */

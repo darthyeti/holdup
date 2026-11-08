@@ -9,6 +9,9 @@
    Silhouette fuer Spieler, Team und sichtbare Gegner hinter Waenden (zweiter Durchgang mit Tiefentest "groesser"), Bodenring am Zielpunkt zeichnet das HUD (js/draw.js).
    Stand 3D-4 (Ticket 153): Sichtmaske aus dem Sichtpolygon der 2D-Dunkelzone (X.vis aus js/draw.js vis3d, nur lokale Daten), ein Viertel der Weltaufloesung, neu gemalt und hochgeladen nur bei
    geaendertem Schluessel (Lage, Reichweite, Raster). Boden, Waende, Moebel, Fahrzeuge und Figuren dunkeln ausserhalb ab wie unter der 2D-Dunkelzone (fogC, nach der Farbraum-Umrechnung).
+   Stand 3D-5 (Ticket 154): Licht. Himmel (oben und unten) und Sonne je Tageszeit (V3CFG.light.tod, Richtung und Farbe aus LAY.theme.sun wie 2D), Schattenkarte der Sonne (eigener Tiefen-Durchgang
+   aus Sicht der Sonne um den Blickpunkt, Regler X.shadow), Taschenlampe als Spot mit Lichtkreis bei Nacht (X.night), Punktlichter (Lampen der Karte, Blaulicht, Muendungsfeuer, hoechstens light.pl.max,
+   die naechsten zum Blickpunkt), Toenung, Farbkorrektur und Vignette wie GFX.overlay in 2D (litC vor, gradeC nach der Farbraum-Umrechnung, vor der Abdunklung fogC).
    Einheiten: 1 Einheit = 1 Weltpixel, 2D x -> 3D x, 2D y -> 3D z, oben ist +y. Simulation, Netz und VER bleiben unberuehrt.
    Uebernommen aus dem Prototyp (Ticket 125, PR 130): Kontext mit Gettern, Perspektive mit schmalem Blickwinkel, camSet, Boden aus der 2D-Textur, pick-Strahl, Rueckfall {on:false,err}.
    Bei geaendertem Kontext oder geaenderter Rueckgabe mkView3d.api hier und VIEW3D_API in index.html erhoehen. */
@@ -24,6 +27,30 @@ export const V3CFG = {
   // 3D-4 (Ticket 153) Sicht: Maske visDiv Weltpixel je Maskenpixel (ein Viertel), Seitenflaechen lesen die Maske visIn Weltpixel hinter der Flaeche (am Wandfuss, die 2D-Sicht reicht 5 px in die Wand),
   // Farbe der Dunkelzone wie 2D (rgba(10,12,20), Deckkraft aus dem Kern), fog: false schaltet die Abdunklung ab (nur Tests und Bilder)
   visDiv: 4, visIn: 2, darkCol: [10, 12, 20], fog: true,
+  // 3D-5 (Ticket 154) Licht. lit: false schaltet alles Licht ab (Aussehen wie 3D-4, nur Tests und Bilder). Lichtwerte linear (vor der Farbraum-Umrechnung), Deckel am Mittag ohne Schatten etwa 1 (wie bisher).
+  // tod je Tageszeit (Namen wie maps.js TODS): sky und gnd Himmelslicht von oben und unten (Hemisphere), sun Faktor auf die Sonnenfarbe aus LAY.theme.sun.c, el Sonnenhoehe in Grad,
+  // Richtung in der Ebene aus LAY.theme.sun (dx, dy wie die 2D-Lichtbahnen), lamps: Lampen der Karte an. Unbekannte Tageszeit nimmt mittag.
+  // grade und vig wie GFX in index.html (Farbkorrektur und Vignette je Stufe, nur ab Stufe mittel), Toenung LAY.theme.tint immer.
+  // shadow: Schattenkarte size je Grafikstufe (hoechstens 2048, Plan Abschnitt 5), Bereich area Weltpixel um den Blickpunkt, bias Tiefe, nrm Versatz entlang der Flaechennormale, soft Abstand der Proben in Texeln.
+  // spot (Taschenlampe, nur Nacht): Hoehe h, Reichweite r, Kegel cos aussen und innen (c0, c1), Neigung nach unten dn, Farbe col mal i, dazu der Lichtkreis um den Spieler wie 2D (Radius CFG.night.lamp mal haloK, Staerke halo).
+  // pl Punktlichter: max gleichzeitig (Shader-Feld), Lampen der Karte im Raster lampStep Kacheln im Gebaeude (Decke, h 60) und streetStep draussen (Laterne, h 80) auf begehbaren Kacheln,
+  // Blaulicht (blue, red) ueber dem Dach, Muendungsfeuer (muz) vor der Waffe. Reihenfolge der Wahl: Muendungsfeuer, Blaulicht, Lampen, je nach Abstand zum Blickpunkt.
+  light: {
+    lit: true,
+    tod: {
+      mittag: { sky: [.62, .62, .6], gnd: [.42, .4, .38], sun: .52, el: 55 },
+      morgen: { sky: [.5, .55, .66], gnd: [.34, .37, .44], sun: .62, el: 32 },
+      abend: { sky: [.57, .48, .45], gnd: [.38, .32, .3], sun: .74, el: 24 },
+      daemmerung: { sky: [.34, .37, .5], gnd: [.23, .25, .33], sun: .55, el: 20, lamps: 1 },
+      nacht: { sky: [.08, .1, .17], gnd: [.055, .065, .11], sun: .36, el: 48, lamps: 1 },
+    },
+    nightK: .3, // Lage-Tag nacht auf einer Tageskarte: Himmel und Sonne zusaetzlich mal nightK (Tageszeit-Farben bleiben)
+    grade: { mittag: [255, 244, 225, .04], morgen: [255, 225, 190, .06], abend: [255, 150, 70, .08], daemmerung: [90, 110, 200, .06], nacht: [40, 60, 140, .08] }, gradeHi: 1.4, vig: [0, .2, .32],
+    shadow: { size: [1024, 1024, 2048], area: 1280, bias: .0006, nrm: 1.5, soft: 1, far: 4000 },
+    spot: { h: 24, r: 470, c0: .83, c1: .94, dn: .22, col: [1, .94, .82], i: 2.8, haloK: 1, halo: .6 },
+    pl: { max: 6, lampStep: 5, streetStep: 8, lamp: { h: 60, r: 190, col: [1, .84, .58], i: 2.2 }, street: { h: 80, r: 240, col: [1, .8, .5], i: 2.4 },
+      blue: { h: 34, r: 200, col: [.25, .42, 1], i: 3.2 }, red: { h: 34, r: 200, col: [1, .22, .18], i: 3.2 }, muz: { d: 30, h: 24, r: 140, col: [1, .74, .4], i: 2.2 } },
+  },
   // 3D-2a (Ticket 151) Figuren als Aufsteller: Koerper (Zylinder, Farbe aus der Sprite-Zeile) bis bodyH, darauf das 2D-Sprite liegend (die Sprites sind Draufsichten, aufrecht gestellt
   // saehe man den Kopf von oben an einer senkrechten Tafel). Geduckt (Spalte 8) mit cowerK der Hoehe, liegend (am Boden, bewusstlos, tot) nur das Sprite knapp ueber dem Boden (lieH).
   // headH: Hoehe der HUD-Marken ueber dem Kopf (Namen, Balken, js/draw.js marks3d). Schatten wie in 2D versetzt (shOff), Deckkraft shA.
@@ -62,11 +89,51 @@ export const V3CFG = {
 const VISF = `uniform sampler2D uVis; uniform vec4 uVisO; uniform vec4 uDark;
 vec3 fogC(vec3 c, vec2 w) { if (uDark.w <= 0.0) return c; float v = texture2D(uVis, vec2((w.x - uVisO.x) * uVisO.z, 1.0 - (w.y - uVisO.y) * uVisO.w)).r; return mix(c, uDark.rgb, uDark.w * (1.0 - v)); }
 `;
+// 3D-5 Licht: litC (linear, vor colorspace_fragment): Himmelslicht nach Flaechenrichtung, Sonne mit Schattenkarte (5 Proben), Taschenlampe (Spot und Lichtkreis), NPL Punktlichter ohne Schatten.
+// gradeC (sRGB, danach): Toenung und Farbkorrektur wie GFX.overlay, Vignette um die Bildmitte. uLit 0: unveraendert (wie 3D-4).
+const NPL = V3CFG.light.pl.max;
+const LITF = `#define NPL ${NPL}
+uniform float uLit; uniform vec3 uSunD; uniform vec3 uSunC; uniform vec3 uSky; uniform vec3 uGnd;
+uniform float uShOn; uniform sampler2D uShM; uniform mat4 uShMat; uniform vec3 uShP;
+uniform vec4 uSpP; uniform vec4 uSpD; uniform vec2 uSpK; uniform vec3 uSpC; uniform vec4 uHalo;
+uniform vec4 uPlP[NPL]; uniform vec3 uPlC[NPL];
+uniform vec4 uTint; uniform vec4 uGrade; uniform vec4 uVig; uniform float uVigA;
+float shadowAt(vec3 w, vec3 n) {
+  if (uShOn < 0.5) return 1.0;
+  vec4 s = uShMat * vec4(w + n * uShP.z, 1.0);
+  if (s.x <= 0.0 || s.x >= 1.0 || s.y <= 0.0 || s.y >= 1.0 || s.z >= 1.0) return 1.0;
+  float z = s.z - uShP.y, t = uShP.x, r = step(z, texture2D(uShM, s.xy).r);
+  r += step(z, texture2D(uShM, s.xy + vec2(t, 0.0)).r) + step(z, texture2D(uShM, s.xy - vec2(t, 0.0)).r);
+  r += step(z, texture2D(uShM, s.xy + vec2(0.0, t)).r) + step(z, texture2D(uShM, s.xy - vec2(0.0, t)).r);
+  return r * 0.2;
+}
+vec3 litC(vec3 c, vec3 w, vec3 n) {
+  if (uLit < 0.5) return c;
+  vec3 L = mix(uGnd, uSky, n.y * 0.5 + 0.5);
+  float sd = dot(n, uSunD); if (sd > 0.0) L += uSunC * (sd * shadowAt(w, n));
+  if (uSpD.w > 0.0) {
+    vec3 d = w - uSpP.xyz; float r = length(d);
+    if (r < uSpP.w) { vec3 l = d / max(r, 0.001); float a = 1.0 - r / uSpP.w; L += uSpC * (smoothstep(uSpK.x, uSpK.y, dot(l, uSpD.xyz)) * a * a * (0.4 + 0.6 * max(dot(n, -l), 0.0))); }
+    float h = 1.0 - length(w.xz - uHalo.xy) / uHalo.z; if (h > 0.0) L += uSpC * (uHalo.w * h * h);
+  }
+  for (int i = 0; i < NPL; i++) {
+    vec4 p = uPlP[i]; if (p.w <= 0.0) continue;
+    vec3 d = p.xyz - w; float r = length(d); if (r >= p.w) continue;
+    float a = 1.0 - r / p.w; L += uPlC[i] * (a * a * (0.35 + 0.65 * max(dot(n, d / max(r, 0.001)), 0.0)));
+  }
+  return c * L;
+}
+vec3 gradeC(vec3 c) {
+  if (uLit < 0.5) return c;
+  c = mix(c, uTint.rgb, uTint.w); c = mix(c, uGrade.rgb, uGrade.w);
+  float d = length(gl_FragCoord.xy - uVig.xy); return c * (1.0 - uVigA * clamp((d - uVig.z) / max(1.0, uVig.w - uVig.z), 0.0, 1.0));
+}
+`;
 // Shader der statischen Welt: Kloetze als Instanzen eines Einheitswuerfels, Bild-Koordinate aus der Weltlage (Seiten um edge nach innen versetzt, sie zeigen den Randpixel der Kachel),
 // Helligkeit je Flaechenrichtung aus V3CFG.shade. Farbraum wie MeshBasicMaterial (sRGB-Textur, Ausgabe ueber colorspace_fragment).
-const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM;
+const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
 void main() {
-  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz; vM = wp.xz - normal.xz * uVisIn;
+  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz; vM = wp.xz - normal.xz * uVisIn; vN = normal;
   vec2 q = wp.xz - normal.xz * uEdge;
   vUv = vec2((q.x - uOrg.x) * uOrg.z, 1.0 - (q.y - uOrg.y) * uOrg.w);
   float s = normal.y > 0.5 ? uSh.x : normal.z > 0.5 ? uSh.y : normal.z < -0.5 ? uSh.z : uSh.w;
@@ -76,14 +143,14 @@ void main() {
 }`;
 // Schnitt (3D-3): uCut = Bildpunkt des Spielers (gl_FragCoord), Radius in Bildpunkten, Suedgrenze (Welt z des Spielers); uCutH Hoehe, ab der geschnitten wird, uCutS weicher Rand.
 // Geschnitten wird nur, was zwischen Kamera und Spieler liegt (suedlich von ihm), Waende hinter ihm bleiben stehen.
-const FS = VISF + `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM;
+const FS = VISF + LITF + `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
 void main() {
   if (uCut.z > 0.0 && vW.y > uCutH + 0.01 && vW.z > uCut.w) { float d = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
     if (d < uCutS || (d < 1.0 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > (d - uCutS) / (1.0 - uCutS))) discard; }
   vec3 c = uMap > 0.5 ? texture2D(map, vUv).rgb : uCol;
-  gl_FragColor = vec4(c * vSh, uA);
+  gl_FragColor = vec4(litC(c * vSh, vW, vN), uA);
   #include <colorspace_fragment>
-  gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);
+  gl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);
 }`;
 
 export function mkView3d(X) {
@@ -113,10 +180,19 @@ export function mkView3d(X) {
   const visCv = document.createElement('canvas'), visG = visCv.getContext('2d', { willReadFrequently: true });
   const visTex = new THREE.CanvasTexture(visCv); visTex.colorSpace = THREE.NoColorSpace; visTex.generateMipmaps = false; visTex.minFilter = THREE.LinearFilter; visTex.magFilter = THREE.LinearFilter;
   const UV = { uVis: { value: visTex }, uVisO: { value: new THREE.Vector4() }, uDark: { value: new THREE.Vector4() } };
+  // 3D-5 Licht: gemeinsame Uniforms aller beleuchteten Materialien (litC, gradeC), je Bild in updLight gesetzt. Schattenkarte: Tiefe aus Sicht der Sonne (shRT, eigener Durchgang).
+  const LC = C.light, shRT = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: true }), shCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, LC.shadow.far), shDepth = new THREE.MeshDepthMaterial();
+  shRT.depthTexture = new THREE.DepthTexture(1, 1); shRT.texture.generateMipmaps = false; shCam.layers.set(1); shCam.up.set(0, 0, -1);
+  const v4s = n => Array.from({ length: n }, () => new THREE.Vector4()), v3s = n => Array.from({ length: n }, () => new THREE.Vector3());
+  const UL = { uLit: { value: 0 }, uSunD: { value: new THREE.Vector3(0, 1, 0) }, uSunC: { value: new THREE.Vector3() }, uSky: { value: new THREE.Vector3(1, 1, 1) }, uGnd: { value: new THREE.Vector3(1, 1, 1) },
+    uShOn: { value: 0 }, uShM: { value: shRT.depthTexture }, uShMat: { value: new THREE.Matrix4() }, uShP: { value: new THREE.Vector3() },
+    uSpP: { value: new THREE.Vector4() }, uSpD: { value: new THREE.Vector4() }, uSpK: { value: new THREE.Vector2() }, uSpC: { value: new THREE.Vector3() }, uHalo: { value: new THREE.Vector4() },
+    uPlP: { value: v4s(NPL) }, uPlC: { value: v3s(NPL) }, uTint: { value: new THREE.Vector4() }, uGrade: { value: new THREE.Vector4() }, uVig: { value: new THREE.Vector4() }, uVigA: { value: 0 } };
+  Object.assign(UV, UL);
   // Boden in einem Durchgang: Bodenbild, darueber die Spuren nach ihrem Alpha gemischt (eine durchsichtige Ebene ueber dem ganzen Bild kostete in Software rund 45 ms je Bild)
   const groundMat = new THREE.ShaderMaterial({ uniforms: Object.assign({ map: { value: groundTex }, dmap: { value: decTex } }, UV),
-    vertexShader: 'varying vec2 vUv; varying vec2 vM; void main() { vUv = uv; vM = (modelMatrix * vec4(position, 1.0)).xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: VISF + 'uniform sampler2D map; uniform sampler2D dmap; varying vec2 vUv; varying vec2 vM; void main() { vec4 d = texture2D(dmap, vUv); gl_FragColor = vec4(mix(texture2D(map, vUv).rgb, d.rgb, d.a), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);\n}' });
+    vertexShader: 'varying vec2 vUv; varying vec2 vM; varying vec3 vWp; void main() { vUv = uv; vWp = (modelMatrix * vec4(position, 1.0)).xyz; vM = vWp.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: VISF + LITF + 'uniform sampler2D map; uniform sampler2D dmap; varying vec2 vUv; varying vec2 vM; varying vec3 vWp; void main() { vec4 d = texture2D(dmap, vUv); gl_FragColor = vec4(litC(mix(texture2D(map, vUv).rgb, d.rgb, d.a), vWp, vec3(0.0, 1.0, 0.0)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
   let decT = 0;
   function refreshDecal() { decG.clearRect(0, 0, decCv.width, decCv.height); if (X.dcv) decG.drawImage(X.dcv, 0, 0, decCv.width, decCv.height); decTex.needsUpdate = true; st.decUp++; decT = performance.now() }
 
@@ -138,7 +214,19 @@ export function mkView3d(X) {
     visCv.width = Math.max(1, Math.ceil(WP / C.visDiv)); visCv.height = Math.max(1, Math.ceil(HP / C.visDiv)); visKey = null;
     if (ground) { scene.remove(ground); ground.geometry.dispose() }
     ground = new THREE.Mesh(new THREE.PlaneGeometry(WP, HP).rotateX(-Math.PI / 2), groundMat); ground.position.set(ox + WP / 2, 0, oz + HP / 2); ground.name = 'boden'; scene.add(ground);
-    rev = X.gRev; gridKey = keyOfGrid(); buildStatic(); st.builds++;
+    rev = X.gRev; gridKey = keyOfGrid(); buildStatic(); st.builds++; buildLamps();
+  }
+  // 3D-5 Lampen der Karte (nur Darstellung, aus dem Grundriss abgeleitet, fest je Karte): im Gebaeude (LAY.bld) im Raster lampStep an der Decke, draussen im Raster streetStep als Laterne,
+  // jeweils nur auf begehbaren Kacheln ohne Koerper in der Hoehentabelle. Leuchten nur, wenn die Tageszeit lamps hat oder Nacht ist.
+  let lamps = [];
+  function buildLamps() {
+    lamps = []; const B = X.LAY && X.LAY.bld, P = LC.pl, free = c => { const e = C.cells[c]; return !!e && !e.s.length && !e.dyn };
+    for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) {
+      const inB = !!B && x >= B.x0 && x <= B.x1 && y >= B.y0 && y <= B.y1, c = X.cell(x, y);
+      if (!free(c)) continue;
+      if (inB) { if (c !== 'o' && (x - B.x0) % P.lampStep === 2 && (y - B.y0) % P.lampStep === 2) lamps.push({ k: 'lamp', x: x * T + T / 2, y: y * T + T / 2 }) }
+      else if (c === 'o' && (x - X.WX0) % P.streetStep === 4 && (y - X.WY0) % P.streetStep === 4) lamps.push({ k: 'street', x: x * T + T / 2, y: y * T + T / 2 });
+    }
   }
   // Rasterschluessel fuer den Abgleich: nur gelesen, wenn der Aenderungszaehler X.gRev weitergezaehlt hat. Fahrzeuge (v) zaehlen nicht (Boden darunter, Fahrzeuge zeichnet 3D-2), die offene Tresortuer schon.
   // 3D-4: zuletzt gesehene Zustaende wie 2D (prSeen, Gitter und Tueren im Gefaengnis): X.seen liefert je Bild die Kacheln, die anders gezeigt werden als das Raster ({'x,y': Zeichen} oder null)
@@ -169,7 +257,7 @@ export function mkView3d(X) {
       const n = L.length / 6; if (!n) return;
       const im = new THREE.InstancedMesh(box, mat, n); im.name = name; im.renderOrder = order || -1;
       for (let i = 0; i < n; i++) { const k = i * 6; pos.set((L[k] + L[k + 2]) / 2, (L[k + 4] + L[k + 5]) / 2, (L[k + 1] + L[k + 3]) / 2); scl.set(L[k + 2] - L[k], L[k + 5] - L[k + 4], L[k + 3] - L[k + 1]); im.setMatrixAt(i, mtx.compose(pos, qid, scl)) }
-      im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); scene.add(im); stat.push(im);
+      im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); if (mat !== glassMat) im.layers.enable(1); scene.add(im); stat.push(im);
     };
     lists.forEach((L, i) => mk(L, mats[i], 'welt' + i));
     mk(gl, glassMat, 'glas', 3);
@@ -197,14 +285,14 @@ export function mkView3d(X) {
   const chCol = rowCols(X.ch, 128, 128, CH_R, 6), carCol = rowCols(X.cars, 256, 128, CAR_R, 0), xcol = {};
   for (const k in C.xcol) xcol[k] = [].concat(C.xcol[k]).map(c => new THREE.Color(c));
   // Sprite-Shader: Zelle (Spalte, Zeile) aus dem Bogen, Trefferbild aus der zweiten Textur, Deckkraft unter 1 als Raster (verblassende Tote ohne Sortierung), dim dunkelt ab (Wrack)
-  const SVS = `attribute vec4 iCell; attribute float iDim; uniform vec2 uGrid; varying vec2 vUv; varying vec3 vHAD; varying vec2 vM;
-void main() { vUv = vec2((iCell.x + uv.x) / uGrid.x, 1.0 - (iCell.y + 1.0 - uv.y) / uGrid.y); vHAD = vec3(iCell.zw, iDim); vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }`;
-  const SFS = VISF + `uniform sampler2D map; uniform sampler2D mapF; varying vec2 vUv; varying vec3 vHAD; varying vec2 vM;
+  const SVS = `attribute vec4 iCell; attribute float iDim; uniform vec2 uGrid; varying vec2 vUv; varying vec3 vHAD; varying vec2 vM; varying vec3 vWp;
+void main() { vUv = vec2((iCell.x + uv.x) / uGrid.x, 1.0 - (iCell.y + 1.0 - uv.y) / uGrid.y); vHAD = vec3(iCell.zw, iDim); vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }`;
+  const SFS = VISF + LITF + `uniform sampler2D map; uniform sampler2D mapF; varying vec2 vUv; varying vec3 vHAD; varying vec2 vM; varying vec3 vWp;
 void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv); if (c.a < 0.5) discard;
   if (vHAD.y < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > vHAD.y) discard;
-  gl_FragColor = vec4(c.rgb * (1.0 - vHAD.z), 1.0);
+  gl_FragColor = vec4(litC(c.rgb * (1.0 - vHAD.z), vWp, vec3(0.0, 1.0, 0.0)), 1.0);
   #include <colorspace_fragment>
-  gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);
+  gl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);
 }`;
   const sprMat = (m, f, gx, gy) => new THREE.ShaderMaterial({ vertexShader: SVS, fragmentShader: SFS, side: THREE.DoubleSide, uniforms: Object.assign({ map: { value: m }, mapF: { value: f }, uGrid: { value: new THREE.Vector2(gx, gy) } }, UV) });
   const figMat = sprMat(chTex, chFTex, CH_C, CH_R), topMat = sprMat(carTex, carTex, 1, CAR_R);
@@ -221,16 +309,16 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   const bodyGeo = shadeGeo(new THREE.CylinderGeometry(1, .9, 1, 12).translate(0, .5, 0)), cubeGeo = shadeGeo(new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0)), flatGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   // wie MeshBasicMaterial mit Eck- und Instanzfarbe, dazu die Abdunklung ausserhalb der Sicht (3D-4)
   const colMat = new THREE.ShaderMaterial({ vertexColors: true, uniforms: Object.assign({}, UV),
-    vertexShader: 'varying vec3 vC; varying vec2 vM; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: VISF + 'varying vec3 vC; varying vec2 vM; void main() { gl_FragColor = vec4(vC, 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);\n}' });
-  function pool(name, geo, mat, attrs, colors, order) {
+    vertexShader: 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: VISF + LITF + 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { gl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
+  function pool(name, geo, mat, attrs, colors, order, cast) {
     const P = { name, n: 0, cap: 0, im: null, a: {} };
     P.size = need => {
       P.n = need; if (need > P.cap) {
         let cap = 16; while (cap < need) cap *= 2;
         if (P.im) { scene.remove(P.im); P.im.geometry.dispose(); P.im.dispose() }
         const g = geo.clone(); for (const k in attrs) { P.a[k] = new THREE.InstancedBufferAttribute(new Float32Array(cap * attrs[k]), attrs[k]); P.a[k].setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, P.a[k]) }
-        const im = new THREE.InstancedMesh(g, mat, cap); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.frustumCulled = false; im.name = name; im.renderOrder = order;
+        const im = new THREE.InstancedMesh(g, mat, cap); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.frustumCulled = false; im.name = name; im.renderOrder = order; if (cast) im.layers.enable(1);
         if (colors) { im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3); im.instanceColor.setUsage(THREE.DynamicDrawUsage) }
         scene.add(im); P.im = im; P.cap = cap; st.dynGrow++;
       }
@@ -238,30 +326,30 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     };
     return P;
   }
-  const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1), pBody = pool('koerper', bodyGeo, colMat, {}, true, 2), pSpr = pool('figuren', flatGeo, figMat, { iCell: 4, iDim: 1 }, false, 4),
-    pBox = pool('kloetze', cubeGeo, colMat, {}, true, 2), pTop = pool('daecher', flatGeo, topMat, { iCell: 4, iDim: 1 }, false, 4),
+  const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1), pBody = pool('koerper', bodyGeo, colMat, {}, true, 2, 1), pSpr = pool('figuren', flatGeo, figMat, { iCell: 4, iDim: 1 }, false, 4),
+    pBox = pool('kloetze', cubeGeo, colMat, {}, true, 2, 1), pTop = pool('daecher', flatGeo, topMat, { iCell: 4, iDim: 1 }, false, 4),
     pSil = pool('silhouetten', flatGeo, silMat, { iCell: 4, iCol: 3 }, false, 9), pools = [pSh, pBody, pSpr, pBox, pTop, pSil];
   const silCol = {}, silOf = c => silCol[c] || (silCol[c] = new THREE.Color(c));
   const qr = new THREE.Quaternion(), yAx = new THREE.Vector3(0, 1, 0), tc = new THREE.Color();
   // Instanz i einer Gruppe setzen: Lage (x,z) in Weltpixeln, Hoehe y, Drehung a (2D-Winkel, um die Hochachse), Groesse; Ortsversatz lx, lz im Figurenrahmen wie g.translate nach g.rotate
   function put(P, i, x, y, h, a, sx, sy, sz, lx, lz) { const c = Math.cos(a), s = Math.sin(a); lx = lx || 0; lz = lz || 0; pos.set(x + c * lx - s * lz, h, y + s * lx + c * lz); qr.setFromAxisAngle(yAx, -a); scl.set(sx, sy, sz); P.im.setMatrixAt(i, mtx.compose(pos, qr, scl)) }
   const kinds = (o, L, T) => { const k = T[L.k] ? L.k : '?' + L.k; o[k] = (o[k] || 0) + 1; return T[L.k] };
-  let dynLast = { f: [], c: [] }, hide = null;
+  let dynLast = { f: [], c: [] }, hide = null, dynL = [];
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
-    let nB = 0, nX = 0;
+    let nB = 0, nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
     for (const [o, e] of F) { if (!(e.lie || o.lie)) nB++; if (o.sh >= 0) nX++; if (o.rf) nX++; if (o.bag) nX++ }
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
     const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
-    pSh.size(F.length + Cs.length); pBody.size(nB); pSpr.size(F.length); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
+    pSh.size(nSh); pBody.size(nB); pSpr.size(F.length); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
     let iS = 0, iB = 0, iX = 0, lie = 0, hit = 0;
     const shA = pSh.a.iSA, cel = pSpr.a.iCell, dim = pSpr.a.iDim, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
     F.forEach(([o, e], i) => {
       const lying = !!(e.lie || o.lie), cw = o.col === 8, hb = (e.h || C.bodyH) * (cw ? C.cowerK : 1), hs = lying ? C.lieH : hb + C.spriteH - C.bodyH;
       if (lying) { put(pSh, iS, o.x, o.y, .4, o.a, 52, 1, 28, 3, 4); shA.setXY(iS++, 0, .3 * o.al); lie++ }
-      else { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA); put(pBody, iB, o.x, o.y, 0, o.a, e.r, hb, e.r); pBody.im.setColorAt(iB++, chCol[o.row] || chCol[0]) }
+      else { if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA) } if (o.fl) dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }); put(pBody, iB, o.x, o.y, 0, o.a, e.r, hb, e.r); pBody.im.setColorAt(iB++, chCol[o.row] || chCol[0]) }
       put(pSpr, i, o.x, o.y, hs, o.a, 64, 1, 64); cel.setXYZW(i, o.col, o.row, o.hit, o.al); dim.setX(i, 0); if (o.hit) hit++; o._hs = hs;
       if (o.sh >= 0) box(o.x, o.y, 0, o.a, 3, hb + 4, 26, 15, 0, xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]);
       if (o.rf) box(o.x, o.y, hs + .6, o.a, 26, 2.5, 2.5, 21, 3, xcol.rf[0]);
@@ -269,7 +357,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     });
     Cs.forEach(([o, e], j) => {
       const i = F.length + j, h = e.h, dimK = o.dim ? C.wreckDim : 0;
-      put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1] + 1, .4, o.a, o.L * .97, 1, o.W * .88); shA.setXY(iS++, 1, .3);
+      if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1] + 1, .4, o.a, o.L * .97, 1, o.W * .88); shA.setXY(iS++, 1, .3) }
+      if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
       tc.copy(carCol[o.row] || carCol[0]).multiplyScalar(1 - dimK); box(o.x, o.y, 0, o.a, o.L * C.carK[0], h, o.W * C.carK[1], 0, 0, tc);
       if (e.bar && o.bl) { const r = o.bl === 1; box(o.x, o.y, h, o.a, 5, 4, 9, -4, -6, r ? xcol.red[0] : xcol.blue[0]); box(o.x, o.y, h, o.a, 5, 4, 9, -4, 6, r ? xcol.blue[0] : xcol.red[0]) }
       put(pTop, j, o.x, o.y, h + .5, o.a, o.L * o.fx, 1, o.W * o.fy); pTop.a.iCell.setXYZW(j, 0, o.row, 0, 1); pTop.a.iDim.setX(j, dimK); void i;
@@ -344,6 +433,57 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     return ((d[0] * (1 - tx) + d[4] * tx) * (1 - ty) + (d[8] * (1 - tx) + d[12] * tx) * ty) / 255;
   }
 
+  // 3D-5 Licht je Bild. lightA (vor buildDyn): Tageszeit, Himmel, Sonne, Toenung und ob die Schattenkarte gilt. lightB (nach camSet): Schatten-Durchgang um den Blickpunkt, Taschenlampe, Punktlichter.
+  // Alles nur aus dem Zustand gelesen (LAY.theme, X.night, X.me, Figurenliste), nichts wird geschrieben. st.lt haelt die Werte des letzten Bildes fuer info().light.
+  const rgb = s => String(s || '255,255,255').split(',').map(v => (+v || 0) / 255), lin = v => Math.pow(v, 2.2);
+  const sh = { on: 0, size: 0, ups: 0 }; let lt = null;
+  function lightA() {
+    const th = (X.LAY && X.LAY.theme) || {}, tn = LC.tod[th.tod] ? th.tod : 'mittag', D = LC.tod[tn], night = !!X.night, lit = !!LC.lit, nk = night && tn !== 'nacht' ? LC.nightK : 1;
+    UL.uLit.value = lit ? 1 : 0;
+    const sun = th.sun || {}, sc = rgb(sun.c).map(lin), el = D.el * Math.PI / 180, dx = +sun.dx || 0, dy = +sun.dy || 1, dl = Math.hypot(dx, dy) || 1;
+    // Richtung zur Sonne: gegen die Richtung der 2D-Lichtbahnen (dx, dy), Hoehe el
+    UL.uSunD.value.set(-dx / dl * Math.cos(el), Math.sin(el), -dy / dl * Math.cos(el)).normalize();
+    UL.uSunC.value.set(sc[0], sc[1], sc[2]).multiplyScalar(D.sun * nk); UL.uSky.value.fromArray(D.sky).multiplyScalar(nk); UL.uGnd.value.fromArray(D.gnd).multiplyScalar(nk);
+    const tt = th.tint, gr = LC.grade[tn] || LC.grade.mittag, lv = X.gfx | 0;
+    if (tt) UL.uTint.value.set(tt[0] / 255, tt[1] / 255, tt[2] / 255, tt[3]); else UL.uTint.value.set(0, 0, 0, 0);
+    UL.uGrade.value.set(gr[0] / 255, gr[1] / 255, gr[2] / 255, lv > 0 ? gr[3] * (lv === 2 ? LC.gradeHi : 1) : 0);
+    const q = st.q || 1; UL.uVig.value.set(VW / 2 * q, VH / 2 * q, VH * .45 * q, VW * .62 * q); UL.uVigA.value = LC.vig[lv] || 0;
+    sh.on = lit && X.shadow ? 1 : 0; UL.uShOn.value = sh.on;
+    lt = { tod: tn, night, lit, sun: UL.uSunC.value.toArray(), dir: UL.uSunD.value.toArray(), sky: UL.uSky.value.toArray(), gnd: UL.uGnd.value.toArray(), tint: UL.uTint.value.toArray(), grade: UL.uGrade.value.w, lamps: !!(D.lamps || night) };
+  }
+  const shV = new THREE.Vector3(), shB = new THREE.Matrix4().set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1);
+  function shadowPass() {
+    const S = LC.shadow, size = S.size[X.gfx | 0] || S.size[1], a = S.area / 2;
+    if (sh.size !== size) { shRT.setSize(size, size); sh.size = size }
+    const tx = size / S.area, cx = Math.round(tgt.x * tx) / tx, cz = Math.round(tgt.z * tx) / tx; // am Texelraster, sonst flimmern die Kanten beim Laufen
+    shV.copy(UL.uSunD.value).multiplyScalar(S.far / 2); shCam.position.set(cx + shV.x, shV.y, cz + shV.z); shCam.lookAt(cx, 0, cz);
+    shCam.left = -a; shCam.right = a; shCam.top = a; shCam.bottom = -a; shCam.updateProjectionMatrix(); shCam.updateMatrixWorld();
+    UL.uShMat.value.copy(shB).multiply(shCam.projectionMatrix).multiply(shCam.matrixWorldInverse); UL.uShP.value.set(S.soft / size, S.bias, S.nrm);
+    const ov0 = scene.overrideMaterial; scene.overrideMaterial = shDepth; UL.uShOn.value = 0;
+    ren.setRenderTarget(shRT); ren.clear(); ren.render(scene, shCam); ren.setRenderTarget(null);
+    scene.overrideMaterial = ov0; UL.uShOn.value = 1; sh.ups++; sh.calls = ren.info.render.calls;
+  }
+  function lightB() {
+    if (sh.on) shadowPass();
+    const P = X.me, sp = LC.spot, on = lt.lit && lt.night && !!P;
+    if (on) {
+      const ca = Math.cos(P.a), sa = Math.sin(P.a), N = X.nightCfg || {};
+      UL.uSpP.value.set(P.x, sp.h, P.y, sp.r); shV.set(ca, -sp.dn, sa).normalize(); UL.uSpD.value.set(shV.x, shV.y, shV.z, 1); UL.uSpK.value.set(sp.c0, sp.c1);
+      UL.uSpC.value.fromArray(sp.col).multiplyScalar(sp.i); UL.uHalo.value.set(P.x, P.y, Math.max(1, (+N.lamp || 300) * sp.haloK), sp.halo / sp.i);
+    } else UL.uSpD.value.set(0, 0, 0, 0);
+    lt.spot = on ? { x: P.x, y: P.y, a: P.a, dir: UL.uSpD.value.toArray().slice(0, 3), r: sp.r, halo: UL.uHalo.value.z } : null;
+    // Punktlichter: Muendungsfeuer zuerst, dann Blaulicht, dann Lampen (wenn an), je nach Abstand zum Blickpunkt, hoechstens max
+    const L = LC.pl, d2 = o => (o.x - tgt.x) * (o.x - tgt.x) + (o.y - tgt.z) * (o.y - tgt.z), by = (A) => A.slice().sort((p, q) => d2(p) - d2(q));
+    const cand = by(dynL.filter(o => o.k === 'muz')).concat(by(dynL.filter(o => o.k !== 'muz')), lt.lamps ? by(lamps) : []), out = cand.slice(0, lt.lit ? L.max : 0);
+    for (let i = 0; i < NPL; i++) {
+      const o = out[i], pp = UL.uPlP.value[i], pc = UL.uPlC.value[i];
+      if (!o) { pp.set(0, 0, 0, 0); continue }
+      const e = L[o.k]; pp.set(o.x, e.h, o.y, e.r); pc.fromArray(e.col).multiplyScalar(e.i);
+    }
+    lt.pl = out.map(o => [o.k, Math.round(o.x), Math.round(o.y)]); lt.cand = cand.length; lt.nBlue = dynL.filter(o => o.k === 'red' || o.k === 'blue').length; lt.nLamps = lamps.length;
+    lt.shadow = { on: sh.on, size: sh.on ? sh.size : 0, ups: sh.ups, calls: sh.on ? sh.calls : 0 };
+  }
+
   // Leinwand unter das 2D-Canvas legen: beide in dieselbe Zelle des Rasters von <main> (das 2D-Canvas liegt oben, faengt die Maus, Grund durchsichtig)
   let shown = false;
   function show(v) {
@@ -366,7 +506,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
       updVis();
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      buildDyn(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; ren.render(scene, cam); show(true);
+      lightA(); buildDyn(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -376,7 +516,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -387,8 +527,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
   return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, el, cam, scene, cfg: C });
 }
-mkView3d.api = 5;
+mkView3d.api = 6;
