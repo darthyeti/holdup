@@ -30,7 +30,7 @@ export const V3CFG = {
   // 3D-3 (Ticket 152) Kamera: Blickpunkt camLead Weltpixel noerdlich der 2D-Bildmitte, so steht der Spieler unter der Bildmitte und vorn (oben im Bild) ist mehr zu sehen.
   // Schnitt: Waende und Moebel suedlich des Spielers (zur Kamera hin) innerhalb von cutR Bildpunkten um ihn werden oberhalb cutH ausgeblendet (wie auf Tischhoehe abgesenkt),
   // weicher Rand ab cutSoft des Radius (gerastert). Silhouette: Figuren mit Silhouettenfarbe (Spieler, Team, Gegner in Sicht) erscheinen hinter Verdeckung einfarbig mit silA.
-  camLead: 40, cutR: 56, cutH: 22, cutSoft: .7, sil: true, silA: .8,
+  camLead: 40, cutR: 56, cutH: 22, cutSoft: .7, sil: true, silA: .8, silS: 84,
   // 3D-4 (Ticket 153) Sicht: Maske visDiv Weltpixel je Maskenpixel (ein Viertel), Seitenflaechen lesen die Maske visIn Weltpixel hinter der Flaeche (am Wandfuss, die 2D-Sicht reicht 5 px in die Wand),
   // Farbe der Dunkelzone wie 2D (rgba(10,12,20), Deckkraft aus dem Kern), fog: false schaltet die Abdunklung ab (nur Tests und Bilder)
   visDiv: 4, visIn: 2, darkCol: [10, 12, 20], fog: true,
@@ -545,7 +545,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       if (e.bar && o.bl) { const r = o.bl === 1; box(o.x, o.y, h, o.a, 5, 4, 9, -4, -6, r ? xcol.red[0] : xcol.blue[0]); box(o.x, o.y, h, o.a, 5, 4, 9, -4, 6, r ? xcol.blue[0] : xcol.red[0]) }
       put(pTop, j, o.x, o.y, h + .5, o.a, o.L * o.fx, 1, o.W * o.fy); pTop.a.iCell.setXYZW(j, 0, o.row, 0, 1); pTop.a.iDim.setX(j, dimK); void i;
     });
-    const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, o._hs, o.a, 64, 1, 64); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
+    const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, o._hs, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
     st.sil = S.length; st.sk = sk;
     st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX + gear; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
     dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
