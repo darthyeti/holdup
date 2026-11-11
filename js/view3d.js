@@ -4,7 +4,8 @@
    mit Three.js in eine eigene WebGL-Leinwand unter dem 2D-Canvas. Das 2D-Canvas bleibt oben, durchsichtig, und traegt HUD und Menues (js/draw.js).
    Stand 3D-0: Szene, Kamera fest gekippt (X.angle, 20 bis 30 Grad, Standard 25), Boden als Flaeche mit der Textur der statischen 2D-Ebene (X.st, X.so).
    Stand 3D-1 (Ticket 150): statische Welt aus dem Raster (Hoehentabelle V3CFG.cells, ein InstancedMesh je Material), Neubau nur bei Rasteraenderung (X.gRev, Abgleich), Spuren (X.dcv) als Ebene ueber dem Boden.
-   Stand 3D-2a (Ticket 151): Figuren und Fahrzeuge als Aufsteller aus den Sprites (X.figs aus js/draw.js, Tabellen V3CFG.figs und V3CFG.cars), fuenf InstancedMesh, Marken ueber den Koepfen zeichnet das HUD (toScr).
+   Stand 3D-2a (Ticket 151): Figuren und Fahrzeuge (X.figs aus js/draw.js, Tabellen V3CFG.figs und V3CFG.cars), Marken ueber den Koepfen zeichnet das HUD (toScr). Seit 3D-2b (Ticket 160) sind die Figuren Low-Poly (Stil B, V3CFG.fig,
+   rigFig): Teile als InstancedMesh je Teil-Art, die Fahrzeuge bleiben Kasten mit 2D-Dach.
    Stand 3D-3 (Ticket 152): Kamera mit Vorlauf (Spieler unter der Bildmitte, camLead), Schnitt durch Waende und Moebel vor dem Spieler (uCut im Shader der statischen Welt),
    Silhouette fuer Spieler, Team und sichtbare Gegner hinter Waenden (zweiter Durchgang mit Tiefentest "groesser"), Bodenring am Zielpunkt zeichnet das HUD (js/draw.js).
    Stand 3D-4 (Ticket 153): Sichtmaske aus dem Sichtpolygon der 2D-Dunkelzone (X.vis aus js/draw.js vis3d, nur lokale Daten), ein Viertel der Weltaufloesung, neu gemalt und hochgeladen nur bei
@@ -58,10 +59,28 @@ export const V3CFG = {
     pl: { max: 6, lampStep: 5, streetStep: 8, lamp: { h: 60, r: 190, col: [1, .84, .58], i: 2.2 }, street: { h: 80, r: 240, col: [1, .8, .5], i: 2.4 },
       boom: { h: 40, r: 320, col: [1, .66, .32], i: 4 }, blue: { h: 34, r: 200, col: [.25, .42, 1], i: 3.2 }, red: { h: 34, r: 200, col: [1, .22, .18], i: 3.2 }, muz: { d: 30, h: 24, r: 140, col: [1, .74, .4], i: 2.2 } },
   },
-  // 3D-2a (Ticket 151) Figuren als Aufsteller: Koerper (Zylinder, Farbe aus der Sprite-Zeile) bis bodyH, darauf das 2D-Sprite liegend (die Sprites sind Draufsichten, aufrecht gestellt
-  // saehe man den Kopf von oben an einer senkrechten Tafel). Geduckt (Spalte 8) mit cowerK der Hoehe, liegend (am Boden, bewusstlos, tot) nur das Sprite knapp ueber dem Boden (lieH).
+  // bodyH und spriteH sind seit 3D-2b nur noch die Zielhoehe (aimH, Brusthoehe fuer pick und Schnitt um den Spieler), die Figuren selbst stehen in V3CFG.fig. cowerK, lieH: alte Aufsteller-Werte, ungenutzt.
   // headH: Hoehe der HUD-Marken ueber dem Kopf (Namen, Balken, js/draw.js marks3d). Schatten wie in 2D versetzt (shOff), Deckkraft shA.
-  bodyH: 26, spriteH: 28, headH: 30, lieH: 1.2, cowerK: .6, shOff: [5, 6], shA: .33,
+  bodyH: 26, spriteH: 28, headH: 42, lieH: 1.2, cowerK: .6, shOff: [5, 6], shA: .33,
+  // 3D-2b (Ticket 160) Low-Poly-Figuren, Stil B der Stil-Tafel (weicher Spielzeugstil, grosser runder Kopf, Farben zurueckgenommen). Masse in Weltpixeln (Figur rund 36 hoch, Kopf 12).
+  // dim: Fuss, Unter- und Oberschenkel, Hueftbreite (Abstand Bein zur Mitte), Beindicke, Rumpfhoehe, Schulterbreite, Rumpftiefe, Oberarm, Unterarm, Armdicke, Kopf, Hals.
+  // seg: Segmente der Grundkoerper (Kapsel: Kappen und Umfang, Kopf: Umfang und Ringe, Kugel, Kuppel, Zylinder), halbiert gegenueber der Tafel (Ziel rund 1.000 Dreiecke je Figur).
+  // shade: Helligkeit unten und oben (nach Normale, Licht kommt von litC). hs: Hoehe der Silhouette (Kopfoberkante), hsLie, hsCow. out: Kleidung je Art (top Oberteil, bot Hose, head Kopf, hat Kopfbedeckung, ...).
+  fig: {
+    dim: { foot: 2.2, shin: 5.5, thigh: 5.5, hipW: 3.2, legT: 4.6, torsoH: 10, torsoW: 12, torsoD: 9, armU: 5.2, armF: 5, armT: 4.2, head: 12, neck: .4 },
+    seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
+    hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
+    out: {
+      rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },
+      rob2: { top: 0x4a9a52, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob3: { top: 0x8a58c2, bot: 0x33353d, head: 'mask', gl: 0x33353d },
+      cop: { top: 0x3a63c4, bot: 0x22305e, head: 'cap', hat: 0x22305e, badge: 1 }, swat: { top: 0x474c57, bot: 0x30343c, head: 'helmet', hat: 0x474c57, gl: 0x33353d },
+      shield: { top: 0x474c57, bot: 0x30343c, head: 'helmet', hat: 0x474c57, gl: 0x33353d }, sniper: { top: 0x62773f, bot: 0x3a4630, head: 'beanie', hat: 0x3a4630, gl: 0x33353d },
+      grd: { top: 0x8c97a8, bot: 0x474e5a, head: 'cap', hat: 0x474e5a, holster: 1 }, civA: { top: 0xd9a24e, bot: 0x56778f, head: 'hair', hat: 0x6b4226, coat: 1 },
+      civB: { top: 0x9a6a8a, bot: 0x45506b, head: 'hair', hat: 0xd2b46a }, tel: { top: 0xe3e7ea, bot: 0x4a5568, head: 'hair', hat: 0x5a3b22 }, mgr: { top: 0x4b4f5c, bot: 0x33363f, head: 'hair', hat: 0x2c2118 },
+    },
+    // Art -> Kleidung: Gegnerarten nach Art, alle anderen (Personen, Tote, Gefasste, Spieler am Boden, Fahrer) nach Zeile in chars.png
+    row: { 0: 'cop', 1: 'rob0', 2: 'grd', 3: 'civA', 4: 'civB', 5: 'tel', 6: 'mgr', 7: 'rob0', 8: 'swat', 9: 'rob1', 10: 'rob2', 11: 'rob3', 12: 'rob1', 13: 'rob2', 14: 'rob3' },
+  },
   // Jede Figurenart braucht einen Eintrag (Test 192, Liste aus dem Spiel: Spieler, Gegnerarten, Zivilisten- und Personalarten, Fahrer, Gefasste, Tote, Spieler am Boden).
   // r Koerperradius, h Koerperhoehe (Standard bodyH), lie: liegt immer
   figs: {
@@ -213,7 +232,7 @@ export function mkView3d(X) {
   } catch (e) { return { on: false, err: 'kein WebGL 2 (' + String(e && e.message || e).slice(0, 60) + ')' }; }
   if (!ren.capabilities || !ren.capabilities.isWebGL2) { ren.dispose(); return { on: false, err: 'kein WebGL 2' }; }
   const glc = ren.getContext(), dbgInfo = glc.getExtension('WEBGL_debug_renderer_info');
-  const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
+  const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, figParts: 0, figCalls: 0, gear: 0, fi: [], dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
   ren.setPixelRatio(1); ren.outputColorSpace = THREE.SRGBColorSpace; ren.setClearColor(C.clear);
   const el = ren.domElement;
   // 3D-9 (Ticket 158): Kontextverlust (Treiber, GPU-Reset, zu viele Kontexte) ist kein Absturz: die Ansicht meldet sich ab, der Kern zeichnet in 2D weiter
@@ -330,7 +349,7 @@ export function mkView3d(X) {
   // Fuenf Draw Calls fuer alles, was sich bewegt: Schatten, Koerper (Zylinder), Sprites (chars.png und chars_flash.png in einem Shader), Kloetze (Fahrzeugkaesten und Zusatzteile), Fahrzeugdaecher (cars.png).
   // Jede Gruppe ist ein InstancedMesh, das bei Bedarf in Zweierpotenzen waechst (st.dynGrow), Instanzen werden jedes Bild neu belegt (wer nicht mehr gesehen wird, faellt einfach weg).
   const tex = img => { const t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true; return t };
-  const chTex = tex(X.ch), chFTex = tex(X.chF), carTex = tex(X.cars);
+  const chTex = tex(X.ch), carTex = tex(X.cars);
   const CH_C = Math.round(X.ch.width / 128), CH_R = Math.round(X.ch.height / 128), CAR_R = Math.round(X.cars.height / 128);
   // mittlere Farbe je Zeile eines Sprite-Bogens (deckende Pixel einer Spalte), fuer Koerper und Karosserie (aus dem Prototyp)
   function rowCols(img, cw, chh, rows, col) {
@@ -342,7 +361,7 @@ export function mkView3d(X) {
     }
     return out;
   }
-  const chCol = rowCols(X.ch, 128, 128, CH_R, 6), carCol = rowCols(X.cars, 256, 128, CAR_R, 0), xcol = {};
+  const carCol = rowCols(X.cars, 256, 128, CAR_R, 0), xcol = {};
   for (const k in C.xcol) xcol[k] = [].concat(C.xcol[k]).map(c => new THREE.Color(c));
   // Sprite-Shader: Zelle (Spalte, Zeile) aus dem Bogen, Trefferbild aus der zweiten Textur, Deckkraft unter 1 als Raster (verblassende Tote ohne Sortierung), dim dunkelt ab (Wrack)
   const SVS = `attribute vec4 iCell; attribute float iDim; uniform vec2 uGrid; varying vec2 vUv; varying vec3 vHAD; varying vec2 vM; varying vec3 vWp;
@@ -355,7 +374,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   gl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);
 }`;
   const sprMat = (m, f, gx, gy) => new THREE.ShaderMaterial({ vertexShader: SVS, fragmentShader: SFS, side: THREE.DoubleSide, uniforms: Object.assign({ map: { value: m }, mapF: { value: f }, uGrid: { value: new THREE.Vector2(gx, gy) } }, UV) });
-  const figMat = sprMat(chTex, chFTex, CH_C, CH_R), topMat = sprMat(carTex, carTex, 1, CAR_R);
+  const topMat = sprMat(carTex, carTex, 1, CAR_R);
   // 3D-3 Silhouette: dasselbe Sprite als einfarbige Flaeche, nur wo etwas davor liegt (Tiefentest groesser, schreibt keine Tiefe), nach allem anderen gezeichnet
   const silMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthFunc: THREE.GreaterDepth, side: THREE.DoubleSide, uniforms: { map: { value: chTex }, uGrid: { value: new THREE.Vector2(CH_C, CH_R) }, uA: { value: C.silA } },
     vertexShader: 'attribute vec4 iCell; attribute vec3 iCol; uniform vec2 uGrid; varying vec2 vUv; varying vec3 vC; void main() { vUv = vec2((iCell.x + uv.x) / uGrid.x, 1.0 - (iCell.y + 1.0 - uv.y) / uGrid.y); vC = iCol; gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0); }',
@@ -366,13 +385,14 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     fragmentShader: 'varying vec2 vUv; varying vec2 vSA; void main() { float r = vSA.x > 0.5 ? max(abs(vUv.x), abs(vUv.y)) : length(vUv); float a = vSA.y * (1.0 - smoothstep(0.82, 1.0, r)); if (a <= 0.0) discard; gl_FragColor = vec4(0.06, 0.04, 0.02, a); }' });
   // Koerper und Kloetze: Grundfarbe je Instanz, Flaechenhelligkeit als Eckfarbe wie die statische Welt (V3CFG.shade, Deckel hell, Suedseite zur Kamera)
   const shadeGeo = g => { const n = g.attributes.normal, c = new Float32Array(n.count * 3), S = C.shade; for (let i = 0; i < n.count; i++) { const y = n.getY(i), z = n.getZ(i), v = y > .5 ? S.top : y < -.5 ? S.foot : z > .5 ? S.s : z < -.5 ? S.n : S.ew + (S.s - S.ew) * Math.max(0, z); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = v } g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g };
-  const bodyGeo = shadeGeo(new THREE.CylinderGeometry(1, .9, 1, 12).translate(0, .5, 0)), cubeGeo = shadeGeo(new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0)), flatGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  const cubeGeo = shadeGeo(new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0)), flatGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   // wie MeshBasicMaterial mit Eck- und Instanzfarbe, dazu die Abdunklung ausserhalb der Sicht (3D-4)
   const colMat = new THREE.ShaderMaterial({ vertexColors: true, uniforms: Object.assign({}, UV),
     vertexShader: 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
     fragmentShader: VISF + LITF + 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { gl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
   function pool(name, geo, mat, attrs, colors, order, cast) {
-    const P = { name, n: 0, cap: 0, im: null, a: {} };
+    const P = { name, n: 0, cap: 0, im: null, a: {}, u: 0 };
+    P.finish = () => { P.n = P.u; if (P.im) { P.im.count = P.u; P.im.visible = P.u > 0 } };
     P.size = need => {
       P.n = need; if (need > P.cap) {
         let cap = 16; while (cap < need) cap *= 2;
@@ -386,35 +406,137 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     };
     return P;
   }
-  const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1), pBody = pool('koerper', bodyGeo, colMat, {}, true, 2, 1), pSpr = pool('figuren', flatGeo, figMat, { iCell: 4, iDim: 1 }, false, 4),
+  // 3D-2b (Ticket 160) Low-Poly-Figuren: ein Material fuer alle Teile (wie colMat, dazu Deckkraft je Instanz als Raster fuer verblassende Tote), sechs Grundkoerper als sechs InstancedMesh fuer
+  // ALLE Figuren (ein Draw Call je Teil-Art, nicht je Figur), dazu das durchsichtige Schild. Die Kapsel ist normiert (Durchmesser 1, Hoehe 1,5), der Rest hat Durchmesser oder Kantenlaenge 1.
+  const FG = C.fig, FD = FG.dim, FSG = FG.seg;
+  const smoothGeo = g => { const n = g.attributes.normal, c = new Float32Array(n.count * 3); for (let i = 0; i < n.count; i++) { const v = FG.shade[0] + (FG.shade[1] - FG.shade[0]) * (n.getY(i) * .5 + .5); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = v } g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g };
+  const figGeo = {
+    cap: smoothGeo(new THREE.CapsuleGeometry(.5, .5, FSG.cap[0], FSG.cap[1])), torso: smoothGeo(new THREE.CapsuleGeometry(.5, .5, FSG.torso[0], FSG.torso[1])), head: smoothGeo(new THREE.SphereGeometry(.5, FSG.head[0], FSG.head[1])),
+    ball: smoothGeo(new THREE.SphereGeometry(.5, FSG.ball[0], FSG.ball[1])), dome: smoothGeo(new THREE.SphereGeometry(.5, FSG.dome[0], FSG.dome[1], 0, Math.PI * 2, 0, Math.PI / 2)), cyl: smoothGeo(new THREE.CylinderGeometry(.5, .5, 1, FSG.cyl)),
+    box: smoothGeo(new THREE.BoxGeometry(1, 1, 1)),
+  };
+  const figMat = new THREE.ShaderMaterial({ vertexColors: true, uniforms: Object.assign({}, UV),
+    vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: VISF + LITF + 'varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { if (vA < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > vA) discard;\ngl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
+  const fpool = (name, geo) => pool(name, geo, figMat, { iA: 1 }, true, 2, 1);
+  const fP = { torso: fpool('fig-rumpf', figGeo.torso), cap: fpool('fig-glieder', figGeo.cap), head: fpool('fig-koepfe', figGeo.head), ball: fpool('fig-kugeln', figGeo.ball), dome: fpool('fig-kuppeln', figGeo.dome), cyl: fpool('fig-zylinder', figGeo.cyl), box: fpool('fig-boxen', figGeo.box) };
+  // je Figur hoechstens (Rumpf, Glieder, Koepfe, Kugeln, Kuppeln, Zylinder, Boxen): fuer die Obergrenze der Instanzen
+  const fMax = { torso: 1, cap: 9, head: 1, ball: 10, dome: 1, cyl: 2, box: 9 };
+  const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1),
     pBox = pool('kloetze', cubeGeo, colMat, {}, true, 2, 1), pTop = pool('daecher', flatGeo, topMat, { iCell: 4, iDim: 1 }, false, 4),
-    pSil = pool('silhouetten', flatGeo, silMat, { iCell: 4, iCol: 3 }, false, 9), pools = [pSh, pBody, pSpr, pBox, pTop, pSil];
+    pSil = pool('silhouetten', flatGeo, silMat, { iCell: 4, iCol: 3 }, false, 9), pools = [pSh, pBox, pTop, pSil].concat(Object.values(fP));
   const silCol = {}, silOf = c => silCol[c] || (silCol[c] = new THREE.Color(c));
   const qr = new THREE.Quaternion(), yAx = new THREE.Vector3(0, 1, 0), tc = new THREE.Color();
   // Instanz i einer Gruppe setzen: Lage (x,z) in Weltpixeln, Hoehe y, Drehung a (2D-Winkel, um die Hochachse), Groesse; Ortsversatz lx, lz im Figurenrahmen wie g.translate nach g.rotate
   function put(P, i, x, y, h, a, sx, sy, sz, lx, lz) { const c = Math.cos(a), s = Math.sin(a); lx = lx || 0; lz = lz || 0; pos.set(x + c * lx - s * lz, h, y + s * lx + c * lz); qr.setFromAxisAngle(yAx, -a); scl.set(sx, sy, sz); P.im.setMatrixAt(i, mtx.compose(pos, qr, scl)) }
   const kinds = (o, L, T) => { const k = T[L.k] ? L.k : '?' + L.k; o[k] = (o[k] || 0) + 1; return T[L.k] };
   let dynLast = { f: [], c: [] }, hide = null, dynL = [];
+  // 3D-2b: Rig der Figuren. Lokale Achsen: +x vorn (Blickrichtung a), +y oben, +z rechts. Gelenke sind Matrizen (Wurzel, Becken, Rumpf, Schulter, Ellbogen, Hand, Huefte, Knie), jedes Teil sitzt als
+  // Instanz in seinem Gelenk. Haltung aus dem Zustand von figs3d: col < 6 laeuft (Laufphase w), col 8 kniet mit Haenden am Kopf (geduckt, ergeben, Geisel), lie liegt auf dem Ruecken, ar haelt die Waffe vor sich.
+  const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), hitC = new THREE.Color(), white = new THREE.Color(1, 1, 1);
+  const mRoot = new THREE.Matrix4(), mB = new THREE.Matrix4(), mH = new THREE.Matrix4(), mT = new THREE.Matrix4(), mS = [new THREE.Matrix4(), new THREE.Matrix4()], mE = [new THREE.Matrix4(), new THREE.Matrix4()],
+    mD = new THREE.Matrix4(), mK = new THREE.Matrix4(), mG = new THREE.Matrix4(), mL = new THREE.Matrix4(), mR = new THREE.Matrix4();
+  // Gelenk: out = par * Verschiebung * Drehung (Euler ZXY: erst um x (zur Seite), dann um z (vor und zurueck))
+  const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
+  const figInfo = [];
+  let hitNow = 0, alNow = 1, nP = 0, topY = 0, sigN = 0;
+  // Teil in Gelenk par: Mitte (x,y,z), Groesse (sx,sy,sz), Farbe, optional Drehung (rx,ry,rz) vor der Verschiebung
+  const fput = (P, par, x, y, z, sx, sy, sz, col, rx, rz) => {
+    _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
+    const i = P.u++; P.im.setMatrixAt(i, fm); P.im.setColorAt(i, hitNow ? hitC.copy(col).lerp(white, FG.hit) : col); P.a.iA.setX(i, alNow);
+    nP++; if (fm.elements[13] > topY) topY = fm.elements[13]; sigN += (fm.elements[12] * .7 + fm.elements[13] + fm.elements[14] * 1.3) * (1 + nP * .13);
+  };
+  const typeOf = (o, e) => (o.k === 'cop' || o.k === 'swat' || o.k === 'shield' || o.k === 'sniper') ? o.k : FG.row[o.row] || 'civA';
+  const lerpN = (a, b, t) => a + (b - a) * t;
+  function rigFig(o, e) {
+    const T0 = typeOf(o, e), OT = FG.out[T0], k = 1 + ((e.r || 9) - 9) * FG.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6, sw = run ? Math.sin(o.w || 0) : 0;
+    const gun = !lying && !kneel && o.ar && T0 !== 'sniper', rifle = !lying && !kneel && o.rf, shield = !lying && !kneel && o.sh >= 0, side = [1, -1];
+    const top = colOf(OT.top), bot = colOf(OT.bot), skin = colOf(FG.skin), glv = colOf(OT.gl || FG.skin), hat = colOf(OT.hat || OT.bot), dark = colOf(FG.dark), eye = colOf(FG.eye), gunC = colOf(FG.gun);
+    hitNow = o.hit; alNow = o.al; nP = 0; topY = 0; sigN = 0;
+    _p.set(o.x, 0, o.y); _q.setFromAxisAngle(yAx, -o.a); _s.set(k, k, k); mRoot.compose(_p, _q, _s);
+    const legH = FD.foot + FD.shin + FD.thigh, tH = FD.torsoH, hd = FD.head;
+    // Koerper auf dem Ruecken: um die Fuesse nach hinten gekippt, Mitte auf den Ursprung, Brustkorb auf dem Boden
+    if (lying) jt(mRoot, mB, (legH + tH + hd) / 2, FD.torsoD / 2 + .2, 0, 0, 0, Math.PI / 2); else mB.copy(mRoot);
+    let hipY = legH, lean = 0, bob = 0;
+    // Beine: Hueftdrehung (vor positiv), Knie (zurueck negativ)
+    const hip = [0, 0], kn = [0, 0], spread = [0, 0];
+    if (run) { hip[0] = FG.run * sw; hip[1] = -FG.run * sw; kn[0] = -(.25 + 1.0 * Math.max(0, -sw)); kn[1] = -(.25 + 1.0 * Math.max(0, sw)); lean = FG.tilt; bob = Math.abs(Math.cos(o.w || 0)) * .9 - .6 }
+    if (kneel) { hipY = FD.shin * .98 + FD.legT * .4; hip[0] = hip[1] = .02; kn[0] = kn[1] = -Math.PI / 2 }
+    if (lying) { hip[0] = -.15; hip[1] = .1; kn[0] = -.3; spread[0] = -.1; spread[1] = .06 }
+    // Arme: Schulter (zur Seite s, nach vorn z) und Ellbogen
+    const sh = [[.12, 0], [.12, 0]], el = [.15, .15];
+    if (run) { sh[0][1] = -FG.swing * sw; sh[1][1] = FG.swing * sw; el[0] = el[1] = .85 }
+    if (gun) { sh[0] = [0, Math.PI / 2 - .05]; el[0] = 0; sh[1] = [-.38, 1.22]; el[1] = .3 }
+    if (rifle) { sh[0] = [-.45, 1.2]; el[0] = .5; sh[1] = [-.15, 1.45]; el[1] = .25 }
+    if (shield) { sh[1] = [-.1, 1.15]; el[1] = .3 }
+    if (kneel) { sh[0] = [2.55, -.35]; sh[1] = [2.55, -.35]; el[0] = el[1] = 2.2 }
+    if (lying) { sh[0] = [.35, 0]; sh[1] = [1.35, 0]; el[0] = .3; el[1] = .2 }
+    jt(mB, mH, 0, hipY + bob, 0);
+    jt(mH, mT, 0, 1, 0, 0, 0, -lean);
+    // Becken, Rumpf, Kopf
+    fput(fP.ball, mH, 0, .4, 0, FD.torsoD * .92, 6.1, FD.torsoW * .92, bot);
+    fput(fP.torso, mT, 0, tH / 2, 0, FD.torsoD, (tH + FD.torsoW * .3) / 1.5, FD.torsoW, top); const tHex = (hitNow ? hitC.copy(top).lerp(white, FG.hit) : top).getHex();
+    if (OT.coat) fput(fP.cyl, mT, 0, -1.6, 0, 7.6, 4.5, 11.4, top);
+    if (OT.badge) fput(fP.ball, mT, FD.torsoD * .45, tH * .68, -2.5, 2.4, 2.4, 2.4, colOf(FG.gold));
+    if (OT.holster) fput(fP.box, mT, .5, .4, 6, 2.6, 3, 1.8, dark);
+    const hy = tH + FD.neck + hd / 2, mask = OT.head === 'mask';
+    fput(fP.head, mT, 0, hy, 0, hd * .94, hd, hd, mask ? dark : skin);
+    if (mask) { fput(fP.box, mT, hd * .44, hy + hd * .1, 0, .6, hd * .2, hd * .74, skin); for (const d of side) fput(fP.ball, mT, hd * .5, hy + hd * .1, d * 1.6, 1.5, 1.5, 1.5, eye) }
+    else for (const d of side) fput(fP.ball, mT, hd * .46, hy + .6, d * 1.8, 1.5, 1.5, 1.5, eye);
+    if (OT.head === 'cap') { const r = hd * .52; fput(fP.cyl, mT, 0, hy + hd * .33, 0, 2 * r, hd * .34, 2 * r, hat); fput(fP.box, mT, 5.8, hy + hd * .22, 0, 4.4, .7, 9, hat) }
+    else if (OT.head === 'helmet') { fput(fP.dome, mT, 0, hy + hd * .05, 0, hd * 1.12, hd * 1.12, hd * 1.12, hat); fput(fP.box, mT, hd * .45, hy, 0, .5, hd * .28, hd * .72, colOf(FG.visor)) }
+    else if (OT.head === 'beanie') { const r = hd * 1.06; fput(fP.dome, mT, 0, hy + hd * .08, 0, r, r * 1.15, r, hat) }
+    else if (OT.head === 'hair') fput(fP.dome, mT, 0, hy + hd * .03, 0, hd * 1.06, hd * 1.06, hd * 1.06, hat, 0, .25);
+    // Arme (0 rechts +z, 1 links -z)
+    for (let i = 0; i < 2; i++) {
+      const d = side[i], aw = FD.armT;
+      jt(mT, mS[i], 0, tH - aw * .45, d * (FD.torsoW / 2 + aw * .35), -d * sh[i][0], 0, sh[i][1]);
+      fput(fP.cap, mS[i], 0, -FD.armU / 2, 0, aw, (FD.armU + aw * .4) / 1.5, aw, top);
+      jt(mS[i], mE[i], 0, -FD.armU, 0, kneel ? -d * el[i] : 0, 0, kneel ? 0 : el[i]);
+      fput(fP.cap, mE[i], 0, -FD.armF / 2, 0, aw * .92, (FD.armF + aw * .37) / 1.5, aw * .92, top);
+      fput(fP.ball, mE[i], 0, -FD.armF, 0, aw * 1.24, aw * 1.24, aw * 1.24, glv);
+    }
+    // Beine
+    for (let i = 0; i < 2; i++) {
+      const d = side[i], lt = FD.legT;
+      jt(mH, mL, 0, 0, d * FD.hipW, spread[i], 0, hip[i]);
+      fput(fP.cap, mL, 0, -FD.thigh / 2, 0, lt, (FD.thigh + .6 + lt * .4) / 1.5, lt, bot);
+      jt(mL, mK, 0, -FD.thigh, 0, 0, 0, kn[i]);
+      fput(fP.cap, mK, 0, -FD.shin / 2, 0, lt * .9, (FD.shin + lt * .36) / 1.5, lt * .9, bot);
+      fput(fP.ball, mK, lt * .3, -FD.shin - FD.foot / 2, 0, 8, 3.4, 5.7, colOf(FG.boot));
+    }
+    // Zusatzteile: Pistole in der rechten Hand, Gewehr vor der Brust, Schild links vor dem Koerper, Beute auf dem Ruecken
+    let extra = 0;
+    if (gun) { jt(mE[0], mD, 0, -FD.armF, 0); fput(fP.box, mD, .2, -3.3, 0, 1.7, 5.5, 1.3, gunC); fput(fP.box, mD, -.6, -.9, 0, 2.6, 1.4, 1.2, gunC) }
+    if (rifle) {
+      const L0 = 18; fput(fP.box, mT, FD.torsoD / 2 + 1 + L0 / 2 - 6, tH * .82, 1.5, L0, 1.8, 1.5, gunC); fput(fP.box, mT, FD.torsoD / 2 + 1 - 6, tH * .82 - .7, 1.5, 5.5, 3.2, 1.7, colOf(FG.stock)); fput(fP.box, mT, FD.torsoD / 2 + 3, tH * .82 + 1.8, 1.5, 6, 1.8, 1.8, gunC); extra++;
+    }
+    if (shield) { const c = xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]; _p.set(FD.torsoD / 2 + 5, 16.5, -1.5); _q.identity(); _s.set(1.6, 27, 17); _l.compose(_p, _q, _s); fm.multiplyMatrices(mB, _l); const i = pShld.u++; pShld.im.setMatrixAt(i, fm); pShld.im.setColorAt(i, hitNow ? hitC.copy(c).lerp(white, FG.hit) : c); pShld.a.iA.setX(i, FG.shieldA); extra++ }
+    if (o.bag) { fput(fP.cap, mT, -FD.torsoD / 2 - 3, tH * .58, 0, 6.6, 10.6 / 1.5, 6.6, colOf(FG.bag), Math.PI / 2, 0); extra++ }
+    figInfo.push([o.k, o.row, nP, Math.round(topY * 10) / 10, tHex, Math.round(sigN * 100) / 100]);
+    return extra;
+  }
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
-    let nB = 0, nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
-    for (const [o, e] of F) { if (!(e.lie || o.lie)) nB++; if (o.sh >= 0) nX++; if (o.rf) nX++; if (o.bag) nX++ }
+    let nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
     const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
-    pSh.size(nSh); pBody.size(nB); pSpr.size(F.length); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
-    let iS = 0, iB = 0, iX = 0, lie = 0, hit = 0;
-    const shA = pSh.a.iSA, cel = pSpr.a.iCell, dim = pSpr.a.iDim, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
+    pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
+    for (const key in fP) { fP[key].size(F.length * fMax[key]); fP[key].u = 0 }
+    pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
+    let iS = 0, iX = 0, lie = 0, hit = 0, gear = 0;
+    const shA = pSh.a.iSA, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
     F.forEach(([o, e], i) => {
-      const lying = !!(e.lie || o.lie), cw = o.col === 8, hb = (e.h || C.bodyH) * (cw ? C.cowerK : 1), hs = lying ? C.lieH : hb + C.spriteH - C.bodyH;
+      const lying = !!(e.lie || o.lie), cw = o.col === 8;
       if (lying) { put(pSh, iS, o.x, o.y, .4, o.a, 52, 1, 28, 3, 4); shA.setXY(iS++, 0, .3 * o.al); lie++ }
-      else { if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA) } if (o.fl) dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }); put(pBody, iB, o.x, o.y, 0, o.a, e.r, hb, e.r); pBody.im.setColorAt(iB++, chCol[o.row] || chCol[0]) }
-      put(pSpr, i, o.x, o.y, hs, o.a, 64, 1, 64); cel.setXYZW(i, o.col, o.row, o.hit, o.al); dim.setX(i, 0); if (o.hit) hit++; o._hs = hs;
-      if (o.sh >= 0) box(o.x, o.y, 0, o.a, 3, hb + 4, 26, 15, 0, xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]);
-      if (o.rf) box(o.x, o.y, hs + .6, o.a, 26, 2.5, 2.5, 21, 3, xcol.rf[0]);
-      if (o.bag) box(o.x, o.y, hb * .45, o.a, 14, 13, 16, -13, 0, xcol.bag[0]);
+      else { if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA) } if (o.fl) dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }) }
+      gear += rigFig(o, e); if (o.hit) hit++; o._hs = lying ? FG.hsLie : cw ? FG.hsCow : FG.hs; void i;
     });
+    let figParts = 0, figCalls = 0; for (const key in fP) { const P = fP[key]; figParts += P.u; figCalls += P.u > 0 ? 1 : 0; P.finish() }
+    pShld.finish(); if (pShld.u > 0) figCalls++;
+    st.figParts = figParts; st.figCalls = figCalls; st.gear = gear; st.fi = figInfo.slice();
     Cs.forEach(([o, e], j) => {
       const i = F.length + j, h = e.h, dimK = o.dim ? C.wreckDim : 0;
       if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1] + 1, .4, o.a, o.L * .97, 1, o.W * .88); shA.setXY(iS++, 1, .3) }
@@ -425,7 +547,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     });
     const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, o._hs, o.a, 64, 1, 64); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
     st.sil = S.length; st.sk = sk;
-    st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
+    st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX + gear; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
     dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
   }
 
@@ -443,7 +565,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     fragmentShader: 'varying vec4 vC; void main() { if (vC.a <= 0.002) discard; gl_FragColor = vC;\n#include <colorspace_fragment>\n}' });
   const pSc = pool('szenario', cubeGeo, colMat, {}, true, 2, 1), pScL = pool('szenario-licht', cubeGeo, glowMat, { iA: 1 }, true, 6), pScF = pool('szenario-flaeche', cubeGeo, flatMat, { iA: 1 }, true, 5),
     pScI = pool('szenario-bild', box, mats[0], {}, false, -1, 1);
-  pools.push(pSc, pScL, pScF, pScI);
+  const pShld = pool('fig-schild', cubeGeo, flatMat, { iA: 1 }, true, 5);
+  pools.push(pSc, pScL, pScF, pScI, pShld);
   const CONE_MAX = 16 * 42; // Dreiecke: 16 Wachen zu je 41 Strahlen
   const coneGeo = new THREE.BufferGeometry(); coneGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CONE_MAX * 9), 3).setUsage(THREE.DynamicDrawUsage)); coneGeo.setAttribute('cc', new THREE.BufferAttribute(new Float32Array(CONE_MAX * 12), 4).setUsage(THREE.DynamicDrawUsage));
   const coneMesh = new THREE.Mesh(coneGeo, coneMat); coneMesh.frustumCulled = false; coneMesh.renderOrder = 7; coneMesh.name = 'sichtkegel'; coneMesh.visible = false; scene.add(coneMesh);
@@ -819,7 +942,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -830,7 +953,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [bodyGeo, cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, chFTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [...Object.values(figGeo), cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
   return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }

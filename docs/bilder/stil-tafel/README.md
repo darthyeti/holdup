@@ -1,6 +1,6 @@
 # Stil-Tafel Low-Poly-Figuren (Ticket 160, 3D-2b)
 
-Drei Stilrichtungen für die Figuren aus Grundkörpern (Entscheidung E1, docs/plan-3d.md Abschnitt 3). Noch nichts davon ist im Spiel, die Bilder dienen nur der Auswahl.
+Drei Stilrichtungen für die Figuren aus Grundkörpern (Entscheidung E1, docs/plan-3d.md Abschnitt 3). Entschieden (Till, 11. November 2026): Stil B, gebaut in 3D-2b (docs/plan-3d.md, Abschnitt 2.18). Die Bilder dienen der Auswahl.
 
 Alle Bilder zeigen dieselbe Aufstellung auf hellem Bankboden mit Tresen, Tageslicht (Sonne von Nordwest, Schatten nach Südost wie in 2D) und Himmelslicht. Die Spielkamera ist die aus `js/view3d.js` (fov 30, Kippung 25 Grad, Abstand so, dass 544 Weltpixel die Bildhöhe füllen), die Figuren sind so groß wie im Spiel (Kachel 32, Wand 64). Erzeugt mit `node tools/stil-tafel-3d.js` (gibt auch Dreiecke und Teile je Figur aus) aus `tools/stil-tafel-3d.html` (im Browser ansehen über einen Webserver: `tools/stil-tafel-3d.html?stil=B&shot=nah`).
 

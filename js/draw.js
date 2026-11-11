@@ -367,13 +367,13 @@ for(const o of DX.players){if(!(o.dead&&o.dn>0))continue;const bl2=Math.floor(DX
 for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;g.save();g.setLineDash([6,6]);g.lineDashOffset=-DX.time*14;g.strokeStyle=q.k==='grd'?'rgba(255,179,71,.7)':'rgba(138,208,255,.7)';g.lineWidth=2;g.beginPath();q.line.forEach((pp,i)=>i?g.lineTo(pp[0],pp[1]):g.moveTo(pp[0],pp[1]));g.closePath();g.stroke();g.restore();
 g.fillStyle=q.k==='grd'?'#ffb347':'#8ad0ff';g.font='11px monospace';g.fillText(q.k==='grd'?'WACHE':'MANAGER',q.x-18,q.y-24)}}
 /* 3D-2a (Ticket 151): Figuren und Fahrzeuge fuer die 3D-Ansicht. Dieselbe Auswahl wie lyWorld (Sichtpruefung los, Zustaende, Versatz durch twd, Lehnen und Rueckstoss), nur gelesen, kein Zustand.
-   f: Figuren {k Art (V3CFG.figs), x, y, a, row, col (Zelle in chars.png), hit (chars_flash), lie (liegt am Boden), al (Deckkraft), sh (Schild 0 bis 1), rf (Gewehr), bag (traegt Beute)}.
+   f: Figuren {k Art (V3CFG.figs), x, y, a, row, col (Zelle in chars.png), hit (chars_flash), lie (liegt am Boden), al (Deckkraft), sh (Schild 0 bis 1), rf (Gewehr), bag (traegt Beute), w (Laufphase im Bogenmass, fuer den Beinschwung), ar (haelt die Waffe vor sich: Gegner, Fahrer, bewaffneter Spieler)}.
    sc: Silhouettenfarbe hinter Verdeckung (3D-3, Ticket 152): Spieler und Team in ihrer Farbe (PC), Gegner in Sicht rot (SIL_EN), sonst keine.
    c: Fahrzeuge {k Art (V3CFG.cars), x, y, a, row (Zeile in cars.png), L, W (Laenge, Breite), fx, fy (gespiegelt wie in 2D), dim (Wrack), bl (Blaulicht 0, 1, 2)}. */
 const SIL_EN='#ff5a48';
 function figs3d(){
 const P=DX.p,seeAll=NET.spec&&(DX.specAll||DX.specFree),F=[],C=[],see=(x,y)=>los(P.x,P.y,x,y);DX.losAll=seeAll;
-const fg=(k,x,y,a,row,col,hit,lie,al)=>{const o={k,x,y,a,row,col,hit:hit>0?1:0,lie:lie?1:0,al:al==null?1:al,sh:-1,rf:0,bag:0,fl:0};F.push(o);return o};
+const fg=(k,x,y,a,row,col,hit,lie,al,w)=>{const o={k,x,y,a,row,col,hit:hit>0?1:0,lie:lie?1:0,al:al==null?1:al,sh:-1,rf:0,bag:0,fl:0,w:w||0,ar:0};F.push(o);return o};
 const pol=c=>c.civ||c.dead?0:1+(Math.floor(DX.time*5+c.id)%2);
 if(DX.vanArr||DX.vanX!==DX.LANE.van.from){const m=DX.LANE.van.mid(DX.vanX),vd=DX.LANE.van.dir,ay=DX.LANE.axis==='y';C.push({k:'van',x:m[0],y:m[1],a:ay?(vd<0?-Math.PI/2:Math.PI/2):0,row:0,L:128,W:64,fx:!ay&&vd<0?-1:1,fy:ay&&vd<0?-1:1,dim:0,bl:0})}
 for(const c of DX.pcs){const w=DX.LANE.axis==='x'?Math.cos(c.a)<0:Math.sin(c.a)<0;C.push({k:c.dead?'wreck':c.civ?'civ':'pol',x:c.x,y:c.y,a:w?c.a-Math.PI:c.a,row:c.cv||1,L:128,W:64,fx:w?-1:1,fy:1,dim:c.dead?1:0,bl:pol(c)})}
@@ -382,10 +382,10 @@ for(const c of DX.pcs){const w=DX.LANE.axis==='x'?Math.cos(c.a)<0:Math.sin(c.a)<
 for(const c of DX.corp)if(see(c.x,c.y))fg('tot',c.x,c.y,c.a,c.row,7,0,1,Math.min(1,c.t/3));
 for(const c of DX.capd)if(see(c.x,c.y))fg('cap',c.x,c.y,c.a,2,8,0,0);
 for(const o of DX.players)if(o.dead&&o.dn>0&&(o===DX.me||see(o.x,o.y)))fg('down',o.x,o.y,o.a+3.1,plRow(o),7,0,1);
-for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0)}
-for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0);o.sc=SIL_EN;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1;if(e.fl>0)o.fl=1}
-{const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8)){const o=fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0);if(v.fl>0)o.fl=1}}}
-const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0);f.bag=o.units>0?1:0;f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
+for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0,1,q.w)}
+for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0,1,e.w);o.sc=SIL_EN;o.ar=e.sur?0:1;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1;if(e.fl>0)o.fl=1}
+{const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8)){const o=fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0,1,v.w);o.ar=DX.dl.st===3?0:1;if(v.fl>0)o.fl=1}}}
+const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
