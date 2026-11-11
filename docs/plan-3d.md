@@ -195,6 +195,8 @@ Figuren sind der sichtbarste Punkt des Stils. Optionen:
 
 **Empfehlung.** Mit **B** bauen, mit **A** als Übergang und Rückfall: 3D-2 liefert zuerst Billboards (nach dem Prototyp), damit alle Szenen sofort spielbar sind; 3D-2b ersetzt sie schrittweise durch Low-Poly-Körper (Spieler, Polizei, Zivilisten, Schild-Beamte, Scharfschützen, Geiseln, jeweils Farbe und Zusatzteile). C bleibt eine spätere Stufe, wenn Till den Stil festgelegt hat (Entscheidung E1). Wichtig: Die Wahl ändert nur 3D-2; alle anderen Tickets gelten für beide.
 
+**Stil-Tafel (Ticket 160, 8. November 2026).** Drei Stilrichtungen für die Low-Poly-Körper (A kantig minimal, B weicher Spielzeugstil, C schlank und realistischer) als Bilder aus der Spielkamera, Nahaufnahme und mit Lauf- und Ziel-Posen: `docs/bilder/stil-tafel/` (README mit Einschätzung, Dreiecken je Figur und Empfehlung), Werkzeug `tools/stil-tafel-3d.html` und `tools/stil-tafel-3d.js`. Wartet auf Tills Wahl, danach Einbau in 3D-2b.
+
 **Animationen.** Der Zustand kommt aus den vorhandenen Feldern (Winkel `a`, Laufphase, `hp`, Zielen, Schießen, `bd` am Boden/Bewusstlos, Geisel, Tragen, Leiter, Schild). Abbildung bei Modellen:
 
 - **Laufen:** Beine und Arme schwingen nach der gleichen Laufphase, die 2D für die Sprite-Zelle nimmt (kein neuer Zustand im Spiel).

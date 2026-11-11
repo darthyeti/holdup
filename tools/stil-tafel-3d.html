@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Holdup Stil-Tafel 3D</title>
+<!--
+  Stil-Tafel fuer Ticket 160 (3D-2b, Low-Poly-Figuren, Entscheidung E1): drei Stilrichtungen fuer Figuren aus Grundkoerpern, nur zum Ansehen, kein Spielcode.
+  Aufruf ueber einen Webserver (ES-Modul): tools/stil-tafel-3d.html?stil=A&shot=spiel (stil A, B, C; shot spiel, nah, bewegung, vergleich).
+  Bilder erzeugt tools/stil-tafel-3d.js (Playwright), Ablage docs/bilder/stil-tafel/.
+  Kamera wie js/view3d.js: fov 30, Kippung 25 Grad, Abstand so, dass die Bildhoehe am Ziel 544 Weltpixel zeigt (wie 2D). Einheit Weltpixel, Kachel 32.
+  Anders als im Spiel (Licht erst mit 3D-5): hier Sonne mit Schatten und Himmelslicht, damit die Stile unter Tageslicht verglichen werden koennen.
+-->
+<style>
+  html, body { margin: 0; background: #1a1c20; color: #eee; font: 13px/1.3 system-ui, sans-serif; }
+  #wrap { position: relative; width: 960px; height: 544px; overflow: hidden; }
+  canvas { display: block; }
+  .lab { position: absolute; transform: translateX(-50%); white-space: nowrap; font-weight: 600; font-size: 11px; color: #1d1f24; background: rgba(255, 255, 255, .78); padding: 1px 5px; border-radius: 3px; }
+  #title { position: absolute; left: 10px; top: 8px; font-weight: 700; font-size: 15px; color: #fff; background: rgba(20, 22, 28, .78); padding: 4px 9px; border-radius: 4px; }
+  #title small { font-weight: 400; font-size: 12px; opacity: .85; margin-left: 6px; }
+  .row { position: absolute; left: 10px; font-weight: 700; font-size: 14px; color: #fff; background: rgba(20, 22, 28, .78); padding: 3px 8px; border-radius: 4px; transform: translateY(-50%); }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="cv"></canvas><div id="ov"></div></div>
+<script type="module">
+import * as THREE from '../assets/three.module.min.js';
+
+const VW = 960, VH = 544, FOV = 30;
+const cv = document.getElementById('cv'), ov = document.getElementById('ov');
+const ren = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
+ren.setPixelRatio(window.devicePixelRatio || 1); ren.setSize(VW, VH);
+ren.outputColorSpace = THREE.SRGBColorSpace; ren.shadowMap.enabled = true; ren.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0e1014);
+const cam = new THREE.PerspectiveCamera(FOV, VW / VH, 10, 9000);
+
+// Kamera wie js/view3d.js camSet: Abstand D, Kippung a (Grad aus der Senkrechten), Ziel (x, z) auf dem Boden
+function camAt(x, z, tilt, D, h) {
+  h = h || 0;
+  D = D || (VH / 2) / Math.tan(FOV / 2 * Math.PI / 180);
+  const a = tilt * Math.PI / 180;
+  cam.position.set(x, h + D * Math.cos(a), z + D * Math.sin(a)); cam.lookAt(x, h, z); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+}
+
+// ---------- Licht: Tageslicht, Sonne von Nordwest (Schatten faellt wie in 2D nach Suedost), Himmelslicht als Fuellung ----------
+scene.add(new THREE.HemisphereLight(0xe6eef8, 0x9a8f80, 1.25));
+const sun = new THREE.DirectionalLight(0xfff2de, 2.3);
+sun.position.set(-260, 620, -330); sun.target.position.set(0, 0, 0);
+sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.4; sun.shadow.radius = 2;
+Object.assign(sun.shadow.camera, { left: -1000, right: 1000, top: 900, bottom: -900, near: 50, far: 2400 });
+scene.add(sun, sun.target);
+
+// ---------- Bankboden (heller Stein, Kacheln 32 px) mit Tresen und Wand im Hintergrund ----------
+function floorTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+    const v = 0; g.fillStyle = `rgb(${233 - v},${228 - v},${218 - v})`; g.fillRect(x * 128, y * 128, 128, 128);
+    g.strokeStyle = 'rgba(170,160,145,.10)'; g.lineWidth = 3;
+    for (let k = 0; k < 2; k++) { g.beginPath(); let px = x * 128 + rnd() * 128, py = y * 128 + rnd() * 128; g.moveTo(px, py); for (let i = 0; i < 4; i++) { px += (rnd() - .5) * 60; py += (rnd() - .5) * 60; g.lineTo(px, py); } g.stroke(); }
+  }
+  g.fillStyle = '#d0c7b6'; for (let i = 0; i <= 4; i++) { g.fillRect(i * 128 - 2, 0, 4, 512); g.fillRect(0, i * 128 - 2, 512, 4); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+const ftex = floorTex(); ftex.repeat.set(2400 / 128, 1800 / 128);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(2400, 1800, 48, 36), new THREE.MeshLambertMaterial({ map: ftex }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const env = new THREE.Group(); scene.add(env);
+function envBox(w, h, d, x, y, z, col) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: col })); m.position.set(x, y + h / 2, z); m.castShadow = m.receiveShadow = true; env.add(m); return m; }
+
+// ---------- Farben je Stil ----------
+// A kantig minimal: flache, mittlere Farben. B Spielzeug: kraeftig, gesaettigt. C realistischer: dunklere, gedeckte Toene.
+const PAL = {
+  A: { pl: 0xe07a2e, pl2: 0x3f7fd6, dark: 0x2c2f36, skin: 0xe2b48c, cop: 0x3b5a9a, copB: 0x1f2a44, swat: 0x30343b, swatB: 0x23262b, snp: 0x4c5a40, snpB: 0x2f3529, grd: 0x7a828e, grdB: 0x353a42, civ: 0xb88a5a, civB: 0x3d5a80, hos: 0xd9dde3, hosB: 0x5a4a6a, hair: 0x5a3b22, hair2: 0xd8b56a, sh: 0xa9c3df, bag: 0x6a5536, gun: 0x24262b, boot: 0x1d1f23, metal: 0x8a9099 },
+  B: { pl: 0xff7a1a, pl2: 0x2f7bff, dark: 0x30323c, skin: 0xf4c49b, cop: 0x2f6bff, copB: 0x1d2f6b, swat: 0x3a3e48, swatB: 0x2a2d34, snp: 0x5b7a3c, snpB: 0x34442a, grd: 0x9aa6b8, grdB: 0x3e4552, civ: 0xf0a63c, civB: 0x4d79c7, hos: 0xffffff, hosB: 0xc74d7a, hair: 0x6b4226, hair2: 0xffd35a, sh: 0x9fd0ff, bag: 0x8a6a3c, gun: 0x2a2c33, boot: 0x26282e, metal: 0xb5bcc6 },
+  C: { pl: 0xa85a24, pl2: 0x2e5f9e, dark: 0x1f2126, skin: 0xc4956f, cop: 0x2a3b5c, copB: 0x182030, swat: 0x1e2125, swatB: 0x17191c, snp: 0x3a4232, snpB: 0x262b22, grd: 0x4e5560, grdB: 0x272b31, civ: 0x7d5f43, civB: 0x34465e, hos: 0xb9c0c8, hosB: 0x3e3a46, hair: 0x3a2717, hair2: 0x9c8250, sh: 0x5d6a78, bag: 0x3e3326, gun: 0x15171a, boot: 0x111215, metal: 0x6e747c, vest: 0x2b2f35, vestP: 0x1f8a4a, belt: 0x151618 },
+};
+
+// ---------- Proportionen je Stil (Weltpixel, Kachel 32, Wand 64) ----------
+const PROP = {
+  A: { foot: 2, shin: 7.5, thigh: 7.5, hipW: 3.2, legT: 3.8, torsoH: 11, torsoW: 11, torsoD: 6.5, armU: 6.5, armF: 6, armT: 3.4, head: 7.5, neck: .5 },
+  B: { foot: 2.2, shin: 5.5, thigh: 5.5, hipW: 3.2, legT: 4.6, torsoH: 10, torsoW: 12, torsoD: 9, armU: 5.2, armF: 5, armT: 4.2, head: 12, neck: .4 },
+  C: { foot: 1.8, shin: 9.5, thigh: 9, hipW: 2.7, legT: 3.1, torsoH: 12.5, torsoW: 10, torsoD: 5.8, armU: 7.2, armF: 6.6, armT: 2.6, head: 6.4, neck: 1.2 },
+};
+
+const matCache = {};
+function mat(st, col, o) {
+  const k = st + col + (o ? JSON.stringify(o) : '');
+  if (matCache[k]) return matCache[k];
+  let m;
+  if (st === 'A') m = new THREE.MeshLambertMaterial({ color: col, flatShading: true });
+  else if (st === 'B') m = new THREE.MeshStandardMaterial({ color: col, roughness: .45, metalness: 0 });
+  else m = new THREE.MeshStandardMaterial({ color: col, roughness: .82, metalness: o && o.metal ? .35 : 0, flatShading: !!(o && o.flat) });
+  if (o && o.op) { m.transparent = true; m.opacity = o.op; }
+  return (matCache[k] = m);
+}
+function mesh(geo, m) { const x = new THREE.Mesh(geo, m); x.castShadow = true; x.receiveShadow = true; return x; }
+
+// Segment ab dem Gelenk nach unten (-y), Laenge len, Dicke w, Tiefe d
+function seg(st, len, w, d, col) {
+  let g;
+  if (st === 'A') g = new THREE.BoxGeometry(w, len, d);
+  else if (st === 'B') { const r = w / 2; g = new THREE.CapsuleGeometry(r, Math.max(.1, len - w * .6), 3, 10); }
+  else { const r = w / 2; g = new THREE.CapsuleGeometry(r, Math.max(.1, len - w * .5), 2, 7); }
+  g.translate(0, -len / 2, 0);
+  return mesh(g, mat(st, col));
+}
+// Rumpf: A Quader, B Kapsel (eifoermig), C sich nach unten verjuengender Zylinder
+function torsoGeo(st, P) {
+  let g;
+  if (st === 'A') g = new THREE.BoxGeometry(P.torsoW, P.torsoH, P.torsoD);
+  else if (st === 'B') { g = new THREE.CapsuleGeometry(P.torsoW / 2, P.torsoH - P.torsoW * .55, 4, 12); g.scale(1, 1, P.torsoD / P.torsoW); }
+  else { g = new THREE.CylinderGeometry(P.torsoW / 2, P.torsoW / 2 * .78, P.torsoH, 8); g.scale(1, 1, P.torsoD / P.torsoW); }
+  g.translate(0, P.torsoH / 2, 0); return g;
+}
+function headGeo(st, P) {
+  if (st === 'A') return new THREE.BoxGeometry(P.head * .9, P.head, P.head * .9).translate(0, P.head / 2, 0);
+  if (st === 'B') return new THREE.SphereGeometry(P.head / 2, 16, 12).translate(0, P.head / 2, 0);
+  return new THREE.SphereGeometry(P.head / 2, 10, 8).scale(.92, 1.12, 1).translate(0, P.head * .56, 0);
+}
+function box(st, w, h, d, col, o) { return mesh(new THREE.BoxGeometry(w, h, d), mat(st, col, o)); }
+
+// ---------- Ausstattung je Art ----------
+function outfit(st, kind) {
+  const C = PAL[st];
+  const o = {
+    raeuber: { top: C.pl, bot: C.dark, head: 'mask', weapon: 'pistol', bag: 1, gloves: C.dark },
+    raeuber2: { top: C.pl2, bot: C.dark, head: 'mask', weapon: null, gloves: C.dark },
+    polizist: { top: C.cop, bot: C.copB, head: 'cap', hat: C.copB, weapon: 'pistol', vest: st === 'C' ? C.vest : 0, belt: 1 },
+    schild: { top: C.swat, bot: C.swatB, head: 'helmet', hat: C.swat, weapon: 'pistol', shield: 1, vest: st === 'C' ? C.vest : 0, belt: 1, gloves: C.dark },
+    scharf: { top: C.snp, bot: C.snpB, head: 'beanie', hat: C.snpB, weapon: 'sniper', vest: st === 'C' ? C.snpB : 0, gloves: C.dark },
+    wache: { top: C.grd, bot: C.grdB, head: 'cap', hat: C.grdB, weapon: null, belt: 1, holster: 1 },
+    zivil: { top: C.civ, bot: C.civB, head: 'hair', hat: C.hair, weapon: null, coat: 1 },
+    geisel: { top: C.hos, bot: C.hosB, head: 'hair', hat: C.hair2, weapon: null },
+  }[kind];
+  o.skin = C.skin; o.boot = C.boot; return o;
+}
+
+// Figur: Wurzel (Gierung), Huefte, Rumpf, Kopf, Schultern mit Ober- und Unterarm, Beine mit Ober- und Unterschenkel und Fuss.
+// Blickrichtung lokal +z, rechte Hand auf -x. Vorwaerts schwingen ist rotation.x negativ.
+function figure(st, kind, pose, ph) {
+  const P = PROP[st], C = PAL[st], O = outfit(st, kind);
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const legH = P.foot + P.shin + P.thigh;
+  const hips = new THREE.Group(); hips.position.y = legH; body.add(hips);
+  // Becken
+  const pel = st === 'A' ? box(st, P.torsoW * .92, 3, P.torsoD * .95, O.bot) : mesh(st === 'B' ? new THREE.SphereGeometry(P.torsoW * .46, 12, 8).scale(1, .55, P.torsoD / P.torsoW) : new THREE.CylinderGeometry(P.torsoW * .4, P.torsoW * .38, 3, 8).scale(1, 1, P.torsoD / P.torsoW), mat(st, O.bot));
+  pel.position.y = st === 'B' ? .4 : .2; hips.add(pel);
+  const torso = new THREE.Group(); torso.position.y = st === 'A' ? 1.5 : 1; hips.add(torso);
+  const tm = mesh(torsoGeo(st, P), mat(st, O.top)); torso.add(tm);
+  // Mantel (Zivilist): Saum unter dem Rumpf
+  if (O.coat) { const s = st === 'A' ? box(st, P.torsoW * .98, 4, P.torsoD * 1.02, O.top) : mesh(new THREE.CylinderGeometry(P.torsoW * .44, P.torsoW * .5, 4.5, st === 'B' ? 12 : 8).scale(1, 1, P.torsoD / P.torsoW * (st === 'B' ? .9 : 1.05)), mat(st, O.top)); s.position.y = -1.6; torso.add(s); }
+  // Weste (Stil C): Platte vorn und hinten, Taschen
+  if (O.vest) {
+    const vw = P.torsoW * .96, vh = P.torsoH * .7, vd = P.torsoD * 1.18;
+    const v = box(st, vw, vh, vd, O.vest); v.position.y = P.torsoH * .52; torso.add(v);
+    for (const dx of [-2.6, 0, 2.6]) { const p = box(st, 2, 2.2, 1, C.dark); p.position.set(dx, P.torsoH * .3, vd / 2 + .3); torso.add(p); }
+    if (kind === 'polizist') { const s = box(st, vw * .8, 1.3, .3, 0xd8dde3); s.position.set(0, P.torsoH * .7, vd / 2 + .1); torso.add(s); }
+  }
+  if (O.belt && st === 'C') { const b = mesh(new THREE.CylinderGeometry(P.torsoW * .41, P.torsoW * .41, 1.3, 10).scale(1, 1, P.torsoD / P.torsoW * 1.1), mat(st, C.belt)); b.position.y = .7; torso.add(b); if (O.holster) { const h = box(st, 1.6, 3, 2.4, C.belt); h.position.set(-P.torsoW * .45, -.6, .5); torso.add(h); } }
+  if (O.holster && st !== 'C') { const h = box(st, 1.8, 3, 2.6, C.dark); h.position.set(-P.torsoW * .5, .4, .5); torso.add(h); }
+  // Polizeiabzeichen (B und C), Schulter-Streifen der Wache
+  if (kind === 'polizist' && st === 'B') { const s = mesh(new THREE.SphereGeometry(1.2, 8, 6), mat(st, 0xffd34a)); s.position.set(2.5, P.torsoH * .68, P.torsoD * .45); torso.add(s); }
+  // Kopf
+  const neck = new THREE.Group(); neck.position.y = P.torsoH + P.neck; torso.add(neck);
+  if (st === 'C') { const n = seg(st, P.neck + 1.2, 2.2, 2.2, O.skin); n.position.y = P.neck + .4; neck.add(n); }
+  const headCol = O.head === 'mask' ? C.dark : O.skin;
+  const hm = mesh(headGeo(st, P), mat(st, headCol)); neck.add(hm);
+  addHead(st, P, C, O, neck, kind);
+  // Arme
+  const arms = [];
+  for (const side of [1, -1]) { // +1 links (+x), -1 rechts
+    const sh = new THREE.Group(); sh.position.set(side * (P.torsoW / 2 + P.armT * .35), P.torsoH - P.armT * .45, 0); torso.add(sh);
+    sh.add(seg(st, P.armU, P.armT, P.armT, O.top));
+    const el = new THREE.Group(); el.position.y = -P.armU; sh.add(el);
+    el.add(seg(st, P.armF, P.armT * .92, P.armT * .92, O.coat ? O.top : (st === 'C' && O.vest ? O.top : O.top)));
+    const hand = new THREE.Group(); hand.position.y = -P.armF; el.add(hand);
+    const hc = O.gloves || O.skin;
+    if (st === 'B') { const h = mesh(new THREE.SphereGeometry(P.armT * .62, 8, 6), mat(st, hc)); hand.add(h); }
+    else { const h = box(st, P.armT * .9, P.armT * .9, P.armT, hc); h.position.y = -P.armT * .3; hand.add(h); }
+    arms.push({ sh, el, hand });
+  }
+  // Beine
+  const legs = [];
+  for (const side of [1, -1]) {
+    const hp = new THREE.Group(); hp.position.set(side * P.hipW, 0, 0); hips.add(hp);
+    hp.add(seg(st, P.thigh + .6, P.legT, P.legT, O.bot));
+    const kn = new THREE.Group(); kn.position.y = -P.thigh; hp.add(kn);
+    kn.add(seg(st, P.shin, P.legT * .9, P.legT * .9, O.bot));
+    const ft = new THREE.Group(); ft.position.y = -P.shin; kn.add(ft);
+    const f = st === 'B' ? mesh(new THREE.SphereGeometry(P.legT * .62, 8, 6).scale(1, .6, 1.4), mat(st, O.boot)) : box(st, P.legT * .95, P.foot, P.legT * 1.6, O.boot);
+    f.position.set(0, -P.foot / 2, P.legT * .3); ft.add(f);
+    legs.push({ hp, kn, ft });
+  }
+  const R = arms[1], L = arms[0];
+  // Waffe
+  let gun = null;
+  if (O.weapon === 'pistol') {
+    gun = new THREE.Group();
+    const b = box(st, 1.3, 5.5, 1.7, C.gun); b.position.y = -3; gun.add(b);
+    const gr = box(st, 1.2, 1.4, 2.6, C.gun); gr.position.set(0, -.6, -.6); gun.add(gr);
+    gun.position.set(0, -P.armT * .3, .2); R.hand.add(gun);
+  }
+  let rifle = null;
+  if (O.weapon === 'sniper') {
+    rifle = new THREE.Group();
+    const L0 = st === 'B' ? 18 : 24;
+    const b = box(st, 1.5, 1.8, L0, C.gun); b.position.z = L0 / 2 - 6; rifle.add(b);
+    const st0 = box(st, 1.7, 3.2, 5.5, st === 'A' ? 0x5b4a36 : st === 'B' ? 0x7a5532 : 0x2c2620); st0.position.set(0, -.7, -6); rifle.add(st0);
+    const sc = mesh(new THREE.CylinderGeometry(.9, .9, 6, st === 'A' ? 6 : 8).rotateX(Math.PI / 2), mat(st, C.gun)); sc.position.set(0, 1.8, 2); rifle.add(sc);
+    torso.add(rifle);
+  }
+  // Schild: vor dem Koerper am linken Arm
+  let shield = null;
+  if (O.shield) {
+    shield = new THREE.Group();
+    const sw = 17, shh = 27;
+    const s = box(st, sw, shh, 1.6, C.sh, st === 'B' ? { op: .82 } : null); s.position.y = shh / 2; shield.add(s);
+    if (st !== 'A') { const w = box(st, sw * .6, 2.2, .4, st === 'B' ? 0x2a3a55 : 0x9fb4c8); w.position.set(0, shh * .78, .9); shield.add(w); }
+    if (st === 'C') { const t = box(st, sw * .7, 1.6, .3, 0xd8dde3); t.position.set(0, shh * .45, .9); shield.add(t); }
+    root.add(shield);
+  }
+  // Beute auf dem Ruecken
+  if (O.bag) {
+    let b;
+    if (st === 'A') b = box(st, 7, 6.5, 4, C.bag);
+    else if (st === 'B') b = mesh(new THREE.CapsuleGeometry(3.3, 4, 3, 10).rotateZ(Math.PI / 2), mat(st, C.bag));
+    else { b = mesh(new THREE.CylinderGeometry(2.8, 2.8, 8.5, 8).rotateZ(Math.PI / 2), mat(st, C.bag)); const s = box(st, 1, P.torsoH * .8, .4, C.belt); s.position.set(1.5, -1, 2.6); s.rotation.z = .5; b.add(s); }
+    b.position.set(0, P.torsoH * .58, -P.torsoD / 2 - (st === 'B' ? 3 : 2.4)); torso.add(b);
+  }
+
+  const F = { st, P, root, body, hips, torso, neck, R, L, legs, gun, rifle, shield, legH };
+  applyPose(F, pose || 'stand', ph || 0);
+  let tris = 0; root.traverse(m => { if (m.isMesh) { const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+  root.userData.tris = tris; root.userData.parts = countParts(root);
+  return root;
+}
+function countParts(r) { let n = 0; r.traverse(m => { if (m.isMesh) n++; }); return n; }
+
+function addHead(st, P, C, O, neck, kind) {
+  const H = P.head;
+  const hy = st === 'C' ? H * .56 : H / 2; // Kopfmitte
+  if (O.head === 'mask') {
+    // Sturmhaube: Augenschlitz in Hautfarbe
+    const e = box(st, H * (st === 'B' ? .74 : .66), H * .2, .6, O.skin); e.position.set(0, hy + H * .1, (st === 'A' ? H * .45 : H * (st === 'B' ? .44 : .44))); neck.add(e);
+    if (st === 'B') for (const dx of [-1, 1]) { const ey = mesh(new THREE.SphereGeometry(.75, 6, 4), mat(st, 0x1a1a1a)); ey.position.set(dx * 1.6, hy + H * .1, H * .5); neck.add(ey); }
+    if (st === 'C') { const t = mesh(new THREE.SphereGeometry(H * .52, 8, 5, 0, Math.PI * 2, 0, Math.PI * .35).scale(.92, 1.1, 1), mat(st, C.dark)); t.position.y = hy + .3; neck.add(t); }
+    return;
+  }
+  // Gesicht: Augen fuer B (Spielzeug), Nase fuer C
+  if (st === 'B') for (const dx of [-1, 1]) { const ey = mesh(new THREE.SphereGeometry(.75, 6, 4), mat(st, 0x1a1a1a)); ey.position.set(dx * 1.8, hy + .6, H * .46); neck.add(ey); }
+  if (st === 'C') { const n = box(st, .9, 1.2, 1, O.skin); n.position.set(0, hy, H * .47); neck.add(n); }
+  if (O.head === 'cap') {
+    if (st === 'A') { const c = box(st, H * .98, H * .3, H * .98, O.hat); c.position.y = H * .95; neck.add(c); const b = box(st, H * .9, .7, H * .45, O.hat); b.position.set(0, H * .82, H * .62); neck.add(b); }
+    else {
+      const r = H * (st === 'B' ? .52 : .54);
+      const c = mesh(new THREE.CylinderGeometry(r * (st === 'C' ? 1.08 : 1), r, H * (st === 'B' ? .34 : .38), st === 'B' ? 14 : 9), mat(st, O.hat)); c.position.y = hy + H * (st === 'B' ? .33 : .36); neck.add(c);
+      const b = mesh(new THREE.CylinderGeometry(r * .8, r * .8, .6, st === 'B' ? 12 : 8, 1, false, -Math.PI / 2, Math.PI), mat(st, st === 'C' ? C.belt : O.hat)); b.position.set(0, hy + H * .22, r * .45); neck.add(b);
+      if (st === 'C') { const bd = box(st, 1.2, 1.3, .3, 0xcfb45a); bd.position.set(0, hy + H * .42, r * 1.02); neck.add(bd); }
+    }
+  } else if (O.head === 'helmet') {
+    if (st === 'A') { const c = box(st, H * 1.04, H * .52, H * 1.04, O.hat); c.position.y = H * .82; neck.add(c); const v = box(st, H * .8, H * .18, .6, 0x1a1c20); v.position.set(0, H * .52, H * .47); neck.add(v); }
+    else {
+      const r = H * (st === 'B' ? .56 : .6);
+      const c = mesh(new THREE.SphereGeometry(r, st === 'B' ? 16 : 10, st === 'B' ? 8 : 6, 0, Math.PI * 2, 0, Math.PI * .55), mat(st, O.hat)); c.position.y = hy + H * .05; neck.add(c);
+      const v = box(st, H * .9, H * .28, .5, st === 'B' ? 0x9fd0ff : 0x232a33, st === 'B' ? { op: .7 } : null); v.position.set(0, hy, H * .5); neck.add(v);
+    }
+  } else if (O.head === 'beanie') {
+    if (st === 'A') { const c = box(st, H * .98, H * .42, H * .98, O.hat); c.position.y = H * .86; neck.add(c); }
+    else { const r = H * (st === 'B' ? .53 : .54); const c = mesh(new THREE.SphereGeometry(r, st === 'B' ? 14 : 9, 6, 0, Math.PI * 2, 0, Math.PI * .5).scale(1, 1.15, 1), mat(st, O.hat)); c.position.y = hy + H * .08; neck.add(c); if (st === 'B') { const p = mesh(new THREE.SphereGeometry(1.3, 8, 6), mat(st, O.hat)); p.position.y = hy + r * 1.2; neck.add(p); } }
+  } else if (O.head === 'hair') {
+    if (st === 'A') { const c = box(st, H * .96, H * .26, H * .96, O.hat); c.position.y = H * .96; neck.add(c); const b = box(st, H * .96, H * .55, H * .2, O.hat); b.position.set(0, H * .62, -H * .42); neck.add(b); }
+    else { const r = H * (st === 'B' ? .53 : .53); const c = mesh(new THREE.SphereGeometry(r, st === 'B' ? 14 : 9, 6, 0, Math.PI * 2, 0, Math.PI * .5), mat(st, O.hat)); c.position.y = hy + H * .03; c.rotation.x = -.25; neck.add(c); }
+  }
+}
+
+// ---------- Posen ----------
+const PI = Math.PI;
+function applyPose(F, pose, ph) {
+  const { R, L, legs, torso, body, hips, P } = F;
+  const set = (g, x, y, z) => { g.rotation.set(x || 0, y || 0, z || 0); };
+  // Grundhaltung: Arme leicht vom Koerper
+  set(R.sh, 0, 0, -.12); set(L.sh, 0, 0, .12); set(R.el, -.15); set(L.el, -.15);
+  if (F.gun) { set(R.sh, -.15, 0, -.12); set(R.el, -.35); }
+  if (F.rifle) { F.rifle.position.set(-1, P.torsoH * .45, P.torsoD / 2 + 1.5); F.rifle.rotation.set(.7, .25, 0); set(R.sh, -.75, 0, .25); set(R.el, -.9); set(L.sh, -1.0, 0, -.35); set(L.el, -.7); }
+  if (F.shield) { F.shield.position.set(1.5, 3, P.torsoD / 2 + 5); set(L.sh, -1.15, 0, -.1); set(L.el, -.3); }
+  if (pose === 'run') {
+    const s = Math.sin(ph * 2 * PI), c = Math.cos(ph * 2 * PI);
+    set(torso, .18); hips.position.y = F.legH - .6 + Math.abs(c) * .9;
+    set(legs[0].hp, -.75 * s); set(legs[1].hp, .75 * s);
+    set(legs[0].kn, .25 + Math.max(0, s) * 1.1 + .3 * (1 + c) * .3); set(legs[1].kn, .25 + Math.max(0, -s) * 1.1);
+    if (!F.rifle) { set(L.sh, .7 * s, 0, .12); set(L.el, -.9); if (!F.gun) { set(R.sh, -.7 * s, 0, -.12); set(R.el, -.9); } else { set(R.sh, -.5 * s - .2, 0, -.12); set(R.el, -.9); } }
+    if (F.shield) { set(L.sh, -1.15, 0, -.1); set(L.el, -.3); }
+  }
+  if (pose === 'aim') {
+    // Oberkoerper dreht zum Ziel, Waffenarm nach vorn, Stuetzhand
+    if (F.gun) { set(torso, 0, .25); set(R.sh, -PI / 2 + .05, -.15, 0); set(R.el, 0); if (!F.shield) { set(L.sh, -1.35, 0, -.55); set(L.el, -.5); } }
+    if (F.rifle) { set(torso, 0, .2); F.rifle.position.set(-1.5, P.torsoH * .82, P.torsoD / 2 + 1); F.rifle.rotation.set(0, 0, 0); set(R.sh, -1.25, 0, .55); set(R.el, -.6); set(L.sh, -1.5, 0, -.25); set(L.el, -.25); }
+    set(legs[0].hp, -.25); set(legs[1].hp, .2); set(legs[0].kn, .15); set(legs[1].kn, .1);
+  }
+  if (pose === 'kneel') {
+    // Geisel: kniet, Haende hinter dem Kopf
+    hips.position.y = P.shin * .98 + P.legT * .4;
+    set(legs[0].hp, .02, 0, .08); set(legs[1].hp, .02, 0, -.08); set(legs[0].kn, PI / 2); set(legs[1].kn, PI / 2); set(legs[0].ft, -.7); set(legs[1].ft, -.7);
+    set(torso, -.05);
+    set(L.sh, -.35, 0, 2.55); set(R.sh, -.35, 0, -2.55); set(L.el, 0, 0, 2.2); set(R.el, 0, 0, -2.2);
+    L.el.rotation.order = R.el.rotation.order = 'ZXY';
+  }
+  if (pose === 'lie') {
+    // Spieler am Boden: auf dem Ruecken, ein Arm ausgestreckt
+    body.rotation.x = -PI / 2; body.position.set(0, P.torsoD / 2 + .2, F.legH + P.torsoH * .3);
+    set(L.sh, 0, 0, 1.35); set(L.el, 0, 0, .3); set(R.sh, .35, 0, -.4); set(R.el, -.8);
+    set(legs[0].hp, -.15, 0, .12); set(legs[0].kn, .3); set(legs[1].hp, .1, 0, -.06);
+  }
+}
+
+// ---------- Aufstellungen ----------
+const NAMES = { raeuber: 'Räuber', polizist: 'Polizist', schild: 'Schild-Beamter', scharf: 'Scharfschütze', wache: 'Wache', zivil: 'Zivilist', geisel: 'Geisel', boden: 'Spieler 2 am Boden' };
+const LINE = [['raeuber', 'aim'], ['polizist', 'stand'], ['schild', 'stand'], ['scharf', 'stand'], ['wache', 'stand'], ['zivil', 'stand'], ['geisel', 'kneel'], ['boden', 'lie']];
+const STIL = { A: 'Stil A: kantig minimal', B: 'Stil B: weicher Spielzeugstil', C: 'Stil C: schlank, realistischere Proportionen' };
+const figs = new THREE.Group(); scene.add(figs);
+const labels = [];
+function place(st, kind, pose, x, z, yaw, ph) {
+  const k = kind === 'boden' ? 'raeuber2' : kind;
+  const f = figure(st, k, kind === 'boden' ? 'lie' : pose, ph);
+  f.position.set(x, 0, z); f.rotation.y = yaw; figs.add(f); return f;
+}
+function label(text, x, y, z, cls) { labels.push({ text, v: new THREE.Vector3(x, y, z), cls: cls || 'lab' }); }
+function drawLabels() {
+  ov.innerHTML = '';
+  for (const l of labels) {
+    const p = l.v.clone().project(cam), d = document.createElement('div');
+    d.className = l.cls; d.textContent = l.text; d.style.left = ((p.x + 1) / 2 * VW) + 'px'; d.style.top = ((1 - p.y) / 2 * VH) + 'px'; ov.appendChild(d);
+  }
+}
+function title(t, sub) { const d = document.createElement('div'); d.id = 'title'; d.innerHTML = t + (sub ? '<small>' + sub + '</small>' : ''); ov.appendChild(d); }
+function room(zBack) {
+  // Tresen mit Holzfront und heller Platte, dahinter eine Wand (Hoehen wie V3CFG.cells: Tresen 24, Wand 64)
+  envBox(820, 22, 18, 0, 0, zBack, 0x8a6a45); envBox(824, 2.5, 20, 0, 22, zBack, 0xd9d2c4);
+  envBox(1400, 64, 32, 0, 0, zBack - 110, 0xcfc8ba);
+  envBox(22, 34, 22, 380, 0, zBack + 50, 0x5f6772); // Geldautomat-artiger Block als Groessenvergleich
+}
+
+const tris = {};
+function render(o) {
+  const st = o.stil || 'A', shot = o.shot || 'spiel';
+  figs.clear(); env.clear(); labels.length = 0; ov.innerHTML = '';
+  if (shot === 'spiel') {
+    room(-150);
+    LINE.forEach(([k, p], i) => { const x = -350 + i * 100; place(st, k, p, x, 0, k === 'boden' ? .5 : k === 'geisel' ? .2 : .95 - i * .05); label(NAMES[k], x, 0, 30); });
+    camAt(0, -40 + 40, 25);
+  } else if (shot === 'nah') {
+    room(-60);
+    const sel = [['raeuber', 'aim', .9], ['polizist', 'stand', .25], ['schild', 'stand', -.1], ['geisel', 'kneel', -.3]];
+    sel.forEach(([k, p, y], i) => { const x = -60 + i * 40; place(st, k, p, x, 0, y); label(NAMES[k], x, 0, 16); });
+    camAt(0, -2, 40, 215, 13);
+  } else if (shot === 'bewegung') {
+    room(-90);
+    const sel = [['raeuber', 'run', 0, 'Räuber Lauf 1'], ['raeuber', 'run', .25, 'Lauf 2'], ['raeuber', 'run', .5, 'Lauf 3'], ['raeuber', 'aim', 0, 'Räuber zielt'],
+      ['polizist', 'run', .15, 'Polizist läuft'], ['polizist', 'aim', 0, 'Polizist zielt'], ['scharf', 'aim', 0, 'Scharfschütze zielt'], ['schild', 'run', .6, 'Schild rückt vor']];
+    sel.forEach(([k, p, ph, t], i) => { const r = i < 4 ? 0 : 1, x = -120 + (i % 4) * 80, z = -30 + r * 64; place(st, k, p, x, z, k === 'schild' ? .45 : (p === 'aim' ? .9 : PI / 2), ph); label(t, x, 0, z + 18); });
+    camAt(20, 10, 32, 470);
+  } else if (shot === 'vergleich') {
+    room(-215);
+    ['A', 'B', 'C'].forEach((s, r) => {
+      const z = -125 + r * 120;
+      LINE.forEach(([k, p], i) => { const x = -300 + i * 92; place(s, k, p, x, z, k === 'boden' ? .5 : k === 'geisel' ? .2 : .95 - i * .05); });
+      label('Stil ' + s, -440, 18, z, 'row');
+    });
+    camAt(0, 0, 25);
+  }
+  // Dreiecke und Teile (Meshes) je Figur, als 'Dreiecke/Teile' (einmal je Stil und Art, Pose Stehen)
+  for (const s of ['A', 'B', 'C']) for (const [k] of LINE) { const kk = k === 'boden' ? 'raeuber2' : k; const f = figure(s, kk, 'stand'); tris[s + ':' + kk] = f.userData.tris + '/' + f.userData.parts; }
+  ren.render(scene, cam);
+  drawLabels();
+  const sub = { spiel: 'Spielkamera 25 Grad, Abstand wie im Spiel', nah: 'Nahaufnahme', bewegung: 'Lauf- und Ziel-Posen', vergleich: 'alle drei Stile, Spielkamera 25 Grad' }[shot];
+  title(shot === 'vergleich' ? 'Stil-Tafel Vergleich' : STIL[st], sub);
+  return { tris };
+}
+window.TAFEL = { render, tris };
+const q = new URLSearchParams(location.search);
+render({ stil: q.get('stil') || 'A', shot: q.get('shot') || 'spiel' });
+window.TAFEL_READY = true;
+</script>
+</body>
+</html>
