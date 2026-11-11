@@ -95,8 +95,8 @@ export const V3CFG = {
   xcol: { sh: [0xa9c3df, 0xd9b36a, 0xd9604f], rf: 0x2a2f36, bag: 0x6a5536, red: 0xff3a30, blue: 0x3a6bff, off: 0x3a3e46 },
   // Flaechenhelligkeit ohne Licht (Licht kommt mit 3D-5): Deckel, Suedseite (zur Kamera), Nordseite, Ost und West, Fuss (Seiten unten dunkler, bis wallH linear heller)
   shade: { top: 1, s: .84, n: .62, ew: .72, foot: .74 },
-  // Materialien der Kloetze: 0 Bild (Bodentextur, Deckel zeigen die 2D-Zeichnung, Seiten strecken die Randpixel), 1 Holz, 2 Metall, 3 Zaun; Glas eigens (durchsichtig)
-  mats: [null, 0x8a6a45, 0x5f6772, 0x8d959e], glass: 0xbfe6ff, glassA: .3,
+  // Materialien der Kloetze: 0 Bild (Bodentextur, Deckel zeigen die 2D-Zeichnung, Seiten strecken die Randpixel), 1 Holz, 2 Metall, 3 Zaun, 4 Mauerkrone (Fensterbruestung und -sturz, Farbe je Karte aus einer Wandkachel der 2D-Zeichnung, Ticket 178: sonst zeigt der Deckel das 2D-Fenster); Glas eigens (durchsichtig)
+  mats: [null, 0x8a6a45, 0x5f6772, 0x8d959e, 0x8a867e], crownMat: 4, glass: 0xbfe6ff, glassA: .42,
   // 3D-6 (Ticket 155) Szenario-Besonderheiten: scen3d in js/draw.js liefert je Bild die Teile (dieselbe Auswahl wie lyWorld), hier stehen die Bauplaene je Art (SCEN unten, Masse in Weltpixeln).
   // kinds: jede Art, die scen3d liefert, braucht einen Eintrag (Test 196, sonst zaehlt info().scen ?art und zeichnet nichts); g: Gruppe(n) der Teile (s Koerper beleuchtet, l Leuchten additiv, f Flaechen
   // durchsichtig, i Bildkloetze mit der 2D-Zeichnung als Deckel, c Sichtkegel). laserH Hoehe der Laser (Knie bis Huefte), cone Deckkraft der Sichtkegel wie 2D (ruhig, Alarm), grille Gitterstaebe je Kachel.
@@ -137,7 +137,7 @@ export const V3CFG = {
   cells: {
     '.': { s: [] }, o: { s: [] }, g: { s: [] }, v: { s: [], dyn: 1 }, // v: Fahrzeuge zeichnet der dynamische Teil (3D-2a, cars)
     '#': { s: [[0, 64]] }, P: { s: [[0, 64]], ins: 2 }, V: { s: [[0, 64, 2]], open: 1 }, L: { s: [[0, 64, 2]] }, l: { s: [[50, 64]] },
-    W: { s: [[0, 16], [50, 64]], glass: [16, 50] }, w: { s: [[0, 16], [50, 64]] }, Y: { s: [[0, 16], [50, 64], [18, 48, 1]] },
+    W: { s: [[0, 16, 4], [50, 64, 4]], glass: [16, 50], frame: [[16, 19], [47, 50]] }, w: { s: [[0, 16, 4], [50, 64, 4]], frame: [[16, 19], [47, 50]] }, Y: { s: [[0, 16, 4], [50, 64, 4], [18, 48, 1]] },
     D: { s: [[50, 64]] }, d: { s: [[50, 64]] },
     C: { s: [[0, 24]] }, e: { s: [[0, 20]], ins: 1 }, m: { s: [[0, 22]], ins: 1 }, b: { s: [[0, 14]], ins: 3 }, r: { s: [[0, 26]], ins: 4 },
     A: { s: [[0, 46]], ins: 3 }, k: { s: [[0, 28]], ins: 2 }, q: { s: [[0, 30]], ins: 5 }, p: { s: [[0, 34]], ins: 6 }, u: { s: [[0, 40]], ins: 4 },
@@ -319,6 +319,9 @@ export function mkView3d(X) {
     const lists = C.mats.map(() => []), gl = [], spec = c => C.cells[c], cell = cellAt, wallish = c => { const s = spec(c); return !!s && !s.ins && !s.fence && s.s.some(q => q[0] === 0 && q[1] >= C.wallH) };
     const add = (L, X0, Z0, X1, Z1, Y0, Y1) => L.push(X0, Z0, X1, Z1, Y0, Y1);
     const x0 = X.WX0, y0 = X.WY0, vo = !!X.vaultOpen;
+    // Mauerkrone (Ticket 178): Farbe der Bruestung und des Sturzes aus der Mitte einer Wandkachel der 2D-Zeichnung (nach Moeglichkeit mit Wand in allen vier Nachbarn, dort ohne Kantenlinien)
+    { let pk = null; for (let y = y0; y < y0 + X.H && !(pk && pk[2]); y++) for (let x = x0; x < x0 + X.W; x++) if (cell(x, y) === '#') { const full = cell(x - 1, y) === '#' && cell(x + 1, y) === '#' && cell(x, y - 1) === '#' && cell(x, y + 1) === '#'; if (!pk || full) pk = [x, y, full]; if (full) break }
+      if (pk) try { const k = X.st.width / (X.W * T), q = X.st.getContext('2d').getImageData(Math.round(((pk[0] - x0) * T + 12) * k), Math.round(((pk[1] - y0) * T + 12) * k), 4, 4).data; let r = 0, g = 0, b = 0; for (let i = 0; i < q.length; i += 4) { r += q[i]; g += q[i + 1]; b += q[i + 2] } const n = q.length / 4; mats[C.crownMat].uniforms.uCol.value.setRGB(r / n / 255, g / n / 255, b / n / 255, THREE.SRGBColorSpace) } catch (e) {} }
     for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) {
       const c = cell(x, y), s = spec(c);
       if (!s) { cells['?' + c] = (cells['?' + c] || 0) + 1; continue }
@@ -330,6 +333,7 @@ export function mkView3d(X) {
       const hz = cell(x - 1, y) === c || cell(x + 1, y) === c || wallish(cell(x - 1, y)) || wallish(cell(x + 1, y));
       if (s.fence) { if (cell(x - 1, y) === 'f' || cell(x + 1, y) === 'f') { Z0 = y * T + 12; Z1 = y * T + 19 } else { X0 = x * T + 12; X1 = x * T + 19 } }
       for (const q of s.s) add(lists[q[2] || 0], X0, Z0, X1, Z1, q[0], q[1]);
+      if (s.frame) for (const f of s.frame) { if (hz) add(lists[2], x * T, y * T + 13, x * T + T, y * T + 19, f[0], f[1]); else add(lists[2], x * T + 13, y * T, x * T + 19, y * T + T, f[0], f[1]) }
       if (s.glass) { if (hz) add(gl, x * T, y * T + 14, x * T + T, y * T + 18, s.glass[0], s.glass[1]); else add(gl, x * T + 14, y * T, x * T + 18, y * T + T, s.glass[0], s.glass[1]) }
     }
     const mk = (L, mat, name, order) => {

@@ -49,13 +49,15 @@ module.exports = [
       for (const c of Object.keys(cells)) {
         const e = cells[c];
         if (!Array.isArray(e.s)) { bad.push(c + ': s fehlt'); continue; }
-        for (const q of e.s) if (!(q[0] >= 0 && q[1] > q[0] && q[1] <= 64 && [undefined, 0, 1, 2, 3].includes(q[2]))) bad.push(c + ': Scheibe ' + JSON.stringify(q));
+        for (const q of e.s) if (!(q[0] >= 0 && q[1] > q[0] && q[1] <= 64 && [undefined, 0, 1, 2, 3, 4].includes(q[2]))) bad.push(c + ': Scheibe ' + JSON.stringify(q));
         const solid = SOLID.includes(c) || c === 'V', ground = e.s.some(q => q[0] === 0);
         if (solid && !ground && !e.dyn) bad.push(c + ': solide, aber ohne Koerper am Boden');
         if (!solid && e.s.some(q => q[0] < 48)) bad.push(c + ': begehbar, aber Koerper unter Kopfhoehe');
         if (e.glass && !(e.glass[0] >= 0 && e.glass[1] > e.glass[0])) bad.push(c + ': glass');
       }
       t.eq(bad, [], 'Eintraege gueltig und passend zur Kollision (solide hat Koerper, begehbar nur oben)');
+      t.eq(['W', 'w', 'Y'].filter(c => cells[c].s.some(q => (q[2] || 0) === 0)), [], 'Fenster: Bruestung und Sturz nicht aus dem Bildmaterial (sonst zeigt der Deckel das 2D-Fenster ein zweites Mal, Ticket 178)');
+      t.ok(cells.W.glass && cells.W.frame && cells.W.frame.length === 2 && cells.w.frame, 'Fenster: Scheibe mit Rahmen, zerschossen nur der Rahmen');
       t.ok(cells.V.open === 1 && cells.W.glass && !cells.w.glass, 'Tresortuer faellt beim Oeffnen weg, nur das heile Fenster hat Glas');
       const full = ['#', 'P', 'V', 'L'].filter(c => !cells[c].s.some(q => q[0] === 0 && q[1] === 64));
       t.eq(full, [], 'Wand, Pfeiler, Tresortuer und Hintertuer reichen vom Boden bis zur Wandhoehe 64');
@@ -76,7 +78,7 @@ module.exports = [
           const V = D.view3d.V, cfg = V.cfg.cells, w = D.world(), M = w.M, cnt = {};
           for (const row of M) for (const c of row) cnt[c] = (cnt[c] || 0) + 1;
           const want = {}; for (const c in cnt) if (cfg[c] && cfg[c].s.length) want[c] = cnt[c];
-          const parts = [0, 0, 0, 0, 0]; for (const c in want) { for (const q of cfg[c].s) parts[q[2] || 0] += cnt[c]; if (cfg[c].glass) parts[4] += cnt[c]; }
+          const parts = [0, 0, 0, 0, 0, 0]; for (const c in want) { for (const q of cfg[c].s) parts[q[2] || 0] += cnt[c]; if (cfg[c].frame) parts[2] += cfg[c].frame.length * cnt[c]; if (cfg[c].glass) parts[5] += cnt[c]; }
           const a = D.view3d.info();
           // ohne Aenderung: weitere Bilder bauen nichts neu, auch nicht nach setc mit demselben Zeichen
           const g0 = D.view3d.V; let x0 = 0, y0 = 0; for (let y = 0; y < M.length && !x0; y++) { const i = M[y].indexOf('#'); if (i >= 0) { x0 = i + w.WX0; y0 = y + w.WY0; } }
@@ -102,7 +104,7 @@ module.exports = [
         t.eq(Object.keys(a.cells).filter(k => k[0] === '?'), [], 'kein Zeichen ohne Eintrag im Raster');
         t.eq(a.cells['#'], r.want['#'], 'Wandkoerper gleich Wandkacheln');
         t.eq(a.cells, r.want, 'Koerper je Zeichen gleich Kacheln im Raster');
-        t.eq(a.parts, r.parts, 'Kloetze je Material (Bild, Holz, Metall, Zaun, Glas) wie aus Raster und Hoehentabelle gerechnet');
+        t.eq(a.parts, r.parts, 'Kloetze je Material (Bild, Holz, Metall, Zaun, Mauerkrone, Glas) wie aus Raster und Hoehentabelle gerechnet');
         t.ok(a.calls >= 3 && a.calls < 30, 'statische Welt unter 30 Draw Calls: ' + a.calls);
         t.ok(a.tris > 1000 && a.tris < 150000, 'Dreiecke im Budget: ' + a.tris);
         t.eq([r.b.statBuilds, r.b.builds, r.b.groundUp], [a.statBuilds, a.builds, a.groundUp], 'ohne Rasteraenderung kein Neubau (auch nicht bei setc mit demselben Zeichen)');
@@ -110,8 +112,8 @@ module.exports = [
         t.ok(r.c.statBuilds === a.statBuilds + 1 && r.c.cells.L === a.cells.L - 1 && r.c.cells.l === (a.cells.l || 0) + 1 && r.c.vol < a.vol && r.c.groundUp === a.groundUp + 1, 'Tuer auf aendert die Geometrie: ' + JSON.stringify([r.c.cells.L, r.c.cells.l, a.vol - r.c.vol]));
         t.ok(r.c2.cells.L === a.cells.L && r.c2.vol === a.vol && r.c2.tris === a.tris, 'Tuer zu: wie vorher');
         const dp = (i, k) => i.parts[k] - a.parts[k];
-        t.ok(r.e.cells.w === 1 && r.e.cells.W === a.cells.W - 1 && dp(r.e, 4) === -1 && dp(r.e, 0) === 0, 'Fenster zerschossen: eine Glasscheibe weniger, Bruestung und Sturz bleiben: ' + r.e.parts);
-        t.ok(r.e2.cells.Y === 1 && dp(r.e2, 4) === -1 && dp(r.e2, 1) === 1, 'Fenster vernagelt: Bretter (Holz) statt Glas: ' + r.e2.parts);
+        t.ok(r.e.cells.w === 1 && r.e.cells.W === a.cells.W - 1 && dp(r.e, 5) === -1 && dp(r.e, 0) === 0, 'Fenster zerschossen: eine Glasscheibe weniger, Bruestung und Sturz bleiben: ' + r.e.parts);
+        t.ok(r.e2.cells.Y === 1 && dp(r.e2, 5) === -1 && dp(r.e2, 1) === 1, 'Fenster vernagelt: Bretter (Holz) statt Glas: ' + r.e2.parts);
         t.ok(r.f.cells.X === 1 && dp(r.f, 1) === 1 && r.f.vol === a.vol + 32 * 32 * 30, 'Barrikade gebaut: ein Holzkoerper mehr');
         t.ok(!r.v.cells.V && r.v.statBuilds > r.f.statBuilds, 'Tresortuer offen: Tuerkoerper weg: ' + r.v.cells.V);
         t.eq(r.v2.cells.V, a.cells.V, 'nach reset ist die Tresortuer wieder da');
@@ -133,8 +135,8 @@ module.exports = [
           const o = {};
           for (const sc of SCS) {
             D.setScenario(sc); D.buildSeed(3); D.update(1 / 30); D.draw(); D.draw();
-            const i = D.view3d.info(), cfg = D.view3d.V.cfg.cells, M = D.world().M, cnt = {}, parts = [0, 0, 0, 0, 0];
-            for (const row of M) for (const c of row) if (cfg[c] && cfg[c].s.length && !(c === 'V' && D.get().vaultOpen)) { cnt[c] = (cnt[c] || 0) + 1; for (const q of cfg[c].s) parts[q[2] || 0]++; if (cfg[c].glass) parts[4]++; }
+            const i = D.view3d.info(), cfg = D.view3d.V.cfg.cells, M = D.world().M, cnt = {}, parts = [0, 0, 0, 0, 0, 0];
+            for (const row of M) for (const c of row) if (cfg[c] && cfg[c].s.length && !(c === 'V' && D.get().vaultOpen)) { cnt[c] = (cnt[c] || 0) + 1; for (const q of cfg[c].s) parts[q[2] || 0]++; if (cfg[c].frame) parts[2] += cfg[c].frame.length; if (cfg[c].glass) parts[5]++; }
             o[sc] = { errs: i.errs, err: i.err, calls: i.calls, tris: i.tris, parts: i.parts.join(',') === parts.join(','), ok: JSON.stringify(i.cells) === JSON.stringify(Object.fromEntries(Object.keys(i.cells).map(k => [k, cnt[k]]))) && Object.keys(cnt).length === Object.keys(i.cells).length };
           }
           D.setScenario('bank'); D.buildSeed('classic'); D.view3d.reset();
