@@ -59,7 +59,8 @@ module.exports = [
       t.ok(cells.V.open === 1 && cells.W.glass && !cells.w.glass, 'Tresortuer faellt beim Oeffnen weg, nur das heile Fenster hat Glas');
       const full = ['#', 'P', 'V', 'L'].filter(c => !cells[c].s.some(q => q[0] === 0 && q[1] === 64));
       t.eq(full, [], 'Wand, Pfeiler, Tresortuer und Hintertuer reichen vom Boden bis zur Wandhoehe 64');
-      t.ok(['D', 'd', 'l', 'W', 'w', 'Y'].every(c => cells[c].s.some(q => q[0] >= 48 && q[1] === 64)), 'Tueren und Fenster haben einen Sturz bis 64');
+      t.ok(['W', 'w', 'Y'].every(c => cells[c].s.some(q => q[0] >= 48 && q[1] === 64)), 'Fenster haben einen Sturz bis 64');
+      t.eq(['D', 'd', 'l', 'g'].filter(c => cells[c].s.length), [], 'Durchgaenge (Tueren D und d, offene Hintertuer, Tresentor) haben keinen Koerper ueber Kopfhoehe (Ticket 177)');
       await t.page.evaluate(() => { __dbg.setScenario('bank'); __dbg.buildSeed('classic'); });
     },
   },
@@ -94,7 +95,8 @@ module.exports = [
           // Tresor auf (wie im Spiel ueber das Objekt), danach wieder zu per reset
           const vt = D.get().its.find(o => o.t === 'vault'); vt.act(D.get().me); D.draw(); const v = D.view3d.info();
           D.reset(); D.draw(); const v2 = D.view3d.info();
-          return { a, b, bv, c, c2, e, e2, f, v, v2, want, parts };
+          const pass = ['D', 'd', 'l', 'g'].reduce((n, ch) => n + (cnt[ch] || 0), 0);
+          return { a, b, bv, c, c2, e, e2, f, v, v2, want, parts, pass };
         });
         if (!r.a) { t.ok(false, '3D nicht an: ' + JSON.stringify(r.i0)); return; }
         const a = r.a; t.note(a.calls + ' Draw Calls, ' + a.tris + ' Dreiecke, ' + a.inst + ' Kloetze, ' + a.ms.toFixed(1) + ' ms (Software)');
@@ -103,11 +105,12 @@ module.exports = [
         t.eq(a.cells['#'], r.want['#'], 'Wandkoerper gleich Wandkacheln');
         t.eq(a.cells, r.want, 'Koerper je Zeichen gleich Kacheln im Raster');
         t.eq(a.parts, r.parts, 'Kloetze je Material (Bild, Holz, Metall, Zaun, Glas) wie aus Raster und Hoehentabelle gerechnet');
+        t.ok(r.pass > 0 && !a.cells.D && !a.cells.d && !a.cells.l && !a.cells.g, 'Durchgaenge im Raster (' + r.pass + ') ohne Koerper und Sturz: ' + JSON.stringify([a.cells.D, a.cells.d, a.cells.l, a.cells.g]));
         t.ok(a.calls >= 3 && a.calls < 30, 'statische Welt unter 30 Draw Calls: ' + a.calls);
         t.ok(a.tris > 1000 && a.tris < 150000, 'Dreiecke im Budget: ' + a.tris);
         t.eq([r.b.statBuilds, r.b.builds, r.b.groundUp], [a.statBuilds, a.builds, a.groundUp], 'ohne Rasteraenderung kein Neubau (auch nicht bei setc mit demselben Zeichen)');
         t.eq([r.bv.statBuilds, r.bv.groundUp], [a.statBuilds, a.groundUp], 'haltendes Fahrzeug (o zu v) baut die Welt nicht neu (Abgleich nach dem Zaehler)');
-        t.ok(r.c.statBuilds === a.statBuilds + 1 && r.c.cells.L === a.cells.L - 1 && r.c.cells.l === (a.cells.l || 0) + 1 && r.c.vol < a.vol && r.c.groundUp === a.groundUp + 1, 'Tuer auf aendert die Geometrie: ' + JSON.stringify([r.c.cells.L, r.c.cells.l, a.vol - r.c.vol]));
+        t.ok(r.c.statBuilds === a.statBuilds + 1 && r.c.cells.L === a.cells.L - 1 && !r.c.cells.l && r.c.vol < a.vol && r.c.groundUp === a.groundUp + 1, 'Tuer auf aendert die Geometrie (kein Sturz ueber der offenen Tuer): ' + JSON.stringify([r.c.cells.L, r.c.cells.l, a.vol - r.c.vol]));
         t.ok(r.c2.cells.L === a.cells.L && r.c2.vol === a.vol && r.c2.tris === a.tris, 'Tuer zu: wie vorher');
         const dp = (i, k) => i.parts[k] - a.parts[k];
         t.ok(r.e.cells.w === 1 && r.e.cells.W === a.cells.W - 1 && dp(r.e, 4) === -1 && dp(r.e, 0) === 0, 'Fenster zerschossen: eine Glasscheibe weniger, Bruestung und Sturz bleiben: ' + r.e.parts);
