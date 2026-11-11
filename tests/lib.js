@@ -52,7 +52,8 @@ async function launch(opts) {
   const browser = await chromium.launch({ executablePath: findChrome(), args: ['--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-accelerated-2d-canvas', ...gl] });
   // Mit #debug allein wuerfelt das Spiel zufaellige Karten. Die Tests brauchen die feste Klassikkarte und setzen sie hier ausdruecklich, fuer jeden Kontext (auch die eigenen Seiten einzelner Tests)
   const newCtx = browser.newContext.bind(browser);
-  browser.newContext = async (o) => { const c = await newCtx(o); await c.addInitScript(() => { window.__holdupSeed = 'classic'; window.__nbVarOff = 1; if (!window.__holdupGfx) window.__holdupGfx = 'niedrig'; }); return c; };
+  // __holdupV3Fix (Ticket 158): die Selbstregelung der 3D-Ansicht bleibt aus (Tests auf fester Stufe, Test 199 schaltet sie selbst ein)
+  browser.newContext = async (o) => { const c = await newCtx(o); await c.addInitScript(() => { window.__holdupSeed = 'classic'; window.__nbVarOff = 1; window.__holdupV3Fix = 1; if (!window.__holdupGfx) window.__holdupGfx = 'niedrig'; }); return c; };
   return { srv, url, browser };
 }
 
