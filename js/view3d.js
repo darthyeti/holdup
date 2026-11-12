@@ -133,12 +133,12 @@ export const V3CFG = {
     gr: { flash: 0xe9e6d2, smoke: 0xa9b0bc, dec: 0xffc446, shell: 0xff8a3a, gas: 0x7a8a3c },
   },
   // Hoehentabelle je Kachelzeichen (jedes Zeichen des Rasters braucht einen Eintrag, Test 191): s Scheiben [unten, oben, Material] in Weltpixeln, ins Einzug je Seite,
-  // fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
+  // Durchgaenge (D, d, g, l, Ticket 177) haben keinen Koerper und keinen Sturz: von oben offen wie 2D, geschlossen sind sie L, V oder X. fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
   cells: {
     '.': { s: [] }, o: { s: [] }, g: { s: [] }, v: { s: [], dyn: 1 }, // v: Fahrzeuge zeichnet der dynamische Teil (3D-2a, cars)
-    '#': { s: [[0, 64]] }, P: { s: [[0, 64]], ins: 2 }, V: { s: [[0, 64, 2]], open: 1 }, L: { s: [[0, 64, 2]] }, l: { s: [[50, 64]] },
-    W: { s: [[0, 16, 4], [50, 64, 4]], glass: [16, 50], frame: [[16, 19], [47, 50]] }, w: { s: [[0, 16, 4], [50, 64, 4]], frame: [[16, 19], [47, 50]] }, Y: { s: [[0, 16, 4], [50, 64, 4], [18, 48, 1]] },
-    D: { s: [[50, 64]] }, d: { s: [[50, 64]] },
+    '#': { s: [[0, 64]] }, P: { s: [[0, 64]], ins: 2 }, V: { s: [[0, 64, 2]], open: 1 }, L: { s: [[0, 64, 2]] }, l: { s: [] },
+    W: { s: [[0, 16, 4]], glass: [16, 50], frame: [[16, 19], [47, 50]] }, w: { s: [[0, 16, 4]], frame: [[16, 19], [47, 50]] }, Y: { s: [[0, 16, 4], [18, 48, 1]] }, // Fenster: nur Bruestung, ueber der Oeffnung offen (kein Sturz, Ticket 178)
+    D: { s: [] }, d: { s: [] },
     C: { s: [[0, 24]] }, e: { s: [[0, 20]], ins: 1 }, m: { s: [[0, 22]], ins: 1 }, b: { s: [[0, 14]], ins: 3 }, r: { s: [[0, 26]], ins: 4 },
     A: { s: [[0, 46]], ins: 3 }, k: { s: [[0, 28]], ins: 2 }, q: { s: [[0, 30]], ins: 5 }, p: { s: [[0, 34]], ins: 6 }, u: { s: [[0, 40]], ins: 4 },
     N: { s: [[0, 36, 2]], ins: 1 }, f: { s: [[0, 26, 3]], fence: 1 }, X: { s: [[0, 30, 1]] },

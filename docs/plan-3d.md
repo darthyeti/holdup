@@ -196,7 +196,12 @@ Damit ist die Bank für den Haltepunkt in 3D spielbar (Sicht wie 2D).
 ### 2.20 Fenster in 3D (Ticket 178, 11. November 2026)
 
 - **Befund:** Fensterkacheln (`W`, `w`, `Y`) bestanden aus Brüstung [0, 16] und Sturz [50, 64] im Bildmaterial (Material 0). Deren Deckel zeigen die 2D-Zeichnung der Kachel, also das große 2D-Fenster, ein zweites kleines stand an der Vorderseite (gestreckte Randpixel).
-- **Fix** in `js/view3d.js`: Brüstung und Sturz nutzen das neue Material 4 `Mauerkrone` (`C.crownMat`), dessen Farbe `buildWorld` je Karte aus der Mitte einer Wandkachel der 2D-Zeichnung liest. Dazu ein dünner Rahmen (`frame`, zwei Metallleisten bei 16 bis 19 und 47 bis 50, auch beim zerschossenen `w`) um die Scheibe, `glassA` .42 (vorher .3), damit die Scheibe lesbar ist. In `st.parts` rutscht Glas auf Index 5. Test 191 (Fenster nicht aus dem Bildmaterial, Rahmen, Teilezählung), Bilder `3d178-vorher-*` und `3d178-nachher-*` je Straßenseite (`tools/bilder-3d178.js`). 2D IDENTISCH, `VER` unverändert.
+- **Nachtrag (Till, 12. November):** Fenster (`W`, `w`, `Y`) haben keinen Sturz mehr, über der Öffnung ist von oben offen wie bei den Durchgängen (Ticket 177, in diesem PR eingemerged), sonst sahen sie wie geschlossene Wandstücke aus. Bilder `3d178-ohnesturz-*`.
+- **Fix** in `js/view3d.js`: Brüstung (und im ersten Stand der Sturz) nutzen das neue Material 4 `Mauerkrone` (`C.crownMat`), dessen Farbe `buildWorld` je Karte aus der Mitte einer Wandkachel der 2D-Zeichnung liest. Dazu ein dünner Rahmen (`frame`, zwei Metallleisten bei 16 bis 19 und 47 bis 50, auch beim zerschossenen `w`) um die Scheibe, `glassA` .42 (vorher .3), damit die Scheibe lesbar ist. In `st.parts` rutscht Glas auf Index 5. Test 191 (Fenster nicht aus dem Bildmaterial, Rahmen, Teilezählung), Bilder `3d178-vorher-*` und `3d178-nachher-*` je Straßenseite (`tools/bilder-3d178.js`). 2D IDENTISCH, `VER` unverändert.
+
+### 2.20b Durchgänge ohne Sturz (Ticket 177)
+
+- Die Höhentabelle `cells` in `js/view3d.js` gab `D`, `d` und `l` einen Sturz [50, 64] über der begehbaren Kachel. Jetzt haben `D`, `d`, `l` (und `g`) keinen Körper, die Durchgänge sind von oben offen wie 2D. Geschlossen bleiben `L` (Hintertür, Gitter) und `V` (Tresortür) bis zum Öffnen voll hoch, Fenster behalten Brüstung und Sturz. Verdeckung und Sichtmaske lesen weiter nur Wände. Test 191 (Durchgänge ohne Körper, Hintertür auf baut ohne `l`), Test 196 (offenes Gitter wird leichter statt schwerer), Bilder `docs/bilder/plan-3d/3d177-vorher.jpg` und `-nachher.jpg` (`tools/bilder-3d177.js`). 2D IDENTISCH, `VER` unverändert.
 
 ## 3. Figuren
 
