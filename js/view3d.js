@@ -69,6 +69,9 @@ export const V3CFG = {
   fig: {
     dim: { foot: 2.2, shin: 5.5, thigh: 5.5, hipW: 3.2, legT: 4.6, torsoH: 10, torsoW: 12, torsoD: 9, armU: 5.2, armF: 5, armT: 4.2, head: 12, neck: .4 },
     seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
+    // look (Ticket 189): Figuren heben sich vom Boden ab. sat Saettigung der Kleidung, out Dicke des Umrisses in Weltpixeln (zweite, aufgeblasene Instanz je Teil, nur die Rueckseiten, outDay dunkel,
+    // outNight hell bei dunkler Szene), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
+    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0xdfe5f2 },
     hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
     out: {
       rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },
@@ -232,7 +235,7 @@ export function mkView3d(X) {
   } catch (e) { return { on: false, err: 'kein WebGL 2 (' + String(e && e.message || e).slice(0, 60) + ')' }; }
   if (!ren.capabilities || !ren.capabilities.isWebGL2) { ren.dispose(); return { on: false, err: 'kein WebGL 2' }; }
   const glc = ren.getContext(), dbgInfo = glc.getExtension('WEBGL_debug_renderer_info');
-  const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, figParts: 0, figCalls: 0, gear: 0, fi: [], dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
+  const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, figParts: 0, figOl: 0, figCalls: 0, gear: 0, fi: [], dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
   ren.setPixelRatio(1); ren.outputColorSpace = THREE.SRGBColorSpace; ren.setClearColor(C.clear);
   const el = ren.domElement;
   // 3D-9 (Ticket 158): Kontextverlust (Treiber, GPU-Reset, zu viele Kontexte) ist kein Absturz: die Ansicht meldet sich ab, der Kern zeichnet in 2D weiter
@@ -391,7 +394,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     vertexShader: 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
     fragmentShader: VISF + LITF + 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { gl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
   function pool(name, geo, mat, attrs, colors, order, cast) {
-    const P = { name, n: 0, cap: 0, im: null, a: {}, u: 0 };
+    const P = { name, n: 0, cap: 0, im: null, a: {}, u: 0, o: 0, k: '' };
     P.finish = () => { P.n = P.u; if (P.im) { P.im.count = P.u; P.im.visible = P.u > 0 } };
     P.size = need => {
       P.n = need; if (need > P.cap) {
@@ -415,11 +418,11 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     ball: smoothGeo(new THREE.SphereGeometry(.5, FSG.ball[0], FSG.ball[1])), dome: smoothGeo(new THREE.SphereGeometry(.5, FSG.dome[0], FSG.dome[1], 0, Math.PI * 2, 0, Math.PI / 2)), cyl: smoothGeo(new THREE.CylinderGeometry(.5, .5, 1, FSG.cyl)),
     box: smoothGeo(new THREE.BoxGeometry(1, 1, 1)),
   };
-  const figMat = new THREE.ShaderMaterial({ vertexColors: true, uniforms: Object.assign({}, UV),
+  const figMat = new THREE.ShaderMaterial({ vertexColors: true, side: THREE.DoubleSide, uniforms: Object.assign({ uLook: { value: new THREE.Vector4(FG.look.sat, 0, 0, 0) } }, UV),
     vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: VISF + LITF + 'varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { if (vA < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > vA) discard;\ngl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
-  const fpool = (name, geo) => pool(name, geo, figMat, { iA: 1 }, true, 2, 1);
-  const fP = { torso: fpool('fig-rumpf', figGeo.torso), cap: fpool('fig-glieder', figGeo.cap), head: fpool('fig-koepfe', figGeo.head), ball: fpool('fig-kugeln', figGeo.ball), dome: fpool('fig-kuppeln', figGeo.dome), cyl: fpool('fig-zylinder', figGeo.cyl), box: fpool('fig-boxen', figGeo.box) };
+    fragmentShader: VISF + LITF + 'uniform vec4 uLook; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { bool ol = vA > 1.5; float al = ol ? vA - 2.0 : vA; if (ol && gl_FrontFacing) discard; if (al < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > al) discard;\nvec3 nn = normalize(vN); float lu = dot(vC, vec3(0.299, 0.587, 0.114)); vec3 cc = ol ? vC : max(vec3(0.0), mix(vec3(lu), vC, uLook.x));\ngl_FragColor = vec4(ol ? cc : litC(cc, vWp, nn), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
+  const fpool = (name, geo, k) => { const P = pool(name, geo, figMat, { iA: 1 }, true, 2, 1); P.k = k; return P };
+  const fP = { torso: fpool('fig-rumpf', figGeo.torso, 'torso'), cap: fpool('fig-glieder', figGeo.cap, 'cap'), head: fpool('fig-koepfe', figGeo.head, 'head'), ball: fpool('fig-kugeln', figGeo.ball), dome: fpool('fig-kuppeln', figGeo.dome), cyl: fpool('fig-zylinder', figGeo.cyl), box: fpool('fig-boxen', figGeo.box) };
   // je Figur hoechstens (Rumpf, Glieder, Koepfe, Kugeln, Kuppeln, Zylinder, Boxen): fuer die Obergrenze der Instanzen
   const fMax = { torso: 1, cap: 9, head: 1, ball: 10, dome: 1, cyl: 2, box: 9 };
   const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1),
@@ -441,9 +444,14 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   const figInfo = [];
   let hitNow = 0, alNow = 1, nP = 0, topY = 0, sigN = 0;
   // Teil in Gelenk par: Mitte (x,y,z), Groesse (sx,sy,sz), Farbe, optional Drehung (rx,ry,rz) vor der Verschiebung
+  const OLK = { torso: 1, cap: 1, head: 1 }; // Teil-Arten mit Umriss (Haende, Fuesse, Huete und Zubehoer ohne, das spart rund 40 % der Dreiecke des Umrisses)
+  const fm2 = new THREE.Matrix4(); let olT = 0; const olC = new THREE.Color(); // olT Umrissdicke dieses Bildes (0 aus), olC Farbe
   const fput = (P, par, x, y, z, sx, sy, sz, col, rx, rz) => {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
     const i = P.u++; P.im.setMatrixAt(i, fm); P.im.setColorAt(i, hitNow ? hitC.copy(col).lerp(white, FG.hit) : col); P.a.iA.setX(i, alNow);
+    if (olT > 0 && OLK[P.k]) { // Umriss (Ticket 189): dieselbe Lage, aufgeblasen, nur Rueckseiten (alpha + 2 markiert ihn im Shader)
+      _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm2.multiplyMatrices(par, _l); const k = P.u++; P.o++; P.im.setMatrixAt(k, fm2); P.im.setColorAt(k, olC); P.a.iA.setX(k, alNow + 2);
+    }
     nP++; if (fm.elements[13] > topY) topY = fm.elements[13]; sigN += (fm.elements[12] * .7 + fm.elements[13] + fm.elements[14] * 1.3) * (1 + nP * .13);
   };
   const typeOf = (o, e) => (o.k === 'cop' || o.k === 'swat' || o.k === 'shield' || o.k === 'sniper') ? o.k : FG.row[o.row] || 'civA';
@@ -524,7 +532,8 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
     const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
     pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
-    for (const key in fP) { fP[key].size(F.length * fMax[key]); fP[key].u = 0 }
+    olT = FG.look.out || 0; { const th = (X.LAY && X.LAY.theme) || {}; olC.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) }
+    for (const key in fP) { fP[key].size(F.length * fMax[key] * (olT > 0 && OLK[key] ? 2 : 1)); fP[key].u = 0; fP[key].o = 0 }
     pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
     let iS = 0, iX = 0, lie = 0, hit = 0, gear = 0;
     const shA = pSh.a.iSA, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
@@ -534,9 +543,9 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       else { if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA) } if (o.fl) dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }) }
       gear += rigFig(o, e); if (o.hit) hit++; o._hs = lying ? FG.hsLie : cw ? FG.hsCow : FG.hs; void i;
     });
-    let figParts = 0, figCalls = 0; for (const key in fP) { const P = fP[key]; figParts += P.u; figCalls += P.u > 0 ? 1 : 0; P.finish() }
+    let figParts = 0, figCalls = 0, figOl = 0; for (const key in fP) { const P = fP[key]; figOl += P.o; figParts += P.u - P.o; figCalls += P.u > 0 ? 1 : 0; P.finish() }
     pShld.finish(); if (pShld.u > 0) figCalls++;
-    st.figParts = figParts; st.figCalls = figCalls; st.gear = gear; st.fi = figInfo.slice();
+    st.figParts = figParts; st.figOl = figOl; st.figCalls = figCalls; st.gear = gear; st.fi = figInfo.slice();
     Cs.forEach(([o, e], j) => {
       const i = F.length + j, h = e.h, dimK = o.dim ? C.wreckDim : 0;
       if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1] + 1, .4, o.a, o.L * .97, 1, o.W * .88); shA.setXY(iS++, 1, .3) }
@@ -822,8 +831,9 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     r = r == null ? 12 : r;
     if (!render()) return null; const A = grab();
     hide = o => Math.hypot(o.x - x, o.y - y) <= r; let B; try { render(); B = grab() } finally { hide = null }
-    let n = 0; for (let i = 0; i < A.length; i += 4) if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) > 24) n++;
-    render(); return { vis: n / (w * h), n: w * h, box: bx };
+    let n = 0, m = 0, ds = 0, lo = 0; for (let i = 0; i < A.length; i += 4) { const d = Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]); if (d > 24) n++; if (d > 6) { m++; ds += d; if (d < 60) lo++ } }
+    // Kontrast (Ticket 189): mittlerer Farbabstand (Summe der RGB-Unterschiede 0 bis 765) der Figurenpixel zum Hintergrund ohne Figur, und Anteil der Figurenpixel unter 60 (verschmelzen mit dem Boden)
+    render(); return { vis: n / (w * h), n: w * h, box: bx, dist: m ? ds / m : 0, merge: m ? lo / m : 0, px: m };
   }
 
   // 3D-4 Sicht: X.vis() (js/draw.js vis3d) liefert null (alles sehen) oder Schluessel, Deckkraft, Kante und das Sichtpolygon (dieselbe Quelle wie die 2D-Dunkelzone, nur lokale Daten).
@@ -942,7 +952,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figOl: st.figOl, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
