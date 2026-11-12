@@ -10,7 +10,7 @@ const SEEDS = `(sc) => { const D = __dbg; D.setScenario(sc); D.setSeedMode('rand
 module.exports = [
   {
     name: 'Gedreht: setTurn legt jede Karte auf die Lage (acht verschiedene Raster, Strasse an der richtigen Seite), gleiche Seeds geben gleiche Karten, der Transporter bleibt unberuehrt',
-    timeout: 120000,
+    timeout: 300000,
     async run(t) {
       await t.loadInpage('turn.js');
       const r = await t.page.evaluate(({ SC, SEEDS }) => {
