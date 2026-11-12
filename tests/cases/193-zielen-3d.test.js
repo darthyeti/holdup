@@ -181,4 +181,30 @@ module.exports = [
       } finally { await P.done(); }
     },
   },
+  {
+    name: '3D-Schnitt nur fuer Waende (Ticket 190): Geldautomat, Kasse und Tresen bleiben voll stehen, wenn der Spieler nordlich davon steht',
+    timeout: 300000,
+    async run(t) {
+      const P = await glPage(t); if (!P) return;
+      try {
+        const page = P.page, i0 = await page.evaluate(SETUP);
+        if (i0.state !== 'an') { t.ok(false, '3D nicht an: ' + JSON.stringify(i0)); return; }
+        const r = await page.evaluate(() => {
+          const D = __dbg, V = D.view3d.V, C = V.cfg, W = D.world(), cut0 = C.cutR, o = {};
+          for (const ch of ['A', 'r', 'C']) {
+            let f = null; for (let y = W.WY0 + 3; y < W.WY0 + W.H - 3 && !f; y++) for (let x = W.WX0 + 3; x < W.WX0 + W.W - 3 && !f; x++)
+              if (W.cell(x, y) === ch && !W.isSol(x, y - 1) && !W.isSol(x, y - 2) && W.cell(x, y - 1) !== 'v') f = [x, y];
+            if (!f) continue;
+            H3.put(f[0] * 32 + 16, f[1] * 32 - 8, 1.57);
+            const h = V.cfg.cells[ch].s[0][1], s = V.toScr(f[0] * 32 + 16, f[1] * 32 + 16, h), bx = [s[0] - 12, s[1] - 12, s[0] + 12, s[1] + 12];
+            C.cutR = cut0; const A = H3.grab(...bx); C.cutR = 0; const B = H3.grab(...bx); C.cutR = cut0; o[ch] = H3.diff(A, B);
+          }
+          return o;
+        });
+        t.ok(Object.keys(r).length >= 2, 'mindestens zwei der Arten (A, r, C) in der Karte gefunden: ' + JSON.stringify(r));
+        t.ok(Object.values(r).every(v => v < .01), 'Moebel im Schnittkreis unveraendert (Anteil geaenderter Bildpunkte mit und ohne Schnitt): ' + JSON.stringify(r));
+        await page.evaluate(() => __dbg.view3d.reset());
+      } finally { await P.done(); }
+    },
+  },
 ];
