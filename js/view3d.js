@@ -516,13 +516,31 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     figInfo.push([o.k, o.row, nP, Math.round(topY * 10) / 10, tHex, Math.round(sigN * 100) / 100]);
     return extra;
   }
+  // Sichtstrahl von der Kamera zu drei Punkten der Figur (Fuss, Mitte, Kopf) durch die Koerper der Kacheln (Hoehentabelle, eigene Kachel ausgenommen, offener Tresor ohne Koerper, v als Fahrzeug bis 26):
+  // verdeckt, wenn mindestens zwei Punkte blockiert sind. Nur das Stueck unter Wandhoehe wird abgeschritten.
+  const hidSamp = [8, 22, 36], hidTop = C.wallH + 4;
+  function hidden(o) {
+    camSet(); const cp = cam.position, ox = Math.floor(o.x / T), oy = Math.floor(o.y / T); let n = 0;
+    for (const hz of hidSamp) {
+      const dx = cp.x - o.x, dy = cp.y - hz, dz = cp.z - o.y, t1 = Math.min(1, Math.max(0, (dy - (hidTop - hz)) > 0 ? (hidTop - hz) / dy : 1)), N = Math.max(2, Math.ceil(Math.hypot(dx, dz) * t1 / 4)); let blocked = false;
+      for (let i = 1; i <= N && !blocked; i++) {
+        const f = t1 * i / N, x = o.x + dx * f, z = hz + dy * f, y = o.y + dz * f, tx = Math.floor(x / T), ty = Math.floor(y / T); if (tx === ox && ty === oy) continue;
+        const c = cellAt(tx, ty), e = C.cells[c]; if (!e || (e.open && X.vaultOpen)) continue;
+        if (c === 'v') { if (z < 26) blocked = true; continue }
+        for (const q of e.s) if (z >= q[0] && z <= q[1]) { blocked = true; break }
+      }
+      if (blocked) n++;
+    }
+    return n >= 2;
+  }
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
     let nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
-    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
+    // Silhouette (Ticket 188): nur fuer Figuren, die wirklich verdeckt sind. Das Sprite liegt als flaches Quadrat ueber der Figur und ragt in Waende dahinter, dort malte der Tiefentest es faelschlich orange
+    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie) && hidden(o)) : [];
     pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
     for (const key in fP) { fP[key].size(F.length * fMax[key]); fP[key].u = 0 }
     pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
