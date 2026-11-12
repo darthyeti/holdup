@@ -136,8 +136,8 @@ export const V3CFG = {
   // fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
   cells: {
     '.': { s: [] }, o: { s: [] }, g: { s: [] }, v: { s: [], dyn: 1 }, // v: Fahrzeuge zeichnet der dynamische Teil (3D-2a, cars)
-    '#': { s: [[0, 64]] }, P: { s: [[0, 64]], ins: 2 }, V: { s: [[0, 64, 2]], open: 1 }, L: { s: [[0, 64, 2]] }, l: { s: [[50, 64]] },
-    W: { s: [[0, 16], [50, 64]], glass: [16, 50] }, w: { s: [[0, 16], [50, 64]] }, Y: { s: [[0, 16], [50, 64], [18, 48, 1]] },
+    '#': { s: [[0, 64]], cut: 1 }, P: { s: [[0, 64]], ins: 2, cut: 1 }, V: { s: [[0, 64, 2]], open: 1, cut: 1 }, L: { s: [[0, 64, 2]], cut: 1 }, l: { s: [[50, 64]] },
+    W: { s: [[0, 16], [50, 64]], glass: [16, 50], cut: 1 }, w: { s: [[0, 16], [50, 64]], cut: 1 }, Y: { s: [[0, 16], [50, 64], [18, 48, 1]], cut: 1 },
     D: { s: [[50, 64]] }, d: { s: [[50, 64]] },
     C: { s: [[0, 24]] }, e: { s: [[0, 20]], ins: 1 }, m: { s: [[0, 22]], ins: 1 }, b: { s: [[0, 14]], ins: 3 }, r: { s: [[0, 26]], ins: 4 },
     A: { s: [[0, 46]], ins: 3 }, k: { s: [[0, 28]], ins: 2 }, q: { s: [[0, 30]], ins: 5 }, p: { s: [[0, 34]], ins: 6 }, u: { s: [[0, 40]], ins: 4 },
@@ -202,9 +202,9 @@ vec3 gradeC(vec3 c) {
 `;
 // Shader der statischen Welt: Kloetze als Instanzen eines Einheitswuerfels, Bild-Koordinate aus der Weltlage (Seiten um edge nach innen versetzt, sie zeigen den Randpixel der Kachel),
 // Helligkeit je Flaechenrichtung aus V3CFG.shade. Farbraum wie MeshBasicMaterial (sRGB-Textur, Ausgabe ueber colorspace_fragment).
-const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
+const VS = `attribute float iCut; varying float vCut; uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
 void main() {
-  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz; vM = wp.xz - normal.xz * uVisIn; vN = normal;
+  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz; vM = wp.xz - normal.xz * uVisIn; vN = normal; vCut = iCut;
   vec2 q = wp.xz - normal.xz * uEdge;
   vUv = vec2((q.x - uOrg.x) * uOrg.z, 1.0 - (q.y - uOrg.y) * uOrg.w);
   float s = normal.y > 0.5 ? uSh.x : normal.z > 0.5 ? uSh.y : normal.z < -0.5 ? uSh.z : uSh.w;
@@ -214,9 +214,9 @@ void main() {
 }`;
 // Schnitt (3D-3): uCut = Bildpunkt des Spielers (gl_FragCoord), Radius in Bildpunkten, Suedgrenze (Welt z des Spielers); uCutH Hoehe, ab der geschnitten wird, uCutS weicher Rand.
 // Geschnitten wird nur, was zwischen Kamera und Spieler liegt (suedlich von ihm), Waende hinter ihm bleiben stehen.
-const FS = VISF + LITF + `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
+const FS = VISF + LITF + `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying float vCut; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
 void main() {
-  if (uCut.z > 0.0 && vW.y > uCutH + 0.01 && vW.z > uCut.w) { float d = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
+  if (uCut.z > 0.0 && vCut > 0.5 && vW.y > uCutH + 0.01 && vW.z > uCut.w) { float d = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
     if (d < uCutS || (d < 1.0 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > (d - uCutS) / (1.0 - uCutS))) discard; }
   vec3 c = uMap > 0.5 ? texture2D(map, vUv).rgb : uCol;
   gl_FragColor = vec4(litC(c * vSh, vW, vN), uA);
@@ -315,13 +315,15 @@ export function mkView3d(X) {
   // cells zaehlt die Kacheln mit Koerper je Zeichen (Test: Wandkoerper gleich Wandkacheln), Zeichen ohne Eintrag landen in cells['?'+c] und zeichnen nichts.
   const mtx = new THREE.Matrix4(), pos = new THREE.Vector3(), scl = new THREE.Vector3(), qid = new THREE.Quaternion();
   function buildStatic() {
-    for (const m of stat) { scene.remove(m); m.dispose() } stat = []; cells = {};
+    for (const m of stat) { scene.remove(m); m.geometry.dispose(); m.dispose() } stat = []; cells = {};
     const lists = C.mats.map(() => []), gl = [], spec = c => C.cells[c], cell = cellAt, wallish = c => { const s = spec(c); return !!s && !s.ins && !s.fence && s.s.some(q => q[0] === 0 && q[1] >= C.wallH) };
-    const add = (L, X0, Z0, X1, Z1, Y0, Y1) => L.push(X0, Z0, X1, Z1, Y0, Y1);
+    // cutF: gehoert der Koerper zu einem Wandteil (Tabelle cut), nur die schneidet der Schnitt um den Spieler (Ticket 190), Moebel und Objekte bleiben stehen
+    let cutF = 0; const add = (L, X0, Z0, X1, Z1, Y0, Y1) => { L.push(X0, Z0, X1, Z1, Y0, Y1); (L.f || (L.f = [])).push(cutF) };
     const x0 = X.WX0, y0 = X.WY0, vo = !!X.vaultOpen;
     for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) {
       const c = cell(x, y), s = spec(c);
       if (!s) { cells['?' + c] = (cells['?' + c] || 0) + 1; continue }
+      cutF = s.cut ? 1 : 0;
       if (!s.s.length || (s.open && vo)) continue;
       cells[c] = (cells[c] || 0) + 1;
       // 3D-6 Gefaengnis: geschlossenes Gitter (scen3d grl) statt Block nur der untere Riegel (ein Kloetzchen wie die Tabelle, die Zaehlung bleibt), Staebe und uebrige Riegel zeichnet SCEN.grille
@@ -336,7 +338,7 @@ export function mkView3d(X) {
       const n = L.length / 6; if (!n) return;
       const im = new THREE.InstancedMesh(box, mat, n); im.name = name; im.renderOrder = order || -1;
       for (let i = 0; i < n; i++) { const k = i * 6; pos.set((L[k] + L[k + 2]) / 2, (L[k + 4] + L[k + 5]) / 2, (L[k + 1] + L[k + 3]) / 2); scl.set(L[k + 2] - L[k], L[k + 5] - L[k + 4], L[k + 3] - L[k + 1]); im.setMatrixAt(i, mtx.compose(pos, qid, scl)) }
-      im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); if (mat !== glassMat) im.layers.enable(1); scene.add(im); stat.push(im);
+      im.geometry = box.clone(); im.geometry.setAttribute('iCut', new THREE.InstancedBufferAttribute(Float32Array.from(L.f || []), 1)); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); if (mat !== glassMat) im.layers.enable(1); scene.add(im); stat.push(im);
     };
     lists.forEach((L, i) => mk(L, mats[i], 'welt' + i));
     mk(gl, glassMat, 'glas', 3);
