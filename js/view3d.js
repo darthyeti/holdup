@@ -200,6 +200,7 @@ vec3 gradeC(vec3 c) {
   float d = length(gl_FragCoord.xy - uVig.xy); return c * (1.0 - uVigA * clamp((d - uVig.z) / max(1.0, uVig.w - uVig.z), 0.0, 1.0));
 }
 `;
+export const V3GLSL = { VISF, LITF }; // fuer js/view3d-kloetzchen.js (Ticket 196)
 // Shader der statischen Welt: Kloetze als Instanzen eines Einheitswuerfels, Bild-Koordinate aus der Weltlage (Seiten um edge nach innen versetzt, sie zeigen den Randpixel der Kachel),
 // Helligkeit je Flaechenrichtung aus V3CFG.shade. Farbraum wie MeshBasicMaterial (sRGB-Textur, Ausgabe ueber colorspace_fragment).
 const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
@@ -226,7 +227,7 @@ void main() {
 
 export function mkView3d(X) {
   const C = V3CFG, T = X.T, VW = X.VW, VH = X.VH;
-  let ren;
+  let ren, K = null; // K: Stilstudie Kloetzchen (Ticket 196, js/view3d-kloetzchen.js), nur mit Schalter und geladenem Modul, sonst null (dann ist alles wie vorher)
   try {
     ren = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   } catch (e) { return { on: false, err: 'kein WebGL 2 (' + String(e && e.message || e).slice(0, 60) + ')' }; }
@@ -288,7 +289,7 @@ export function mkView3d(X) {
     visCv.width = Math.max(1, Math.ceil(WP / C.visDiv)); visCv.height = Math.max(1, Math.ceil(HP / C.visDiv)); visKey = null;
     if (ground) { scene.remove(ground); ground.geometry.dispose() }
     ground = new THREE.Mesh(new THREE.PlaneGeometry(WP, HP).rotateX(-Math.PI / 2), groundMat); ground.position.set(ox + WP / 2, 0, oz + HP / 2); ground.name = 'boden'; scene.add(ground);
-    rev = X.gRev; gridKey = keyOfGrid(); buildStatic(); st.builds++; buildLamps();
+    if (K) K.reset(); rev = X.gRev; gridKey = keyOfGrid(); buildStatic(); st.builds++; buildLamps();
   }
   // 3D-5 Lampen der Karte (nur Darstellung, aus dem Grundriss abgeleitet, fest je Karte): im Gebaeude (LAY.bld) im Raster lampStep an der Decke, draussen im Raster streetStep als Laterne,
   // jeweils nur auf begehbaren Kacheln ohne Koerper in der Hoehentabelle. Leuchten nur, wenn die Tageszeit lamps hat oder Nacht ist.
@@ -316,7 +317,7 @@ export function mkView3d(X) {
   const mtx = new THREE.Matrix4(), pos = new THREE.Vector3(), scl = new THREE.Vector3(), qid = new THREE.Quaternion();
   function buildStatic() {
     for (const m of stat) { scene.remove(m); m.dispose() } stat = []; cells = {};
-    const lists = C.mats.map(() => []), gl = [], spec = c => C.cells[c], cell = cellAt, wallish = c => { const s = spec(c); return !!s && !s.ins && !s.fence && s.s.some(q => q[0] === 0 && q[1] >= C.wallH) };
+    const SPT = K && K.on ? K.cells : C.cells, lists = C.mats.map(() => []), gl = [], spec = c => SPT[c], cell = cellAt, wallish = c => { const s = spec(c); return !!s && !s.ins && !s.fence && s.s.some(q => q[0] === 0 && q[1] >= C.wallH) };
     const add = (L, X0, Z0, X1, Z1, Y0, Y1) => L.push(X0, Z0, X1, Z1, Y0, Y1);
     const x0 = X.WX0, y0 = X.WY0, vo = !!X.vaultOpen;
     for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) {
@@ -340,6 +341,7 @@ export function mkView3d(X) {
     };
     lists.forEach((L, i) => mk(L, mats[i], 'welt' + i));
     mk(gl, glassMat, 'glas', 3);
+    if (K) K.world();
     st.statBuilds++; st.inst = stat.reduce((a, m) => a + m.count, 0);
     // Pruefsumme fuer Tests: Kloetze je Material und Rauminhalt (aendert sich, wenn eine Tuer aufgeht, auch bei gleicher Zahl von Kloetzen)
     st.parts = lists.map(L => L.length / 6).concat([gl.length / 6]); st.vol = 0; for (const L of lists.concat([gl])) for (let k = 0; k < L.length; k += 6) st.vol += (L[k + 2] - L[k]) * (L[k + 3] - L[k + 1]) * (L[k + 5] - L[k + 4]);
@@ -516,6 +518,15 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     figInfo.push([o.k, o.row, nP, Math.round(topY * 10) / 10, tHex, Math.round(sigN * 100) / 100]);
     return extra;
   }
+  // Stilstudie Kloetzchen: Figuren und Fahrzeuge zeichnet K (js/view3d-kloetzchen.js), die uebrigen Gruppen bleiben leer, die Silhouetten hinter Waenden (3D-3) laufen wie vorher
+  function kDyn(F, Cs, S, fk, ck) {
+    for (const P of [pSh, pBox, pTop, pShld].concat(Object.values(fP))) { P.size(0); P.u = 0; P.finish() }
+    pSil.size(S.length); const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, C.fig.hsK || 48, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
+    const r = K.dyn(F, Cs, dynL);
+    st.figParts = r.parts; st.figCalls = 1; st.gear = r.gear; st.fi = []; st.sil = S.length; st.sk = sk; st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = r.lie; st.hit = r.hit; st.xparts = 0;
+    st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
+    dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
+  }
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
@@ -523,6 +534,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     let nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
     const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
+    if (K && K.on) return kDyn(F, Cs, S, fk, ck);
     pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
     for (const key in fP) { fP[key].size(F.length * fMax[key]); fP[key].u = 0 }
     pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
@@ -773,6 +785,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     }
     for (const q of D.dcy) { ring(FA, q.x, q.y, .7, 8 + q.ph * 40, 2, lc('255,196,70'), .8 * (1 - q.ph)); thing(q.x, q.y, 0, 10, 6, 8, 0, 0x2a2d33); if (q.bl) fp(FA, q.x, q.y, 7, 3, 0, hc(0xffc446), 1); cnt('dcy') }
     for (const q of D.burn) { fp(FA, q.x, q.y, 20, 64, 0, lc('255,120,40'), q.f); cnt('burn') }
+    if (K && K.on) K.step(D, FA, FN, dynL);
     // Puffer belegen
     for (const [P, L] of [[pFxA, FA], [pFxN, FN]]) {
       const m = L.length / 12; P.size(m); if (!m) continue; const A = P.a.iA.array, B = P.a.iB.array, Cc = P.a.iC.array;
@@ -926,13 +939,14 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     const t0 = performance.now();
     try {
       setQ((X.gfx > 0 ? 2 : 1) * ((X.lod | 0) >= 2 ? C.lodRes : 1));
+      if (K && K.sync()) { rev = -1; gridKey = '' }
       { ov = X.seen ? X.seen() : null; const ok = ov ? JSON.stringify(ov) : ''; if (ok !== ovKey) { ovKey = ok; rev = -1 } }
       const SC = X.scen ? X.scen() : null; { const k = SC ? SC.key : ''; if (k !== scKey) { scKey = k; grl = new Set(SC ? SC.grl : []); rev = -1 } }
       if (X.LAY !== curLay || X.st !== curSt) buildLay();
       else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
       updVis();
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); ren.render(scene, cam); show(true);
+      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); if (K && K.on) K.render(scene, cam); else ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -942,7 +956,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, k: K ? K.info() : null, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -953,8 +967,13 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [...Object.values(figGeo), cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [...Object.values(figGeo), cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); if (K) K.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
-  return Object.assign(api, { render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
+  // Stilstudie Kloetzchen (Ticket 196): Werkzeuge der Ansicht fuer js/view3d-kloetzchen.js, erst nach dem Bau von allem, Modul nur mit Schalter geladen (X.klotz)
+  if (X.klotz) {
+    K = X.klotz({ X, C, scene, cam, ren, UV, UL, st, pool, pools, colOf, FG, typeOf, carCol, xcol, cellAt, mats, groundMat, shMat, flatGeo, GL: V3GLSL, fp, hc, get lamps() { return lamps } });
+    for (const m of K.mats) litMats.push(m);
+  }
+  return Object.assign(api, { hasK: !!K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 9;
+mkView3d.api = 10;
