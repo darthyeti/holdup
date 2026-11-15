@@ -11,7 +11,7 @@ async function glPage(t) {
   await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
 }
 const TILES = ['C', 'e', 'm', 'b', 'r', 'A', 'k', 'q', 'p', 'f', 'u', 'X'];           // Kacheln dieses Teils (g, P, V, Y, W, # bleiben schlicht)
-const KINDS = ['vault', 'pad', 'note', 'bundle', 'bag', 'dark', 'good', 'vit', 'pump', 'tk'];
+const KINDS = ['vault', 'pad', 'note', 'bundle', 'bag', 'dark', 'good', 'pump', 'tk'];
 const GOODS = ['cig', 'shelf'];
 module.exports = [
   {
@@ -54,7 +54,7 @@ module.exports = [
         t.ok(r.bank.k.world.bricks > 60 && r.bank.moebel > 0, 'Bank: Moebel als Kloetze (' + r.bank.k.world.bricks + ' Kloetze)');
         t.ok(r.bank.list.includes('vault') && r.bank.list.includes('pad'), 'Bank: Tresortuer und Tastenfeld da');
         t.ok(r.bank.dinge > 0, 'Bank: Szenario-Teile aus Kloetzen (' + r.bank.dinge + ')');
-        t.ok(r.jewel.dinge > 0 && r.jewel.list.includes('vit'), 'Juwelier: Vitrinen aus Kloetzen (' + r.jewel.dinge + ')');
+        t.ok(r.jewel.list.includes('vit') && r.jewel.k.world.bricks > 0, 'Juwelier: Vitrinen da (Bauer von Dinge B, sonst klassisch)');
         t.ok(r.gas.k.world.bricks > 0 && r.gas.list.includes('pump'), 'Tankstelle: Zapfsaeulen (' + r.gas.k.world.bricks + ' Kloetze)');
         t.ok(r.truck.dinge >= 0 && r.truck.list.includes('tk'), 'Transporter: Panzerwagen-Zubehoer');
         t.ok(r.cut.every(c => !c), 'Moebel-Material hat keinen Wandschnitt (Moebel bleiben stehen)');
