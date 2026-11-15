@@ -74,8 +74,16 @@ async function openGame(env, opts) {
   page.errors = [];
   page.on('pageerror', e => page.errors.push(String(e && e.stack || e)));
   page.on('console', m => { if (m.type() === 'error') page.errors.push('console.error: ' + m.text() + (m.location().url ? ' (' + m.location().url + ')' : '')); });
-  await page.goto(env.url + '/index.html' + (opts.hash || '#debug'));
-  await page.waitForFunction(() => window.__dbg && window.__dbg.get && window.__dbg.get().players, null, { timeout: 30000 });
+  // Seitenladen mit Luft und einem zweiten Versuch (Ticket 198): in der CI laeuft SwiftShader (3D-Tests) auf denselben wenigen Kernen und liess das Laden gelegentlich in die 30 Sekunden laufen. Das Zeitlimit waechst im
+  // parallelen Lauf mit HOLDUP_SLOWDOWN (run.js), ein haengendes Laden wird einmal neu versucht.
+  const loadT = 45000 * Math.max(1, +process.env.HOLDUP_SLOWDOWN || 1);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await page.goto(env.url + '/index.html' + (opts.hash || '#debug'), { timeout: loadT });
+      await page.waitForFunction(() => window.__dbg && window.__dbg.get && window.__dbg.get().players, null, { timeout: loadT });
+      break;
+    } catch (e) { if (attempt >= 1) throw e; page.errors.length = 0; }
+  }
   await page.evaluate(() => { __dbg.setFocus(true); });
   // opts.still: die Spielschleife steht still (requestAnimationFrame ist leer), nichts rechnet oder zeichnet zwischen den Aufrufen des Tests (Pixel-Hash, Bildzeit)
   if (opts.still) { await page.evaluate(() => { window.requestAnimationFrame = () => 0; }); await page.waitForTimeout(150); }

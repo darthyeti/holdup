@@ -1,13 +1,7 @@
 // Kloetzchen-Stil ohne Noppen (Ticket 215): KCFG.studs (Standard 0) ist der eine Schalter fuer alle Noppen (Welt: k.studs, Fahrzeugdaecher). Mit 0 gibt es keine Noppen-Instanzen,
 // mit 1 wieder, die Teile der Fahrzeuge sinken ohne Noppen. Kein Pixelvergleich, ohne WebGL 2 uebersprungen.
 const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [
   {
     name: 'Kloetzchen ohne Noppen: Standard 0 ohne Noppen-Instanzen (Bank, Casino, Strasse mit Autos), mit KCFG.studs 1 wieder da, Fahrzeugdaecher folgen demselben Schalter',

@@ -18,6 +18,8 @@ const COUNT = `async (D) => {
   const i = D.view3d.info(); return { ch, car, i, dyn: D.view3d.V.dyn() };
 }`;
 
+// Messrauschen von seen(): der Anteil verschmelzender Pixel schwankt von Lauf zu Lauf um etwa 0,02 (gleiche Szene, auch auf main, Beobachtung am 15. November 2026), der Farbabstand dagegen steigt in jedem Lauf
+const MERGE_TOL = .03;
 module.exports = [
   {
     name: '3D-Figuren: jede Figurenart und jedes Fahrzeug aus dem Spiel hat einen Eintrag in V3CFG.figs und V3CFG.cars, 2D-Zeichenstellen und figs3d passen zusammen',
@@ -245,7 +247,7 @@ module.exports = [
         t.ok(r.on.ol > 0 && r.off.ol === 0 && r.on2.ol === r.on.ol, 'Umriss-Instanzen nur mit out > 0: ' + [r.on.ol, r.off.ol, r.on2.ol]);
         t.eq(r.on.parts, r.off.parts, 'der Umriss zaehlt nicht als Figurenteil (figParts gleich)');
         t.ok(r.on.ol < r.on.parts, 'Umriss nur fuer Rumpf, Glieder und Kopf, nicht fuer jedes Teil: ' + r.on.ol + ' von ' + r.on.parts);
-        t.ok(r.on.merge < r.off.merge + 1e-6 && r.on.dist > r.off.dist, 'Kontrast zum Boden steigt (Farbabstand ' + r.off.dist.toFixed(0) + ' -> ' + r.on.dist.toFixed(0) + ', verschmelzend ' + (r.off.merge * 100).toFixed(0) + ' % -> ' + (r.on.merge * 100).toFixed(0) + ' %)');
+        t.ok(r.on.merge < r.off.merge + MERGE_TOL && r.on.dist > r.off.dist, 'Kontrast zum Boden steigt (Farbabstand ' + r.off.dist.toFixed(0) + ' -> ' + r.on.dist.toFixed(0) + ', verschmelzend ' + (r.off.merge * 100).toFixed(0) + ' % -> ' + (r.on.merge * 100).toFixed(0) + ' %)');
         if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
         await page.evaluate(() => __dbg.view3d.reset());
       } finally { await P.done(); }
