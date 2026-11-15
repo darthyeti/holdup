@@ -422,6 +422,8 @@ if(L.cone)for(const n of DX.npcs)if(n.k==='grd'&&n.st!=='away'&&n.st!=='dead'&&n
 if(L.lasers){const on=DX.camDown<=0;for(const l of L.lasers){const x0=l[0]*T,y0=l[1]*T,x1=l[2]*T,y1=l[3]*T;if(!see(x0,y0)&&!see(x1,y1)&&!see((x0+x1)/2,(y0+y1)/2))continue;q('laser',{x0,y0,x1,y1,on:on?1:0,f:on?.6+.25*Math.sin(t*9+x0*.1):0})}}}
 // Ueberwachungskameras (Klotz-Stil baut sie als Wandhalter mit Gehaeuse, klassisch zeichnet cams3d das 2D-Bild): sichtbar wie dort (bekannt, alles sichtbar oder in Sicht), Blickwinkel mit Schwung
 DX.cams.forEach((c,i)=>{if(c.k||DX.losAll||los(P.x,P.y,c.x,c.y))q('cam',{x:c.x,y:c.y,a:camAng(c,i),a0:c.a0,off:c.off||DX.camDown>0?1:0,al:c.alert>0?1:0})});
+// Hauptschalter (E-Ziel Strom aus): Lage und Zustand (Kameras und Laser aus solange camDown laeuft)
+if(L.sw)q('sw',{x:L.sw.x,y:L.sw.y,on:DX.camDown>0?0:1});
 // Zapfsaeulen: heil (Anzeige) oder ausgebrannt (Raster u wird o)
 for(const p of L.pumps||[])q('pump',{x:p.x*T+16,y:p.y*T+16,ok:cell(p.x,p.y)==='u'?1:0});
 // Notenbank: Bohrer (laeuft, steht, Fortschritt), Loch und Ausstieg, Notenpresse mit Papier, gedruckte Buendel, Abgabe
