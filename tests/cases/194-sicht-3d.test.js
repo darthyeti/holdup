@@ -4,16 +4,7 @@
 // Kein Pixelvergleich gegen Referenzen. Ohne WebGL 2 (auch nicht mit SwiftShader-Flags) ueberspringt der Test mit Meldung.
 const lib = require('../lib');
 
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 
 // Hilfen in der Seite (fuer jede Instanz D mit ihrer Ansicht V): Stichpunkte im Bild, deren Sicht ueber los in 20 px Umkreis gleich ist, am Boden ohne Koerper davor
 // und weit weg von Figuren und Fahrzeugen; Bild mit und ohne Nebel; erwartete Farbe aussen = Farbe ohne Nebel gemischt zur Dunkelfarbe mit Deckkraft mal (1 - Maske).

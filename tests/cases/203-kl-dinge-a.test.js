@@ -3,13 +3,7 @@
 // Kein Pixelvergleich, ohne WebGL 2 uebersprungen.
 const path = require('path'), { pathToFileURL } = require('url');
 const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 const TILES = ['C', 'e', 'm', 'b', 'r', 'A', 'k', 'q', 'p', 'f', 'u', 'X'];           // Kacheln dieses Teils (g, P, V, Y, W, # bleiben schlicht)
 const KINDS = ['vault', 'pad', 'note', 'bundle', 'bag', 'dark', 'pump', 'tk'];
 const GOODS = ['good:cig', 'good:shelf'];
