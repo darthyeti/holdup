@@ -101,6 +101,19 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       await page.evaluate(([w, armed, a]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.armed = !!armed; me.a = a; me.hp = 100; D.mouse.t = -999; D.draw(); D.draw() }, [w, armed, a]);
       info = await shot(`f${FR.length}`, null);
     }
+  } else if (FLOW === 'waffen2') {
+    // Ticket 232: alle Waffen in der Hand (Pistole, SMG, Sturmgewehr, Praezisionsgewehr, Granatwerfer), Lehnen und verstaut, Tag und Nacht, nah in der Spielkamera
+    await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; g.npcs.length = 0; g.cars.length = 0; g.me.vx = g.me.vy = 0 });
+    process.env.HALF = process.env.HALF || '90';
+    const poses = [['pistol', 'p'], ['smg', 'p'], ['rifle', 'p'], ['rifle', 'prec'], ['pistol', 'launch'], ['pistol', 'lean'], ['pistol', 'stow']];
+    for (const night of [0, 1]) {
+      if (night) await page.evaluate(async () => { const D = __dbg, L = D.LAY(); L.mission.lg = (L.mission.lg || []).concat('nacht'); D.view3d.reset(); await D.view3d.set(true); D.draw() });
+      for (const [w, mode] of poses) {
+        await page.evaluate(([w, mode]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.kit.sk = mode === 'prec' ? { A3: 1 } : mode === 'launch' ? { A4: 1 } : {}; me.sx = 3; me.ak = 3; me.armed = mode !== 'stow'; me.a = .5; me.units = 0; me.hp = 100; me.ln = mode === 'lean' ? 1 : 0; D.mouse.t = -999;
+          const want = mode === 'prec' || mode === 'launch'; if (want !== !!D.spw()) document.getElementById('c').dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', shiftKey: true })); D.draw(); D.draw(); return [mode, D.spw(), D.spwKind(me)] }, [w, mode]).then(r => process.env.DBGW && console.log(JSON.stringify(r)));
+        info = await shot(`f${FR.length}`, null);
+      }
+    }
   } else if (FLOW === 'pickups') {
     // Ticket 234: Aufnahmen (Munition, Medikit, unbekannte Zelle) als schwebende, drehende Klotzchen, vier Zeitpunkte, Tag und Nacht, nah in der Spielkamera
     process.env.HALF = process.env.HALF || '80';

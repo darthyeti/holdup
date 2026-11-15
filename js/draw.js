@@ -385,7 +385,7 @@ for(const o of DX.players)if(o.dead&&o.dn>0&&(o===DX.me||see(o.x,o.y)))fg('down'
 for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0,1,q.w)}
 for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0,1,e.w);o.sc=SIL_EN;o.ar=e.sur?0:1;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1;if(e.fl>0)o.fl=1}
 {const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8)){const o=fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0,1,v.w);o.ar=DX.dl.st===3?0:1;if(v.fl>0)o.fl=1}}}
-const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.wp=(o.kit&&o.kit.w)||'pistol';f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
+const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.wp=(o.kit&&o.kit.w)||'pistol';f.ln=o.ln?1:0;f.sw=o===DX.me&&DX.spwOn?spwKind(o):null;f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
