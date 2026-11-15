@@ -456,12 +456,15 @@ return o}
 /* 3D-4: Ueberwachungskameras und Wachrouten wie in 2D (lyWorld): eine Kamera ist zu sehen, wenn sie bekannt ist (Monitore geprueft, c.k) oder in Sicht liegt, ausserhalb der Sicht abgedunkelt
    wie unter der 2D-Dunkelzone; Kegel bekannter Kameras und aufgedeckte Routen liegen wie in 2D ueber der Dunkelzone. Am Boden (gnd), Kameras in Hoehe camH, auf dem HUD vor allen anderen Marken.
    Zaehlt die gezeichneten Kameras (cams3dN, nur Tests). */
-let cams3dN=0;
-function cams3d(V,gnd){const P=DX.p,dk3=V.fogA(),H=56;cams3dN=0;
+let cams3dN=0,camPts3dN=[];
+function cams3d(V,gnd){const P=DX.p,dk3=V.fogA(),H=56;cams3dN=0;camPts3dN=[];
 DX.cams.forEach((c,i)=>{if(!(c.k||DX.losAll||los(P.x,P.y,c.x,c.y)))return;const a=camAng(c,i);gnd(c.x,c.y,H);g.save();g.translate(c.x,c.y);g.rotate(a);g.drawImage(p2,3*64,0,64,64,-14,-14,28,28);g.restore();cams3dN++;
 if(c.off||DX.camDown>0){g.fillStyle='rgba(20,22,26,.6)';g.beginPath();g.arc(c.x,c.y,10,0,6.283);g.fill()}
 if(dk3>0&&!DX.losAll&&!los(P.x,P.y,c.x,c.y)){g.globalCompositeOperation='source-atop';g.fillStyle='rgba(10,12,20,'+Math.min(1,dk3)+')';g.fillRect(c.x-16,c.y-16,32,32);g.globalCompositeOperation='source-over'}});
-DX.cams.forEach((c,i)=>{if(!c.k||c.off||DX.camDown>0)return;const a=camAng(c,i),al=DX.phase===1?(c.alert>0?.45:.2):.08;gnd(c.x,c.y,0);wedge(c.x,c.y,a,c.fov,c.rng,c.alert>0?'255,40,40':'255,90,70',al);g.strokeStyle='rgba(255,90,70,'+(DX.phase===1?.5:.2)+')';g.lineWidth=1;g.beginPath();g.moveTo(c.x,c.y);g.arc(c.x,c.y,c.rng,a-c.fov,a+c.fov);g.closePath();g.stroke()});
+/* Kegel (Ticket 176): Spitze am Bildpunkt der Kamera (Hoehe H), Rand am Boden (Hoehe 0) ueber toScr, Streifen Punkt fuer Punkt statt Bodenebene um die Kamera */
+DX.cams.forEach((c,i)=>{if(!c.k||c.off||DX.camDown>0)return;const a=camAng(c,i),al=DX.phase===1?(c.alert>0?.45:.2):.08,col=c.alert>0?'255,40,40':'255,90,70',A=V.toScr(c.x,c.y,H),N=24,E=[];for(let k=0;k<=N;k++){const an=a-c.fov+2*c.fov*k/N;E.push(V.toScr(c.x+Math.cos(an)*c.rng,c.y+Math.sin(an)*c.rng,0))}
+const R=Math.max(1,...E.map(q=>Math.hypot(q[0]-A[0],q[1]-A[1]))),gr=g.createRadialGradient(A[0],A[1],0,A[0],A[1],R);gr.addColorStop(0,'rgba('+col+','+al+')');gr.addColorStop(1,'rgba('+col+',0)');
+camPts3dN.push({i,cam:V.toScr(c.x,c.y,H),apex:A});g.setTransform(2,0,0,2,0,0);g.fillStyle=gr;g.beginPath();g.moveTo(A[0],A[1]);E.forEach(q=>g.lineTo(q[0],q[1]));g.closePath();g.fill();g.strokeStyle='rgba(255,90,70,'+(DX.phase===1?.5:.2)+')';g.lineWidth=1;g.stroke()});
 S0();for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;g.save();g.setLineDash([6,6]);g.lineDashOffset=-DX.time*14;g.strokeStyle=q.k==='grd'?'rgba(255,179,71,.7)':'rgba(138,208,255,.7)';g.lineWidth=2;g.beginPath();q.line.forEach((pp,i)=>{const s=V.toScr(pp[0],pp[1],0);i?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1])});g.closePath();g.stroke();g.restore()}}
 /* 3D-7 (Ticket 156): Weltschriften und Bodenmarken, die lyWorld in 2D auf den Boden schreibt (AUSSTIEG, ABHOLPUNKT, ABGABE, SPRENGUNG, BELAGERT), in 3D als HUD an derselben Weltstelle (gnd am Boden oder auf dem Deckel,
    up aufrecht ueber der Barrikade). Wurfvorschau (Fallen, Spezialwaffen, Wurfgeraete) wie drawGad, Punkt fuer Punkt ueber toScr am Boden (die lineare Naeherung waere auf 300 px zu ungenau). Zaehlt die Schriften (txt3dN, nur Tests). */
@@ -599,5 +602,5 @@ if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&!DX.prDl&&DX.rT<DX.LAY.prison.dl.at){
 if(DX.LAY.prison&&DX.phase===1&&!DX.ended&&DX.LAY.prison.dv&&(DX.LAY.prison.dv.st===1||(DX.LAY.prison.dv.st===2&&DX.LAY.prison.dv.end>DX.rT))){g.textAlign='right';g.font='bold 12px monospace';g.fillStyle='#ffd27a';g.fillText(DX.LAY.prison.dv.st===1?'Lieferant kommt: Servicetür offen':'Servicetür schließt in '+Math.ceil(DX.LAY.prison.dv.end-DX.rT)+' s',VW-12,VH-78);g.textAlign='left'}
 if(DX.phase===1&&DX.alarmT>0&&!DX.ended){const cd='ENTDECKT! Alarm in '+DX.alarmT.toFixed(1).replace('.',',')+' s';g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(cd,482,154);g.fillStyle=Math.floor(DX.time*4)%2?'#ff4a3a':'#ffb000';g.fillText(cd,480,152);g.font='12px monospace';g.fillStyle='#e6eaf0';g.fillText('Aus dem Blick, Balken unter '+CFG.watch.back+' % bringen',480,176);g.textAlign='left'}
 if(DX.banner&&!DX.paused){g.globalAlpha=Math.min(1,DX.banner.t*1.5);g.textAlign='center';g.font='bold 30px monospace';g.fillStyle='rgba(0,0,0,.6)';g.fillText(DX.banner.s,482,154);g.fillStyle=DX.phase===2?'#ff8a6a':'#ffd27a';g.fillText(DX.banner.s,480,152);g.textAlign='left';g.globalAlpha=1}}
-return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,fx3d,txt3d:()=>txt3dN.slice(),hud3d:()=>hud3dN.map(q=>Object.assign({},q)),kickOff,leanLine,pinfo,ring3d:()=>ring3dAt,funk3d:()=>funk3dN.map(q=>({k:q.k,id:q.id,s:q.s.slice()})),scrPt,vis3d,seen3d,scen3d,cams3d:()=>cams3dN}}
-mkDraw.api=9;
+return{S0,W1,coneRays,draw,drawLegend,drawNote,edgePt,endRows,figs3d,fx3d,txt3d:()=>txt3dN.slice(),hud3d:()=>hud3dN.map(q=>Object.assign({},q)),kickOff,leanLine,pinfo,ring3d:()=>ring3dAt,funk3d:()=>funk3dN.map(q=>({k:q.k,id:q.id,s:q.s.slice()})),scrPt,vis3d,seen3d,scen3d,cams3d:()=>cams3dN,camPts3d:()=>camPts3dN.map(q=>({i:q.i,cam:q.cam.slice(),apex:q.apex.slice()}))}}
+mkDraw.api=10;
