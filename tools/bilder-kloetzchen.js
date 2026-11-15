@@ -134,6 +134,16 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       await page.evaluate((t) => { const D = __dbg, m = D.get().me; D.get().en.length = 0; const W = D.world(), T = 32; let best = null; for (let r = 40; r <= 120 && !best; r += 20) for (let a = 0; a < 16 && !best; a++) { const x = t[0] + Math.cos(a * .39) * r, y = t[1] + Math.sin(a * .39) * r; if (!W.isSol(Math.floor(x / T), Math.floor(y / T))) best = [x, y] } m.x = best ? best[0] : t[0]; m.y = best ? best[1] : t[1]; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: t[0], y: t[1] }; D.draw(); D.draw() }, tiles[i]);
       info = await shot('m' + i, 'at');
     }
+  } else if (FLOW === 'fundorte') {
+    // Fundorte des Tresorcodes (Ticket 228): je Art ohne und mit Zettel an einer Wandkachel der Bank (X.scen der Ansicht wird ersetzt), Ausschnitt um den Fundort
+    const kinds = ['bin', 'copy', 'coffee', 'file', 'pin', 'coat', 'locker', 'mgr'];
+    const tile = await page.evaluate(() => { const D = __dbg, B = D.LAY().bld, W = D.world(), T = 32; for (let y = B.y0 + 1; y < B.y1; y++) for (let x = B.x0 + 2; x < B.x1 - 1; x++) { if (W.cell(x, y) !== '.') continue; if (W.cell(x, y - 1) === '#' && W.cell(x - 1, y) === '.' && W.cell(x + 1, y) === '.') return [x * T + 16, y * T + 16] } return null });
+    for (const paper of [0, 1]) for (const kind of kinds) {
+      await page.evaluate(([tile, kind, paper]) => { const D = __dbg, V = D.view3d.V, X = V.kl().kit.X; if (!window.__scen0) window.__scen0 = X.scen; const m = D.get().me; m.x = tile[0]; m.y = tile[1] + 70; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: tile[0], y: tile[1] };
+        X.scen = () => { const o = window.__scen0(); return { p: o.p.filter(q => q.k !== 'note').concat([{ k: 'note', n: kind, x: tile[0], y: tile[1], paper }]), grl: o.grl, key: o.key + kind + paper } }; D.draw(); D.draw() }, [tile, kind, paper]);
+      info = await shot('n' + FR.length, 'at');
+    }
+    await page.evaluate(() => { __dbg.view3d.V.kl().kit.X.scen = window.__scen0 });
   } else if (FLOW === 'pumpe') {
     // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
     await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });
