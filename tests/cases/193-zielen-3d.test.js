@@ -148,7 +148,9 @@ module.exports = [
           // Wand hinter (noerdlich) dem Spieler bleibt stehen: Spieler eine Kachel suedlich einer Wandreihe, Ausschnitt um die Wand mit und ohne Schnitt gleich
           const W = D.world(); let nb = null; for (let y = W.WY0 + 3; y < W.WY0 + W.H - 3 && !nb; y++) for (let x = W.WX0 + 3; x < W.WX0 + W.W - 3 && !nb; x++)
             if (W.cell(x, y) === '#' && W.cell(x - 1, y) === '#' && W.cell(x + 1, y) === '#' && !W.isSol(x, y + 1) && !W.isSol(x, y + 2) && !W.isSol(x, y + 3) && W.cell(x, y + 2) !== '#' && W.cell(x, y + 3) !== '#') nb = [x, y];
-          if (nb) { const m2 = H3.put(nb[0] * 32 + 16, nb[1] * 32 + 32 + 12, 1.57), w = V.toScr(m2.x, nb[1] * 32 + 16, 64); const A2 = H3.grab(w[0] - 40, w[1] - 26, w[0] + 40, w[1] + 20); C.cutR = 0; const B2 = H3.grab(w[0] - 40, w[1] - 26, w[0] + 40, w[1] + 20); C.cutR = cut0; o.north = [nb, H3.diff(A2, B2)]; }
+          if (nb) { const m2 = H3.put(nb[0] * 32 + 16, nb[1] * 32 + 32 + 12, 1.57), w = V.toScr(m2.x, nb[1] * 32 + 16, 64); const A2 = H3.grab(w[0] - 40, w[1] - 26, w[0] + 40, w[1] + 20); C.cutR = 0; const B2 = H3.grab(w[0] - 40, w[1] - 26, w[0] + 40, w[1] + 20); C.cutR = cut0; o.north = [nb, H3.diff(A2, B2)];
+            // Ticket 188: Spieler sichtbar suedlich vor der Wand: keine Silhouette, und sie aendert im Bild um die Figur nichts (kein orangefarbener Hut an der Wandkante)
+            const s3 = V.toScr(m2.x, m2.y, 14), bx = [s3[0] - 60, s3[1] - 80, s3[0] + 60, s3[1] + 50]; C.cutR = cut0; const A3 = H3.grab(...bx), sn = V.info().sil; C.sil = false; const B3 = H3.grab(...bx); C.sil = true; o.south = [sn, H3.diff(A3, B3)]; }
           // Gegner in Sicht hinter einer Wand (Wand suedlich von ihm, der Spieler steht noerdlich im selben Raum): Silhouette; Gegner ohne Sicht: keine
           const g = D.get(); o.en = null;
           for (const [x, y] of sp) {
@@ -168,16 +170,43 @@ module.exports = [
         t.ok(r.rows.every(q => q[2] > .15), 'mit Schnitt ist der Spieler an jeder Stelle erkennbar: ' + r.rows.map(q => q[2].toFixed(3)));
         t.ok(r.rows.every(q => q[3] > q[4] + .06), 'ohne Schnitt zeigt die Silhouette den Spieler: ' + r.rows.map(q => q[3].toFixed(3)));
         t.ok(r.open[0] < .002 && r.open[1] > .15, 'freie Flaeche: Silhouette aendert nichts, Spieler sichtbar: ' + r.open.map(v => v.toFixed(4)));
+        t.ok(r.south && r.south[0] === 0 && r.south[1] < .002, 'Spieler sichtbar vor der Wand: keine Silhouette, im Bild um die Figur kein Unterschied mit und ohne Silhouette (Ticket 188): ' + JSON.stringify(r.south));
         t.ok(r.north && r.north[1] < .01, 'Wand hinter dem Spieler wird nicht geschnitten: ' + JSON.stringify(r.north));
         t.ok(r.en, 'Stelle fuer Gegner hinter Wand in Sicht gefunden');
         if (r.en) {
           t.eq(r.en.dyn.length, 1, 'nur der Gegner in Sicht wird gezeichnet: ' + JSON.stringify(r.en));
-          t.ok(r.en.sk.cop === 1 && r.en.sk.pl === 1 && Object.keys(r.en.sk).length === 2, 'Silhouetten: Spieler und der Gegner in Sicht, nicht der ohne Sicht: ' + JSON.stringify(r.en.sk));
+          t.ok(r.en.sk.cop === 1 && Object.keys(r.en.sk).length === 1, 'Silhouetten: nur der verdeckte Gegner in Sicht, nicht der sichtbare Spieler (Ticket 188) und nicht der ohne Sicht: ' + JSON.stringify(r.en.sk));
           t.ok(r.en.v1 > r.en.v0 + .04, 'Gegner hinter der Wand als Silhouette zu sehen: ' + r.en.v1.toFixed(3) + ' gegen ' + r.en.v0.toFixed(3));
           t.ok(!r.en.civSk || !Object.keys(r.en.civSk).some(k => k !== 'pl' && k !== 'cop'), 'Zivilisten bekommen keine Silhouette: ' + JSON.stringify(r.en.civSk));
         }
         await page.evaluate(() => __dbg.view3d.reset());
         if (page !== t.page && page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
+      } finally { await P.done(); }
+    },
+  },
+  {
+    name: '3D-Schnitt nur fuer Waende (Ticket 190): Geldautomat, Kasse und Tresen bleiben voll stehen, wenn der Spieler nordlich davon steht',
+    timeout: 300000,
+    async run(t) {
+      const P = await glPage(t); if (!P) return;
+      try {
+        const page = P.page, i0 = await page.evaluate(SETUP);
+        if (i0.state !== 'an') { t.ok(false, '3D nicht an: ' + JSON.stringify(i0)); return; }
+        const r = await page.evaluate(() => {
+          const D = __dbg, V = D.view3d.V, C = V.cfg, W = D.world(), cut0 = C.cutR, o = {};
+          for (const ch of ['A', 'r', 'C']) {
+            let f = null; for (let y = W.WY0 + 3; y < W.WY0 + W.H - 3 && !f; y++) for (let x = W.WX0 + 3; x < W.WX0 + W.W - 3 && !f; x++)
+              if (W.cell(x, y) === ch && !W.isSol(x, y - 1) && !W.isSol(x, y - 2) && W.cell(x, y - 1) !== 'v') f = [x, y];
+            if (!f) continue;
+            H3.put(f[0] * 32 + 16, f[1] * 32 - 8, 1.57);
+            const h = V.cfg.cells[ch].s[0][1], s = V.toScr(f[0] * 32 + 16, f[1] * 32 + 16, h), bx = [s[0] - 12, s[1] - 12, s[0] + 12, s[1] + 12];
+            C.cutR = cut0; const A = H3.grab(...bx); C.cutR = 0; const B = H3.grab(...bx); C.cutR = cut0; o[ch] = H3.diff(A, B);
+          }
+          return o;
+        });
+        t.ok(Object.keys(r).length >= 2, 'mindestens zwei der Arten (A, r, C) in der Karte gefunden: ' + JSON.stringify(r));
+        t.ok(Object.values(r).every(v => v < .01), 'Moebel im Schnittkreis unveraendert (Anteil geaenderter Bildpunkte mit und ohne Schnitt): ' + JSON.stringify(r));
+        await page.evaluate(() => __dbg.view3d.reset());
       } finally { await P.done(); }
     },
   },

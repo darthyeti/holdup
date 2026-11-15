@@ -1,4 +1,4 @@
-/* Holdup: Kloetzchen-Stil der 3D-Ansicht, Kern (Ticket 196 und 198, docs/plan-3d.md Abschnitt 2.19). ES-Modul, wird von index.html per import() mit ?v=N geladen, wenn der Stil an ist (Standard in 3D,
+/* Holdup: Kloetzchen-Stil der 3D-Ansicht, Kern (Ticket 196 und 198, docs/plan-3d.md Abschnitt 2.24). ES-Modul, wird von index.html per import() mit ?v=N geladen, wenn der Stil an ist (Standard in 3D,
    Rueckweg: Taste F7, #klassisch in der Adresse oder localStorage holdup.stil=klassisch). Die Dateien kl-*.js (Liste KL_FILES) werden von hier mit derselben ?v=N nachgeladen, jede exportiert register(KL)
    und traegt nur Bauer ein. Neue Art: Bauer in die passende Datei schreiben und dort mit KL.fig, KL.car, KL.obj oder KL.fx eintragen, view3d.js und kl-kern.js bleiben unberuehrt.
    Gibt es fuer eine Art keinen Bauer, zeichnet view3d sie wie ohne Stil (Low-Poly-Figur, Kasten mit 2D-Dach, Szenario-Kloetze), so bleibt jedes Szenario spielbar.
