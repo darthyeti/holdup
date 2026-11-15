@@ -116,24 +116,31 @@ void main() {
   K.mats = [kMat];
   const kpool = (name, geo, order) => { const P = E.pool(name, geo, kMat, { iK: 2 }, true, order == null ? 2 : order, 1); E.pools.push(P); return P };
   const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo);
+  // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
+  const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
+    vertexShader: 'varying vec2 vM; void main() {\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: E.GL.VISF + 'uniform vec3 uC; uniform float uA; varying vec2 vM; void main() { if (uA < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > uA) discard; gl_FragColor = vec4(uC, 1.0);\n#include <colorspace_fragment>\n gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM); }' });
+  olMat.uniforms.uC = { value: new THREE.Color() }; olMat.uniforms.uA = { value: 1 };
+  const pO = E.pool('k-umriss', boxGeo, olMat, {}, false, 2); E.pools.push(pO);
   const pAO = E.pool('k-kontakt', E.flatGeo, E.shMat, { iSA: 2 }, false, 1); E.pools.push(pAO);
 
   // ---------- Werkzeug fuer die Bauer ----------
   const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), white = new THREE.Color(1, 1, 1), hitC = new THREE.Color(), yAx = new THREE.Vector3(0, 1, 0);
   const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
   const mats = n => Array.from({ length: n }, () => new THREE.Matrix4());
-  let hitNow = 0, alNow = 1, out = null, iB = 0, nP = 0;
+  let hitNow = 0, alNow = 1, out = null, iB = 0, nP = 0, iO = 0, olT = 0;
   // Teil im Gelenk par: Mitte (x,y,z), Groesse, Farbe, Leuchten em, Drehung (rx, rz) vor der Verschiebung. Im Sammelmodus (collect) wird nur gemerkt, sonst in den Pool geschrieben.
   function part(par, x, y, z, sx, sy, sz, col, em, rx, rz) {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
     const c = hitNow ? hitC.copy(col).lerp(white, FG.hit) : col;
     if (out) { out.push({ m: fm.clone(), c: c.clone(), e: em || 0, s: [sx, sy, sz] }); return }
     const i = iB++; pB.im.setMatrixAt(i, fm); pB.im.setColorAt(i, c); pB.a.iK.setXY(i, alNow, em || 0); nP++;
+    if (olT > 0 && Math.min(sx, sy, sz) >= 3.9) { _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l); pO.im.setMatrixAt(iO++, fm) }
   }
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
     X, C, E, KC, D, FG, T, THREE, colOf, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
-    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al },
+    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on ? FG.look.out || 0 : 0 },
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
     collect(fn) { const was = out, r = []; out = r; try { fn() } finally { out = was } return r },
     time: 0, dt: 0, FA: null, FN: null, light: null,
@@ -179,7 +186,8 @@ void main() {
   // ---------- Bild: Figuren und Fahrzeuge der Arten mit Bauer (die anderen zeichnet view3d wie sonst) ----------
   const figMax = 40, carMax = 40;
   K.dyn = (F, Cs, dynL) => {
-    iB = 0; nP = 0; kit.light = dynL; carsNow = []; figsNow = F;
+    iB = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
+    { const th = (X.LAY && X.LAY.theme) || {}; olMat.uniforms.uC.value.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) } carsNow = []; figsNow = F;
     pB.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pB.u = 0;
     pAO.size(F.length + Cs.length); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
@@ -188,7 +196,7 @@ void main() {
       const art = E.typeOf(o, e), lying = !!(e.lie || o.lie);
       if (o.k === 'tot' && KL.fxs['fig-tot'] && !o.noBurst) { const key = 't' + Math.round(o.x) + ',' + Math.round(o.y) + ',' + o.row; if (!seenKey.has(key)) { seenKey.add(key); if (primed) queue.push({ n: 'fig-tot', a: { o: Object.assign({}, o), e, art } }) } if (K.burstArts.has(art)) continue }
       if (lying) { ao(o.x + 3, o.y + 4, o.a, 54, 30, 0, .3 * o.al); lie++ } else { ao(o.x, o.y, 0, 24, 21, 0, .42); if (o.fl) { dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }); if (queue.length < 48) queue.push({ n: 'casing', a: { o: Object.assign({}, o) } }) } }
-      gear += KL.figs[art](kit, o, e); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
+      kit.outline(!lying || true); gear += KL.figs[art](kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
     }
     const cars = [];
     for (const [o, e] of Cs) {
@@ -200,7 +208,7 @@ void main() {
       if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
     }
     prevCars = cars; primed = true;
-    pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish();
+    pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
     if (X.alarm && E.lamps.length) { // Alarm im Raum: zwei kreisende rote Lampen an der Decke (naechste Lampen), nur im Ueberfall
       const P = X.me, L = E.lamps.slice().sort((a, b) => (P ? Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y) : 0)).slice(0, KC.alarm.n);
       L.forEach((l, i) => { const f = .5 + .5 * Math.sin(alarmPh * KC.alarm.spin + i * Math.PI); dynL.push({ k: 'alarm', x: l.x, y: l.y, i: .15 + .85 * f }) });
@@ -313,7 +321,7 @@ void main() {
   K.sync = () => { const w = X.kstil ? 1 : 0; K.on = w > 0 && !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
   K.info = () => ({ on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
-  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
+  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
   return K;
 }
 mkKl.api = KL_API;
