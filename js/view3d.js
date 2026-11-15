@@ -282,7 +282,14 @@ export function mkView3d(X) {
   const box = new THREE.BoxGeometry(1, 1, 1);
 
   let ground = null, curLay = null, curSt = null, gridKey = '', rev = -1, stat = [], cells = {}, grl = new Set();
-  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); groundTex.needsUpdate = true; st.groundUp++ }
+  // Klotz-Stil: Die Platte des Hauptschalters (paintTop der Karte, Rechteck [sw.x - 8, sw.y - 20, 16, 10]) steckt in der statischen Ebene. Der Kasten an der Wand ersetzt sie, darum wird sie auf der Bodenkopie
+  // mit einem Stueck Boden von daneben (eine Kachelhaelfte entfernt, bevorzugt freier Boden) uebermalt. 2D (X.st) bleibt unveraendert.
+  function hideSwitchPlate() {
+    const L = X.LAY; if (!L || !L.sw || !K || !K.on) return; const k = groundCv.width / (X.W * T), x0 = (L.sw.x - 9 - X.WX0 * T) * k, y0 = (L.sw.y - 21 - X.WY0 * T) * k, w = 18 * k, h = 12 * k, free = (dx, dy) => X.cell(Math.floor((L.sw.x + dx) / T), Math.floor((L.sw.y + dy) / T)) === '.';
+    const D = [[0, 16], [0, -16], [16, 0], [-16, 0], [0, 24]].find(d => free(d[0], d[1])) || [0, 16];
+    groundG.drawImage(groundCv, x0 + D[0] * k, y0 + D[1] * k, w, h, x0, y0, w, h);
+  }
+  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
     curLay = X.LAY; curSt = X.st;

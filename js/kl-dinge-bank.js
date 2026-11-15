@@ -107,8 +107,11 @@ export function register(KL) {
   // Grauer Metallkasten etwa halbe Wandhoehe, gelb-schwarzes Warnschild mit Blitz, grosser roter Hebel, darueber eine Lampe. Strom an (o.on): Hebel oben, Lampe gruen; nach Strom aus (Kameras aus):
   // Hebel unten, Lampe rot. Die Wand im Ruecken folgt den Nachbarkacheln (zuerst Norden, dann Westen, Osten, Sueden), ohne Wand steht der Kasten mit Blick nach Sueden in der Kachelmitte.
   KL.obj('sw', (k, o) => {
-    const T_ = k.T, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), cell = k.E.cellAt, wall = (a, b) => { const e = k.C.cells[cell(a, b)]; return !!e && e.s.some(q => q[0] === 0 && q[1] >= k.C.wallH) };
-    const D = [[0, -1], [-1, 0], [1, 0], [0, 1]].find(d => wall(tx + d[0], ty + d[1])) || [0, -1], cx = tx * T_ + T_ / 2, cz = ty * T_ + T_ / 2, pu = [-D[1], D[0]];
+    const T_ = k.T, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), cell = k.E.cellAt, wall = (a, b) => cell(a, b) === '#' || cell(a, b) === 'P'; // nur echte Mauer, keine Tueren
+    // Standort: die Kachel von LAY.sw, steht dort ein Moebel (zum Beispiel der Monitortisch im Museum), die naechste freie Bodenkachel (hoechstens zwei Kacheln entfernt) mit Wand im Ruecken
+    const free = (a, b) => cell(a, b) === '.', dirs = [[0, -1], [-1, 0], [1, 0], [0, 1]], wd = (a, b) => dirs.find(d => wall(a + d[0], b + d[1]));
+    let best = null, bd = 1e9; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const a = tx + dx, b = ty + dy; if (!free(a, b) || !wd(a, b)) continue; const d = Math.hypot(a * T_ + 16 - o.x, b * T_ + 16 - o.y) + (free(tx, ty) && !dx && !dy ? -99 : 0); if (d < bd) { bd = d; best = [a, b] } }
+    const [bx, by] = best || [tx, ty], D = wd(bx, by) || [0, -1], cx = bx * T_ + T_ / 2, cz = by * T_ + T_ / 2, pu = [-D[1], D[0]];
     // u entlang der Wand, w Abstand von der Wandflaeche nach innen (Wand bei w = 0), Kloetze am Rand der Kachel
     const br = (u, w, y0, su, sh, sw_, col, em) => { const px = cx + D[0] * (T_ / 2 - w) + pu[0] * u, pz = cz + D[1] * (T_ / 2 - w) + pu[1] * u, ax = D[0] !== 0; k.dbrick(px, pz, y0, ax ? sw_ : su, sh, ax ? su : sw_, 0, col, em) };
     const on = o.on, metal = 0x8f98a6, dark = 0x2a2f37;
