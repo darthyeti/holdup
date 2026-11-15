@@ -9,6 +9,7 @@ module.exports = [
     async run(t) {
       const K = await import(pathToFileURL(path.join(lib.ROOT, 'js', 'kl-kern.js')).href), V = await import(pathToFileURL(path.join(lib.ROOT, 'js', 'view3d.js')).href);
       t.ok(K.KL.hasObj('lock') && V.V3CFG.scen.kinds.lock, 'lock hat Bauer und Eintrag');
+      t.ok(K.KL.cellOver && K.KL.cellOver.L && K.KL.cellOver.L.cut && K.KL.cellOver.L.s[0][0] > 40, 'im Stil bleibt von L nur der Sturz (mit Schnitt), die Nische bauen die Kloetze');
       t.ok(V.V3CFG.cells.L && V.V3CFG.cells.L.cut && V.V3CFG.cells.l, 'L und l in der Hoehentabelle, L mit Schnitt wie Waende');
     },
   },
