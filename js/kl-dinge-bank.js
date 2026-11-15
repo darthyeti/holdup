@@ -78,6 +78,7 @@ export function register(KL) {
   // ---------- Hintertueren und Nebeneingaenge (Ticket 211): Szenario-Teil 'lock' fuer L (zu) und l (offen), auch Personaltueren, Hoftuer und Zellentueren des Gefaengnisses ----------
   // Der Koerper der Kachel L (Wandhoehe, Schnitt wie Waende) bleibt aus der Tabelle, hier kommen beidseitig Rahmen, Stahlblatt, Panikstange, Schild, Kartenleser mit roter LED. Offen (l): Pfosten, an die Laibung
   // geklapptes Blatt, Schwelle, Leser mit gruener LED. Die Wandrichtung folgt den Nachbarkacheln (quer zur Wand sind die zwei Seiten der Tuer), o.x, o.y Mitte der Kachel, o.open.
+  KL.cellOver = Object.assign(KL.cellOver || {}, { L: { s: [[54, 64, 2]], cut: 1 } }); // L im Kloetzchen-Stil: nur der Sturz bleibt aus der Tabelle (mit Schnitt), die Nische bauen die Kloetze
   const WALLS = '#PWwYVLlDdg';
   KL.obj('lock', (k, o) => {
     const T_ = k.T, cell = k.E.cellAt, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), isW = (a, b) => WALLS.includes(cell(a, b)) || (k.C.cells[cell(a, b)] || { s: [] }).s.some(q => q[0] === 0 && q[1] >= k.C.wallH);
@@ -86,20 +87,20 @@ export function register(KL) {
     const br = (u, v, y0, su, sh, sv, col, em) => k.dbrick(o.x + (hz ? u : v), o.y + (hz ? v : u), y0, hz ? su : sv, sh, hz ? sv : su, 0, col, em);
     const frame = 0x2a3038, steel = 0x9aa6b6, dark = 0x3b4350, H = 56;
     if (!o.open) {
+      // Nische: die Kachel L hat im Stil nur den Sturz (KL.cellOver), hier stehen zwei wandstarke Pfosten, ein duenneres Stahlblatt mittig in der Laibung und die Beschlaege auf beiden Seiten
+      br(-13.5, 0, 0, 5, 54, 32, frame); br(13.5, 0, 0, 5, 54, 32, frame); br(0, 0, 0, 22, .6, 32, 0x20252c);                    // Pfosten (Laibung) und Schwelle
+      br(0, 0, 1, 21.6, 52, 8, steel); br(0, 0, 1, 21.8, 3, 8.4, dark); br(0, 0, 49, 21.8, 3, 8.4, dark); br(0, 0, 22, 21.8, 1.6, 8.4, dark); // Stahlblatt (ein Viertel der Wandstaerke) mit Rippen
       for (const sd of [-1, 1]) {
-        const f = sd * 16.4, p = sd * 17.5;
-        br(-13.8, f, 0, 4.4, H + 3, 1.6, frame); br(13.8, f, 0, 4.4, H + 3, 1.6, frame); br(0, f, H, 32, 3.4, 1.6, frame);          // Rahmen: zwei Pfosten und Sturz
-        br(0, f, 1, 23.4, H - 2, 1.2, steel);                                                                                       // Stahlblatt
-        br(0, f, 1, 23.4, 3, 1.5, dark); br(0, f, H - 4, 23.4, 3, 1.5, dark); br(0, f, 27, 23.4, 1.6, 1.5, dark);                    // Blech-Rippen
-        br(-2, p, 24, 21, 3, 2.4, 0xf0f3f7); br(-12, sd * 17, 23, 2.4, 5, 2, 0x6b7380); br(8, sd * 17, 23, 2.4, 5, 2, 0x6b7380);   // Panikstange und Halter
-        br(-9, sd * 17, 46, 9, 5, 1.2, 0xffc83a); br(-9, sd * 17.6, 47.6, 6, 1.8, .6, 0x1a1d22);                                     // gelbes Schild
-        br(9.5, p, 31, 6, 11, 2.4, 0x20252c); br(9.5, sd * 18.7, 38, 3, 2.4, .6, 0xff3a2e, 1.8); br(9.5, sd * 18.7, 33, 4, 3, .6, 0x4a5260);  // Leser mit roter LED und Tastenfeld
+        const f = sd * 4.6;
+        br(-1.5, sd * 6.4, 22, 17, 2.8, 2.4, 0xf0f3f7); br(-9, sd * 5.4, 21.4, 2.2, 4.2, 1.6, 0x6b7380); br(6, sd * 5.4, 21.4, 2.2, 4.2, 1.6, 0x6b7380);   // Panikstange und Halter
+        br(-6, sd * 4.8, 29, 8.4, 5, 1, 0xffc83a); br(-6, sd * 5.4, 30.4, 5.6, 1.8, .5, 0x1a1d22); void f;                              // gelbes Schild
+        br(13.5, sd * 16.9, 23, 4, 10, 1.8, 0x20252c); br(13.5, sd * 17.9, 30.4, 2.4, 2.4, .6, 0xff3a2e, 1.8); br(13.5, sd * 17.9, 25.4, 3, 3, .6, 0x4a5260);   // Leser an der Laibung mit roter LED und Tastenfeld
       }
     } else {
-      for (const sd of [-1, 1]) { br(-14.5, sd * 15.5, 0, 3, 52, 1.2, frame); br(14.5, sd * 15.5, 0, 3, 52, 1.2, frame) }
-      br(-14.5, 0, 0, 3, 52, 32, frame); br(14.5, 0, 0, 3, 52, 32, frame); br(0, 0, 0, 26, .6, 32, 0x20252c);                            // Pfosten (Laibung) und Schwelle
-      br(-12, 0, 0, 2.6, 50, 29, steel); br(-12, 0, 24, 2.8, 3, 29, dark); br(-10.4, 0, 22, 1, 3, 14, 0xf0f3f7);                           // an die Laibung geklapptes Blatt mit Rippe und Stange
-      br(11, 15.6, 30, 5, 9, 1.6, 0x20252c); br(11, 16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); br(11, -15.6, 30, 5, 9, 1.6, 0x20252c); br(11, -16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); // Leser mit gruener LED
+      for (const sd of [-1, 1]) { br(-13.5, sd * 15.5, 0, 5, 50, 1.2, frame); br(13.5, sd * 15.5, 0, 5, 50, 1.2, frame) }
+      br(-13.5, 0, 0, 5, 50, 32, frame); br(13.5, 0, 0, 5, 50, 32, frame); br(0, 0, 0, 22, .6, 32, 0x20252c);                          // Pfosten (Laibung) und Schwelle
+      br(-8, 0, 0, 6, 48, 29, steel); br(-8, 0, 22, 6.4, 3, 29, dark); br(-4.6, 0, 21, 1, 3, 14, 0xf0f3f7);                              // duenn an die Laibung geklapptes Blatt mit Rippe und Stange
+      br(13.5, 16.9, 23, 4, 10, 1.8, 0x20252c); br(13.5, 17.9, 30.4, 2.4, 2.4, .6, 0x4cf06a, 1.8); br(13.5, -16.9, 23, 4, 10, 1.8, 0x20252c); br(13.5, -17.9, 30.4, 2.4, 2.4, .6, 0x4cf06a, 1.8); // Leser mit gruener LED
     }
   });
 }
