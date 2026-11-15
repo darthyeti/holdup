@@ -282,7 +282,13 @@ export function mkView3d(X) {
   const box = new THREE.BoxGeometry(1, 1, 1);
 
   let ground = null, curLay = null, curSt = null, gridKey = '', rev = -1, stat = [], cells = {}, grl = new Set();
-  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); groundTex.needsUpdate = true; st.groundUp++ }
+  // Klotz-Stil (Ticket 229): Kisten und Faesser (k, q) zeichnet die Objektebene X.so der Karte als 2D-Bild auf den Boden. Die Strassenmoebel (kl-dinge-bank.js) ersetzen sie mit anderer Grundflaeche, darum schien die alte Kiste
+  // (brauner Rahmen mit Eckbeschlaegen) darunter durch. Auf der Bodenkopie wird die Kachel aus der statischen Ebene X.st neu gemalt (Boden ohne Objekt). 2D (X.st, X.so) bleibt unveraendert.
+  function hideStreetProps() {
+    if (!K || !K.on) return; const k = groundCv.width / (X.W * T), w = T * k;
+    for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = X.cell(x, y); if (c !== 'k' && c !== 'q') continue; const sx = (x - X.WX0) * w, sy = (y - X.WY0) * w; groundG.clearRect(sx, sy, w, w); groundG.drawImage(X.st, sx, sy, w, w, sx, sy, w, w) }
+  }
+  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideStreetProps(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
     curLay = X.LAY; curSt = X.st;
