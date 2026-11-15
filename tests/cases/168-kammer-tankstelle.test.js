@@ -3,7 +3,7 @@
 // die Hintertuer zieht in die neue Nordwand. Rueckfall auf dieselbe Huelle ohne Kammer, wenn validateMap etwas Neues meldet (gasLayout). Geprueft wie bei der Bank (Test 167).
 const { coopGame } = require('../lib');
 // Hashes (TN.layHash) der Tankstellen-Karten 1 bis 40 auf der Basis (Lage S, ohne Treffpunkt abseits) vom Stand vor K5 (origin/main 04bf933)
-const OLD = [[1,"174b62f3"],[2,"a11b9878"],[3,"e2720a7a"],[4,"81e8ce76"],[5,"6f98111"],[6,"312227d9"],[7,"2e6bc3dd"],[8,"ea94ef41"],[9,"302ebe2e"],[10,"3250ee9d"],[11,"e642b345"],[12,"afaf8349"],[13,"26639be3"],[14,"1b71434a"],[15,"14ef6bdc"],[16,"430dfedc"],[17,"13dcdfde"],[18,"598b0186"],[19,"191c6e31"],[20,"f803050e"],[21,"31ee1a75"],[22,"bf543e77"],[23,"43739b13"],[24,"a1eb399"],[25,"2b27b85e"],[26,"6b01e141"],[27,"e6c3df9e"],[28,"1e8acfcc"],[29,"a5642ee7"],[30,"de96680b"],[31,"c246b61d"],[32,"947706e0"],[33,"dcffded2"],[34,"f05f310b"],[35,"d8945fa0"],[36,"435cfe7f"],[37,"ab4ed84c"],[38,"39c287a3"],[39,"b7842592"],[40,"d46c70a9"]];
+const OLD = [[1,"174b62f3"],[2,"45acc1fe"],[3,"f48b264f"],[4,"a97cda74"],[5,"6f98111"],[6,"e46643a"],[7,"e9757094"],[8,"5a7b484c"],[9,"45a9cff1"],[10,"25e88f37"],[11,"9961aa8c"],[12,"bbc7dbb4"],[13,"9a3cca56"],[14,"12e6b1c0"],[15,"4bd978af"],[16,"4e7e6496"],[17,"6aa145da"],[18,"d5ee6c75"],[19,"8a7a3073"],[20,"343725d6"],[21,"cbc95658"],[22,"a6c0b5ae"],[23,"39a3b07"],[24,"68b9366d"],[25,"34652ea7"],[26,"6a1faacb"],[27,"5e51a632"],[28,"3fa3521a"],[29,"aa0cc8a3"],[30,"ea3e43ce"],[31,"98c2a23a"],[32,"75cf0565"],[33,"f475bd44"],[34,"f05f310b"],[35,"d8945fa0"],[36,"d561d94c"],[37,"17ca6a8c"],[38,"39c287a3"],[39,"2d499119"],[40,"24770aa4"]];
 
 module.exports = [
   {

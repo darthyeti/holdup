@@ -640,6 +640,8 @@ const pt=(a,n)=>{if(!a)return;if(isSol(a[0],a[1])||!hs(RL,a[0],a[1]))E('route',n
 (lay.guards||[]).forEach((g,i)=>rt(g.route,'Wachroute '+i));if(lay.mgr)rt(lay.mgr.route,'Managerroute');(lay.mission.extra||[]).forEach((x,i)=>{pt(x.p,'Wachwechsel-Start');rt(x.route,'Wachwechsel-Route '+i)});
 (lay.tellers||[]).forEach(a=>pt(a,'Kassierer'));if(v&&v.bundles)v.bundles.forEach(a=>pt(a,'Tresorbuendel'));(lay.mission.bags||[]).forEach(a=>pt(a,'Geldsack'));
 for(const c of lay.cams||[])if(!near(c.x,c.y,50))E('kamera','Kamera nicht erreichbar: '+nm(c.x,c.y));
+// Kameras nur an Waenden (Ticket 221): hinter der Kamera (entgegen a0, je Achse nur bei mehr als .38 Blickanteil) liegt eine Mauer (#, Pfeiler, Tresortuer), Fenster, Glastueren und Hintertueren zaehlen nicht (js/maps.js mountCams)
+for(const c of lay.cams||[]){const cw=q=>q==='#'||q==='P'||q==='V',tx=Math.floor(c.x/T),ty=Math.floor(c.y/T),dx=Math.cos(c.a0),dy=Math.sin(c.a0);if(!((Math.abs(dx)>.38&&cw(cell(tx-Math.sign(dx),ty)))||(Math.abs(dy)>.38&&cw(cell(tx,ty-Math.sign(dy))))))E('kamera-wand','Kamera ohne Mauer im Ruecken: '+nm(c.x,c.y))}
 if(lay.museum&&!lay.turned)museumRules(lay,E,hs,RL);
 if(lay.stash)stashRule(lay,E,hs,RL);
 // Lobby
