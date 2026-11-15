@@ -101,4 +101,67 @@ module.exports = [
       } finally { await env.browser.close().catch(() => {}); env.srv.close(); }
     },
   },
+  {
+    name: 'Kloetzchen Rundenwechsel: Autoexplosion, dann neuer Auftrag, dreimal hintereinander, ohne Haenger, WebGL-Fehler und Wachstum; danach laedt eine neue Seite im selben Browser zuegig (Verdacht aus Test 202)',
+    timeout: 400000,
+    async run(t) {
+      const env = await lib.launch({ webgl: true });
+      try {
+        const page = await lib.openGame(env, { hash: '#debug&3d' });
+        if (!await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'))) { t.note('kein WebGL 2, uebersprungen'); return; }
+        const r = await page.evaluate(async () => {
+          const D = __dbg, out = [], T0 = performance.now(); D.view3d.kstil = 1; await D.view3d.set(true);
+          for (let c = 0; c < 3; c++) {
+            const t0 = performance.now(); D.setScenario('bank'); D.setSeedMode('random'); D.buildLay(D.layoutFor(5 + c)); D.startHeist();
+            for (let i = 0; i < 90; i++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); D.draw();
+            const car = D.get().cars.find(q => q.civ && !q.dead); if (car) D.carBlow(car, 0);
+            let deb = 0; for (let i = 0; i < 60; i++) { D.get().me.hp = 100; D.update(1 / 30); if (i % 3 === 0) { D.draw(); deb = Math.max(deb, D.view3d.V.info().k.deb) } }
+            D.startNext(); for (let i = 0; i < 30; i++) D.update(1 / 30); D.draw(); D.draw(); const i = D.view3d.V.info();
+            out.push({ ms: Math.round(performance.now() - t0), deb, err: i.err, on: !!(i.k && i.k.on), tris: i.tris, objs: i.objs, lost: i.lost, car: !!car });
+          }
+          return { out, total: Math.round(performance.now() - T0), gl: (() => { const c = document.getElementById('c3d'); const g = c && c.getContext('webgl2'); return g ? g.isContextLost() : 'kein c3d' })() };
+        });
+        t.note(JSON.stringify(r));
+        t.ok(r.out.every(o => o.err === '' && o.on), 'jede Runde ohne Fehler in der Ansicht');
+        t.ok(r.gl === false, 'WebGL-Kontext nicht verloren: ' + r.gl);
+        t.ok(r.out.every(o => o.deb > 10 || !o.car), 'Zerfall in jeder Runde: ' + r.out.map(o => o.deb));
+        t.ok(r.out[2].objs <= r.out[0].objs + 40 && r.out[2].tris < r.out[0].tris * 1.6, 'kein Wachstum der Szene ueber die Runden: Objekte ' + r.out.map(o => o.objs) + ', Dreiecke ' + r.out.map(o => o.tris));
+        t.eq(page.errors, [], 'keine JS-Fehler');
+        // neue Seite im selben Browser: Ladezeit
+        const t1 = Date.now(), p2 = await lib.openGame(env, { hash: '#debug&3d' }); const ms = Date.now() - t1;
+        t.ok(ms < 20000, 'neue Seite im selben Browser nach der Explosion in ' + ms + ' ms geladen');
+        await p2.ctx.close().catch(() => {});
+      } finally { await env.browser.close().catch(() => {}); env.srv.close(); }
+    },
+  },
+  {
+    name: 'Kloetzchen-Coop Rundenwechsel: Autoexplosion, Host startet den naechsten Auftrag, der Client zeichnet weiter ohne Fehler und ohne Haenger',
+    timeout: 400000,
+    async run(t) {
+      const P = await glPage(t); if (!P) return;
+      try {
+        await lib.loadTool(P.page, 'loopnet.js'); await lib.loadInpage(P.page, 'coop.js');
+        const r = await P.page.evaluate(`(async () => {
+          const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
+          const run = n => { for (let i = 0; i < n; i++) step(G.insts, G.net, 1 / 60); };
+          for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
+          const o = { rounds: [] };
+          for (let c = 0; c < 2; c++) {
+            const t0 = performance.now(); A.startHeist(); run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
+            const car = A.get().cars.find(q => q.civ && !q.dead); A.get().me.hp = 1e9; if (car) A.carBlow(car, 0);
+            let deb = [0, 0]; for (let i = 0; i < 60; i++) { run(1); if (i % 3 === 0) for (const d of [A, B]) d.draw(); deb = deb.map((v, j) => Math.max(v, [A, B][j].view3d.V.info().k.deb)) }
+            try { A.startNext(); } catch (e) { o.nextErr = String(e) }
+            run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
+            const ii = [A, B].map(d => d.view3d.V.info()); o.rounds.push({ ms: Math.round(performance.now() - t0), deb, err: ii.map(i => i.err), on: ii.map(i => !!(i.k && i.k.on)), phase: [A.get().phase, B.get().phase], tris: ii.map(i => i.tris) });
+          }
+          for (const d of [A, B]) await d.view3d.set(false); for (const d of G.insts) { try { d.leaveGame(); } catch (e) {} } return o; })()`);
+        t.note(JSON.stringify(r));
+        t.ok(!r.nextErr, 'startNext ohne Fehler: ' + r.nextErr);
+        t.ok(r.rounds.every(q => q.err.every(e => e === '') && q.on.every(Boolean)), 'beide Ansichten in jeder Runde ohne Fehler');
+        t.ok(r.rounds.every(q => q.deb[1] > 10), 'Zerfall beim Client in jeder Runde: ' + r.rounds.map(q => q.deb));
+        t.ok(r.rounds.every(q => q.ms < 60000), 'keine Haenger: ' + r.rounds.map(q => q.ms) + ' ms je Runde');
+        if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
+      } finally { await P.done(); }
+    },
+  },
 ];
