@@ -6,14 +6,18 @@ import * as THREE from '../assets/three.module.min.js';
 export function register(KL) {
   const mRoot = new THREE.Matrix4(), mB = new THREE.Matrix4(), mH = new THREE.Matrix4(), mT = new THREE.Matrix4(), mD = new THREE.Matrix4();
   const mk = n => Array.from({ length: n }, () => new THREE.Matrix4()), mS = mk(2), mE = mk(2), mL = mk(2), mKn = mk(2);
+  // Lesbarkeit auf Spielzoom: kraeftige Farben je Rolle, ueberschreibt nur die Farben von V3CFG.fig.out (Form und Kopfart bleiben)
+  const PAL = { cop: { top: 0x2f62dc, bot: 0x1b2f78, hat: 0x1b2f78 }, swat: { top: 0x2b2e35, bot: 0x1d2025, hat: 0x15171b, gl: 0x15171b }, shield: { top: 0x2b2e35, bot: 0x1d2025, hat: 0x15171b, gl: 0x15171b },
+    sniper: { top: 0x5d7a35, bot: 0x3a4a24, hat: 0x2f3d1d }, grd: { top: 0x9b8468, bot: 0x5c4f40, hat: 0x6b5a45 }, civA: { top: 0xf0b030, bot: 0x4c7aa0, hat: 0x6b4226 }, civB: { top: 0xe0508c, bot: 0x3f4d78, hat: 0xd2b46a },
+    tel: { top: 0xeef2f5, bot: 0x4a5568, hat: 0x5a3b22 }, mgr: { top: 0x6a4fb5, bot: 0x33363f, hat: 0x2c2118 } };
   const base = (k, o, e, art) => {
-    const { part, jt, rotY, colOf, KC, D, FG } = k, OT = FG.out[art], kk = (1 + ((e.r || 9) - 9) * FG.size) * KC.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6;
+    const { part, jt, rotY, colOf, KC, D, FG } = k, OT = Object.assign({}, FG.out[art], PAL[art]), rob = art.startsWith('rob'), kk = (1 + ((e.r || 9) - 9) * FG.size) * KC.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6;
     const pw = Math.PI * 2 / KC.step, qw = run ? Math.round((o.w || 0) / pw) * pw : 0, sw = run ? Math.sin(qw) : 0, stepOdd = run ? (Math.round((o.w || 0) / pw) & 1) : 0;
     const gun = !lying && !kneel && o.ar && art !== 'sniper', rifle = !lying && !kneel && o.rf, shield = !lying && !kneel && o.sh >= 0, side = [1, -1];
     const top = colOf(OT.top), bot = colOf(OT.bot), skin = colOf(FG.skin), glv = colOf(OT.gl || FG.skin), hat = colOf(OT.hat || OT.bot), dark = colOf(FG.dark), eye = colOf(FG.eye), gunC = colOf(FG.gun), boot = colOf(FG.boot);
     k.state(o.hit, o.al);
     rotY(o.x, o.y, o.a, kk); mRoot.copy(k.root);
-    const legH = D.footH + D.shin + D.thigh, tH = D.torsoH, hd = D.head;
+    const legH = D.footH + D.shin + D.thigh, tH = D.torsoH, hd = D.head * 1.1;
     if (lying) jt(mRoot, mB, (legH + D.pelvH + tH + hd) / 2, D.torsoD / 2 + .2, 0, 0, 0, Math.PI / 2); else mB.copy(mRoot);
     let hipY = legH, bob = 0, lean = 0;
     const hip = [0, 0], kn = [0, 0], spread = [0, 0], sh = [[.12, 0], [.12, 0]], el = [.1, .1];
@@ -37,6 +41,7 @@ export function register(KL) {
     part(mT, 0, hy, 0, hd, hd, hd * 1.04, mask ? dark : skin);
     if (mask) { part(mT, hd * .5 - .1, hy + hd * .08, 0, .8, hd * .24, hd * .78, skin); for (const d of side) part(mT, hd * .5 + .35, hy + hd * .08, d * 2, .8, 1.7, 1.7, eye) }
     else { for (const d of side) part(mT, hd * .5 + .1, hy + .9, d * 2.5, .8, 2, 1.8, eye); part(mT, hd * .5 + .1, hy - 2.6, 0, .6, .9, 3.6, colOf(0x7a4a3a)) }
+    if (rob) { part(mT, 0, hy + hd * .5 + .5, 0, hd * 1.02, 2.4, hd * 1.06, top); part(mT, -D.torsoD / 2 - .3, tH * .5, 0, .8, tH * .8, D.torsoW * .5, colOf(FG.sleeve)) }
     if (OT.head === 'cap') { part(mT, 0, hy + hd * .5 + .6, 0, hd * 1.06, 2.6, hd * 1.1, hat); part(mT, hd * .5 + 2.4, hy + hd * .5 - .2, 0, 5, .9, hd * .95, hat) }
     else if (OT.head === 'helmet') { part(mT, 0, hy + hd * .2, 0, hd * 1.14, hd * .7, hd * 1.18, hat); part(mT, hd * .5 + .3, hy + .1, 0, .7, hd * .26, hd * .78, colOf(FG.visor), .1) }
     else if (OT.head === 'beanie') part(mT, 0, hy + hd * .32, 0, hd * 1.08, hd * .42, hd * 1.12, hat);
@@ -60,10 +65,10 @@ export function register(KL) {
       part(mKn[i], (D.footL - lt) / 2, -D.shin - D.footH / 2 + .4, 0, D.footL, D.footH, D.footW, boot);
     }
     let extra = 0;
-    if (gun) { jt(mE[0], mD, 0, -D.armF - D.hand * .3, 0); part(mD, 3, -.4, 0, 6.4, 1.8, 1.3, gunC); part(mD, .5, -2.2, 0, 1.8, 3.6, 1.3, gunC) }
+    if (gun) { jt(mE[0], mD, 0, -D.armF - D.hand * .3, 0); part(mD, 3.4, -.4, 0, 8, 2.2, 1.7, gunC); part(mD, .5, -2.4, 0, 2.2, 4.2, 1.7, gunC) }
     if (rifle) { const L0 = 18; part(mT, D.torsoD / 2 + L0 / 2 - 4, tH * .82, 1.5, L0, 1.8, 1.5, gunC); part(mT, D.torsoD / 2 - 5, tH * .82 - .7, 1.5, 5.5, 3.2, 1.7, colOf(FG.stock)); part(mT, D.torsoD / 2 + 4, tH * .82 + 1.8, 1.5, 6, 1.8, 1.8, gunC); extra++ }
     if (shield) { const c = k.xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]; part(mB, D.torsoD / 2 + 5, 16.5, -1.5, 1.8, 27, 17, c, .12); part(mB, D.torsoD / 2 + 6, 22, -1.5, .8, 5, 11, dark); extra++ }
-    if (o.bag) { part(mT, -D.torsoD / 2 - 3.6, tH * .56, 0, 5.4, 10.6, 8, colOf(FG.bag)); extra++ }
+    if (o.bag) { part(mT, -D.torsoD / 2 - 4.4, tH * .52, 0, 7.4, 12.6, 10, colOf(0xc79a3c)); part(mT, -D.torsoD / 2 - 1.2, tH * .84, 0, 1.6, 2.2, 6, colOf(FG.dark)); extra++ }
     return extra;
   };
   // Arten: Spieler und Team (rob0 bis rob3), Polizei und Gegner, Wachen, Zivilisten, Angestellte (Namen wie V3CFG.fig.out)
