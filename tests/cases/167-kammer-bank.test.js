@@ -4,7 +4,7 @@
 // (3) die Regel kammer samt Mutanten der Sperrzonen-Ausnahme, (4) alle acht Lagen, (5) der Zugang liegt ausserhalb der Sicht, (6) Spieltest: ziehen, H, 90 s ohne Alarm, Gegenprobe in der Halle, (7) Coop.
 const { coopGame } = require('../lib');
 // Hashes (TN.layHash) der Bank-Karten 1 bis 40 auf der Basis (Lage S, ohne Treffpunkt abseits) vom Stand vor K4 (origin/main 04bf933)
-const OLD = [[1,"f4deb800"],[2,"aa96d294"],[3,"78ce5201"],[4,"e6dc076d"],[5,"cc704636"],[6,"867f9b35"],[7,"3e4c95c7"],[8,"e449d63d"],[9,"32ffd75e"],[10,"525d01e3"],[11,"bd9a8d63"],[12,"6fa56f61"],[13,"777d1832"],[14,"12536fbd"],[15,"40241f2c"],[16,"d06e671e"],[17,"de6e7d10"],[18,"d5cf40c3"],[19,"cb114b41"],[20,"e745280d"],[21,"c2c63cd1"],[22,"2db273"],[23,"bcf371f8"],[24,"ec9bdb2e"],[25,"a2dffc58"],[26,"f4fc7455"],[27,"6a14083a"],[28,"e262027e"],[29,"a54e485c"],[30,"6cf99e68"],[31,"1b231191"],[32,"1e91abb9"],[33,"d7936df6"],[34,"c67a8077"],[35,"6d4169ea"],[36,"826d392a"],[37,"bd12a91d"],[38,"81ddcc2a"],[39,"633f6b54"],[40,"cdff71ed"]];
+const OLD = [[1,"29582586"],[2,"d84119a2"],[3,"66f089c5"],[4,"1ee89fa9"],[5,"1e553efa"],[6,"6ff328a6"],[7,"90b9783d"],[8,"3c64d0ca"],[9,"b6e9e754"],[10,"98de1d52"],[11,"f985824d"],[12,"503bd59d"],[13,"2596eb44"],[14,"935ae2ea"],[15,"fe2daafa"],[16,"77d1a3d9"],[17,"44d7eb36"],[18,"67af7e4d"],[19,"c2017c84"],[20,"38796465"],[21,"806b642e"],[22,"7e7b236"],[23,"e2f83367"],[24,"a59364fa"],[25,"d4514d50"],[26,"7794d256"],[27,"7c5b6ed0"],[28,"6022d2d5"],[29,"ba2947de"],[30,"e181ec4b"],[31,"fff3dc76"],[32,"75f33ed0"],[33,"33f3f629"],[34,"aba40871"],[35,"f3e0282c"],[36,"5ee14654"],[37,"e44690e5"],[38,"2657a1fd"],[39,"40c96bfa"],[40,"62e4f961"]];
 
 module.exports = [
   {

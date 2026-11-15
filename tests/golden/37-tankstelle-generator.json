@@ -1,15 +1,15 @@
 {
  "gas-basis": {
   "hash": {
-   "Insel": "f907f72e",
-   "Klassik": "862aebe5",
-   "G\u00e4nge": "dae9320e",
-   "Wandregale": "dd320881"
+   "Insel": "734a336f",
+   "Klassik": "9f8a202e",
+   "Gänge": "428f755",
+   "Wandregale": "f9cc1b62"
   },
   "n": {
    "Insel": 60,
    "Klassik": 50,
-   "G\u00e4nge": 35,
+   "Gänge": 35,
    "Wandregale": 55
   }
  }

@@ -60,7 +60,7 @@ module.exports = [
       const r = await t.page.evaluate(() => {
         const D = __dbg, T = 32, bad = [], grp = {}, resid = { U: new Set(), F: new Set() }, sun = { U: new Set(), F: new Set() }, fnum = x => Math.round(x * 1000) / 1000;
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S');
-        const S0 = [.62, 2.45, .75, 1.75, 3.14, 0, .59, 2.55, -1.4, .8], twoPi = 2 * Math.PI;
+        const S0 = [.62, 2.45, .75, 1.75, 3.14, 0, .59, 2.55, -1.4, .8].concat([0, Math.PI / 2, Math.PI, -Math.PI / 2].flatMap(b => [b + .95, b - .95])), twoPi = 2 * Math.PI;
         const adist = (a, b) => { let d = ((a - b) % twoPi + twoPi) % twoPi; return Math.min(d, twoPi - d); };
         let maxOff = { U: 0, F: 0 };
         let w = D.world(); const cell = (x, y) => w.cell(x, y);

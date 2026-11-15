@@ -67,7 +67,7 @@ sw:{x:24*T+16,y:7*T+22},exit:{x:26*T,y0:8*T,y1:12*T,dir:1,tx:26},van:{y:10*T,x0:
 posts:[{x:8,y:14,a:-1.57,k:'S'},{x:27,y:8,a:3.14,k:'E',anchor:true},{x:-1,y:9,a:0,k:'W'},Object.assign({x:11,y:-1,a:1.57,k:'N'},cbd===11?{door:[11,0]}:{}),{x:11,y:14,a:-1.57,k:'S'},{x:27,y:11,a:3.14,k:'E',anchor:true},Object.assign({x:22,y:-1,a:1.57,k:'N'},cbd===22?{door:[22,0]}:{}),{x:5,y:14,a:-1.57,k:'S'},
 {x:-1,y:6,a:0,k:'W'},{x:5,y:-1,a:1.57,k:'N'},{x:14,y:14,a:-1.57,k:'S'},{x:27,y:6,a:3.14,k:'E',anchor:true},{x:16,y:-1,a:1.57,k:'N'},{x:-1,y:12,a:0,k:'W'},{x:2,y:14,a:-1.57,k:'S'},{x:17,y:14,a:-1.57,k:'S'}],
 slots:{W:[15,10,5,0],E:[20,25,30,35]},laneY:18*T,title:{cx:32,ax:190,cy:-10,ay:110}};
-return lay}
+lay.cams=mountCams(lay.cams);return lay}
 /* ---- Zufallskarte: Variationen derselben Bank. Alle Groessen kommen aus den Parametern q, CLASSICP ergibt exakt die klassische Bank. ---- */
 function mulberry32(a){return()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296}}
 const CLASSICP={cx:11,vw:5,ew:6,bd:5,ld:5,fd:9,wy:9,ey:9,sd:9,od:21,nt:3,na:2,nb:3,nbun:5,yw:11};
@@ -250,8 +250,9 @@ const R0b=[[3,sd],[fd,ly0+1],[mx1-1,ly0+1],[mx1,sd],[ex0+1,sd],[exr-1,sd],[ex0+1
 const mgrR=rotR(MR0,ms.rot[2],ms.rot[3]),guards=[],deskT=[[oc-1,oy0+1],[oc,oy0+1],[oc+1,oy0+1],[2,2],[3,2],[cx-3,2],[cx-2,2]];
 if(ms.guards>=1){const rt=rotR(R0,ms.rot[0],ms.rot[1]);guards.push({p:rt[0],route:rt})}
 if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+4)%9,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
-const camc=[{x:1.5*T,y:(ly0+.5)*T,a0:.62,amp:.55,sp:.55,rng:270,fov:.5},{x:(mx1+.5)*T,y:(ly0+.5)*T,a0:2.45,amp:.5,sp:.5,rng:270,fov:.5},{x:1.5*T,y:1.5*T,a0:.75,amp:.6,sp:.6,rng:250,fov:.5},{x:(cx+.5)*T,y:1.5*T,a0:1.75,amp:.7,sp:.7,rng:170,fov:.55},
+const camc0=[{x:1.5*T,y:(ly0+.5)*T,a0:.62,amp:.55,sp:.55,rng:270,fov:.5},{x:(mx1+.5)*T,y:(ly0+.5)*T,a0:2.45,amp:.5,sp:.5,rng:270,fov:.5},{x:1.5*T,y:1.5*T,a0:.75,amp:.6,sp:.6,rng:250,fov:.5},{x:(cx+.5)*T,y:1.5*T,a0:1.75,amp:.7,sp:.7,rng:170,fov:.55},
 {x:(mx1-.5)*T,y:-.45*T,a0:3.14,amp:.55,sp:.5,rng:300,fov:.5},{x:(ex0+.5)*T,y:-.45*T,a0:0,amp:.55,sp:.45,rng:300,fov:.5},{x:(tp==='W'?-1.5:bx1+2.5)*T,y:((tp==='W'?wy:ey)-1)*T,a0:tp==='W'?.59:2.55,amp:.5,sp:.5,rng:260,fov:.5},{x:(fd+1)*T,y:(by1-.55)*T,a0:-1.4,amp:.6,sp:.5,rng:260,fov:.5},{x:(ex0+.5)*T,y:(sy0+.5)*T,a0:.8,amp:.55,sp:.5,rng:260,fov:.5}];
+const camc=mountCams(camc0);
 let camsSel=camc.slice(0,7);
 if(!po){const idx=camc.map((_,i)=>i);for(let i=idx.length-1;i>0;i--){const j=Math.floor(mr()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]]}camsSel=idx.slice(0,ms.cams).sort((a,b)=>a-b).map(i=>{const c=camc[i];return Object.assign({},c,{a0:c.a0+(mr()-.5)*.3,rng:c.rng+Math.round((mr()-.5)*40)})})}
 const ev=ms.ev,evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',transport:'Geldtransport',feiertag:'Feiertag'},extra=[],bags=[],frontP=[fd,ly1];
@@ -454,7 +455,7 @@ const R0=SK?routeOut(HT.route,SK):HT.route,MR0=[[16,3],[18,3],[18,5],[17,7],[20,
 if(ms.guards>=1){const rt=rotR(R0,ms.rot[0]%6,ms.rot[1]);guards.push({p:rt[0],route:rt})}
 if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+3)%6,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
 const camc0=[{x:1.5*T,y:1.5*T,a0:.78,amp:.6,sp:.6,rng:270,fov:.5},{x:(hw+.5)*T,y:1.5*T,a0:2.4,amp:.6,sp:.55,rng:250,fov:.5},{x:1.5*T,y:(hd+.4)*T,a0:-.78,amp:.55,sp:.5,rng:250,fov:.5},{x:(hw+.5)*T,y:(hd+.4)*T,a0:-2.35,amp:.55,sp:.5,rng:240,fov:.5},
-{x:(22.4+dx)*T,y:7.4*T,a0:2.4,amp:.5,sp:.5,rng:230,fov:.5},{x:(15.5+dx)*T,y:1.5*T,a0:.8,amp:.6,sp:.6,rng:180,fov:.55},{x:(18.5+dx)*T,y:-.45*T,a0:3.14,amp:.55,sp:.5,rng:300,fov:.5},{x:(24.6+dx)*T,y:5*T,a0:2.6,amp:.5,sp:.5,rng:260,fov:.5}],camc=SK?camc0.filter((_,i)=>i!==2):camc0;
+{x:(22.4+dx)*T,y:7.4*T,a0:2.4,amp:.5,sp:.5,rng:230,fov:.5},{x:(15.5+dx)*T,y:1.5*T,a0:.8,amp:.6,sp:.6,rng:180,fov:.55},{x:(18.5+dx)*T,y:-.45*T,a0:3.14,amp:.55,sp:.5,rng:300,fov:.5},{x:(24.6+dx)*T,y:5*T,a0:2.6,amp:.5,sp:.5,rng:260,fov:.5}],camc=mountCams(SK?camc0.filter((_,i)=>i!==2):camc0);
 const idx=camc.map((_,i)=>i);for(let i=idx.length-1;i>0;i--){const j=Math.floor(mr()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]]}
 let nCam=Math.max(4,Math.min(camc.length,ms.cams-1));if(!P.classic&&fr<CR.few)nCam=Math.min(nCam,CR.camsFew);
 const camsSel=idx.slice(0,nCam).sort((a,b)=>a-b).map(i=>{const c=camc[i];return Object.assign({},c,{a0:c.a0+(mr()-.5)*.3,rng:c.rng+Math.round((mr()-.5)*40)})});
@@ -490,6 +491,20 @@ slots:{W:[14,9,4,-1],E:[19,24,29,34]}}:{q:{hw,hd,vx}}),...(SK?{stash:SK}:{}),lan
 /* ---- Gemeinsame Helfer der neuen Karten (Tankstelle, Museum, Casino): Raster aus Textzeilen, Rahmen der Welt, Kameras waehlen, Lage-Text. ---- */
 const asc=(rows,x0,y0)=>rows.forEach((r,j)=>{for(let i=0;i<r.length;i++)if(r[i]!==' ')setc(x0+i,y0+j,r[i])});
 function frameWorld(w,h,x0,y0,wy1){newGrid(w,h,x0,y0);const x1=x0+w-1,y1=y0+h-1;fill(x0,y0,x1,y1,'o');fill(x0,y0,x1,y0+1,'#');fill(x0,y0,x0+3,wy1,'#');fill(x1,y0+2,x1,y1,'f');fill(x0,y1,x1-1,y1,'f')}
+/* Kameras nur an Waenden (Ticket 221): Eine Kamera haengt an einer Mauer (#, Pfeiler P, Tresortuer V; Fenster, Glastueren und Hintertueren zaehlen nicht). camBack prueft, ob hinter der Kamera (entgegen ihrem Blickwinkel a)
+   eine Mauer liegt: die Nachbarkachel gegen die Blickrichtung, je Achse nur, wenn die Blickrichtung dort mehr als .38 hat (Diagonale: beide Achsen, eine Mauer genuegt). mountCams setzt jede Kandidatin der Liste
+   an die naechste freie Bodenkachel (. oder o) mit Mauer im Ruecken (Radius 2, sonst 4), dreht den Blick so wenig wie noetig von der Mauer weg und rueckt sie an die Mauer (6 px vor die Flaeche). Eine schon richtig haengende
+   Kamera bleibt unveraendert, Kandidatinnen ohne Platz (oder doppelt auf einer Kachel) fallen weg. Reichweite, Oeffnung und Schwung bleiben. */
+const CAMWALL=q=>q==='#'||q==='P'||q==='V';
+function camBack(c,a){const dx=Math.cos(a),dy=Math.sin(a),tx=Math.floor(c.x/T),ty=Math.floor(c.y/T);return(Math.abs(dx)>.38&&CAMWALL(cell(tx-Math.sign(dx),ty)))||(Math.abs(dy)>.38&&CAMWALL(cell(tx,ty-Math.sign(dy))))}
+function mountCams(list){const out=[],used=new Set(),W4=[[0,-1],[-1,0],[1,0],[0,1]],wrap=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a};
+for(const c of list){const tx=Math.floor(c.x/T),ty=Math.floor(c.y/T);
+if(!CAMWALL(cell(tx,ty))&&camBack(c,c.a0-.16)&&camBack(c,c.a0+.16)&&!used.has(tx+','+ty)){used.add(tx+','+ty);out.push(c);continue}
+let best=null;for(const R of[2,4]){for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){const x=tx+dx,y=ty+dy,q=cell(x,y);if(q!=='.'&&q!=='o'||used.has(x+','+y))continue;
+for(const w of W4){if(!CAMWALL(cell(x+w[0],y+w[1])))continue;const base=Math.atan2(-w[1],-w[0]),d=wrap(c.a0-base),lim=.95,a=base+Math.max(-lim,Math.min(lim,d)),cost=Math.hypot(dx,dy)+Math.abs(wrap(a-c.a0))*.8;
+if(!best||cost<best.cost)best={cost,x,y,w,a}}}if(best)break}
+if(!best)continue;used.add(best.x+','+best.y);out.push(Object.assign({},c,{x:(best.x+.5)*T+best.w[0]*(T/2-6),y:(best.y+.5)*T+best.w[1]*(T/2-6),a0:best.a}))}
+return out}
 function pickCams(mr,camc,n){const idx=camc.map((_,i)=>i);for(let i=idx.length-1;i>0;i--){const j=Math.floor(mr()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]]}
 return idx.slice(0,Math.min(camc.length,n)).sort((a,b)=>a-b).map(i=>{const c=camc[i];return Object.assign({},c,{a0:c.a0+(mr()-.5)*.3,rng:c.rng+Math.round((mr()-.5)*40)})})}
 /* Museum: Kameras mit Mindestabstand (minD Kacheln untereinander), ohne Kandidaten nahe der Tueren (door Kacheln um jede Tuer in tuer). Gierig in gemischter Reihenfolge, haelt der Abstand fuer n nicht, bleiben weniger. */
@@ -554,7 +569,8 @@ const fr=sw*sd-SH.reduce((a,b)=>a+b[2]*b[3],0),CR=CFG.gasGen.crowd;if(!P.classic
 const rl=Math.min(2,fd-5),rr=Math.max(sw-1,fd+6),R0=H.rt(rl,rr,6,bot,fd+1),NR=R0.length,guards=[];
 if(ms.guards>=1){const rt=rotR(R0,ms.rot[0]%NR,ms.rot[1]);guards.push({p:rt[0],route:rt})}
 if(ms.guards>=2){const rt=rotR(R0,(ms.rot[0]+(NR>>1))%NR,!ms.rot[1]);guards.push({p:rt[0],route:rt})}
-const camc=[{x:1.5*T,y:6.4*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:(sw+.5)*T,y:6.4*T,a0:2.4,amp:.6,sp:.55,rng:300,fov:.5},{x:1.5*T,y:(bot+.5)*T,a0:-.7,amp:.55,sp:.5,rng:290,fov:.5},{x:6.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:(cx0+2.5)*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:200,fov:.55},{x:(fd+1)*T,y:(wall+.4)*T,a0:1.57,amp:.7,sp:.5,rng:320,fov:.6}];
+const camc0=[{x:1.5*T,y:6.4*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:(sw+.5)*T,y:6.4*T,a0:2.4,amp:.6,sp:.55,rng:300,fov:.5},{x:1.5*T,y:(bot+.5)*T,a0:-.7,amp:.55,sp:.5,rng:290,fov:.5},{x:6.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:(cx0+2.5)*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:200,fov:.55},{x:(fd+1)*T,y:(wall+.4)*T,a0:1.57,amp:.7,sp:.5,rng:320,fov:.6}];
+const camc=mountCams(camc0);
 const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
 /* Paket P1: der Wachwechsel-Wachmann beginnt in den erzeugten Huellen nicht auf den Kacheln direkt an der Vordertuer (Klassik-Huelle wie vorher) */
@@ -662,7 +678,8 @@ if(BK.on&&!P.classic){const br=mulberry32((((sn)*2246822519)>>>0)^0x7b10c4e3),F=
    else for(let b=-2;b<=2&&ok;b++)for(let a=-2;a<=2&&ok;a++)if(!F(q[0]+a,q[1]+b))ok=false;
    if(!ok||ch(q[0],q[1],rsv)||ch(q[0],q[1],walk)){ok=false;break}}
   if(!ok)continue;cs.forEach(q=>setc(q[0],q[1],pil?'P':'#'));n++}}
-const camc=[{x:1.5*T,y:1.5*T,a0:.78,amp:.6,sp:.6,rng:290,fov:.5},{x:(c.ww+.5)*T,y:1.5*T,a0:2.3,amp:.6,sp:.55,rng:290,fov:.5},{x:1.5*T,y:(S+.4)*T,a0:-.78,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.ww+.5)*T,y:(S+.4)*T,a0:-2.3,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.xc+.5)*T,y:(S+.4)*T,a0:-1.57,amp:.6,sp:.5,rng:280,fov:.5},{x:(16.5+dx)*T,y:6.5*T,a0:1.55,amp:.6,sp:.55,rng:260,fov:.5},{x:(26.4+ox)*T,y:6.5*T,a0:2.4,amp:.55,sp:.5,rng:280,fov:.5},{x:(26.4+ox)*T,y:(S+.4)*T,a0:-2.4,amp:.55,sp:.5,rng:280,fov:.5}];
+const camc0=[{x:1.5*T,y:1.5*T,a0:.78,amp:.6,sp:.6,rng:290,fov:.5},{x:(c.ww+.5)*T,y:1.5*T,a0:2.3,amp:.6,sp:.55,rng:290,fov:.5},{x:1.5*T,y:(S+.4)*T,a0:-.78,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.ww+.5)*T,y:(S+.4)*T,a0:-2.3,amp:.55,sp:.5,rng:290,fov:.5},{x:(c.xc+.5)*T,y:(S+.4)*T,a0:-1.57,amp:.6,sp:.5,rng:280,fov:.5},{x:(16.5+dx)*T,y:6.5*T,a0:1.55,amp:.6,sp:.55,rng:260,fov:.5},{x:(26.4+ox)*T,y:6.5*T,a0:2.4,amp:.55,sp:.5,rng:280,fov:.5},{x:(26.4+ox)*T,y:(S+.4)*T,a0:-2.4,amp:.55,sp:.5,rng:280,fov:.5}];
+const camc=mountCams(camc0);
 const CM=CFG.museum.cam,cr=mulberry32((((sn)*1103515245+(P.ct|0)*2654435761)>>>0)^0x2c9277b5),nCam=ms.lg.includes('sicher')?CM.n[1]:CM.n[0]+Math.floor(cr()*(CM.n[1]-CM.n[0]+1));
 const camsSel=pickCamsFar(cr,camc,nCam,CM.minD,[[dd,Y1],[dd+1,Y1],[13+dx,0]],CM.door);
 const ev=ms.ev.filter(e=>e!=='transport'&&e!=='feiertag'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe'},extra=[];ms.ev=ev;
@@ -741,7 +758,8 @@ const mr=mulberry32((((sn)*2654435761)>>>0)^0x5bd1e995),ms=genMission(mr,'c',sn)
 const nG=Math.min(6,3+ms.guards+(ms.lg.includes('sicher')?1:0));ms.guards=nG;ms.cams=Math.min(10,ms.cams+3);const civBase=Math.round(9+ms.civ*1.6);ms.civ=civBase;
 const RT=HT.rt,guards=[];
 for(let i=0;i<nG;i++){const base=RT[i%3],rt=rotR(base,(ms.rot[0]+i)%base.length,(i>>1)%2?!ms.rot[1]:ms.rot[1]);guards.push({p:rt[0],route:rt})}
-const camc=[{x:1.5*T,y:10.5*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:1.5*T,y:(22.4+dy)*T,a0:-.75,amp:.55,sp:.5,rng:300,fov:.5},{x:12.5*T,y:7.4*T,a0:.6,amp:.6,sp:.55,rng:300,fov:.5},{x:(25.5+dx)*T,y:7.4*T,a0:2.5,amp:.6,sp:.5,rng:300,fov:.5},{x:(38.4+dx)*T,y:7.4*T,a0:2.4,amp:.55,sp:.5,rng:300,fov:.5},{x:(38.4+dx)*T,y:(22.4+dy)*T,a0:-2.4,amp:.55,sp:.5,rng:300,fov:.5},{x:(19.5+vx)*T,y:(22.4+dy)*T,a0:-1.57,amp:.7,sp:.5,rng:330,fov:.55},{x:17.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:(30.5+dx)*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:240,fov:.55},{x:6*T,y:1.4*T,a0:1.0,amp:.6,sp:.55,rng:260,fov:.55}];
+const camc0=[{x:1.5*T,y:10.5*T,a0:.75,amp:.6,sp:.6,rng:300,fov:.5},{x:1.5*T,y:(22.4+dy)*T,a0:-.75,amp:.55,sp:.5,rng:300,fov:.5},{x:12.5*T,y:7.4*T,a0:.6,amp:.6,sp:.55,rng:300,fov:.5},{x:(25.5+dx)*T,y:7.4*T,a0:2.5,amp:.6,sp:.5,rng:300,fov:.5},{x:(38.4+dx)*T,y:7.4*T,a0:2.4,amp:.55,sp:.5,rng:300,fov:.5},{x:(38.4+dx)*T,y:(22.4+dy)*T,a0:-2.4,amp:.55,sp:.5,rng:300,fov:.5},{x:(19.5+vx)*T,y:(22.4+dy)*T,a0:-1.57,amp:.7,sp:.5,rng:330,fov:.55},{x:17.5*T,y:1.4*T,a0:1.2,amp:.6,sp:.6,rng:230,fov:.55},{x:(30.5+dx)*T,y:1.4*T,a0:1.57,amp:.6,sp:.55,rng:240,fov:.55},{x:6*T,y:1.4*T,a0:1.0,amp:.6,sp:.55,rng:260,fov:.55}];
+const camc=mountCams(camc0);
 const camsSel=pickCams(mr,camc,ms.cams);
 const ev=ms.ev.filter(e=>e!=='transport'),evTag={wache:'Wachwechsel',strom:'Stromausfall',streife:'Streife in der Nähe',feiertag:'Feiertag'},extra=[];ms.ev=ev;
 /* Der Wachwechsel-Wachmann beginnt in den erzeugten Huellen nicht auf den Kacheln direkt hinter dem Haupteingang (Klassik wie vorher) */
@@ -867,7 +885,8 @@ const slots=[0,2,4].map(k=>{const c=cl8[(pc+k)%8];return{cell:[(c.t[0]+1)*T,(c.t
 [1,2].forEach(i=>locks.push({id:'z'+i,kind:'door',cells:[slots[i].cl.d],ops:[{k:'pry',who:'pz',at:slots[i].cl.s},{k:'sw',who:'team',sw:swOf('z'+i),at:(swOf('z'+i)==='wach'?swW:swK).at}]}));
 const rot=()=>Math.floor(mr()*4),gd=route=>{const k=rot()%route.length;return{p:route[k],route:rotR(route,k,mr()<.5)}};
 const guards=[gd([[2,4],[11,4],[11,5],[2,5]]),gd([[2,18],[11,18],[11,19],[2,19]]),gd([[14,2],[14,20],[15,20],[15,2]]),gd([[18,2],[22,2],[22,7],[18,7]]),gd([[26,4],[29,6],[27,8],[27,11],[19,11],[35,11],[27,11],[27,8]]),gd([[19,18],[28,18],[28,20],[19,20]]),gd([[39,2],[47,2],[47,10],[39,10]])];
-const camc=[{x:38.5*T,y:1.4*T,a0:.75,amp:.55,sp:.55,rng:330,fov:.55},{x:48.5*T,y:1.4*T,a0:2.4,amp:.55,sp:.5,rng:330,fov:.55},{x:48.5*T,y:13.4*T,a0:3.9,amp:.5,sp:.5,rng:330,fov:.55},{x:14.5*T,y:10.5*T,a0:1.57,amp:.45,sp:.5,rng:330,fov:.5},{x:36.5*T,y:10.5*T,a0:3.14,amp:.4,sp:.5,rng:330,fov:.5},{x:29.5*T,y:15.4*T,a0:2.35,amp:.5,sp:.5,rng:330,fov:.55}];
+const camc0=[{x:38.5*T,y:1.4*T,a0:.75,amp:.55,sp:.55,rng:330,fov:.55},{x:48.5*T,y:1.4*T,a0:2.4,amp:.55,sp:.5,rng:330,fov:.55},{x:48.5*T,y:13.4*T,a0:3.9,amp:.5,sp:.5,rng:330,fov:.55},{x:14.5*T,y:10.5*T,a0:1.57,amp:.45,sp:.5,rng:330,fov:.5},{x:36.5*T,y:10.5*T,a0:3.14,amp:.4,sp:.5,rng:330,fov:.5},{x:29.5*T,y:15.4*T,a0:2.35,amp:.5,sp:.5,rng:330,fov:.55}];
+const camc=mountCams(camc0);
 const rooms={trA:[1,1,12,8],trB:[1,15,12,22],gang:[14,1,15,22],kran:[1,10,12,13],hof2:[17,1,23,8],wach:[25,1,30,8],kon:[32,1,36,8],flur:[17,10,36,13],kan:[17,15,29,22],wasch:[31,15,36,22],kue:[38,16,48,22],hof1:[38,1,48,14]};
 const inR=(r,x,y)=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3],pan=[swW.at,swK.at,[36,3]];
 return{seed:sn,decor:decorOf([]),prison:{cell:[(pcell.t[0]+1)*T,(pcell.t[1]+1)*T],slots,cells:allCells,cl:pcell,tb,pc,sx,locks,open0:[[13,yo+3],[13,yo+4]],sws:{wach:swW,kon:swK},card:{g:tb},rally:[[43,7],[22,18],[14,10],[6,tb?18:4]],rooms,
@@ -917,7 +936,8 @@ const P=CFG.nb,h0=(((sn)*2654435761)>>>0),mr=mulberry32(h0^0x3a91c7d5),tr=mulber
 const pcand=[[19+poff,8],[19+poff,10],[19+poff,12]],press=pcand[Math.floor(pr()*pcand.length)];fill(press[0],press[1],press[0]+2,press[1]+1,'N');setc(22+poff,press[1],'N');setc(22+poff,press[1]+1,'N');fill(23+poff,press[1],25+poff,press[1]+1,'N');fill(20+ox,3,21+ox,3,'N');
 const rot=Math.floor(mr()*4),rev=mr()<.5,gd=(route)=>({p:route[rot%route.length],route:rotR(route,rot%route.length,rev)});
 const guards=[gd([[6,25],[20,25],[14,24],[14,22],[22,21],[10,22],[13,22],[13,24]]),{p:[16+ox,2],route:[[16+ox,2],[22+ox,2],[22+ox,4],[16+ox,4]]}];
-const camc=[{x:2.5*T,y:24.5*T,a0:.4,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:24.5*T,a0:2.7,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:19.5*T,a0:2.4,amp:.55,sp:.55,rng:280,fov:.5},{x:8.5*T,y:19.5*T,a0:.7,amp:.5,sp:.5,rng:280,fov:.5},{x:15.5*T,y:7.5*T,a0:1.2,amp:.7,sp:.7,rng:220,fov:.55},{x:(kx+.5)*T,y:1.5*T,a0:.5,amp:.5,sp:.5,rng:280,fov:.5},{x:7.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.5,rng:300,fov:.5},{x:20.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.45,rng:300,fov:.5}];
+const camc0=[{x:2.5*T,y:24.5*T,a0:.4,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:24.5*T,a0:2.7,amp:.5,sp:.5,rng:300,fov:.5},{x:25.5*T,y:19.5*T,a0:2.4,amp:.55,sp:.55,rng:280,fov:.5},{x:8.5*T,y:19.5*T,a0:.7,amp:.5,sp:.5,rng:280,fov:.5},{x:15.5*T,y:7.5*T,a0:1.2,amp:.7,sp:.7,rng:220,fov:.55},{x:(kx+.5)*T,y:1.5*T,a0:.5,amp:.5,sp:.5,rng:280,fov:.5},{x:7.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.5,rng:300,fov:.5},{x:20.5*T,y:(bot+.45)*T,a0:1.57,amp:.6,sp:.45,rng:300,fov:.5}];
+const camc=mountCams(camc0);
 const cams=pickCams(mr,camc,P.cams),code=String(1000+Math.floor(mr()*9000)),gates={haupt:[[13,bot],[14,bot]],seite:[[GX,sY],[GX,sY+1]],hinten:[[0,hY]],schleuse:[[13,23],[14,23]],panzer:[[pl,15],[pl+1,15]],treppe:[[sx,6]]};
 const sy=gates.schleuse[0][1],py=gates.panzer[0][1],ty=gates.treppe[0][1],rings=[[[0,sy+1,GX,bot]],[[0,py+1,GX,sy]],[[0,ty+1,GX,py]],[[0,0,GX,ty]]];
 const vspots=[];for(let y=7;y<=14;y++)for(const x of [1,2,4,5,7,8])vspots.push([mx(x),y]);

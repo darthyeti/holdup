@@ -420,6 +420,8 @@ else if(it.t==='good'&&it.rc)q('good',{n:it.k,rc:it.rc,done:it.done?1:0});else i
 if(DX.phase===1&&!DX.ended){
 if(L.cone)for(const n of DX.npcs)if(n.k==='grd'&&n.st!=='away'&&n.st!=='dead'&&n.st!=='ko'&&see(n.x,n.y))q('cone',{x:n.x,y:n.y,pts:coneRays(n.x,n.y,n.a,n.fov,n.rng*(DX.blk>0?CFG.ev.sight:1)*lgM('sight')),al:n.alert>0?1:0});
 if(L.lasers){const on=DX.camDown<=0;for(const l of L.lasers){const x0=l[0]*T,y0=l[1]*T,x1=l[2]*T,y1=l[3]*T;if(!see(x0,y0)&&!see(x1,y1)&&!see((x0+x1)/2,(y0+y1)/2))continue;q('laser',{x0,y0,x1,y1,on:on?1:0,f:on?.6+.25*Math.sin(t*9+x0*.1):0})}}}
+// Ueberwachungskameras (Klotz-Stil baut sie als Wandhalter mit Gehaeuse, klassisch zeichnet cams3d das 2D-Bild): sichtbar wie dort (bekannt, alles sichtbar oder in Sicht), Blickwinkel mit Schwung
+DX.cams.forEach((c,i)=>{if(c.k||DX.losAll||los(P.x,P.y,c.x,c.y))q('cam',{x:c.x,y:c.y,a:camAng(c,i),a0:c.a0,off:c.off||DX.camDown>0?1:0,al:c.alert>0?1:0})});
 // Hauptschalter (E-Ziel Strom aus): Lage und Zustand (Kameras und Laser aus solange camDown laeuft)
 if(L.sw)q('sw',{x:L.sw.x,y:L.sw.y,on:DX.camDown>0?0:1});
 // Zapfsaeulen: heil (Anzeige) oder ausgebrannt (Raster u wird o)
@@ -460,8 +462,8 @@ return o}
    wie unter der 2D-Dunkelzone; Kegel bekannter Kameras und aufgedeckte Routen liegen wie in 2D ueber der Dunkelzone. Am Boden (gnd), Kameras in Hoehe camH, auf dem HUD vor allen anderen Marken.
    Zaehlt die gezeichneten Kameras (cams3dN, nur Tests). */
 let cams3dN=0,camPts3dN=[];
-function cams3d(V,gnd){const P=DX.p,dk3=V.fogA(),H=56;cams3dN=0;camPts3dN=[];
-DX.cams.forEach((c,i)=>{if(!(c.k||DX.losAll||los(P.x,P.y,c.x,c.y)))return;const a=camAng(c,i);gnd(c.x,c.y,H);g.save();g.translate(c.x,c.y);g.rotate(a);g.drawImage(p2,3*64,0,64,64,-14,-14,28,28);g.restore();cams3dN++;
+function cams3d(V,gnd){const P=DX.p,dk3=V.fogA(),H=56,KK=V.kl&&V.kl(),kc=!!(KK&&KK.on&&KK.KL&&KK.KL.hasObj('cam'));cams3dN=0;camPts3dN=[];
+DX.cams.forEach((c,i)=>{if(!(c.k||DX.losAll||los(P.x,P.y,c.x,c.y)))return;const a=camAng(c,i);if(kc){cams3dN++;return}gnd(c.x,c.y,H);g.save();g.translate(c.x,c.y);g.rotate(a);g.drawImage(p2,3*64,0,64,64,-14,-14,28,28);g.restore();cams3dN++;
 if(c.off||DX.camDown>0){g.fillStyle='rgba(20,22,26,.6)';g.beginPath();g.arc(c.x,c.y,10,0,6.283);g.fill()}
 if(dk3>0&&!DX.losAll&&!los(P.x,P.y,c.x,c.y)){g.globalCompositeOperation='source-atop';g.fillStyle='rgba(10,12,20,'+Math.min(1,dk3)+')';g.fillRect(c.x-16,c.y-16,32,32);g.globalCompositeOperation='source-over'}});
 /* Kegel (Ticket 176, dezent seit Ticket 203, Werte in CFG.cone3d: Deckkraft der Flaeche je Zustand ruhig, entdeckt, Alarm; Verlauf mid = [Stelle, Anteil]; Rand je Zustand und Breite): Spitze am Bildpunkt der Kamera (Hoehe H), Rand am Boden (Hoehe 0) ueber toScr, Streifen Punkt fuer Punkt statt Bodenebene um die Kamera */
