@@ -197,6 +197,10 @@ void main() {
 
   // ---------- Bild: Figuren und Fahrzeuge der Arten mit Bauer (die anderen zeichnet view3d wie sonst) ----------
   const figMax = 40, carMax = 40;
+  // Rueckfall fuer Arten ohne Bauer (zaehlt in info().fb, Test 220 verlangt 0): ein schlichter Kasten statt einer Figur oder eines Autos
+  const fb = { fig: {}, car: {} }, gray = new THREE.Color(0x9aa3b0);
+  const genFig = (k, o, e) => { k.state(o.hit, o.al); k.rotY(o.x, o.y, o.a, 1); k.part(k.root, 0, 11, 0, 8, 22, 12, gray); k.part(k.root, 0, 26, 0, 10, 8, 10, gray); return 0 };
+  const genCar = (k, o) => { k.state(0, 1); k.rotY(o.x, o.y, o.a, 1); k.part(k.root, 0, 10, 0, o.L * .9, 20, o.W * .8, gray); return 0 };
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
     { const th = (X.LAY && X.LAY.theme) || {}; olMat.uniforms.uC.value.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) } carsNow = []; figsNow = F;
@@ -208,7 +212,7 @@ void main() {
       const art = E.typeOf(o, e), lying = !!(e.lie || o.lie);
       if (o.k === 'tot' && KL.fxs['fig-tot'] && !o.noBurst) { const key = 't' + Math.round(o.x) + ',' + Math.round(o.y) + ',' + o.row; if (!seenKey.has(key)) { seenKey.add(key); if (primed) queue.push({ n: 'fig-tot', a: { o: Object.assign({}, o), e, art } }) } if (K.burstArts.has(art)) continue }
       if (lying) { ao(o.x + 3, o.y + 4, o.a, 54, 30, 0, .3 * o.al); lie++ } else { ao(o.x, o.y, 0, 24, 21, 0, .42); if (o.fl) { dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }); if (queue.length < 48) queue.push({ n: 'casing', a: { o: Object.assign({}, o) } }) } }
-      kit.outline(!lying || true); gear += KL.figs[art](kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
+      kit.outline(!lying || true); if (!KL.figs[art]) fb.fig[art] = (fb.fig[art] || 0) + 1; gear += (KL.figs[art] || genFig)(kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
     }
     const cars = [];
     for (const [o, e] of Cs) {
@@ -216,7 +220,7 @@ void main() {
       if (o.k === 'wreck') { const key = 'w' + Math.round(o.x / 6) + ',' + Math.round(o.y / 6); if (!seenKey.has(key)) { seenKey.add(key); if (primed) { let best = null, bd = 1e9; for (const p of prevCars) { const d = Math.hypot(p.o.x - o.x, p.o.y - o.y); if (d < bd) { bd = d; best = p } } queue.push({ n: 'car-wreck', a: { o: Object.assign({}, o), e: best && bd < 40 ? best.e : e, look: best && bd < 40 ? best.look : look } }) } } }
       else { cars.push({ o: Object.assign({}, o), e, look }); carsNow.push([o, e]) }
       ao(o.x + 2, o.y + 3, o.a, o.L * .96, o.W * .92, 1, .42);
-      KL.cars[o.k](kit, o, e, look);
+      if (!KL.cars[o.k]) fb.car[o.k] = (fb.car[o.k] || 0) + 1; (KL.cars[o.k] || genCar)(kit, o, e, look);
       if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
     }
     prevCars = cars; primed = true;
@@ -339,7 +343,7 @@ void main() {
   let applied = -1;
   K.zoom = () => K.on ? KC.zoom : 1;
   K.sync = () => { const w = 1; K.on = !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
-  K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB + iF, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
+  K.info = () => ({ fb, dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB + iF, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.dingeList = () => SD.map(q => q.slice(0, 7));
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
   K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, kGlass, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };

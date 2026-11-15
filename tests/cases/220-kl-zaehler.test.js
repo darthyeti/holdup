@@ -15,7 +15,7 @@ module.exports = [{
         await P.page.evaluate(([sc, sd]) => { PX.scene(sc, sd); const K = __dbg.view3d.V.kl(); window.__rec = {}; if (!K._w) { K._w = 1; const o0 = K.sceneBuilder; K.sceneBuilder = o => { const b = o0(o); if (!b) window.__rec[o.k + (o.n ? ':' + o.n : '')] = 1; return b } } }, [sc, sd]);
         for (const ph of ['erkundung', 'ueberfall']) {
           const r = await P.page.evaluate(([ph]) => { window.__rec = {}; PX.phase(ph); __dbg.draw(); __dbg.draw(); const V = __dbg.view3d.V, i = V.info(), KL = V.kl().KL;
-            return { figs: i.fi.map(f => f[0] + '/' + f[1]), cars: Object.keys(i.ck).filter(k => !KL.hasCar(k)), scen: Object.keys(window.__rec), tiles: Object.keys(i.cells).filter(c => c.length === 1 && !KL.hasObj(c) && !KL.plain.has(c)), tris: i.tris, err: i.err } }, [ph]);
+            return { figs: Object.keys(i.k.fb.fig), cars: Object.keys(i.k.fb.car).concat(Object.keys(i.ck).filter(k => !KL.hasCar(k))), scen: Object.keys(window.__rec), tiles: Object.keys(i.cells).filter(c => c.length === 1 && !KL.hasObj(c) && !KL.plain.has(c)), tris: i.tris, err: i.err } }, [ph]);
           r.figs.forEach(f => miss.fig.add(f)); r.cars.forEach(f => miss.car.add(f)); r.scen.forEach(f => miss.scen.add(f)); r.tiles.forEach(f => miss.tile.add(f)); tris.push([sc, sd, ph, r.tris]); if (r.err) errs.push(sc + ' ' + r.err);
         }
       }
