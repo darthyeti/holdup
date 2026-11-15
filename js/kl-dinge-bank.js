@@ -6,6 +6,21 @@ export function register(KL) {
   const T = 32, geo = (k, x, y, spec) => { const ins = spec.ins || 0, w = T - 2 * ins; return { cx: x * T + T / 2, cz: y * T + T / 2, w, top: spec.s[0][1] } };
   KL.obj('C', (k, x, y, c, spec) => { // Tresen: Holzfront, heller Deckel mit Messingkante, Noppen
     const { cx, cz, w, top } = geo(k, x, y, spec), B = k.brick; k.shadow(cx, cz, w + 9);
+    const L = k.X.LAY || {}, at = (dx, dy) => k.E.cellAt(x + dx, y + dy) === 'C';
+    const run = (dx, dy) => { let n = 1; for (let i = 1; i < 5 && at(dx * i, dy * i); i++) n++; for (let i = 1; i < 5 && at(-dx * i, -dy * i); i++) n++; return n };
+    if (L.casino && run(1, 0) <= 2 && run(0, 1) <= 2) { k.shadow(cx, cz, w + 9); return } // 2x2-Block: Standflaeche der Spielautomaten, der Automat (good:slot) ist der Koerper
+    if (L.casino) { // Spieltisch (Ticket 198 Abnahme): Holzfuss, gruener Filz, Holzrand nur an den Aussenseiten, Chipstapel, Kreis der Auslage
+      B(cx, cz, 0, w - 2, top - 4, w - 2, 0x6b3f22); B(cx, cz, top - 4, w + .6, 3, w + .6, 0x1f9a52);
+      for (const [dx, dy, px, pz, sx, sz] of [[0, -1, 0, -w / 2 + 1.5, w + .8, 3], [0, 1, 0, w / 2 - 1.5, w + .8, 3], [-1, 0, -w / 2 + 1.5, 0, 3, w + .8], [1, 0, w / 2 - 1.5, 0, 3, w + .8]]) if (!at(dx, dy)) B(cx + px, cz + pz, top - 1, sx, 4.2, sz, 0x8a5226);
+      B(cx, cz, top - .8, 14, .5, 14, 0x3cc47a); B(cx, cz, top - .5, 9, .5, 9, 0x1f9a52);
+      if ((x * 3 + y) % 3 === 0) { for (let i = 0; i < 4; i++) B(cx - 6, cz + 5, top - 1 + i * 1.6, 5, 1.4, 5, i % 2 ? 0xc4402f : 0xe9e5da); for (let i = 0; i < 3; i++) B(cx + 6, cz - 4, top - 1 + i * 1.6, 5, 1.4, 5, i % 2 ? 0x3a78cc : 0x1f2128) }
+      return;
+    }
+    if (L.jewel) { // Schaukasten (Ticket 198 Abnahme): Nussholzfuss, dunkles Samtkissen, Glasrahmen; der Schmuck kommt aus der Vitrine (vit)
+      B(cx, cz, 0, w, top - 6, w, 0x6a3f24); B(cx, cz, top - 6, w + .8, 2, w + .8, 0xe8b923, .2); B(cx, cz, top - 4, w - 1, 2.5, w - 1, 0x4a1f4a);
+      for (const [px, pz, sx, sz] of [[0, -w / 2 + .8, w, 1.4], [0, w / 2 - .8, w, 1.4], [-w / 2 + .8, 0, 1.4, w], [w / 2 - .8, 0, 1.4, w]]) B(cx + px, cz + pz, top - 1.5, sx, 3.4, sz, 0xd6ecf8, .1);
+      return;
+    }
     B(cx, cz, 0, w, top - 4, w, 0xa5683a); B(cx, cz, top - 4, w + .8, 4, w + .8, 0xf3ead2); B(cx, cz + w / 2 - .4, top - 8, w - 4, 2, 1, 0xe8b923, .15); B(cx, cz, 1, w - 6, 8, w + .4, 0x7d4a26);
     k.studs(cx, cz, w - 2, w - 2, top, 0xf3ead2);
   });
@@ -58,5 +73,33 @@ export function register(KL) {
     B(cx, cz, 0, w * .9, 13, w * .9, 0xd4602f); B(cx, cz, 11, w * .98, 3, w * .98, 0xb04a22); B(cx, cz, 14, w * .8, 1.2, w * .8, 0x5a3b22);
     for (let i = 0; i < 3; i++) B(cx, cz, 15 + i * 7, (w + 5) * (1 - i * .22), 7.4, (w + 5) * (1 - i * .22), i === 1 ? 0x4fd05a : 0x2fb246, 0, i * .45);
     B(cx + 3, cz - 2, 36, 4, 3, 4, 0xff4a6a, .15, .4); B(cx - 5, cz + 3, 29, 3, 3, 3, 0xffd23a, .15, .2);
+  });
+
+  // ---------- Hintertueren und Nebeneingaenge (Ticket 211): Szenario-Teil 'lock' fuer L (zu) und l (offen), auch Personaltueren, Hoftuer und Zellentueren des Gefaengnisses ----------
+  // Der Koerper der Kachel L (Wandhoehe, Schnitt wie Waende) bleibt aus der Tabelle, hier kommen beidseitig Rahmen, Stahlblatt, Panikstange, Schild, Kartenleser mit roter LED. Offen (l): Pfosten, an die Laibung
+  // geklapptes Blatt, Schwelle, Leser mit gruener LED. Die Wandrichtung folgt den Nachbarkacheln (quer zur Wand sind die zwei Seiten der Tuer), o.x, o.y Mitte der Kachel, o.open.
+  const WALLS = '#PWwYVLlDdg';
+  KL.obj('lock', (k, o) => {
+    const T_ = k.T, cell = k.E.cellAt, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), isW = (a, b) => WALLS.includes(cell(a, b)) || (k.C.cells[cell(a, b)] || { s: [] }).s.some(q => q[0] === 0 && q[1] >= k.C.wallH);
+    const hz = isW(tx - 1, ty) && isW(tx + 1, ty) ? true : isW(tx, ty - 1) && isW(tx, ty + 1) ? false : true;
+    // u entlang der Wand, v quer dazu (Seiten +1 Sueden oder Osten, -1 Norden oder Westen), Kloetze am Mittelpunkt der Kachel
+    const br = (u, v, y0, su, sh, sv, col, em) => k.dbrick(o.x + (hz ? u : v), o.y + (hz ? v : u), y0, hz ? su : sv, sh, hz ? sv : su, 0, col, em);
+    const frame = 0x2a3038, steel = 0x9aa6b6, dark = 0x3b4350, H = 56;
+    if (!o.open) {
+      for (const sd of [-1, 1]) {
+        const f = sd * 16.4, p = sd * 17.5;
+        br(-13.8, f, 0, 4.4, H + 3, 1.6, frame); br(13.8, f, 0, 4.4, H + 3, 1.6, frame); br(0, f, H, 32, 3.4, 1.6, frame);          // Rahmen: zwei Pfosten und Sturz
+        br(0, f, 1, 23.4, H - 2, 1.2, steel);                                                                                       // Stahlblatt
+        br(0, f, 1, 23.4, 3, 1.5, dark); br(0, f, H - 4, 23.4, 3, 1.5, dark); br(0, f, 27, 23.4, 1.6, 1.5, dark);                    // Blech-Rippen
+        br(-2, p, 24, 21, 3, 2.4, 0xf0f3f7); br(-12, sd * 17, 23, 2.4, 5, 2, 0x6b7380); br(8, sd * 17, 23, 2.4, 5, 2, 0x6b7380);   // Panikstange und Halter
+        br(-9, sd * 17, 46, 9, 5, 1.2, 0xffc83a); br(-9, sd * 17.6, 47.6, 6, 1.8, .6, 0x1a1d22);                                     // gelbes Schild
+        br(9.5, p, 31, 6, 11, 2.4, 0x20252c); br(9.5, sd * 18.7, 38, 3, 2.4, .6, 0xff3a2e, 1.8); br(9.5, sd * 18.7, 33, 4, 3, .6, 0x4a5260);  // Leser mit roter LED und Tastenfeld
+      }
+    } else {
+      for (const sd of [-1, 1]) { br(-14.5, sd * 15.5, 0, 3, 52, 1.2, frame); br(14.5, sd * 15.5, 0, 3, 52, 1.2, frame) }
+      br(-14.5, 0, 0, 3, 52, 32, frame); br(14.5, 0, 0, 3, 52, 32, frame); br(0, 0, 0, 26, .6, 32, 0x20252c);                            // Pfosten (Laibung) und Schwelle
+      br(-12, 0, 0, 2.6, 50, 29, steel); br(-12, 0, 24, 2.8, 3, 29, dark); br(-10.4, 0, 22, 1, 3, 14, 0xf0f3f7);                           // an die Laibung geklapptes Blatt mit Rippe und Stange
+      br(11, 15.6, 30, 5, 9, 1.6, 0x20252c); br(11, 16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); br(11, -15.6, 30, 5, 9, 1.6, 0x20252c); br(11, -16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); // Leser mit gruener LED
+    }
   });
 }

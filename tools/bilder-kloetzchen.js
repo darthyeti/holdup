@@ -1,6 +1,6 @@
 // Ticket 196: Bilder und Bildfolgen der Stilstudie Kloetzchen (docs/bilder/stil-kloetzchen/). Aufruf:
 //   cd tests && HOLDUP_CHROME=/opt/pw-browsers/chromium node ../tools/bilder-kloetzchen.js <ordner> <szene bank|museum> <stil 0|1|2> <ablauf> [Bildbreite]
-// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
+// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, fenster, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
 // Es wird die WebGL-Leinwand selbst gelesen (ohne HUD, doppelte Aufloesung bei Grafik hoch), ein Ausschnitt um das Geschehen, Bildfolgen als Streifen (Pillow). Stil 0 ist das heutige 3D zum Vergleich.
 const path = require('path'), fs = require('fs'), { execFileSync } = require('child_process');
 const lib = require(path.join(__dirname, '..', 'tests', 'lib'));
@@ -13,15 +13,15 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
   if (STIL !== 'x') await page.evaluate(async (stil) => { __dbg.view3d.kstil = +stil; await __dbg.view3d.set(true); }, STIL);
-  const prep = await page.evaluate(([sc, flow]) => {
-    const D = __dbg; if (sc === 'museum') D.setLage(['nacht']);
-    PX.scene(sc, 5); if (sc === 'museum') { D.setLage(['nacht']); D.buildSeed(5); D.ptClear(); }
+  const prep = await page.evaluate(([sc, flow, seed, lage]) => {
+    const D = __dbg; if (lage) D.setLage([lage]); else if (sc === 'museum') D.setLage(['nacht']);
+    PX.scene(sc, seed); if (lage || sc === 'museum') { D.setLage([lage || 'nacht']); D.buildSeed(seed); D.ptClear(); }
     PX.phase(flow === 'dinge' ? 'erkundung' : 'ueberfall'); const g = D.get(), me = g.me; me.hp = 1e9; me.armed = true; me.mag = 99; me.res = 99; D.mouse.t = -999; D.CFG.vanLock = 0;
     const W = D.world(), T = 32, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T));
     // freie Richtung vor dem Spieler: von Wand frei und 150 Pixel weit
     let best = 0, bd = -1; for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; let d = 0; while (d < 220 && free(me.x + Math.cos(a) * (d + 10), me.y + Math.sin(a) * (d + 10))) d += 10; if (d > bd) { bd = d; best = a } }
     window.__dir = best; me.a = best; return { dir: best, free: bd, at: [Math.round(me.x), Math.round(me.y)], night: D.LAY().theme && D.LAY().theme.tod };
-  }, [SC, FLOW]);
+  }, [SC, FLOW, +(process.env.SEED || 5), process.env.LAGE || '']);
   console.log(JSON.stringify(prep));
   // ein Bild: Spielschritte, zeichnen, Leinwand lesen, Mitte (Bildpunkte) des Geschehens zurueck
   const FR = [], shot = async (name, at) => {
@@ -56,6 +56,19 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       return out.slice(0, 8) });
     console.log(JSON.stringify(targets));
     for (const t of targets) { await page.evaluate(([x, y]) => { const D = __dbg, m = D.get().me; m.x = x - 60; m.y = y + 40; m.vx = m.vy = 0; D.update(1 / 30); D.update(1 / 30); D.draw() }, t.slice(1, 3)); process.env.HALF = '190'; info = await shot('d' + FR.length, t.slice(1, 4)) }
+  } else if (FLOW === 'tresor') {
+    // Tresor zu, offen, Spieler im Tresor (Ticket 198 Tresor): Spieler vor der Tuer, dann Tresor oeffnen (Beute-Objekt act), dann in den Raum dahinter
+    const V0 = await page.evaluate(() => { const D = __dbg, L = D.LAY(), T = 32, v = L.vault; if (!v) return null; const m = D.get(); return { door: [v.door[0] * T, v.door[1] * T], o: v.o, dir: v.dir, mid: [v.door[0] * T + 32, v.door[1] * T + 32] } });
+    console.log(JSON.stringify(V0)); if (!V0) process.exit(1);
+    const put = async (dx, dy, n) => { await page.evaluate(([x, y]) => { const D = __dbg, m = D.get().me; m.x = x; m.y = y; m.vx = m.vy = 0; D.update(1 / 30); D.update(1 / 30) }, [V0.mid[0] + dx, V0.mid[1] + dy]); process.env.HALF = '150'; return shot(n, [V0.mid[0], V0.mid[1], 20]) };
+    const side = V0.o === 'h' ? [0, 1] : [1, 0]; // Gangseite grob: ausprobieren
+    info = await put(-60 * V0.dir * side[0] - 0, -60 * V0.dir * side[1], 'zu');
+    await page.evaluate(() => { const D = __dbg, g = D.get(), it = g.its.find(i => i.t === 'vault'); try { it.act(g.me) } catch (e) { } if (!D.get().vaultOpen) { const c = g.its.find(i => i.t === 'vault'); c && c.act && c.act(g.me) } D.update(1 / 30) });
+    console.log('offen', await page.evaluate(() => __dbg.get().vaultOpen));
+    info = await put(-60 * V0.dir * side[0], -60 * V0.dir * side[1], 'offen');
+    info = await put(40 * V0.dir * side[0], 40 * V0.dir * side[1], 'drin');
+    const bu = await page.evaluate(() => { const b = __dbg.get().its.find(i => i.t === 'bundle' && !i.done); if (!b) return null; const m = __dbg.get().me; m.x = b.x - 50; m.y = b.y + 30; m.vx = m.vy = 0; __dbg.update(1 / 30); __dbg.update(1 / 30); return [b.x, b.y, 8] });
+    if (bu) { process.env.HALF = '110'; info = await shot('buendel', bu) }
   } else if (FLOW === 'laufen') {
     await step(1, 'D.keys.d=1;D.keys.w=0'); info = await shot('f0'); for (let k = 1; k < 8; k++) { await step(3, 'D.keys.d=1'); info = await shot('f' + k) } await step(1, 'for(const k of "wasd")delete D.keys[k]');
   } else if (FLOW === 'schiessen') {
@@ -78,6 +91,14 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     });
     process.env.HALF = '470'; info = await shot('f0', rp);
     process.env.HALF = '150'; await shot('f1', [rp[0] - 4 * 40, rp[1], 18]); await shot('f2', [rp[0] + 1.2 * 40, rp[1], 18]);
+  } else if (FLOW === 'waffen') {
+    // Ticket 217: der Spieler mit Pistole, SMG, Sturmgewehr und verstaut, nah (Spielkamera) in zwei Blickrichtungen
+    await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; g.npcs.length = 0; g.cars.length = 0; g.me.vx = g.me.vy = 0 });
+    process.env.HALF = process.env.HALF || '70';
+    for (const a of [0, 2.2]) for (const [w, armed] of [['pistol', 1], ['smg', 1], ['rifle', 1], ['pistol', 0]]) {
+      await page.evaluate(([w, armed, a]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.armed = !!armed; me.a = a; me.hp = 100; D.mouse.t = -999; D.draw(); D.draw() }, [w, armed, a]);
+      info = await shot(`f${FR.length}`, null);
+    }
   } else if (FLOW === 'explosion') {
     await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; const c = g.cars.find(q => q.civ && !q.dead) || g.cars[0]; window.__car = c; });
     info = await shot('f0', 'car'); await page.evaluate(() => { const D = __dbg; D.get().me.hp = 1e9; D.carBlow(window.__car, 0) });
@@ -98,6 +119,12 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     });
     await step(1); info = await shot('alle', 'at');
     await page.evaluate(() => { window.__X.figs = window.__orig });
+  } else if (FLOW === 'fenster') {
+    // Glas-Zerfall (Ticket 207): Spieler steht vor der ersten Scheibe, ein Schuss, Bildfolge um die Scheibe
+    await page.evaluate(() => { const D = __dbg, g = D.get(), m = g.me, w = D.LAY().wins[0]; g.en.length = 0; m.hp = 1e9; m.x = w.px + w.iv[0] * 70; m.y = w.py + w.iv[1] * 70; m.a = Math.atan2(-w.iv[1], -w.iv[0]); for (let i = 0; i < 30; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: w.px, y: w.py }; window.__w = w; });
+    info = await shot('f0', 'at');
+    await page.evaluate(() => { const D = __dbg, w = window.__w, m = D.get().me; D.get().bl.push({ id: 9901, x: m.x, y: m.y, vx: -w.iv[0] * 700, vy: -w.iv[1] * 700, l: .8, o: 1, own: m.id, d: 20, ov: 0 }) });
+    for (const n of [2, 1, 2, 3, 4, 6, 10, 20]) { await step(n, 'D.get().me.hp=1e9'); info = await shot('f' + FR.length, 'at') }
   } else if (FLOW === 'pumpe') {
     // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
     await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });

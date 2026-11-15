@@ -385,7 +385,7 @@ for(const o of DX.players)if(o.dead&&o.dn>0&&(o===DX.me||see(o.x,o.y)))fg('down'
 for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0,1,q.w)}
 for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0,1,e.w);o.sc=SIL_EN;o.ar=e.sur?0:1;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1;if(e.fl>0)o.fl=1}
 {const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8)){const o=fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0,1,v.w);o.ar=DX.dl.st===3?0:1;if(v.fl>0)o.fl=1}}}
-const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
+const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.wp=(o.kit&&o.kit.w)||'pistol';f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
@@ -394,7 +394,7 @@ return{f:F,c:C}}
    gc Gaswolken, smk Rauchwolken {id,x,y,r,al Deckkraft wie 2D} (wie 2D ohne Sichtpruefung), pk Aufnahmen in Sicht {x,y,k Zelle in props.png, b Wippen}, tr Fallen {k,x,y,r Radius,armed,bl}, aid Notfallkoffer {x,y,r,ph,al}, dcy Ablenker {x,y,ph,bl},
    burn brennende Wracks {x,y,f}, t Spielzeit. */
 function fx3d(){const P=DX.p,see=(x,y)=>los(P.x,P.y,x,y),t=DX.time,muz=[],gr=[],pk=[],tr=[],aid=[],dcy=[],burn=[];
-for(const o of DX.players){if(o.flash<=0||!live(o)||(o!==P&&!see(o.x,o.y)))continue;muz.push({x:o.x+Math.cos(o.a)*34,y:o.y+Math.sin(o.a)*34,a:o.a,r:34,pl:1,fv:GFX.lv>0?o.fv|0:0})}
+for(const o of DX.players){if(o.flash<=0||!live(o)||(o!==P&&!see(o.x,o.y)))continue;{const d=((CFG.wpn[o.kit&&o.kit.w]||CFG.wpn.pistol).tip)||34;muz.push({x:o.x+Math.cos(o.a)*d,y:o.y+Math.sin(o.a)*d,a:o.a,r:34,pl:1,fv:GFX.lv>0?o.fv|0:0})}}
 for(const e of DX.en)if(e.fl>0&&see(e.x,e.y))muz.push({x:e.x+Math.cos(e.a)*(e.muz+2),y:e.y+Math.sin(e.a)*(e.muz+2),a:e.a,r:22,pl:0,fv:0});
 {const v=DX.dl.dv;if(v&&v.fl>0&&see(v.x,v.y))muz.push({x:v.x+Math.cos(v.a)*24,y:v.y+Math.sin(v.a)*24,a:v.a,r:10,pl:0,fv:0})}
 for(const q of DX.gr){if(!see(q.x,q.y))continue;gr.push({id:q.id,k:q.k,x:q.x,y:q.y,st:q.st,t:q.t,bk:q.st==='rest'&&Math.floor(t*(q.tm<.5?14:7))%2?1:0})}
@@ -462,10 +462,10 @@ function cams3d(V,gnd){const P=DX.p,dk3=V.fogA(),H=56;cams3dN=0;camPts3dN=[];
 DX.cams.forEach((c,i)=>{if(!(c.k||DX.losAll||los(P.x,P.y,c.x,c.y)))return;const a=camAng(c,i);gnd(c.x,c.y,H);g.save();g.translate(c.x,c.y);g.rotate(a);g.drawImage(p2,3*64,0,64,64,-14,-14,28,28);g.restore();cams3dN++;
 if(c.off||DX.camDown>0){g.fillStyle='rgba(20,22,26,.6)';g.beginPath();g.arc(c.x,c.y,10,0,6.283);g.fill()}
 if(dk3>0&&!DX.losAll&&!los(P.x,P.y,c.x,c.y)){g.globalCompositeOperation='source-atop';g.fillStyle='rgba(10,12,20,'+Math.min(1,dk3)+')';g.fillRect(c.x-16,c.y-16,32,32);g.globalCompositeOperation='source-over'}});
-/* Kegel (Ticket 176): Spitze am Bildpunkt der Kamera (Hoehe H), Rand am Boden (Hoehe 0) ueber toScr, Streifen Punkt fuer Punkt statt Bodenebene um die Kamera */
-DX.cams.forEach((c,i)=>{if(!c.k||c.off||DX.camDown>0)return;const a=camAng(c,i),al=DX.phase===1?(c.alert>0?.45:.2):.08,col=c.alert>0?'255,40,40':'255,90,70',A=V.toScr(c.x,c.y,H),N=24,E=[];for(let k=0;k<=N;k++){const an=a-c.fov+2*c.fov*k/N;E.push(V.toScr(c.x+Math.cos(an)*c.rng,c.y+Math.sin(an)*c.rng,0))}
-const R=Math.max(1,...E.map(q=>Math.hypot(q[0]-A[0],q[1]-A[1]))),gr=g.createRadialGradient(A[0],A[1],0,A[0],A[1],R);gr.addColorStop(0,'rgba('+col+','+al+')');gr.addColorStop(1,'rgba('+col+',0)');
-camPts3dN.push({i,cam:V.toScr(c.x,c.y,H),apex:A});g.setTransform(2,0,0,2,0,0);g.fillStyle=gr;g.beginPath();g.moveTo(A[0],A[1]);E.forEach(q=>g.lineTo(q[0],q[1]));g.closePath();g.fill();g.strokeStyle='rgba(255,90,70,'+(DX.phase===1?.5:.2)+')';g.lineWidth=1;g.stroke()});
+/* Kegel (Ticket 176, dezent seit Ticket 203, Werte in CFG.cone3d: Deckkraft der Flaeche je Zustand ruhig, entdeckt, Alarm; Verlauf mid = [Stelle, Anteil]; Rand je Zustand und Breite): Spitze am Bildpunkt der Kamera (Hoehe H), Rand am Boden (Hoehe 0) ueber toScr, Streifen Punkt fuer Punkt statt Bodenebene um die Kamera */
+DX.cams.forEach((c,i)=>{if(!c.k||c.off||DX.camDown>0)return;const a=camAng(c,i),K=CFG.cone3d,ph=DX.phase===1?(c.alert>0?1:0):2,al=K.fill[ph],col=c.alert>0?'255,40,40':'255,90,70',A=V.toScr(c.x,c.y,H),N=24,E=[];for(let k=0;k<=N;k++){const an=a-c.fov+2*c.fov*k/N;E.push(V.toScr(c.x+Math.cos(an)*c.rng,c.y+Math.sin(an)*c.rng,0))}
+const R=Math.max(1,...E.map(q=>Math.hypot(q[0]-A[0],q[1]-A[1]))),gr=g.createRadialGradient(A[0],A[1],0,A[0],A[1],R);gr.addColorStop(0,'rgba('+col+','+al+')');gr.addColorStop(K.mid[0],'rgba('+col+','+al*K.mid[1]+')');gr.addColorStop(1,'rgba('+col+',0)');
+camPts3dN.push({i,cam:V.toScr(c.x,c.y,H),apex:A});g.setTransform(2,0,0,2,0,0);g.fillStyle=gr;g.beginPath();g.moveTo(A[0],A[1]);E.forEach(q=>g.lineTo(q[0],q[1]));g.closePath();g.fill();g.strokeStyle='rgba('+col+','+K.edge[ph]+')';g.lineWidth=K.edgeW;g.stroke()});
 S0();for(const q of DX.npcs){if(!q.rk||!q.line||q.st==='away')continue;g.save();g.setLineDash([6,6]);g.lineDashOffset=-DX.time*14;g.strokeStyle=q.k==='grd'?'rgba(255,179,71,.7)':'rgba(138,208,255,.7)';g.lineWidth=2;g.beginPath();q.line.forEach((pp,i)=>{const s=V.toScr(pp[0],pp[1],0);i?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1])});g.closePath();g.stroke();g.restore()}}
 /* 3D-7 (Ticket 156): Weltschriften und Bodenmarken, die lyWorld in 2D auf den Boden schreibt (AUSSTIEG, ABHOLPUNKT, ABGABE, SPRENGUNG, BELAGERT), in 3D als HUD an derselben Weltstelle (gnd am Boden oder auf dem Deckel,
    up aufrecht ueber der Barrikade). Wurfvorschau (Fallen, Spezialwaffen, Wurfgeraete) wie drawGad, Punkt fuer Punkt ueber toScr am Boden (die lineare Naeherung waere auf 300 px zu ungenau). Zaehlt die Schriften (txt3dN, nur Tests). */

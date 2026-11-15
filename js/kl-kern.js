@@ -25,11 +25,15 @@ export const KCFG = {
   // je Grafikstufe (niedrig, mittel, hoch): Obergrenzen fliegender Teile, Funken, Rauchpuffer, Bloom an, Wandkanten-Noppen
   // Kleinteile: Klotz mit kleinster Kante unter small Weltpixeln wird ein Quader ohne Fase (12 statt 108 Dreiecke), sonst zu viele Dreiecke in den Moebeln
   small: 4.5,
+  // Noppen (Bauklotz-Knoepfe) auf Moebeln, Dachflaechen und Fahrzeugen: 0 aus (Standard, Ticket 215), 1 an. Zentraler Schalter, k.studs (Welt) und die Dach-Noppen der Fahrzeuge fragen nur hier
+  studs: 0,
   q: { debris: [160, 320, 560], sparks: [60, 120, 220], smoke: [24, 48, 80], bloom: [0, 1, 1] },
   // Zerfall: Schwerkraft, Rueckprall, Reibung, Liegezeit (von bis), Verschwinden, Anfangsgeschwindigkeit, Aufwaerts, Drehung, Zug weg vom Spieler (Prozent), Huelsen
   deb: { g: 520, bounce: .38, fric: .62, rest: [5.5, 8.5], fade: .8, burstV: [70, 190], up: [140, 300], spin: 9, biasK: 70 },
   bloom: { thr: .9, knee: .1, s: [.26, .34], flash: .45 },
   alarm: { n: 2, spin: 3.2 },
+  // Glas-Splitter einer zerschossenen Scheibe (Ticket 207): Anzahl je Grafikstufe, Groesse von bis, Tempo, Aufwaerts, Liegezeit, Leuchten, Deckkraft, Funken, Farben
+  glass: { n: [6, 12, 18], size: [2, 4.2], k: .55, up: .55, rest: [.8, 1.6], em: .05, a: .45, sparks: 6, col: [0xcfeeff, 0xa9d8f5, 0xe8f6ff] },
   car: { pol: [0x2b55b8, 0xeef1f4], bar: [0xff3a30, 0x3a6bff], wheel: 0x24272d, glass: 0x1f3550, lamp: 0xfff1b8, tail: 0xff3b2e, scorch: 0x2a2522, ember: 0xff7a2a },
 };
 
@@ -117,7 +121,10 @@ void main() {
   const kMat = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS, uniforms: Object.assign({ uK: { value: new THREE.Vector4(...KC.plastic) } }, UV) });
   K.mats = [kMat];
   const kpool = (name, geo, order) => { const P = E.pool(name, geo, kMat, { iK: 2 }, true, order == null ? 2 : order, 1); E.pools.push(P); return P };
-  const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox);
+  // Glas (Ticket 207): durchsichtig (Deckkraft KC.glass.a), ohne Tiefenschreiben, staerker spiegelnd; nur fuer Glas-Splitter des Zerfalls (spawnDeb mit glass: 1)
+  const kGlass = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS.replace('gl_FragColor = vec4(col, 1.0);', 'gl_FragColor = vec4(col, ' + (KC.glass ? KC.glass.a : .45).toFixed(3) + ');'), transparent: true, depthWrite: false, uniforms: Object.assign({ uK: { value: new THREE.Vector4(KC.plastic[0] * 1.5, KC.plastic[1] * 1.9, KC.plastic[2], KC.plastic[3]) } }, UV) });
+  const pG = E.pool('k-glas', boxGeo, kGlass, { iK: 2 }, true, 6, 0); E.pools.push(pG);
+  const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox), pF = kpool('k-kloetze-klein', flatBox);
   // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
   const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
     vertexShader: 'varying vec2 vM; void main() {\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
@@ -130,13 +137,16 @@ void main() {
   const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), white = new THREE.Color(1, 1, 1), hitC = new THREE.Color(), yAx = new THREE.Vector3(0, 1, 0);
   const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
   const mats = n => Array.from({ length: n }, () => new THREE.Matrix4());
-  let hitNow = 0, alNow = 1, out = null, iB = 0, nP = 0, iO = 0, olT = 0;
+  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, olT = 0;
   // Teil im Gelenk par: Mitte (x,y,z), Groesse, Farbe, Leuchten em, Drehung (rx, rz) vor der Verschiebung. Im Sammelmodus (collect) wird nur gemerkt, sonst in den Pool geschrieben.
   function part(par, x, y, z, sx, sy, sz, col, em, rx, rz) {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
     const c = hitNow ? hitC.copy(col).lerp(white, FG.hit) : col;
     if (out) { out.push({ m: fm.clone(), c: c.clone(), e: em || 0, s: [sx, sy, sz] }); return }
-    const i = iB++; pB.im.setMatrixAt(i, fm); pB.im.setColorAt(i, c); pB.a.iK.setXY(i, alNow, em || 0); nP++;
+    // Kleinteile (kleinste Kante unter KC.small) als Quader ohne Fase (12 statt 108 Dreiecke), wie die Kleinteile der Moebel
+    if (Math.min(sx, sy, sz) < KC.small) { const j = iF++; pF.im.setMatrixAt(j, fm); pF.im.setColorAt(j, c); pF.a.iK.setXY(j, alNow, em || 0) }
+    else { const i = iB++; pB.im.setMatrixAt(i, fm); pB.im.setColorAt(i, c); pB.a.iK.setXY(i, alNow, em || 0) }
+    nP++;
     if (olT > 0 && Math.min(sx, sy, sz) >= 3.9) { _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l); pO.im.setMatrixAt(iO++, fm) }
   }
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
@@ -160,7 +170,7 @@ void main() {
   // Oberkante des Koerpers der Kachel an (x, y) (Tresen 24, Wand 64) aus der Hoehentabelle: Teile prallen von Waenden ab und bleiben auf Kanten liegen
   const topH = (x, y) => { const c = E.cellAt(Math.floor(x / T), Math.floor(y / T)), e = C.cells[c]; if (!e || (e.open && X.vaultOpen)) return 0; let h = 0; for (const s of e.s) if (s[0] === 0) h = Math.max(h, s[1]); return h };
   const capD = () => KC.q.debris[q()] >> (lod() >= 3 ? 1 : 0);
-  // parts aus collect; o: k Tempo, up Aufwaerts, em Glut, dir (Richtung), scale, split (grosse Teile in viele kleine teilen)
+  // parts aus collect; o: k Tempo, up Aufwaerts, em Glut, dir (Richtung), scale, split (grosse Teile in viele kleine teilen), rest [von, bis] Liegezeit in Sekunden (sonst KC.deb.rest)
   kit.spawnDeb = (parts, cx, cy, o) => {
     parts = parts.slice(); o = o || {}; const B = KC.deb, me = X.me;
     if (o.split) { const more = []; for (const p of parts) { const big = Math.max(...p.s); if (big < 9) continue; const n = big > 40 ? 6 : big > 20 ? 4 : 2; p.s = p.s.map(v => v * .5); for (let i = 0; i < n; i++) more.push({ m: p.m.clone().multiply(new THREE.Matrix4().makeTranslation(rr(-.5, .5), rr(-.5, .5), rr(-.5, .5))), c: p.c, e: p.e, s: p.s.map(v => v * rr(.45, .8)) }) } parts = parts.concat(more) }
@@ -168,7 +178,7 @@ void main() {
       p.m.decompose(tp, tq, ts); const kx = tp.x - cx, kz = tp.z - cy, l = Math.hypot(kx, kz) || 1, v = rr(B.burstV[0], B.burstV[1]) * (o.k || 1);
       let bx = kx / l, bz = kz / l; if (o.dir) { bx = bx * .6 + o.dir[0] * .8; bz = bz * .6 + o.dir[1] * .8 } else if (me) { const mx = cx - me.x, mz = cy - me.y, ml = Math.hypot(mx, mz) || 1; bx += mx / ml * (B.biasK / 100); bz += mz / ml * (B.biasK / 100) }
       deb.push({ x: tp.x, y: tp.y, z: tp.z, q: tq.clone(), s: p.s.map(v => v * (o.scale || 1)), c: p.c, em: p.e + (o.em || 0), hot: o.em || 0, vx: bx * v + rr(-25, 25), vy: rr(B.up[0], B.up[1]) * (o.up || 1), vz: bz * v + rr(-25, 25),
-        wx: rr(-B.spin, B.spin), wy: rr(-B.spin, B.spin), wz: rr(-B.spin, B.spin), age: 0, rest: 0, life: rr(B.rest[0], B.rest[1]), still: 0 });
+        wx: rr(-B.spin, B.spin), wy: rr(-B.spin, B.spin), wz: rr(-B.spin, B.spin), g: o.glass ? 1 : 0, age: 0, rest: 0, life: o.rest ? rr(o.rest[0], o.rest[1]) : rr(B.rest[0], B.rest[1]), still: 0 });
     }
     while (deb.length > capD()) deb.shift();
   };
@@ -188,9 +198,9 @@ void main() {
   // ---------- Bild: Figuren und Fahrzeuge der Arten mit Bauer (die anderen zeichnet view3d wie sonst) ----------
   const figMax = 40, carMax = 40;
   K.dyn = (F, Cs, dynL) => {
-    iB = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
+    iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
     { const th = (X.LAY && X.LAY.theme) || {}; olMat.uniforms.uC.value.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) } carsNow = []; figsNow = F;
-    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pB.u = 0;
+    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pF.u = 0;
     pAO.size(F.length + Cs.length); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
     let gear = 0, lie = 0, hit = 0;
@@ -210,12 +220,12 @@ void main() {
       if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
     }
     prevCars = cars; primed = true;
-    pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
+    pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pF.u = iF; pF.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
     if (X.alarm && E.lamps.length) { // Alarm im Raum: zwei kreisende rote Lampen an der Decke (naechste Lampen), nur im Ueberfall
       const P = X.me, L = E.lamps.slice().sort((a, b) => (P ? Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y) : 0)).slice(0, KC.alarm.n);
       L.forEach((l, i) => { const f = .5 + .5 * Math.sin(alarmPh * KC.alarm.spin + i * Math.PI); dynL.push({ k: 'alarm', x: l.x, y: l.y, i: .15 + .85 * f }) });
     }
-    return { gear, lie, hit, parts: iB };
+    return { gear, lie, hit, parts: iB + iF };
   };
   K.burstArts = new Set(['cop', 'swat', 'grd', 'shield', 'sniper']); // Arten, deren Leiche zerfaellt (die Leiche selbst wird dann nicht gezeichnet)
 
@@ -244,14 +254,14 @@ void main() {
     for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i]; f.t += dt; if (f.t > .3) flashes.splice(i, 1) }
     let fl = 0; for (const f of flashes) fl = Math.max(fl, f.k * (1 - f.t / .3)); flashK = Math.max(flashK * Math.pow(.02, dt), fl);
     for (let i = deb.length - 1; i >= 0; i--) if (deb[i].rest && deb[i].still > deb[i].life + B.fade) deb.splice(i, 1);
-    pD.size(deb.length); deb.forEach((d, i) => {
+    let nG = 0; for (const d of deb) if (d.g) nG++; pD.size(deb.length - nG); pG.size(nG); let iD = 0, iG = 0; deb.forEach(d => { const Pq = d.g ? pG : pD, i = d.g ? iG++ : iD++;
       let k = 1; if (d.rest) { const u = d.still - d.life; if (u > 0) k = Math.max(0, 1 - u / B.fade); if (d.rest === 1) { d.rest = 2; // einrasten: die Achse, die am meisten nach oben zeigt, genau nach oben
           let bi = 0, bv = -1, sg = 1; for (let a = 0; a < 3; a++) { tv.set(a === 0 ? 1 : 0, a === 1 ? 1 : 0, a === 2 ? 1 : 0).applyQuaternion(d.q); if (Math.abs(tv.y) > bv) { bv = Math.abs(tv.y); bi = a; sg = tv.y < 0 ? -1 : 1 } }
           tv.set(bi === 0 ? 1 : 0, bi === 1 ? 1 : 0, bi === 2 ? 1 : 0).applyQuaternion(d.q).multiplyScalar(sg); tq2.setFromUnitVectors(tv, upV); d.q.premultiply(tq2); d.y = (d.gh || 0) + d.s[bi] / 2 } }
-      tp.set(d.x, d.y, d.z); ts.set(d.s[0] * k, d.s[1] * k, d.s[2] * k); pD.im.setMatrixAt(i, tm.compose(tp, d.q, ts)); pD.im.setColorAt(i, d.c);
-      pD.a.iK.setXY(i, 1, d.hot ? Math.max(0, d.em * Math.max(0, 1 - d.age / 1.6)) : d.em);
+      tp.set(d.x, d.y, d.z); ts.set(d.s[0] * k, d.s[1] * k, d.s[2] * k); Pq.im.setMatrixAt(i, tm.compose(tp, d.q, ts)); Pq.im.setColorAt(i, d.c);
+      Pq.a.iK.setXY(i, 1, d.hot ? Math.max(0, d.em * Math.max(0, 1 - d.age / 1.6)) : d.em);
     });
-    pD.u = deb.length; pD.finish();
+    pD.u = deb.length - nG; pD.finish(); pG.u = nG; pG.finish();
     const fp = E.fp; // Quads fuer die Ansicht: Funken, Rauch, Blitz
     for (const s of sparks) { const a = s.l / s.m, c = s.c ? [1, .78, .34] : [1, .62, .22]; fp(FA, s.x, s.y, s.h, 1.1, 3, c, Math.min(1, a * 1.6), -s.vx * .045, -s.vy * .045, 0, -s.vh * .045) }
     for (const s of puffs) { const a = s.l / s.m; fp(FN, s.x, s.y, s.h, s.s, 0, [.2 + .1 * a, .19 + .1 * a, .19 + .08 * a], s.a * Math.min(1, a * 2.2) * .8) }
@@ -271,7 +281,7 @@ void main() {
     const B = [], S = [], A = [];
     const wk = Object.assign({}, kit, {
       brick: (x, z, y0, sx, sy, sz, col, em, rot) => B.push([x, z, y0, sx, sy, sz, colOf(col), em || 0, rot || 0]),
-      studs: (cx, cz, sx, sz, h, col) => { const nx = Math.max(1, Math.round(sx / 16)), nz = Math.max(1, Math.round(sz / 16)); if (sx < 9 || sz < 9) return; for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) S.push([cx - sx / 2 + (i + .5) * sx / nx, cz - sz / 2 + (j + .5) * sz / nz, h, colOf(col)]) },
+      studs: (cx, cz, sx, sz, h, col) => { if (!KC.studs) return; const nx = Math.max(1, Math.round(sx / 16)), nz = Math.max(1, Math.round(sz / 16)); if (sx < 9 || sz < 9) return; for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) S.push([cx - sx / 2 + (i + .5) * sx / nx, cz - sz / 2 + (j + .5) * sz / nz, h, colOf(col)]) },
       shadow: (cx, cz, size) => A.push([cx, cz, size]),
     });
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = E.cellAt(x, y), f = KL.objs[c]; if (f && c.length === 1 && C.cells[c]) f(wk, x, y, c, C.cells[c]) }
@@ -323,9 +333,10 @@ void main() {
   let applied = -1;
   K.zoom = () => K.on ? KC.zoom : 1;
   K.sync = () => { const w = X.kstil ? 1 : 0; K.on = w > 0 && !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
-  K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
+  K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB + iF, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
+  K.dingeList = () => SD.map(q => q.slice(0, 7));
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
-  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
+  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, kGlass, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
   return K;
 }
 mkKl.api = KL_API;
