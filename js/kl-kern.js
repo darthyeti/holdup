@@ -25,6 +25,8 @@ export const KCFG = {
   // je Grafikstufe (niedrig, mittel, hoch): Obergrenzen fliegender Teile, Funken, Rauchpuffer, Bloom an, Wandkanten-Noppen
   // Kleinteile: Klotz mit kleinster Kante unter small Weltpixeln wird ein Quader ohne Fase (12 statt 108 Dreiecke), sonst zu viele Dreiecke in den Moebeln
   small: 4.5,
+  // Noppen (Bauklotz-Knoepfe) auf Moebeln, Dachflaechen und Fahrzeugen: 0 aus (Standard, Ticket 215), 1 an. Zentraler Schalter, k.studs (Welt) und die Dach-Noppen der Fahrzeuge fragen nur hier
+  studs: 0,
   q: { debris: [160, 320, 560], sparks: [60, 120, 220], smoke: [24, 48, 80], bloom: [0, 1, 1] },
   // Zerfall: Schwerkraft, Rueckprall, Reibung, Liegezeit (von bis), Verschwinden, Anfangsgeschwindigkeit, Aufwaerts, Drehung, Zug weg vom Spieler (Prozent), Huelsen
   deb: { g: 520, bounce: .38, fric: .62, rest: [5.5, 8.5], fade: .8, burstV: [70, 190], up: [140, 300], spin: 9, biasK: 70 },
@@ -279,7 +281,7 @@ void main() {
     const B = [], S = [], A = [];
     const wk = Object.assign({}, kit, {
       brick: (x, z, y0, sx, sy, sz, col, em, rot) => B.push([x, z, y0, sx, sy, sz, colOf(col), em || 0, rot || 0]),
-      studs: (cx, cz, sx, sz, h, col) => { const nx = Math.max(1, Math.round(sx / 16)), nz = Math.max(1, Math.round(sz / 16)); if (sx < 9 || sz < 9) return; for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) S.push([cx - sx / 2 + (i + .5) * sx / nx, cz - sz / 2 + (j + .5) * sz / nz, h, colOf(col)]) },
+      studs: (cx, cz, sx, sz, h, col) => { if (!KC.studs) return; const nx = Math.max(1, Math.round(sx / 16)), nz = Math.max(1, Math.round(sz / 16)); if (sx < 9 || sz < 9) return; for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) S.push([cx - sx / 2 + (i + .5) * sx / nx, cz - sz / 2 + (j + .5) * sz / nz, h, colOf(col)]) },
       shadow: (cx, cz, size) => A.push([cx, cz, size]),
     });
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = E.cellAt(x, y), f = KL.objs[c]; if (f && c.length === 1 && C.cells[c]) f(wk, x, y, c, C.cells[c]) }

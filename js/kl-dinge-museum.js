@@ -1,24 +1,37 @@
 /* Kloetzchen-Stil: Dinge des Museums (Ticket 198, Schritt 4c, Teil Museum): Vitrinen, Bilder, Statue, Reliquien, VIP-Auslagen, Laser. register(KL) traegt Bauer fuer Szenario-Teile ein, fn(k, o) je Bild mit
    k.dbrick(mx, mz, y0, sx, sy, sz, drehung, farbe, leuchten) (Mitte in Weltpixeln, Unterkante y0, sx laenge entlang der Drehung). 'good:art' gilt vor 'good' (o.n ist die Unterart). o.rc ist das Rechteck [x, y, w, h],
    o.done heisst genommen: dann bleibt ein dunkler Sockel oder Rahmen. Dazu laser (o.x0..y1, o.on, o.f Puls). Die Vitrine (vit) teilt sich der Juwelier, hier die Fassung fuer beide. */
-const hood = (k, r, t, h, col) => {
+const GEM = [0xe5324a, 0x3ac4d9, 0xf0e8c8, 0x7ee34a, 0xb36af0, 0xffb02e];
+// Glashaube: nur die Rahmenkanten (das Glas ist durchsichtig), Sockel in warmem Holz, damit Sockel und Auslage sich abheben
+const hood = (k, r, t, h, base) => {
   const cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2;
-  k.dbrick(cx, cz, t, r[2] - 4, 2.5, r[3] - 4, 0, 0x30343c); // Sockel
-  for (const [dx, dz, sx, sz] of [[-1, 0, 1.6, r[3] - 5], [1, 0, 1.6, r[3] - 5], [0, -1, r[2] - 5, 1.6], [0, 1, r[2] - 5, 1.6]]) k.dbrick(cx + dx * (r[2] / 2 - 3), cz + dz * (r[3] / 2 - 3), t + 2.5, sx, h, sz, 0, col || 0xb8e3f4); // Glaswaende als helle Rahmen
-  k.dbrick(cx, cz, t + 2.5 + h, r[2] - 4, 1.8, r[3] - 4, 0, 0xcfeaf6);
+  k.dbrick(cx, cz, t, r[2] - 4, 2.5, r[3] - 4, 0, base || 0x8a5a34);
+  for (const [dx, dz, sx, sz] of [[-1, 0, 1.2, r[3] - 5], [1, 0, 1.2, r[3] - 5], [0, -1, r[2] - 5, 1.2], [0, 1, r[2] - 5, 1.2]]) k.dbrick(cx + dx * (r[2] / 2 - 2.6), cz + dz * (r[3] / 2 - 2.6), t + 2.5, sx, h, sz, 0, 0xd6ecf8, .12);
+};
+// Schmuck auf dem Kissen: Raster aus Steinen (bunt, leuchtend), dazwischen Goldringe und Barren
+const jewelry = (k, r, t) => {
+  const cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, nx = Math.max(1, Math.floor((r[2] - 8) / 9)), nz = Math.max(1, Math.floor((r[3] - 8) / 9)), t2 = t + 4.1;
+  k.dbrick(cx, cz, t + 2.5, r[2] - 7, 1.6, r[3] - 7, 0, 0x5a1f5a);
+  for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = cx - (nx - 1) * 4.5 + i * 9, z = cz - (nz - 1) * 4.5 + j * 9, n = i * 7 + j * 3 + Math.round(cx / 7);
+    if (n % 3 === 0) { k.dbrick(x, z, t2, 5, .8, 5, 0, 0xe8b923, .35); k.dbrick(x, z, t2 + .8, 3, 2.6, 3, .4, GEM[n % 6], .7) } else if (n % 3 === 1) k.dbrick(x, z, t2, 6.4, 2.2, 3, .3 * (n % 4), 0xffc83a, .45); else k.dbrick(x, z, t2, 4, 3.4, 4, .4, GEM[(n + 2) % 6], .8) }
 };
 export function register(KL) {
-  KL.obj('vit', (k, o) => { const r = o.rc, t = k.topAt(r[0] + r[2] / 2, r[1] + r[3] / 2); if (o.done) { k.dbrick(r[0] + r[2] / 2, r[1] + r[3] / 2, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return } hood(k, r, t, k.X.LAY && k.X.LAY.jewel ? 7 : 9); const cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2;
-    if (k.X.LAY && k.X.LAY.jewel) { k.dbrick(cx, cz, t + 2.5, r[2] - 8, 1.6, r[3] - 8, 0, 0x2a1a30); [[-6, 0xe5324a], [0, 0x3ac4d9], [6, 0xf0e8c8]].forEach(([dx, c], i) => k.dbrick(cx + dx, cz + (i - 1) * 2, t + 4.1, 3.4, 2.6, 3.4, .3 * i, c, .35)) } // Juwelier: Schmuck auf dunklem Kissen
-    else k.dbrick(cx, cz, t + 2.5, 8, 4, 5, 0, 0xd9b440, .25) });
+  KL.obj('vit', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, t = k.topAt(cx, cz), jw = k.X.LAY && k.X.LAY.jewel;
+    if (o.done) { k.dbrick(cx, cz, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return }
+    hood(k, r, t, jw ? 7 : 9, jw ? 0x6a3f24 : 0x8a5a34);
+    if (jw) jewelry(k, r, t); else { k.dbrick(cx, cz, t + 2.5, r[2] - 8, 2, r[3] - 8, 0, 0x7a2a3a); k.dbrick(cx, cz, t + 4.5, 8, 5, 5, 0, 0xffd23a, .6); k.dbrick(cx, cz, t + 9.5, 4, 3, 4, .4, 0x3ac4d9, .8) } });
+  // Bilder an der Wand: goldener Rahmen, bunte leuchtende Leinwand; genommen bleibt ein dunkler Rahmen
   KL.obj('good:art', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, a = r[2] >= r[3] ? 0 : Math.PI / 2, L = Math.max(r[2], r[3]) - 4;
-    if (o.done) { k.dbrick(cx, cz, 14, L, 14, 2, a, 0x2f2a24); return }
-    k.dbrick(cx, cz, 12, L, 20, 3, a, 0x8a5a2c); k.dbrick(cx, cz, 14, L - 6, 16, 3.6, a, [0xc9a24a, 0x3c7a9a, 0xb5503a, 0x4f9a5a][(Math.round(cx / 32) + Math.round(cz / 32)) & 3]) }); // Rahmen und Leinwand
+    if (o.done) { k.dbrick(cx, cz, 14, L, 14, 2, a, 0x4a3a2a); return }
+    k.dbrick(cx, cz, 12, L, 20, 3, a, 0xd9a441, .2); k.dbrick(cx, cz, 14, L - 6, 16, 3.6, a, [0x3a9ad9, 0xe5603a, 0x4fb858, 0xe5c33a][(Math.round(cx / 32) + Math.round(cz / 32)) & 3], .3); k.dbrick(cx, cz, 18, (L - 6) * .5, 6, 4, a, 0xf4ecd8, .35) });
+  // Statue: heller Sandsteinsockel, Figur in hellem Marmor mit Goldkranz
   KL.obj('good:statue', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2;
-    k.dbrick(cx, cz, 0, 24, 8, 24, 0, 0x7f7a84); if (o.done) return;
-    k.dbrick(cx, cz, 8, 12, 14, 9, 0, 0xcfc8bc); k.dbrick(cx, cz, 22, 8, 10, 8, 0, 0xcfc8bc); k.dbrick(cx, cz, 32, 8, 8, 8, 0, 0xe5dfd2); k.dbrick(cx + 7, cz, 16, 3, 8, 3, 0, 0xcfc8bc); k.dbrick(cx - 7, cz, 16, 3, 8, 3, 0, 0xcfc8bc) });
-  for (const n of ['relic', 'vip']) KL.obj('good:' + n, (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, t = k.topAt(cx, cz); if (o.done) { k.dbrick(cx, cz, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return } hood(k, r, t, 12);
-    if (n === 'relic') { k.dbrick(cx, cz, t + 2.5, 8, 6, 8, 0, 0xd9b440, .2); k.dbrick(cx, cz, t + 8.5, 4, 5, 4, 0, 0xc4402f, .25) } else { k.dbrick(cx - 4, cz, t + 2.5, 6, 3, 6, 0, 0xe8e8f0, .3); k.dbrick(cx + 4, cz, t + 2.5, 6, 5, 6, 0, 0x3ac4d9, .3) } });
+    k.dbrick(cx, cz, 0, 24, 8, 24, 0, 0xb59a6a); k.dbrick(cx, cz, 8, 20, 2, 20, 0, 0x8a6f48); if (o.done) return;
+    k.dbrick(cx, cz, 10, 12, 14, 9, 0, 0xf2eee2); k.dbrick(cx, cz, 24, 8, 10, 8, 0, 0xf2eee2); k.dbrick(cx, cz, 34, 8, 8, 8, 0, 0xfffaf0); k.dbrick(cx, cz, 41.6, 9, 1.6, 9, 0, 0xe8b923, .5); k.dbrick(cx + 7, cz, 18, 3, 8, 3, 0, 0xf2eee2); k.dbrick(cx - 7, cz, 18, 3, 8, 3, 0, 0xf2eee2) });
+  // Reliquien und VIP-Auslagen: roter Samtsockel, Haube, Gold und Edelstein leuchten
+  for (const n of ['relic', 'vip']) KL.obj('good:' + n, (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, t = k.topAt(cx, cz); if (o.done) { k.dbrick(cx, cz, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return } hood(k, r, t, 12, 0x8a2a3a);
+    k.dbrick(cx, cz, t + 2.5, r[2] - 8, 1.6, r[3] - 8, 0, 0x7a1f30);
+    if (n === 'relic') { k.dbrick(cx, cz, t + 4.1, 8, 6, 8, 0, 0xffd23a, .6); k.dbrick(cx, cz, t + 10.1, 4, 5, 4, .4, 0xff4a5a, .9) } else { k.dbrick(cx - 4, cz, t + 4.1, 6, 3, 6, 0, 0xf4f4ff, .5); k.dbrick(cx + 4, cz, t + 4.1, 6, 5, 6, 0, 0x3ac4d9, .8) } });
   // Laser: Sender an beiden Enden, Strahl als duenner leuchtender Klotz in Knie bis Huefthoehe, aus nur ein matter Strich
   KL.obj('laser', (k, o) => {
     const H = k.C.scen.laserH, L = Math.hypot(o.x1 - o.x0, o.y1 - o.y0), a = Math.atan2(o.y1 - o.y0, o.x1 - o.x0), mx = (o.x0 + o.x1) / 2, mz = (o.y0 + o.y1) / 2;
