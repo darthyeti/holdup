@@ -28,7 +28,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         await lib.loadInpage(P.page, 'bild.js');
-        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
           for (const sc of ['bank', 'jewel', 'gas', 'truck']) {
             PX.scene(sc, 5); PX.phase(sc === 'truck' ? 'ueberfall' : 'erkundung'); const g = D.get(), L = D.LAY(); let tg;
             if (L.truck) { const k = D.tk(); tg = [k.x, k.y]; } else if (L.pumps) { const q = L.pumps[0]; tg = [q.x * 32 + 16, q.y * 32 + 16]; } else if (L.vit) tg = [L.vit[0].x, L.vit[0].y]; else { const v = L.vault.door; tg = [v[0] * 32 + 16, v[1] * 32 + 32]; }
@@ -64,7 +64,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         await lib.loadInpage(P.page, 'bild.js');
-        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
           PX.scene('bank', 5); PX.phase('ueberfall'); const me = D.get().me, V = D.view3d.V, K = V.kl(), cnt = () => ['k-dinge', 'k-dinge-klein'].reduce((a, n) => a + (V.scene.getObjectByName(n) ? V.scene.getObjectByName(n).count : 0), 0);
           const sd = () => { for (let i = 0; i < 3; i++) { me.hp = 100; D.update(1 / 30); } D.draw(); D.draw(); return V.info(); };
           let a = sd(); o.base = cnt(); o.baseKl = a.k.on;

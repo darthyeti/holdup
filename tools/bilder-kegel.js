@@ -10,7 +10,7 @@ const [OUT, SC = 'gas', LAGE = 'abend', STIL = '1', AL = '1', SEED = '3'] = proc
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
   const r = await page.evaluate(async ([sc, lage, kl, al, seed]) => {
-    const D = __dbg; D.view3d.kstil = +kl; await D.view3d.set(true);
+    const D = __dbg; await D.view3d.set(true);
     PX.scene(sc, +seed); D.CFG.vanLock = 0; PX.phase('erkundung'); D.get().me.hp = 100;
     const L = D.LAY(); if (lage !== 'tag') { L.mission.lg = (L.mission.lg || []).concat(lage); D.view3d.reset(); await D.view3d.set(true); }
     const g = D.get(), c = g.cams[0], W = D.world(), T = 32; if (!c) return { err: 'keine Kamera' };

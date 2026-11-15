@@ -338,7 +338,7 @@ void main() {
   // ---------- Stil an oder aus (X.kstil: 0 klassisch, 1 Kloetzchen) ----------
   let applied = -1;
   K.zoom = () => K.on ? KC.zoom : 1;
-  K.sync = () => { const w = X.kstil ? 1 : 0; K.on = w > 0 && !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
+  K.sync = () => { const w = 1; K.on = !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
   K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB + iF, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.dingeList = () => SD.map(q => q.slice(0, 7));
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);

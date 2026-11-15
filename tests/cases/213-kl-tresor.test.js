@@ -7,7 +7,7 @@ module.exports = [{
   async run(t) {
     const P = await glPage(t); if (!P) return;
     try {
-      const r = await P.page.evaluate(`(async () => { const D = __dbg, T = 32; D.view3d.kstil = 1; await D.view3d.set(true);
+      const r = await P.page.evaluate(`(async () => { const D = __dbg, T = 32; await D.view3d.set(true);
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5); for (let i = 0; i < 20; i++) { D.get().me.hp = 1e9; D.update(1 / 30); }
         const v = D.LAY().vault, h = v.o === 'h', X0 = v.door[0] * T, Y0 = v.door[1] * T;
         // Durchgang: Streifen quer zur Wand (3 Pixel um die Wandlinie, ueber die Oeffnung von 2 Kacheln, ohne die Pfosten an den Enden)

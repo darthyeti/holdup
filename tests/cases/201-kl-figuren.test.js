@@ -13,7 +13,7 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
           D.setScenario('bank'); D.setSeedMode('random'); D.buildLay(D.layoutFor(5)); D.startHeist(); const g = D.get(), me = g.me; me.hp = 1e9; me.armed = true;
           for (let i = 0; i < 300; i++) { me.hp = 1e9; D.update(1 / 30) }
-          D.view3d.kstil = 1; await D.view3d.set(true); const W = D.world(), T = 32, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T));
+          await D.view3d.set(true); const W = D.world(), T = 32, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T));
           let spot = null; for (let y = 4 * T; y < 40 * T && !spot; y += T) for (let x = 3 * T; x < 50 * T && !spot; x += T) { let ok = true; for (let k = 0; k < 13; k++) for (const dy of [-T, 0, T]) if (!free(x + k * 40, y + dy)) ok = false; if (ok) spot = [x, y] }
           o.spot = !!spot; if (!spot) return o;
           me.x = spot[0]; me.y = spot[1]; me.a = .6; me.units = 3; me.vx = me.vy = 0; for (let i = 0; i < 45; i++) { me.hp = 1e9; me.x = spot[0]; me.y = spot[1]; D.update(1 / 30) }

@@ -12,7 +12,7 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   const env = await lib.launch({ webgl: true });
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
-  if (STIL !== 'x') await page.evaluate(async (stil) => { __dbg.view3d.kstil = +stil; await __dbg.view3d.set(true); }, STIL);
+  if (STIL !== 'x') await page.evaluate(async (stil) => { await __dbg.view3d.set(true); }, STIL);
   const prep = await page.evaluate(([sc, flow, seed, lage]) => {
     const D = __dbg; if (lage) D.setLage([lage]); else if (sc === 'museum') D.setLage(['nacht']);
     PX.scene(sc, seed); if (lage || sc === 'museum') { D.setLage([lage || 'nacht']); D.buildSeed(seed); D.ptClear(); }

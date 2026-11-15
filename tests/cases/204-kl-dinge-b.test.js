@@ -9,7 +9,7 @@ module.exports = [{
     const P = await glPage(t); if (!P) return;
     try {
       const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
-        D.view3d.kstil = 1; await D.view3d.set(true);
+        await D.view3d.set(true);
         for (const sc of ['museum', 'casino', 'nb', 'prison']) {
           D.setN(sc === 'prison' ? 2 : 1); if (sc === 'prison') D.setPz(1); D.sessReset(); D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5);
           for (let i = 0; i < 60; i++) { D.get().me.hp = 1e9; D.update(1 / 30); }

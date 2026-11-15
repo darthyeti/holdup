@@ -9,7 +9,7 @@ module.exports = [{
     const P = await glPage(t, { gfx: 'mittel', still: true }); if (!P) return;
     try {
       await require('../lib').loadInpage(P.page, 'bild.js');
-      await P.page.evaluate(async () => { __dbg.view3d.kstil = 1; await __dbg.view3d.set(true) });
+      await P.page.evaluate(async () => { await __dbg.view3d.set(true) });
       const miss = { fig: new Set(), car: new Set(), scen: new Set(), tile: new Set() }, tris = [], errs = [];
       for (const sc of ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb', 'prison']) for (const sd of [3, 5]) {
         await P.page.evaluate(([sc, sd]) => { PX.scene(sc, sd); const K = __dbg.view3d.V.kl(); window.__rec = {}; if (!K._w) { K._w = 1; const o0 = K.sceneBuilder; K.sceneBuilder = o => { const b = o0(o); if (!b) window.__rec[o.k + (o.n ? ':' + o.n : '')] = 1; return b } } }, [sc, sd]);

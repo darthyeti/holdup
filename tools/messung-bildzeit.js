@@ -19,7 +19,7 @@ if (!levels.length) levels.push('mittel');
     const page = await lib.openGame(env, { det: true, gfx, still: true });
     await lib.loadInpage(page, 'bild.js');
     if (KLO) await page.evaluate(() => { window.__kl = 1; });
-    if (D3) { const i = await page.evaluate(async (nosh) => { if (nosh && typeof V3OPT !== 'undefined') while (V3OPT.shadow !== 'aus') V3OPT.cycleShadow(); if (window.__kl) __dbg.view3d.kstil = 1; const i = await __dbg.view3d.set(true); const q = document.createElement('canvas').getContext('2d', { willReadFrequently: true }); window.PX_SYNC = () => { const V = __dbg.view3d.V; if (V && V.shown) { q.drawImage(V.el, 0, 0, 1, 1); q.getImageData(0, 0, 1, 1); } }; return i; }, NOSH); if (i.state !== 'an') { console.log('3D nicht an: ' + JSON.stringify(i)); process.exit(1); } console.log('3D an: ' + i.gl + ', ' + i.gpu + (NOSH ? ', Schatten aus' : '')); }
+    if (D3) { const i = await page.evaluate(async (nosh) => { if (nosh && typeof V3OPT !== 'undefined') while (V3OPT.shadow !== 'aus') V3OPT.cycleShadow(); const i = await __dbg.view3d.set(true); const q = document.createElement('canvas').getContext('2d', { willReadFrequently: true }); window.PX_SYNC = () => { const V = __dbg.view3d.V; if (V && V.shown) { q.drawImage(V.el, 0, 0, 1, 1); q.getImageData(0, 0, 1, 1); } }; return i; }, NOSH); if (i.state !== 'an') { console.log('3D nicht an: ' + JSON.stringify(i)); process.exit(1); } console.log('3D an: ' + i.gl + ', ' + i.gpu + (NOSH ? ', Schatten aus' : '')); }
     for (const lod of LODS) {
       const sum = [0, 0, 0];
       for (const sc of (process.env.SC || 'bank,truck,jewel,gas,museum,casino,nb,prison').split(',')) {

@@ -9,7 +9,7 @@ const SC = arg('szenen', 'bank,truck,jewel,gas,museum,casino,nb,prison'), SEEDS 
   const env = await lib.launch({ webgl: true });
   const page = await lib.openGame(env, { still: true, gfx: 'mittel' });
   await lib.loadInpage(page, 'bild.js');
-  await page.evaluate(async () => { __dbg.view3d.kstil = 1; await __dbg.view3d.set(true); });
+  await page.evaluate(async () => { await __dbg.view3d.set(true); });
   const tot = { fig: {}, car: {}, scen: {}, tile: {}, tileK: {} }, add = (o, k, w) => { o[k] = o[k] || { n: 0, wo: [] }; o[k].n++; if (o[k].wo.indexOf(w) < 0) o[k].wo.push(w) };
   for (const sc of SC) for (const sd of SEEDS) {
     await page.evaluate(([sc, sd]) => { PX.scene(sc, sd); window.__rec = { scen: {}, hit: {} }; const K = __dbg.view3d.V.kl(), o0 = K.sceneBuilder; if (!K._w) { K._w = 1; K.sceneBuilder = o => { const b = o0(o); const k = o.k + (o.n ? ':' + o.n : ''); (b ? window.__rec.hit : window.__rec.scen)[k] = 1; return b }; } }, [sc, sd]);

@@ -10,7 +10,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
-          D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); D.view3d.kstil = 1; await D.view3d.set(true); D.draw(); D.draw();
+          D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); await D.view3d.set(true); D.draw(); D.draw();
           const K = D.view3d.V.kl(), k = K.kit, KL = K.KL; k.state(0, 1);
           const fig = (wp, ar) => ({ k: 'pl', x: 0, y: 0, a: 0, row: 1, col: 0, hit: 0, lie: 0, al: 1, sh: -1, rf: 0, bag: 0, fl: 0, w: 0, ar, wp });
           const read = (wp, ar) => { const ps = k.collect(() => KL.figs.rob0(k, fig(wp, ar), { r: 9 })); let fx = -1e9, n = ps.length; for (const p of ps) fx = Math.max(fx, p.m.elements[12] + Math.abs(p.m.elements[0]) * .5); return { n, fx: Math.round(fx * 10) / 10 } };
@@ -39,7 +39,7 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => {
           const G = CT.mkGame('bank', 321, 2, 60, 20, null, null, insts => { insts[0].SESSION.own.smg = 1 }), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
           const run = n => { for (let i = 0; i < n; i++) step(G.insts, G.net, 1 / 60); };
-          for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
+          for (const d of [A, B]) { await d.view3d.set(true); }
           A.startHeist(); run(120); const o = { kitA: A.get().players.map(p => p.kit && p.kit.w), kitB: B.get().players.map(p => p.kit && p.kit.w) };
           const parts = d => { d.draw(); d.draw(); return d.view3d.V.info().k.parts };
           const pb = B.get().players[0]; pb.armed = true; const n = {}; for (const w of ['pistol', 'smg', 'rifle']) { pb.kit.w = w; n[w] = parts(B) } o.n = n; pb.kit.w = o.kitA[0];

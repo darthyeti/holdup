@@ -57,7 +57,7 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => {
           const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
           const run = n => { for (let i = 0; i < n; i++) step(G.insts, G.net, 1 / 60); };
-          for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
+          for (const d of [A, B]) { await d.view3d.set(true); }
           A.startHeist(); run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
           const car = A.get().cars.find(c => c.civ && !c.dead); if (!car) return { nocar: 1 };
           const k0 = [A, B].map(d => d.view3d.V.info().k.deb);
