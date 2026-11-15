@@ -8,7 +8,9 @@ const hood = (k, r, t, h, col) => {
   k.dbrick(cx, cz, t + 2.5 + h, r[2] - 4, 1.8, r[3] - 4, 0, 0xcfeaf6);
 };
 export function register(KL) {
-  KL.obj('vit', (k, o) => { const r = o.rc, t = k.topAt(r[0] + r[2] / 2, r[1] + r[3] / 2); if (o.done) { k.dbrick(r[0] + r[2] / 2, r[1] + r[3] / 2, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return } hood(k, r, t, 9); k.dbrick(r[0] + r[2] / 2, r[1] + r[3] / 2, t + 2.5, 8, 4, 5, 0, 0xd9b440, .25) });
+  KL.obj('vit', (k, o) => { const r = o.rc, t = k.topAt(r[0] + r[2] / 2, r[1] + r[3] / 2); if (o.done) { k.dbrick(r[0] + r[2] / 2, r[1] + r[3] / 2, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return } hood(k, r, t, k.X.LAY && k.X.LAY.jewel ? 7 : 9); const cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2;
+    if (k.X.LAY && k.X.LAY.jewel) { k.dbrick(cx, cz, t + 2.5, r[2] - 8, 1.6, r[3] - 8, 0, 0x2a1a30); [[-6, 0xe5324a], [0, 0x3ac4d9], [6, 0xf0e8c8]].forEach(([dx, c], i) => k.dbrick(cx + dx, cz + (i - 1) * 2, t + 4.1, 3.4, 2.6, 3.4, .3 * i, c, .35)) } // Juwelier: Schmuck auf dunklem Kissen
+    else k.dbrick(cx, cz, t + 2.5, 8, 4, 5, 0, 0xd9b440, .25) });
   KL.obj('good:art', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, a = r[2] >= r[3] ? 0 : Math.PI / 2, L = Math.max(r[2], r[3]) - 4;
     if (o.done) { k.dbrick(cx, cz, 14, L, 14, 2, a, 0x2f2a24); return }
     k.dbrick(cx, cz, 12, L, 20, 3, a, 0x8a5a2c); k.dbrick(cx, cz, 14, L - 6, 16, 3.6, a, [0xc9a24a, 0x3c7a9a, 0xb5503a, 0x4f9a5a][(Math.round(cx / 32) + Math.round(cz / 32)) & 3]) }); // Rahmen und Leinwand
