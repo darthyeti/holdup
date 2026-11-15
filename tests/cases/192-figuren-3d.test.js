@@ -176,7 +176,7 @@ module.exports = [
         t.ok(r.more[5] - r.base[3] <= 3 && r.more[0] - figs >= 6, 'echte Draw Calls (Renderer): acht Figuren mehr, hoechstens drei Aufrufe mehr (Instanzen, nicht je Figur ein Mesh): ' + r.base[3] + ' auf ' + r.more[5] + ' bei ' + figs + ' auf ' + r.more[0] + ' Figuren');
         t.ok(r.more[0] >= figs + 6 && r.more[1] >= parts + 6 * 12, 'mehr Figuren, mehr Instanzen: ' + JSON.stringify([figs, parts, r.more[0], r.more[1]]));
         t.ok(r.stand[2] >= 13 && r.stand[2] <= 24, 'eine Figur besteht aus 13 bis 24 Teilen (Rumpf, Kopf, Glieder, Zubehoer): ' + r.stand[2]);
-        const tpf = (r.tris[0] - r.tris[1]) / r.tris[2]; t.ok(tpf > 600 && tpf <= 1400, 'rund 1.000 Dreiecke je Figur (600 bis 1.400): ' + Math.round(tpf));
+        const tpf = (r.tris[0] - r.tris[1]) / r.tris[2]; t.ok(tpf > 600 && tpf <= 2000, 'rund 1.000 Dreiecke je Figur, dazu der Umriss (Ticket 189, Rumpf, Glieder, Kopf noch einmal als Rueckseiten) bis 2.000: ' + Math.round(tpf));
         // Haltung nach Zustand: Hoehe des hoechsten Teils
         t.ok(r.stand[3] > 27 && r.stand[3] < 34, 'stehende Person: Kopfmitte auf rund 30 Hoehe (Kopf 36 hoch): ' + r.stand[3]);
         t.ok(r.ko[3] < 10 && r.ko[2] === r.stand[2], 'bewusstlos: liegt flach (hoechstes Teil unter 10) mit denselben Teilen: ' + JSON.stringify([r.ko, r.stand]));
@@ -225,6 +225,36 @@ module.exports = [
         t.eq(hx(b), hx(a), 'Host und Client: gleiche Rumpffarben');
         t.eq(r.miss, [], 'jede Figur beim Client gehoert zu einer Figur des Hosts (Zeile gleich, Lage hoechstens 40 px daneben)');
         if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
+      } finally { await P.done(); }
+    },
+  },
+  {
+    name: '3D-Figuren: Umriss hebt die Figur vom Boden ab (Ticket 189), Farbabstand zum Boden steigt, Umriss nur an Rumpf, Gliedern und Kopf, aus mit out 0',
+    timeout: 240000,
+    async run(t) {
+      const P = await glPage(t); if (!P) return;
+      try {
+        const page = P.page;
+        const r = await page.evaluate(async () => {
+          const D = __dbg; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+          D.setScenario('bank'); D.buildSeed('classic'); D.setFocus(true); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset();
+          const g = D.get(), me = g.me, W = D.world(), T = 32, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T)); let spot = null;
+          for (let y = 4 * T; y < 40 * T && !spot; y += T) for (let x = 3 * T; x < 50 * T && !spot; x += T) { let ok = true; for (const dx of [0, 40, 80]) for (const dy of [-T, 0, T]) if (!free(x + dx, y + dy)) ok = false; if (ok) spot = [x, y]; }
+          for (let k = 0; k < 60; k++) { me.x = spot[0]; me.y = spot[1]; me.vx = me.vy = 0; me.hp = 1e9; D.update(1 / 30); }
+          const e = D.mkCop(spot[0] + 40, spot[1], 'cop'); e.react = -1e9; g.en.push(e); D.draw(); D.draw();
+          const V = D.view3d.V, C = V.cfg, o = { i0 };
+          const meas = () => { D.draw(); const i = V.info(), q = V.seen(spot[0] + 40, spot[1], 14); return { ol: i.figOl, parts: i.figParts, tris: i.tris, dist: q.dist, merge: q.merge, px: q.px } };
+          o.on = meas(); const out0 = C.fig.look.out; C.fig.look.out = 0; o.off = meas(); C.fig.look.out = out0; o.on2 = meas();
+          return o;
+        });
+        if (r.i0 && r.i0.state !== 'an') { t.ok(false, '3D nicht an: ' + JSON.stringify(r.i0)); return; }
+        t.note('mit Umriss ' + JSON.stringify(r.on) + ', ohne ' + JSON.stringify(r.off));
+        t.ok(r.on.ol > 0 && r.off.ol === 0 && r.on2.ol === r.on.ol, 'Umriss-Instanzen nur mit out > 0: ' + [r.on.ol, r.off.ol, r.on2.ol]);
+        t.eq(r.on.parts, r.off.parts, 'der Umriss zaehlt nicht als Figurenteil (figParts gleich)');
+        t.ok(r.on.ol < r.on.parts, 'Umriss nur fuer Rumpf, Glieder und Kopf, nicht fuer jedes Teil: ' + r.on.ol + ' von ' + r.on.parts);
+        t.ok(r.on.merge < r.off.merge + 1e-6 && r.on.dist > r.off.dist, 'Kontrast zum Boden steigt (Farbabstand ' + r.off.dist.toFixed(0) + ' -> ' + r.on.dist.toFixed(0) + ', verschmelzend ' + (r.off.merge * 100).toFixed(0) + ' % -> ' + (r.on.merge * 100).toFixed(0) + ' %)');
+        if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
+        await page.evaluate(() => __dbg.view3d.reset());
       } finally { await P.done(); }
     },
   },
