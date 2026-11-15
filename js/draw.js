@@ -385,7 +385,7 @@ for(const o of DX.players)if(o.dead&&o.dn>0&&(o===DX.me||see(o.x,o.y)))fg('down'
 for(const q of DX.npcs){if(q.st==='away'||!see(q.x,q.y))continue;if(q.st==='ko'){fg(q.k,q.x,q.y,q.a,q.row,7,0,1);continue}const tq=twd('n',q.id);fg(q.k,q.x+tq[0],q.y+tq[1],q.a,q.row,q.st==='cower'?8:frame(q.w,q.mvg),0,0,1,q.w)}
 for(const e of DX.en)if(see(e.x,e.y)){const tq=twd('e',e.id),o=fg(e.kind,e.x+tq[0],e.y+tq[1],e.a,e.row,e.sur?8:frame(e.w,e.mvg),e.h,0,1,e.w);o.sc=SIL_EN;o.ar=e.sur?0:1;if(e.kind==='shield'&&e.sh>0)o.sh=e.sh/CFG.shield.pool;if(e.kind==='sniper')o.rf=1;if(e.fl>0)o.fl=1}
 {const v=DX.dl.dv;if(v&&see(v.x,v.y)){const m=DX.LANE.van.mid(DX.vanX);if(!(DX.dl.st===3&&Math.hypot(v.x-m[0],v.y-m[1])<8)){const o=fg('drv',v.x,v.y,v.a,3,DX.dl.st===3?8:frame(v.w,v.mvg),v.h,0,1,v.w);o.ar=DX.dl.st===3?0:1;if(v.fl>0)o.fl=1}}}
-const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
+const pl=o=>{const r=lnOff(o)-rcl(o),f=fg('pl',o.x+r*Math.cos(o.a),o.y+r*Math.sin(o.a),o.a,plRow(o),frame(o.w,o.mvg),o.hurt>.3?1:0,0,1,o.w);f.bag=o.units>0?1:0;f.ar=o.armed?1:0;f.wp=(o.kit&&o.kit.w)||'pistol';f.sc=PC[o.id].c;if(o.flash>0)f.fl=1};
 for(const o of DX.players){if(o===P||!live(o)||!see(o.x,o.y))continue;pl(o)}
 if(live(P))pl(P);
 return{f:F,c:C}}
@@ -394,7 +394,7 @@ return{f:F,c:C}}
    gc Gaswolken, smk Rauchwolken {id,x,y,r,al Deckkraft wie 2D} (wie 2D ohne Sichtpruefung), pk Aufnahmen in Sicht {x,y,k Zelle in props.png, b Wippen}, tr Fallen {k,x,y,r Radius,armed,bl}, aid Notfallkoffer {x,y,r,ph,al}, dcy Ablenker {x,y,ph,bl},
    burn brennende Wracks {x,y,f}, t Spielzeit. */
 function fx3d(){const P=DX.p,see=(x,y)=>los(P.x,P.y,x,y),t=DX.time,muz=[],gr=[],pk=[],tr=[],aid=[],dcy=[],burn=[];
-for(const o of DX.players){if(o.flash<=0||!live(o)||(o!==P&&!see(o.x,o.y)))continue;muz.push({x:o.x+Math.cos(o.a)*34,y:o.y+Math.sin(o.a)*34,a:o.a,r:34,pl:1,fv:GFX.lv>0?o.fv|0:0})}
+for(const o of DX.players){if(o.flash<=0||!live(o)||(o!==P&&!see(o.x,o.y)))continue;{const d=((CFG.wpn[o.kit&&o.kit.w]||CFG.wpn.pistol).tip)||34;muz.push({x:o.x+Math.cos(o.a)*d,y:o.y+Math.sin(o.a)*d,a:o.a,r:34,pl:1,fv:GFX.lv>0?o.fv|0:0})}}
 for(const e of DX.en)if(e.fl>0&&see(e.x,e.y))muz.push({x:e.x+Math.cos(e.a)*(e.muz+2),y:e.y+Math.sin(e.a)*(e.muz+2),a:e.a,r:22,pl:0,fv:0});
 {const v=DX.dl.dv;if(v&&v.fl>0&&see(v.x,v.y))muz.push({x:v.x+Math.cos(v.a)*24,y:v.y+Math.sin(v.a)*24,a:v.a,r:10,pl:0,fv:0})}
 for(const q of DX.gr){if(!see(q.x,q.y))continue;gr.push({id:q.id,k:q.k,x:q.x,y:q.y,st:q.st,t:q.t,bk:q.st==='rest'&&Math.floor(t*(q.tm<.5?14:7))%2?1:0})}
