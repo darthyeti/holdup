@@ -70,8 +70,8 @@ export const V3CFG = {
     dim: { foot: 2.2, shin: 5.5, thigh: 5.5, hipW: 3.2, legT: 4.6, torsoH: 10, torsoW: 12, torsoD: 9, armU: 5.2, armF: 5, armT: 4.2, head: 12, neck: .4 },
     seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
     // look (Ticket 189): Figuren heben sich vom Boden ab. sat Saettigung der Kleidung, out Dicke des Umrisses in Weltpixeln (zweite, aufgeblasene Instanz je Teil, nur die Rueckseiten, outDay dunkel,
-    // outNight hell bei dunkler Szene), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
-    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0xdfe5f2 },
+    // outNight hell bei dunkler Szene, seit Ticket 198 gedaempft: Mittelgrau, Dicke outNightW und Deckkraft outNightA, nur nachts), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
+    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0x7c879c, outNightW: .6, outNightA: .6 },
     hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
     out: {
       rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },
@@ -453,12 +453,12 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   let hitNow = 0, alNow = 1, nP = 0, topY = 0, sigN = 0;
   // Teil in Gelenk par: Mitte (x,y,z), Groesse (sx,sy,sz), Farbe, optional Drehung (rx,ry,rz) vor der Verschiebung
   const OLK = { torso: 1, cap: 1, head: 1 }; // Teil-Arten mit Umriss (Haende, Fuesse, Huete und Zubehoer ohne, das spart rund 40 % der Dreiecke des Umrisses)
-  const fm2 = new THREE.Matrix4(); let olT = 0; const olC = new THREE.Color(); // olT Umrissdicke dieses Bildes (0 aus), olC Farbe
+  const fm2 = new THREE.Matrix4(); let olT = 0, olA = 1; const olC = new THREE.Color(); // olT Umrissdicke dieses Bildes (0 aus), olC Farbe
   const fput = (P, par, x, y, z, sx, sy, sz, col, rx, rz) => {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
     const i = P.u++; P.im.setMatrixAt(i, fm); P.im.setColorAt(i, hitNow ? hitC.copy(col).lerp(white, FG.hit) : col); P.a.iA.setX(i, alNow);
     if (olT > 0 && OLK[P.k]) { // Umriss (Ticket 189): dieselbe Lage, aufgeblasen, nur Rueckseiten (alpha + 2 markiert ihn im Shader)
-      _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm2.multiplyMatrices(par, _l); const k = P.u++; P.o++; P.im.setMatrixAt(k, fm2); P.im.setColorAt(k, olC); P.a.iA.setX(k, alNow + 2);
+      _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm2.multiplyMatrices(par, _l); const k = P.u++; P.o++; P.im.setMatrixAt(k, fm2); P.im.setColorAt(k, olC); P.a.iA.setX(k, alNow * olA + 2);
     }
     nP++; if (fm.elements[13] > topY) topY = fm.elements[13]; sigN += (fm.elements[12] * .7 + fm.elements[13] + fm.elements[14] * 1.3) * (1 + nP * .13);
   };
@@ -560,7 +560,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     // Silhouette (Ticket 188): nur fuer Figuren, die wirklich verdeckt sind. Das Sprite liegt als flaches Quadrat ueber der Figur und ragt in Waende dahinter, dort malte der Tiefentest es faelschlich orange
     const S = C.sil ? F.concat(FK).filter(([o, e]) => o.sc && !(e.lie || o.lie) && hidden(o)) : [];
     pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
-    olT = FG.look.out || 0; { const th = (X.LAY && X.LAY.theme) || {}; olC.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) }
+    { const th = (X.LAY && X.LAY.theme) || {}, nt = X.night || th.tod === 'nacht' || th.tod === 'daemmerung'; olT = FG.look.out ? (nt ? FG.look.outNightW : FG.look.out) : 0; olA = nt ? FG.look.outNightA : 1; olC.set(nt ? FG.look.outNight : FG.look.outDay) }
     for (const key in fP) { fP[key].size(F.length * fMax[key] * (olT > 0 && OLK[key] ? 2 : 1)); fP[key].u = 0; fP[key].o = 0 }
     pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
     let iS = 0, iX = 0, lie = 0, hit = 0, gear = 0;

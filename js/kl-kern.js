@@ -137,7 +137,7 @@ void main() {
   const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), white = new THREE.Color(1, 1, 1), hitC = new THREE.Color(), yAx = new THREE.Vector3(0, 1, 0);
   const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
   const mats = n => Array.from({ length: n }, () => new THREE.Matrix4());
-  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, olT = 0;
+  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, olT = 0, olNt = false;
   // Teil im Gelenk par: Mitte (x,y,z), Groesse, Farbe, Leuchten em, Drehung (rx, rz) vor der Verschiebung. Im Sammelmodus (collect) wird nur gemerkt, sonst in den Pool geschrieben.
   function part(par, x, y, z, sx, sy, sz, col, em, rx, rz) {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
@@ -152,7 +152,7 @@ void main() {
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
     X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
-    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on ? FG.look.out || 0 : 0 },
+    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on && FG.look.out ? (olNt ? FG.look.outNightW : FG.look.out) : 0 },
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
     collect(fn) { const was = out, r = []; out = r; try { fn() } finally { out = was } return r },
     time: 0, dt: 0, FA: null, FN: null, light: null,
@@ -199,7 +199,7 @@ void main() {
   const figMax = 40, carMax = 40;
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
-    { const th = (X.LAY && X.LAY.theme) || {}; olMat.uniforms.uC.value.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) } carsNow = []; figsNow = F;
+    { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olMat.uniforms.uC.value.set(olNt ? FG.look.outNight : FG.look.outDay); olMat.uniforms.uA.value = olNt ? FG.look.outNightA : 1 } carsNow = []; figsNow = F;
     pB.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pF.u = 0;
     pAO.size(F.length + Cs.length); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
