@@ -16,7 +16,7 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   const prep = await page.evaluate(([sc, flow]) => {
     const D = __dbg; if (sc === 'museum') D.setLage(['nacht']);
     PX.scene(sc, 5); if (sc === 'museum') { D.setLage(['nacht']); D.buildSeed(5); D.ptClear(); }
-    PX.phase(flow === 'ueberblick' || flow === 'alarm' ? 'ueberfall' : 'ueberfall'); const g = D.get(), me = g.me; me.hp = 1e9; me.armed = true; me.mag = 99; me.res = 99; D.mouse.t = -999; D.CFG.vanLock = 0;
+    PX.phase(flow === 'dinge' ? 'erkundung' : 'ueberfall'); const g = D.get(), me = g.me; me.hp = 1e9; me.armed = true; me.mag = 99; me.res = 99; D.mouse.t = -999; D.CFG.vanLock = 0;
     const W = D.world(), T = 32, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T));
     // freie Richtung vor dem Spieler: von Wand frei und 150 Pixel weit
     let best = 0, bd = -1; for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; let d = 0; while (d < 220 && free(me.x + Math.cos(a) * (d + 10), me.y + Math.sin(a) * (d + 10))) d += 10; if (d > bd) { bd = d; best = a } }
@@ -46,6 +46,16 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     await page.screenshot({ path: f, type: 'jpeg', quality: 90, clip: bb });
     const w = 520, h = 330, x0 = Math.max(0, Math.min(bb.width - w, pos[0] - w / 2)), y0 = Math.max(0, Math.min(bb.height - h, pos[1] - h * .55));
     execFileSync('python3', ['-I', '-c', 'import sys\nfrom PIL import Image\nf=sys.argv[1]; b=[float(v) for v in sys.argv[2:6]]\nim=Image.open(f).convert("RGB").crop((int(b[0]),int(b[1]),int(b[0]+b[2]),int(b[1]+b[3])))\nim.resize((im.width*2,im.height*2),Image.LANCZOS).save(f,quality=90)', f, String(x0), String(y0), String(w), String(h)]); console.log(f);
+  } else if (FLOW === 'dinge') {
+    // Dinge des Szenarios: Spieler neben bis zu drei Zielen (Beute, Laser, Bohrer, Presse, Schloesser), Ausschnitt um jedes
+    const targets = await page.evaluate(() => { const D = __dbg, g = D.get(), L = D.LAY(), T = 32, out = [], seen = new Set(), add = (n, x, y) => { out.push([n, Math.round(x), Math.round(y), 10]) };
+      for (const it of g.its) if ((it.t === 'good' || it.t === 'vit') && !seen.has(it.k || it.t)) { seen.add(it.k || it.t); add(it.k || it.t, it.x, it.y) }
+      if (L.lasers && L.lasers[0]) { const l = L.lasers[0]; add('laser', (l[0] + l[2]) * T / 2, (l[1] + l[3]) * T / 2) }
+      if (L.nb) { add('bohrer', L.nb.rig[0] * T + T, L.nb.rig[1] * T + T); add('presse', L.nb.press[0] * T + 40, L.nb.press[1] * T + 40) }
+      if (L.prison) { const p = L.prison; add('ring', p.pick[0] * T + 16, p.pick[1] * T + 16); const l = p.locks[0]; if (l) add('schloss', l.cells[0][0] * T + 16, l.cells[0][1] * T + 16); const gl = p.locks.find(q => q.id === 'gi'); if (gl) add('leser', gl.ops[0].at[0] * T + 26, gl.ops[0].at[1] * T + 32) }
+      return out.slice(0, 8) });
+    console.log(JSON.stringify(targets));
+    for (const t of targets) { await page.evaluate(([x, y]) => { const D = __dbg, m = D.get().me; m.x = x - 60; m.y = y + 40; m.vx = m.vy = 0; D.update(1 / 30); D.update(1 / 30); D.draw() }, t.slice(1, 3)); process.env.HALF = '190'; info = await shot('d' + FR.length, t.slice(1, 4)) }
   } else if (FLOW === 'laufen') {
     await step(1, 'D.keys.d=1;D.keys.w=0'); info = await shot('f0'); for (let k = 1; k < 8; k++) { await step(3, 'D.keys.d=1'); info = await shot('f' + k) } await step(1, 'for(const k of "wasd")delete D.keys[k]');
   } else if (FLOW === 'schiessen') {
