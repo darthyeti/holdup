@@ -23,6 +23,8 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     window.__dir = best; me.a = best; return { dir: best, free: bd, at: [Math.round(me.x), Math.round(me.y)], night: D.LAY().theme && D.LAY().theme.tod };
   }, [SC, FLOW, +(process.env.SEED || 5), process.env.LAGE || '']);
   console.log(JSON.stringify(prep));
+  // TOD=mittag|abend|nacht ...: Tageszeit der Karte erzwingen (theme.tod) und die Ansicht neu aufbauen
+  if (process.env.TOD) await page.evaluate(async (tod) => { __dbg.LAY().theme.tod = tod; __dbg.view3d.reset(); await __dbg.view3d.set(true); __dbg.draw(); }, process.env.TOD);
   // ein Bild: Spielschritte, zeichnen, Leinwand lesen, Mitte (Bildpunkte) des Geschehens zurueck
   const FR = [], shot = async (name, at) => {
     const r = await page.evaluate((at) => {
@@ -125,6 +127,23 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     info = await shot('f0', 'at');
     await page.evaluate(() => { const D = __dbg, w = window.__w, m = D.get().me; D.get().bl.push({ id: 9901, x: m.x, y: m.y, vx: -w.iv[0] * 700, vy: -w.iv[1] * 700, l: .8, o: 1, own: m.id, d: 20, ov: 0 }) });
     for (const n of [2, 1, 2, 3, 4, 6, 10, 20]) { await step(n, 'D.get().me.hp=1e9'); info = await shot('f' + FR.length, 'at') }
+  } else if (FLOW === 'moebel') {
+    // Strassenmoebel (Ticket 229): vier Ausschnitte um Kisten und Faesser draussen (mindestens 5 Zellen o im 5 mal 5), die Szene wie bei SC
+    const tiles = await page.evaluate(() => { const D = __dbg, W = D.world(), T = 32, out = []; for (let y = 0; y < W.H; y++) for (let x = 0; x < W.W; x++) { const c = W.cell(x, y); if (c !== 'k' && c !== 'q') continue; let o = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (W.cell(x + dx, y + dy) === 'o') o++; if (o >= 5) out.push([x * T + 16, y * T + 16]) } const pick = []; for (const q of out) if (pick.every(p => Math.hypot(p[0] - q[0], p[1] - q[1]) > 150)) pick.push(q); return pick.slice(0, 4) });
+    for (let i = 0; i < tiles.length; i++) {
+      await page.evaluate((t) => { const D = __dbg, m = D.get().me; D.get().en.length = 0; const W = D.world(), T = 32; let best = null; for (let r = 40; r <= 120 && !best; r += 20) for (let a = 0; a < 16 && !best; a++) { const x = t[0] + Math.cos(a * .39) * r, y = t[1] + Math.sin(a * .39) * r; if (!W.isSol(Math.floor(x / T), Math.floor(y / T))) best = [x, y] } m.x = best ? best[0] : t[0]; m.y = best ? best[1] : t[1]; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: t[0], y: t[1] }; D.draw(); D.draw() }, tiles[i]);
+      info = await shot('m' + i, 'at');
+    }
+  } else if (FLOW === 'fundorte') {
+    // Fundorte des Tresorcodes (Ticket 228): je Art ohne und mit Zettel an einer Wandkachel der Bank (X.scen der Ansicht wird ersetzt), Ausschnitt um den Fundort
+    const kinds = ['bin', 'copy', 'coffee', 'file', 'pin', 'coat', 'locker', 'mgr'];
+    const tile = await page.evaluate(() => { const D = __dbg, B = D.LAY().bld, W = D.world(), T = 32; for (let y = B.y0 + 1; y < B.y1; y++) for (let x = B.x0 + 2; x < B.x1 - 1; x++) { if (W.cell(x, y) !== '.') continue; if (W.cell(x, y - 1) === '#' && W.cell(x - 1, y) === '.' && W.cell(x + 1, y) === '.') return [x * T + 16, y * T + 16] } return null });
+    for (const paper of [0, 1]) for (const kind of kinds) {
+      await page.evaluate(([tile, kind, paper]) => { const D = __dbg, V = D.view3d.V, X = V.kl().kit.X; if (!window.__scen0) window.__scen0 = X.scen; const m = D.get().me; m.x = tile[0]; m.y = tile[1] + 70; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: tile[0], y: tile[1] };
+        X.scen = () => { const o = window.__scen0(); return { p: o.p.filter(q => q.k !== 'note').concat([{ k: 'note', n: kind, x: tile[0], y: tile[1], paper }]), grl: o.grl, key: o.key + kind + paper } }; D.draw(); D.draw() }, [tile, kind, paper]);
+      info = await shot('n' + FR.length, 'at');
+    }
+    await page.evaluate(() => { __dbg.view3d.V.kl().kit.X.scen = window.__scen0 });
   } else if (FLOW === 'pumpe') {
     // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
     await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });

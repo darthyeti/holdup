@@ -4,7 +4,7 @@
 export function register(KL) {
   // geparkte Autos (Transporter): ein ziviles Auto aus dem Fahrzeug-Bauer (KL.cars.civ), als Szenario-Kloetze (kit.emit), Farbe nach Lage (Zeile der Palette)
   KL.obj('parked', (k, o) => {
-    const e = k.C.cars.civ, car = { k: 'civ', x: o.x + 64, y: o.y + 32, a: 0, L: 128, W: 64, row: (Math.round(o.x / 32) + Math.round(o.y / 32)) & 3, bl: 0, dim: 0 }, look = k.carLook(car, e);
+    const e = k.C.cars.civ, car = { k: 'civ', x: o.x + 64, y: o.y + 32, a: 0, L: 128, W: 64, row: (Math.round(o.x / 32) + 3 * Math.round(o.y / 32)) % ((KC.car.pal || [0, 0, 0, 0]).length), bl: 0, dim: 0 }, look = k.carLook(car, e);
     k.emit(k.collect(() => KL.cars.civ(k, car, e, look)));
   });
   KL.obj('tk', (k, o) => {
