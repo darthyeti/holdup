@@ -240,12 +240,17 @@ module.exports = [
           const V = D.view3d.V, C = V.cfg, o = { i0 };
           const meas = () => { D.draw(); const i = V.info(), q = V.seen(spot[0] + 40, spot[1], 14); return { ol: i.figOl, parts: i.figParts, tris: i.tris, dist: q.dist, merge: q.merge, px: q.px } };
           o.on = meas(); const out0 = C.fig.look.out; C.fig.look.out = 0; o.off = meas(); C.fig.look.out = out0; o.on2 = meas();
+          // Nacht (Ticket 198): der Umriss ist dezenter (duennere Linie, Mittelgrau, teildurchsichtig), die Figur hebt sich vom Boden aber weiter ab
+          const lg = D.LAY().mission.lg || (D.LAY().mission.lg = []); lg.push('nacht'); o.nOn = meas(); C.fig.look.out = 0; o.nOff = meas(); C.fig.look.out = out0; lg.pop(); o.look = { w: C.fig.look.out, nw: C.fig.look.outNightW, na: C.fig.look.outNightA, nc: C.fig.look.outNight };
           return o;
         });
         if (r.i0 && r.i0.state !== 'an') { t.ok(false, '3D nicht an: ' + JSON.stringify(r.i0)); return; }
         t.note('mit Umriss ' + JSON.stringify(r.on) + ', ohne ' + JSON.stringify(r.off));
         t.ok(r.on.ol > 0 && r.off.ol === 0 && r.on2.ol === r.on.ol, 'Umriss-Instanzen nur mit out > 0: ' + [r.on.ol, r.off.ol, r.on2.ol]);
         t.eq(r.on.parts, r.off.parts, 'der Umriss zaehlt nicht als Figurenteil (figParts gleich)');
+        t.ok(r.look.nw < r.look.w && r.look.na < 1 && (((r.look.nc >> 16) & 255) + ((r.look.nc >> 8) & 255) + (r.look.nc & 255)) / 3 < 170, 'Nacht: duenner (' + r.look.nw + ' statt ' + r.look.w + '), teildurchsichtig (' + r.look.na + '), Mittelgrau statt fast weiss');
+        // Der Farbabstand im Test (Boden bei Nacht im Test nicht dunkel) ist grob, ein duenner grauer Umriss aendert ihn kaum: er darf nicht merklich sinken, die Wirkung zeigen die Bilder (docs/bilder/stil-kloetzchen/umriss-nacht-vorher-nachher.jpg)
+        t.ok(r.nOn.ol > 0 && r.nOff.ol === 0 && r.nOn.dist >= r.nOff.dist - 12, 'Nacht: der Umriss steht und der Kontrast zum Boden sinkt nicht merklich (' + r.nOff.dist.toFixed(0) + ' -> ' + r.nOn.dist.toFixed(0) + ')');
         t.ok(r.on.ol < r.on.parts, 'Umriss nur fuer Rumpf, Glieder und Kopf, nicht fuer jedes Teil: ' + r.on.ol + ' von ' + r.on.parts);
         t.ok(r.on.merge < r.off.merge + MERGE_TOL && r.on.dist > r.off.dist, 'Kontrast zum Boden steigt (Farbabstand ' + r.off.dist.toFixed(0) + ' -> ' + r.on.dist.toFixed(0) + ', verschmelzend ' + (r.off.merge * 100).toFixed(0) + ' % -> ' + (r.on.merge * 100).toFixed(0) + ' %)');
         if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
