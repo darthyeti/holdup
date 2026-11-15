@@ -705,7 +705,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     const cones = [];
     for (const o of P) {
       const e = C.scen.kinds[o.k], b = SCEN[o.k], k = e && b ? o.k : '?' + o.k; kk[k] = (kk[k] || 0) + 1; if (!e || !b) continue;
-      const kb = K && K.on && K.sceneBuilder(o); if (o.k === 'cone') cones.push(o); else if (kb) kb(K.kit, o); else b(o); scenLast.push(o.k);
+      const kb = K && K.on && K.sceneBuilder(o); if (kb) kb(K.kit, o); else if (o.k === 'cone') cones.push(o); else b(o); scenLast.push(o.k);
     }
     if (K && K.on) K.scenEnd();
     for (const g in SB) {

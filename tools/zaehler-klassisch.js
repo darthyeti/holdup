@@ -17,7 +17,7 @@ const SC = arg('szenen', 'bank,truck,jewel,gas,museum,casino,nb,prison'), SEEDS 
       const r = await page.evaluate(([ph]) => { window.__rec = { scen: {}, hit: {} }; PX.phase(ph); __dbg.draw(); __dbg.draw(); const V = __dbg.view3d.V, i = V.info(), K = V.kl(), KL = K.KL, D = V.dyn();
         const arts = new Set(), cars = {}; for (const f of i.fi) arts.add(f[0] + '/' + f[1]);
         const carKinds = Object.keys(i.ck).filter(k => !KL.hasCar(k));
-        const tiles = Object.keys(i.cells).filter(c => c.length === 1 && !KL.hasObj(c)).map(c => c + ':' + i.cells[c]), tilesK = Object.keys(i.cells).filter(c => c.length === 1 && KL.hasObj(c));
+        const tiles = Object.keys(i.cells).filter(c => c.length === 1 && !KL.hasObj(c) && !(KL.plain && KL.plain.has(c))).map(c => c + ':' + i.cells[c]), tilesK = Object.keys(i.cells).filter(c => c.length === 1 && KL.hasObj(c));
         return { figs: Array.from(arts), cars: carKinds, scen: Object.keys(window.__rec.scen), classicScen: i.scenN, err: i.err, tris: i.tris, tiles, tilesK, calls: i.calls } }, [ph]);
       const w = sc + '/' + sd + '/' + ph;
       for (const f of r.figs) add(tot.fig, f, w); for (const c of r.cars) add(tot.car, c, w); for (const s of r.scen) add(tot.scen, s, w); for (const t of r.tiles) add(tot.tile, t.split(':')[0], w);

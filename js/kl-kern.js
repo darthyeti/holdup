@@ -13,7 +13,7 @@
 import * as THREE from '../assets/three.module.min.js';
 
 export const KL_API = 1;
-export const KL_FILES = ['kl-figuren.js', 'kl-fahrzeuge.js', 'kl-effekte.js', 'kl-dinge-allgemein.js', 'kl-dinge-bank.js', 'kl-dinge-juwelier.js', 'kl-dinge-tankstelle.js', 'kl-dinge-strasse.js', 'kl-dinge-museum.js', 'kl-dinge-casino.js', 'kl-dinge-notenbank.js', 'kl-dinge-gefaengnis.js'];
+export const KL_FILES = ['kl-figuren.js', 'kl-fahrzeuge.js', 'kl-effekte.js', 'kl-dinge-allgemein.js', 'kl-dinge-welt.js', 'kl-dinge-bank.js', 'kl-dinge-juwelier.js', 'kl-dinge-tankstelle.js', 'kl-dinge-strasse.js', 'kl-dinge-museum.js', 'kl-dinge-casino.js', 'kl-dinge-notenbank.js', 'kl-dinge-gefaengnis.js'];
 
 export const KCFG = {
   // Masse der Figur in Weltpixeln (Figur rund 38 hoch, Kopf ein Wuerfel): Fuss (Laenge, Hoehe, Breite), Unter- und Oberschenkel, Beinbreite, Huefte, Becken, Rumpf, Arme, Hand, Kopf, Fase
@@ -43,7 +43,7 @@ THREE.ShaderChunk.colorspace_fragment = 'gl_FragColor = sRGBTransferOETF( gl_Fra
 // ---------- Register ----------
 export const KL = {
   api: KL_API, files: [], figs: {}, cars: {}, objs: {}, fxs: {},
-  fig(art, f) { this.figs[art] = f }, car(art, f) { this.cars[art] = f }, obj(name, f) { this.objs[name] = f }, fx(name, f) { (this.fxs[name] || (this.fxs[name] = [])).push(f) },
+  fig(art, f) { this.figs[art] = f }, car(art, f) { this.cars[art] = f }, obj(name, f, opts) { this.objs[name] = f; this.objOpts[name] = opts || {} }, plain: new Set(), objOpts: {}, fx(name, f) { (this.fxs[name] || (this.fxs[name] = [])).push(f) },
   hasFig(a) { return !!this.figs[a] }, hasCar(a) { return !!this.cars[a] }, hasObj(a) { return !!this.objs[a] },
 };
 { // alle kl-Dateien laden (gleiche ?v=N wie dieser Kern) und eintragen lassen
@@ -266,6 +266,7 @@ void main() {
     for (const s of sparks) { const a = s.l / s.m, c = s.c ? [1, .78, .34] : [1, .62, .22]; fp(FA, s.x, s.y, s.h, 1.1, 3, c, Math.min(1, a * 1.6), -s.vx * .045, -s.vy * .045, 0, -s.vh * .045) }
     for (const s of puffs) { const a = s.l / s.m; fp(FN, s.x, s.y, s.h, s.s, 0, [.2 + .1 * a, .19 + .1 * a, .19 + .08 * a], s.a * Math.min(1, a * 2.2) * .8) }
     for (const f of flashes) { const a = 1 - f.t / .3; fp(FA, f.x, f.y, 14, 22 * f.k * (1 + f.t * 2), 0, E.hc(0xffb35a), .45 * a); fp(FA, f.x, f.y, 14, 7 * f.k, 0, E.hc(0xffffff), .6 * a); dynL.push({ k: 'boom', x: f.x, y: f.y, r: 220 * f.k, i: a * f.k * .7 }) }
+    for (const q of GL.splice(0)) fp(FA, q[0], q[1], q[2], q[3], 0, E.hc(q[4]), q[5], 0, 0, q[6]);
     kit.fire('frame', kit);
   };
   let flashK = 0;
@@ -275,7 +276,7 @@ void main() {
   let worldMeshes = [];
   const tileChars = () => Object.keys(KL.objs).filter(k => k.length === 1);
   K.cells = null;
-  const mkCells = () => { const tc = tileChars(); K.cells = Object.fromEntries(Object.entries(C.cells).map(([k, v]) => [k, tc.includes(k) ? Object.assign({}, v, { s: [] }) : v])) }; mkCells();
+  const mkCells = () => { const tc = tileChars().filter(c => !(KL.objOpts[c] && KL.objOpts[c].keep)); K.cells = Object.fromEntries(Object.entries(C.cells).map(([k, v]) => [k, tc.includes(k) ? Object.assign({}, v, { s: [] }) : v])) }; mkCells();
   K.world = () => {
     for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; K.stats = null; if (!K.on) return;
     const B = [], S = [], A = [];
@@ -295,6 +296,11 @@ void main() {
   // Szenario-Teile (KL.obj mit Namen der Art): je Bild gesammelt und in einem Pool gezeichnet. Ruft view3d in buildScen.
   const SD = [];
   kit.dbrick = (x, z, y0, sx, sy, sz, a, col, em) => SD.push([x, z, y0, sx, sy, sz, a || 0, colOf(col), em || 0]);
+  // gesammelte Teile (kit.collect) als Szenario-Kloetze setzen (nur Drehung um die Hochachse): fuer Fahrzeuge und Figuren als Szenario-Teil (zum Beispiel geparkte Autos)
+  const _m = new THREE.Matrix4(), _pp = new THREE.Vector3(), _qq = new THREE.Quaternion(), _ss = new THREE.Vector3();
+  kit.emit = parts => { for (const p of parts) { p.m.decompose(_pp, _qq, _ss); SD.push([_pp.x, _pp.z, _pp.y - _ss.y / 2, _ss.x, _ss.y, _ss.z, -2 * Math.atan2(_qq.y, _qq.w), p.c, p.e || 0]) } void _m };
+  // weiches Leuchten am Boden oder in der Luft (additiv, fx-Puffer): wird im naechsten step in FA geschrieben (Sichtkegel der Wachen)
+  const GL = []; kit.glow = (x, z, h, s, hex, a, flat) => { if (GL.length < 4000) GL.push([x, z, h, s, hex, a, flat ? 1 : 0]) };
   K.scenBegin = () => { SD.length = 0 };
   K.scenEnd = () => { const sm = q => Math.min(q[3], q[4], q[5]) < KC.small; for (const [P, L] of [[pT, SD.filter(q => !sm(q))], [pT2, SD.filter(sm)]]) { P.size(L.length); L.forEach((q, i) => { _p.set(q[0], q[2] + q[4] / 2, q[1]); _q.setFromAxisAngle(yAx, -q[6]); _s.set(q[3], q[4], q[5]); P.im.setMatrixAt(i, tm.compose(_p, _q, _s)); P.im.setColorAt(i, q[7]); P.a.iK.setXY(i, 1, q[8]) }); P.u = L.length; P.finish() } };
   // Bauer fuer ein Szenario-Teil o: erst die feine Art 'art:unterart' (zum Beispiel good:statue, o.n), dann die Art (good)
