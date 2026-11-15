@@ -18,10 +18,10 @@ if (!levels.length) levels.push('mittel');
   for (const gfx of levels) {
     const page = await lib.openGame(env, { det: true, gfx, still: true });
     await lib.loadInpage(page, 'bild.js');
-    if (D3) { const i = await page.evaluate(async (nosh) => { if (nosh && typeof V3OPT !== 'undefined') while (V3OPT.shadow !== 'aus') V3OPT.cycleShadow(); const i = await __dbg.view3d.set(true); const q = document.createElement('canvas').getContext('2d', { willReadFrequently: true }); window.PX_SYNC = () => { const V = __dbg.view3d.V; if (V && V.shown) { q.drawImage(V.el, 0, 0, 1, 1); q.getImageData(0, 0, 1, 1); } }; return i; }, NOSH); if (i.state !== 'an') { console.log('3D nicht an: ' + JSON.stringify(i)); process.exit(1); } console.log('3D an: ' + i.gl + ', ' + i.gpu + (NOSH ? ', Schatten aus' : '')); }
+    if (D3) { const i = await page.evaluate(async ([nosh, KL]) => { if (nosh && typeof V3OPT !== 'undefined') while (V3OPT.shadow !== 'aus') V3OPT.cycleShadow(); __dbg.view3d.kstil = +(KL||0); const i = await __dbg.view3d.set(true); const q = document.createElement('canvas').getContext('2d', { willReadFrequently: true }); window.PX_SYNC = () => { const V = __dbg.view3d.V; if (V && V.shown) { q.drawImage(V.el, 0, 0, 1, 1); q.getImageData(0, 0, 1, 1); } }; return i; }, [NOSH, process.env.KL]); if (i.state !== 'an') { console.log('3D nicht an: ' + JSON.stringify(i)); process.exit(1); } console.log('3D an: ' + i.gl + ', ' + i.gpu + (NOSH ? ', Schatten aus' : '')); }
     for (const lod of LODS) {
       const sum = [0, 0, 0];
-      for (const sc of ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb', 'prison']) {
+      for (const sc of (process.env.SC || 'bank,truck,jewel,gas,museum,casino,nb,prison').split(',')) {
         const r = await page.evaluate(([sc, n, lod, d3]) => { if (d3) __dbg.view3d.reg.lv = lod; PX.scene(sc, 5); const o = {}; for (const ph of PX.PHASES) { PX.phase(ph); o[ph] = PX.ms(n); }
           const i = d3 ? __dbg.view3d.info() : null; return { o, gl: i ? [i.calls, i.tris, i.q, i.light && i.light.shadow ? i.light.shadow.on : 0] : null }; }, [sc, N, lod, D3]);
         const v = Object.keys(r.o).map(k => r.o[k]); v.forEach((q, j) => { sum[j] += q.med; });
