@@ -2,21 +2,7 @@
 // ueber das Ereignis bx, Blendgranate ueber gb). Wichtig: jede draw() stellt GPU-Arbeit in die Warteschlange (SwiftShader rund 0,3 s je Bild), die Seite schliesst vor dem Ende; Hunderte Bilder liessen den naechsten Seitenaufruf im selben Browser 30 s haengen. Darum wenige Bilder und gl.finish() am Ende. lassen Teile und Funken fliegen, beim Client gleich wie beim Host (Test-Leitung). Kein Pixelvergleich. Ohne WebGL 2 uebersprungen.
 const path = require('path'), { pathToFileURL } = require('url');
 const lib = require('../lib');
-// eine WebGL-Seite fuer die ganze Datei (jede eigene Umgebung schliesst beim Ende ihren Server, mehrere hintereinander lassen den naechsten Test beim Laden haengen); der letzte Test raeumt auf
-let shared = null;
-async function glPage(t, last) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (!shared) {
-    if (await ok(t.page)) return { page: t.page, done: async () => {} };
-    else {
-      const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-      if (await ok(page)) shared = { page, close: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-      else { await env.browser.close().catch(() => {}); env.srv.close(); shared = { none: true } }
-    }
-  }
-  if (shared.none) { t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null }
-  return { page: shared.page, done: async () => { if (last) { const s = shared; shared = null; await s.close() } } };
-}
+const { glPage } = require('../glshare');
 module.exports = [
   {
     name: 'Kloetzchen-Fahrzeuge: jede Art (pol, civ, wreck, van, vh, tk) baut ohne Fehler, hoechstens 40 Teile, Fahrtrichtung bei fx -1 gedreht',
@@ -53,8 +39,8 @@ module.exports = [
           for (let i = 0; i < 60; i++) D.update(1 / 30); D.view3d.kstil = 1; await D.view3d.set(true); D.draw(); D.draw();
           const V = D.view3d.V, m = D.get().me, o = {}, run = n => { let mx = { deb: 0, sparks: 0, puffs: 0 }; for (let i = 0; i < n; i++) { D.get().me.hp = 1e9; D.update(1 / 30); D.draw(); const k = V.info().k; for (const q in mx) mx[q] = Math.max(mx[q], k[q]) } return mx };
           o.base = run(4); D.evt('bx', [m.x + 60, m.y, 120, 1]); o.boom = run(8);
-          o.after = run(40); D.evt('gb', [m.x + 60, m.y, 0]); o.flash = run(8);
-          for (let j = 0; j < 12; j++) D.evt('bx', [m.x + 40 + j * 4, m.y + 20, 160, 1]); o.many = run(10);
+          o.after = run(16); D.evt('gb', [m.x + 60, m.y, 0]); o.flash = run(8);
+          for (let j = 0; j < 12; j++) D.evt('bx', [m.x + 40 + j * 4, m.y + 20, 160, 1]); o.many = run(5);
           o.err = V.info().err; o.q = V.info().k.q; V.el.getContext('webgl2').finish(); await D.view3d.set(false); return o; })()`);
         t.note(JSON.stringify(r));
         t.ok(r.err === '', 'keine Fehler in der Ansicht');
@@ -78,7 +64,7 @@ module.exports = [
           for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
           A.startHeist(); run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
           const m = A.get().me; A.get().me.hp = 1e9; A.evt('bx', [m.x + 50, m.y, 120, 1]); let deb = [0, 0], sp = [0, 0];
-          for (let i = 0; i < 40; i++) { run(1); if (i % 2) for (const d of [A, B]) d.draw(); const k = [A, B].map(d => d.view3d.V.info().k); deb = deb.map((v, j) => Math.max(v, k[j].deb)); sp = sp.map((v, j) => Math.max(v, k[j].sparks)) }
+          for (let i = 0; i < 24; i++) { run(1); if (i % 3 === 2) for (const d of [A, B]) d.draw(); const k = [A, B].map(d => d.view3d.V.info().k); deb = deb.map((v, j) => Math.max(v, k[j].deb)); sp = sp.map((v, j) => Math.max(v, k[j].sparks)) }
           const out = { deb, sp, err: [A, B].map(d => d.view3d.V.info().err) }; for (const d of [A, B]) d.view3d.V.el.getContext('webgl2').finish();
           for (const d of [A, B]) await d.view3d.set(false); for (const d of G.insts) { try { d.leaveGame(); } catch (e) {} } return out; })()`);
         t.note(JSON.stringify(r));
