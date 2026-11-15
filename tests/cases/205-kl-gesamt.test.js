@@ -3,7 +3,7 @@
 // Ohne WebGL 2 im Test-Chromium wird der 3D-Teil uebersprungen (wie Test 190 und 200).
 const lib = require('../lib');
 const SCS = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb', 'prison'];
-const TRIS = 150000, CALLS = 120;
+const TRIS = 150000, CALLS = 120, SEEDS = [5, 3];
 async function glPage(t) {
   const ok = p => p.evaluate(() => !!document.createElement('canvas').getContext('webgl2'));
   if (await ok(t.page)) return { page: t.page, done: async () => {} };
@@ -21,25 +21,30 @@ module.exports = [
         await lib.loadInpage(P.page, 'bild.js');
         await P.page.evaluate(async () => { __dbg.view3d.kstil = 1; await __dbg.view3d.set(true); });
         const rows = [];
-        for (const sc of SCS) {
-          const r = await P.page.evaluate(async (sc) => {
+        for (const [sd, sc] of SEEDS.flatMap(sd => SCS.map(sc => [sd, sc]))) {
+          const r = await P.page.evaluate(async ([sc, sd]) => {
             const D = __dbg, o = {}, shot = ph => { D.draw(); D.draw(); const V = D.view3d.V, i = V.info(); o[ph] = { err: i.err, on: !!(i.k && i.k.on), figsK: i.k ? i.k.figsK : -1, carsK: i.k ? i.k.carsK : -1, tris: i.tris, calls: i.calls, parts: i.k ? i.k.parts : 0 } };
-            PX.scene(sc, 5);
-            for (const ph of ['erkundung', 'ueberfall', 'polizei']) { PX.phase(ph); shot(ph); }
+            PX.scene(sc, sd);
+            // Nacht (Lage nacht in der Karte) nur in der Erkundung, bei Seed 3 mit Abend- und Nachtlicht
+            PX.phase('erkundung');
+            // Spieler nahe die erste Kamera stellen: zeigt Sichtkegel und Szene mit den meisten Teilen (Casino bei Seed 3 hatte so 175.000 Dreiecke)
+            { const g = D.get(), c = g.cams && g.cams[0], W = D.world(), T = 32; if (c) { let best = null; for (let r = 60; r <= 200 && !best; r += 20) for (let k = 0; k < 16 && !best; k++) { const a = k / 16 * 6.283, x = c.x + Math.cos(a) * r, y = c.y + Math.sin(a) * r; if (!W.isSol(Math.floor(x / T), Math.floor(y / T)) && D.los(x, y, c.x, c.y)) best = [x, y] } if (best) { g.me.x = best[0]; g.me.y = best[1]; for (let i = 0; i < 40; i++) { g.me.hp = 100; D.update(1 / 30) } } } }
+            shot('erkundung'); const L = D.LAY(); L.mission.lg = (L.mission.lg || []).concat('nacht'); D.view3d.reset(); await D.view3d.set(true); shot('nacht');
+            for (const ph of ['ueberfall', 'polizei']) { PX.phase(ph); shot(ph); }
             // Flucht: Fluchtwagen rufen und weiterspielen (der Spieler bleibt unverwundbar), Notenbank und Gefaengnis ohne Fluchtwagen laufen einfach weiter
             try { D.callVan(); } catch (e) { o.vanErr = String(e) }
             for (let i = 0; i < 300; i++) { const m = D.get().me; if (m && m.hp < 100) m.hp = 100; D.update(1 / 30) } shot('flucht');
             return o;
-          }, sc);
-          rows.push([sc, r]);
-          for (const ph of ['erkundung', 'ueberfall', 'polizei', 'flucht']) {
+          }, [sc, sd]);
+          const tag = sc + '#' + sd; rows.push([tag, r]);
+          for (const ph of ['erkundung', 'nacht', 'ueberfall', 'polizei', 'flucht']) {
             const q = r[ph];
-            t.ok(q.err === '' && q.on, sc + ' ' + ph + ': keine Fehler in der Ansicht, Klotzchen an: ' + JSON.stringify(q));
-            t.ok(q.tris < TRIS && q.calls < CALLS, sc + ' ' + ph + ': Dreiecke ' + q.tris + ' unter ' + TRIS + ', Draw Calls ' + q.calls + ' unter ' + CALLS);
-            t.ok(q.figsK >= 1, sc + ' ' + ph + ': Figuren aus Teilen (mindestens der Spieler): ' + q.figsK);
+            t.ok(q.err === '' && q.on, tag + ' ' + ph + ': keine Fehler in der Ansicht, Klotzchen an: ' + JSON.stringify(q));
+            t.ok(q.tris < TRIS && q.calls < CALLS, tag + ' ' + ph + ': Dreiecke ' + q.tris + ' unter ' + TRIS + ', Draw Calls ' + q.calls + ' unter ' + CALLS);
+            t.ok(q.figsK >= 1, tag + ' ' + ph + ': Figuren aus Teilen (mindestens der Spieler): ' + q.figsK);
           }
         }
-        t.note(rows.map(([sc, r]) => sc + ' ' + ['erkundung', 'ueberfall', 'polizei', 'flucht'].map(p => r[p].tris + '/' + r[p].calls + '/' + r[p].figsK + '/' + r[p].carsK).join(' ')).join(' | '));
+        t.note(rows.map(([sc, r]) => sc + ' ' + ['erkundung', 'nacht', 'ueberfall', 'polizei', 'flucht'].map(p => r[p].tris + '/' + r[p].calls + '/' + r[p].figsK + '/' + r[p].carsK).join(' ')).join(' | '));
         await P.page.evaluate(async () => { await __dbg.view3d.set(false) });
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 3).join(' | '));
       } finally { await P.done(); }
@@ -110,12 +115,12 @@ module.exports = [
         const page = await lib.openGame(env, { hash: '#debug&3d' });
         if (!await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'))) { t.note('kein WebGL 2, uebersprungen'); return; }
         const r = await page.evaluate(async () => {
-          const D = __dbg, out = [], T0 = performance.now(); D.view3d.kstil = 1; await D.view3d.set(true);
+          const D = __dbg, out = [], T0 = performance.now(); D.view3d.kstil = 1; await D.view3d.set(true); D.draw(); await D.view3d.ready(); D.draw();
           for (let c = 0; c < 3; c++) {
             const t0 = performance.now(); D.setScenario('bank'); D.setSeedMode('random'); D.buildLay(D.layoutFor(5 + c)); D.startHeist();
             for (let i = 0; i < 90; i++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); D.draw();
             const car = D.get().cars.find(q => q.civ && !q.dead); if (car) D.carBlow(car, 0);
-            let deb = 0; for (let i = 0; i < 60; i++) { D.get().me.hp = 100; D.update(1 / 30); if (i % 3 === 0) { D.draw(); deb = Math.max(deb, D.view3d.V.info().k.deb) } }
+            let deb = 0; for (let i = 0; i < 60; i++) { D.get().me.hp = 100; D.update(1 / 30); if (i % 3 === 0) { D.draw(); deb = Math.max(deb, (D.view3d.V.info().k || {}).deb | 0) } }
             D.startNext(); for (let i = 0; i < 30; i++) D.update(1 / 30); D.draw(); D.draw(); const i = D.view3d.V.info();
             out.push({ ms: Math.round(performance.now() - t0), deb, err: i.err, on: !!(i.k && i.k.on), tris: i.tris, objs: i.objs, lost: i.lost, car: !!car });
           }
