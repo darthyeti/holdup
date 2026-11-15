@@ -1,3 +1,84 @@
-/* Kloetzchen-Stil: Dinge (allgemein) (Ticket 198, Schritt 4). Bisher leer: hier tragen Bauer mit KL.obj(name, fn) ein (Beschreibung der Aufrufe in js/kl-kern.js und js/kl-dinge-bank.js).
-   Name mit einem Zeichen: Kachel des Rasters, sonst Art eines Szenario-Teils (V3CFG.scen.kinds), fn(k, o) mit k.dbrick(mx, mz, y0, sx, sy, sz, drehung, farbe, leuchten). Fehlt ein Bauer, zeichnet view3d wie ohne Stil. */
-export function register(KL) { void KL; }
+/* Kloetzchen-Stil: Dinge (allgemein) (Ticket 198, Schritt 4a). Bauer fuer Szenario-Teile (KL.obj mit Namen der Art, fn(k, o) je Bild mit k.dbrick(mx, mz, y0, sx, sy, sz, drehung, farbe, leuchten))
+   und Kacheln (ein Zeichen, fn(k, x, y, ch, spec) beim Bau der Welt mit k.brick, k.studs, k.shadow, siehe js/kl-kern.js und js/kl-dinge-bank.js).
+   Hier: Tresortuer (vault) und Tastenfeld (pad), Notizen/Fundorte des Codes (note), Geldbuendel (bundle), Beutesack (bag), leere Kassen und Automaten (dark), Zaun f, Barrikade X.
+   Dazu zwei Verteiler fuer andere Dateien: KL.goods (Beute-Stuecke nach Name n, Museum und Casino tragen ihre Arten dort ein) und KL.util (kleine Helfer).
+   Wande, Fenster, Tueren und Boden bleiben schlicht (Welt A), dort gibt es keinen Bauer. Alles aus Zustand der Karte und der Beute (scen3d), das auch ein Client hat. */
+// Oberkante des Koerpers der Kachel an (x, y) in Weltpixeln (wie view3d topAt), fuer Dinge, die auf Moebeln liegen
+function top(k, x, y) { const c = k.E.cellAt(Math.floor(x / k.T), Math.floor(y / k.T)), e = k.C.cells[c]; if (!e || (e.open && k.X.vaultOpen)) return 0; let h = 0; for (const s of e.s) if (s[0] === 0) h = Math.max(h, s[1]); return h }
+export function register(KL) {
+  KL.util = { top };
+  KL.goods = KL.goods || {}; // Name n -> fn(k, o, rc, t): ein Beute-Stueck (o.done genommen), Juwelier, Tankstelle, Museum, Casino ergaenzen
+  const T = 32, B = (k, ...a) => k.dbrick(...a);
+
+  // ---------- Tresortuer: Handrad (zu) oder aufgeschwenktes Blatt (offen), Lage im Rahmen der Tuer wie die 2D-Zeichnung ----------
+  KL.obj('vault', (k, o) => {
+    const X0 = o.x, Y0 = o.y, h = o.h, m = u => o.dir < 0 ? 2 * X0 + T - u : u, w = (u, v) => h ? [X0 + (v - Y0), Y0 + (u - X0)] : [u, v];
+    const bx = (u0, u1, v0, v1, y0, hh, col, em) => { const a = w(m(u0), v0), b = w(m(u1), v1); B(k, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, y0, Math.abs(b[0] - a[0]), hh, Math.abs(b[1] - a[1]), 0, col, em) };
+    const steel = 0x8d97a6, dark = 0x2f343c, gold = 0xe8b923;
+    if (o.open) {
+      bx(X0 - 3, X0 + 3, Y0 - 2, Y0 + 2 * T + 2, 0, 60, steel); bx(X0 - 4, X0 - 3, Y0 + 2, Y0 + 2 * T - 2, 6, 48, 0xb7c0cd);
+      for (let i = 0; i < 4; i++) { const v = Y0 + 8 + i * 16; bx(X0 - 5, X0 - 4, v - 2, v + 2, 52, 4, gold); bx(X0 - 5, X0 - 4, v - 2, v + 2, 8, 4, gold) }
+      bx(X0 + T, X0 + 2 * T, Y0 + 2, Y0 + 2 * T - 2, 0, .5, 0xffd264, .55); // warmes Licht aus dem Raum am Boden
+    } else {
+      const c = Y0 + T;
+      bx(X0 - 4, X0, c - 13, c + 13, 18, 26, 0xa7b0be); bx(X0 - 5, X0 - 4, c - 11, c + 11, 20, 22, 0x6e7886);               // runde Platte als Stufenblock
+      bx(X0 - 8, X0 - 5, c - 3, c + 3, 27, 6, gold); bx(X0 - 8, X0 - 5, c - 11, c + 11, 28.5, 3, gold); bx(X0 - 8, X0 - 5, c - 1.5, c + 1.5, 19, 22, gold);  // Nabe und Handrad (Kreuz)
+      for (const dv of [-12, 12]) bx(X0 - 9, X0 - 5, c + dv - 2, c + dv + 2, 27, 6, 0xf5d25a); for (const dy of [-10, 10]) bx(X0 - 9, X0 - 5, c - 2, c + 2, 28.5 + dy - 2, 4, 0xf5d25a);
+      bx(X0 - 4, X0, c - 20, c - 15, 50, 5, dark); bx(X0 - 4.4, X0 - 3.6, c - 19, c - 16, 51, 3, 0xe5392e, 1);             // Riegel und rote Lampe
+      bx(X0 - 3, X0, Y0 + 3, Y0 + 2 * T - 3, 61, 1.2, 0xffffff, .35);
+    }
+  });
+  // Tastenfeld (Code des Tresors): Standfuss, Saeule, Kopf mit Tasten, gruene Lampe
+  KL.obj('pad', (k, o) => {
+    B(k, o.x, o.y, 0, 10, 4, 10, 0, 0x3a4a60); B(k, o.x, o.y, 4, 5, 18, 5, 0, 0x7d8ea6); B(k, o.x, o.y, 22, 13, 11, 9, 0, 0x2f5fb0);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) B(k, o.x - 4 + i * 4, o.y + 4.6, 23.2 + j * 2.8, 2.6, 2, 1, 0, 0xf0f4f8);
+    B(k, o.x, o.y, 33, 6, 1.6, 6, 0, 0x7ee34a, 1);
+  });
+
+  // ---------- Fundort des Codes: Buerogeraet je Art, dazu Zettel, solange der Code fehlt ----------
+  // Teile [breite, tiefe, unten, hoehe, farbe, versatz]
+  const NOTE = { bin: [[16, 16, 0, 18, 0x4fae6a], [18, 18, 18, 2, 0x2f7a47]], copy: [[24, 18, 0, 22, 0xe7ebef], [24, 18, 22, 3, 0x4aa8e8, 0], [22, 14, 25, 1.2, 0x2a2e36]],
+    coffee: [[24, 12, 0, 22, 0x8a4a2c], [10, 8, 22, 5, 0xe9ecef], [10, 4, 12, 3, 0x2d3238]], file: [[24, 22, 0, 40, 0x7f93ad], [20, 1, 10, 3, 0xd6dbe2], [20, 1, 24, 3, 0xd6dbe2]],
+    pin: [[22, 4, 6, 30, 0xb98f5a], [16, 1, 12, 8, 0xfff2a8], [8, 1, 22, 6, 0xf08a8a]], coat: [[2.5, 2.5, 0, 48, 0x7a5b3a], [14, 3, 46, 2, 0x7a5b3a], [7, 5, 20, 24, 0xd8412f, -4], [7, 5, 18, 22, 0x2f6fd8, 4]],
+    locker: [[18, 26, 0, 58, 0x3c7fd0], [17, 1, 40, 4, 0x1b3f6e], [17, 1, 16, 4, 0x1b3f6e], [2, 1, 28, 4, 0xe8b923]] };
+  KL.obj('note', (k, o) => {
+    let t = o.n === 'desk' || o.n === 'mon' ? top(k, o.x, o.y) : 0; const P = NOTE[o.n] || (o.n === 'desk' || o.n === 'mon' || o.n === 'mgr' ? [] : NOTE.locker);
+    for (const q of P) { B(k, o.x + (q[5] || 0), o.y, q[2], q[0], q[3], q[1], 0, q[4]); t = Math.max(t, q[2] + q[3]) }
+    if (o.paper) { B(k, o.x, o.y, t, 10, 1, 8, 0, 0xffffff, .12); B(k, o.x + 1, o.y - 1, t + 1, 9, .8, 7, .12, 0xfff7c9, .12); B(k, o.x, o.y + .5, t + 1.8, 7, .3, 1, 0, 0xc23a2e) }
+  });
+
+  // ---------- Beute: Geldbuendel (offener Tresor, Notenbank), Beutesack, leere Kassen und Automaten ----------
+  const stack = (k, x, z, y0, n) => { for (let i = 0; i < n; i++) { B(k, x, z, y0 + i * 3.6, 14, 3.4, 9, i % 2 ? .06 : -.05, 0x2f9e4f); B(k, x, z, y0 + i * 3.6, 4, 3.45, 9.2, i % 2 ? .06 : -.05, 0xf2ecd0) } }
+  KL.obj('bundle', (k, o) => { const t = top(k, o.x, o.y); stack(k, o.x, o.y, t, 2); B(k, o.x, o.y, t + 7.2, 14, .6, 9, 0, 0x7ee34a, .3) });
+  KL.obj('bag', (k, o) => {
+    const t = top(k, o.x, o.y);
+    B(k, o.x, o.y, t, 15, 6, 12, 0, 0x8a6a3a); B(k, o.x, o.y, t + 6, 12, 5, 10, .25, 0xa8824a); B(k, o.x, o.y, t + 11, 6, 3, 6, .5, 0x8a6a3a);   // Sack in drei Stufen
+    B(k, o.x, o.y, t + 8, 16, 1.4, 13, 0, 0xe8b923, .25); B(k, o.x, o.y + 6.3, t + 3, 7, 4, .8, 0, 0xf2ecd0); B(k, o.x - 1, o.y + 6.4, t + 3.8, 3, 2.4, .6, 0, 0x2f9e4f);
+  });
+  // geleerte Kasse oder Automat (view3d zeichnet sonst einen dunklen Fleck): Abdeckung ueber Bildschirm und Schublade, rote Lampe
+  KL.obj('dark', (k, o) => {
+    const c = k.E.cellAt(Math.floor(o.x / T), Math.floor(o.y / T)), t = top(k, o.x, o.y);
+    if (c === 'A') { B(k, o.x, o.y + 8.9, 24, 13, 11, .9, 0, 0x16191e); B(k, o.x, o.y + 9.4, 36, 4, 1.5, .6, 0, 0xe5392e, 1) }
+    else { B(k, o.x, o.y, t, 15, 6.6, 12, 0, 0x2f343c); B(k, o.x, o.y + 6.3, t + 5, 5, 1.4, .6, 0, 0xe5392e, 1) }
+  });
+
+  // ---------- Beute-Stuecke nach Name (Juwelier, Tankstelle, Museum, Casino): Verteiler ueber KL.goods ----------
+  KL.obj('good', (k, o) => { const r = o.rc, t = top(k, r[0] + r[2] / 2, r[1] + r[3] / 2), f = KL.goods[o.n]; if (f) f(k, o, r, t); else if (o.done) B(k, r[0] + r[2] / 2, r[1] + r[3] / 2, t, Math.max(2, r[2] - 6), .5, Math.max(2, r[3] - 6), 0, 0x1a1512) });
+
+  // ---------- Zaun f: Pfosten und zwei Latten, quer zur Nachbarschaft; Barrikade X: Bretter, Balken, Nieten ----------
+  const isF = (k, x, y) => k.E.cellAt(x, y) === 'f';
+  KL.obj('f', (k, x, y, c) => { // Zaun: je Kachel zwei Latten und ein Pfosten (am freien Ende auch der zweite), wenige Kloetze, weil es auf der Bank mehr als hundert Zaunkacheln gibt
+    const cx = x * T + T / 2, cz = y * T + T / 2, hz = isF(k, x - 1, y) || isF(k, x + 1, y) || !(isF(k, x, y - 1) || isF(k, x, y + 1)), L = 31, S = (a, b, h, dy, col) => k.brick(cx + (hz ? a : 0), cz + (hz ? 0 : a), dy, hz ? b : 2.6, h, hz ? 2.6 : b, col);
+    const n1 = hz ? isF(k, x + 1, y) : isF(k, x, y + 1);
+    S(-L / 2 + 1.5, 3, 28, 0, 0x9aa5b4); if (!n1) S(L / 2 - 1.5, 3, 28, 0, 0x9aa5b4);
+    S(0, L, 3, 22, 0xd2d9e4); S(0, L, 3, 11, 0xd2d9e4);
+  });
+  KL.obj('X', (k, x, y, c, spec) => {
+    const cx = x * T + T / 2, cz = y * T + T / 2, B_ = k.brick, w = T - 2;
+    k.shadow(cx, cz, w + 8);
+    for (let i = 0; i < 4; i++) B_(cx, cz, i * 7.2, w, 6.8, w - 3, i % 2 ? 0xb07a45 : 0xc98d52);
+    B_(cx, cz, 28.8, w - 2, 2, w - 5, 0x8a5a30); B_(cx - w / 2 + 3, cz, 0, 4, 30, w, 0x6f4a28); B_(cx + w / 2 - 3, cz, 0, 4, 30, w, 0x6f4a28);
+    for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) B_(cx + a * (w / 2 - 3), cz + b * (w / 2 - 5), 30, 2.4, 1.2, 2.4, 0xd8dde4);
+    B_(cx, cz, 14, 3, 3, w + .6, 0xd8dde4, .1, .78); k.studs(cx, cz, w - 8, w - 8, 30.8, 0xc98d52);
+  });
+}
