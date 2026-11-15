@@ -38,7 +38,7 @@ canvas:focus-visible{border-color:var(--accent)}
 const BUILD={n:211,d:'2026-10-29'};//BUILD
 const MAPS_API=1;//Vertrag mit js/maps.js (mkMaps.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkMaps aendern
 const DRAW_API=10;//Vertrag mit js/draw.js (mkDraw.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkDraw aendern
-const VIEW3D_API=10;const KL_API=1;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
+const VIEW3D_API=11;const KL_API=1;//Vertrag mit js/view3d.js (mkView3d.api, ES-Modul, nur mit 3D geladen), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkView3d aendern
 const UI_API=13;//Vertrag mit js/ui.js (mkUI.api), von Hand erhoehen, wenn sich Kontext oder Rueckgabe von mkUI aendern
 document.getElementById('ver').textContent='Build '+BUILD.n+' · '+BUILD.d.split('-').reverse().join('.');
 /* Bildgroesse: 'auto' (Voreinstellung) passt das Bild dem Fenster an, 'fix' haelt es wie frueher bei hoechstens 1100 px (Wahl in localStorage 'holdup.view').
