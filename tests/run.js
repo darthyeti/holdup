@@ -72,19 +72,24 @@ async function runParallel(files) {
     const tcs = match.filter(tc => !(FAST && tc.slow));
     if (!tcs.length) { skipP += match.length; continue; }
     const w = wj[base] ? (FAST ? wj[base].fast : wj[base].all) : 10 * tcs.length;
-    items.push({ base, w: Math.max(1, w) });
+    items.push({ base, w: Math.max(1, w), gl: /glshare/.test(fs.readFileSync(file, 'utf8')) });   // gl: Datei nutzt den gemeinsamen SwiftShader-Browser
   }
   const n = Math.min(JOBS, items.length);
   if (n < 2) return null;   // nichts zu verteilen: sequentiell weiter
   const bins = Array.from({ length: n }, () => ({ files: [], w: 0 }));
-  for (const it of items.sort((a, b) => b.w - a.w)) { const b = bins.reduce((m, x) => x.w < m.w ? x : m); b.files.push(it.base); b.w += it.w; }
+  // Alle Dateien mit 3D (SwiftShader rechnet auf der CPU und nimmt mehrere Kerne) laufen in EINEM Kindprozess hintereinander: mehrere SwiftShader-Browser gleichzeitig liessen in der CI auf wenigen Kernen
+  // den Seitenaufruf (page.goto, 30 s) in den Timeout laufen. Die anderen Dateien verteilen sich auf die uebrigen Kinder.
+  for (const it of items.filter(x => x.gl)) { bins[0].files.push(it.base); bins[0].w += it.w; }
+  for (const it of items.filter(x => !x.gl).sort((a, b) => b.w - a.w)) { const b = bins.reduce((m, x) => x.w < m.w ? x : m); b.files.push(it.base); b.w += it.w; }
+  for (let i = bins.length - 1; i >= 0; i--) if (!bins[i].files.length) bins.splice(i, 1);   // leere Kinder (zum Beispiel nur 3D-Dateien im Lauf) entfallen
+  if (bins.length < 2) return null;
   const basePort = +process.env.HOLDUP_PORT || 18765, pixBin = bins.findIndex(b => b.files.includes('70-menues.test.js'));
   let next = 1;
   const t0 = Date.now(), tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'holdup-tests-'));
-  console.log('Paralleler Lauf: ' + n + ' Kindprozesse, geschaetzt ' + bins.map(b => Math.round(b.w) + ' s').join(' / ') + (FAST ? ', schneller Lauf' : ''));
+  console.log('Paralleler Lauf: ' + bins.length + ' Kindprozesse, geschaetzt ' + bins.map(b => Math.round(b.w) + ' s').join(' / ') + (FAST ? ', schneller Lauf' : ''));
   const kids = bins.map((b, i) => new Promise(resolve => {
     const out = path.join(tmp, 'k' + i + '.json'), port = i === pixBin || (pixBin < 0 && i === 0) ? basePort : basePort + next++;
-    const cp = spawn(process.execPath, [__filename, ...args.filter(a => !a.startsWith('--jobs'))], { env: Object.assign({}, process.env, { HOLDUP_CHILD: '1', HOLDUP_SLOWDOWN: String(Math.max(1, n - 1)), HOLDUP_FILES: b.files.join(','), HOLDUP_PORT: String(port), HOLDUP_OUT: out }), stdio: ['ignore', 'pipe', 'pipe'] });
+    const cp = spawn(process.execPath, [__filename, ...args.filter(a => !a.startsWith('--jobs'))], { env: Object.assign({}, process.env, { HOLDUP_CHILD: '1', HOLDUP_SLOWDOWN: String(Math.max(1, bins.length - 1)), HOLDUP_FILES: b.files.join(','), HOLDUP_PORT: String(port), HOLDUP_OUT: out }), stdio: ['ignore', 'pipe', 'pipe'] });
     let buf = '', block = null;
     const flush = () => { if (block) { console.log(block.join('\n')); block = null; } };
     const line = l => {
@@ -150,6 +155,7 @@ async function runParallel(files) {
     }
   } finally {
     // Beenden mit Zeitlimit: Chromium kehrt aus close() gelegentlich nicht zurueck (Ursache des einmaligen Haengers beim ersten Coop-Lauf), process.exit raeumt dann auf
+    await require('./glshare').closeShared();   // gemeinsamer WebGL-Browser der 3D-Tests
     await Promise.race([env.browser.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]);
     env.srv.close();
   }

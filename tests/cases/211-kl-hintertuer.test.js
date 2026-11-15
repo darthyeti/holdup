@@ -2,13 +2,7 @@
 // zu und offen sehen verschieden aus (Kloetze), kein Fehler, Dreiecke im Rahmen. Kein Pixelvergleich, ohne WebGL 2 uebersprungen.
 const path = require('path'), { pathToFileURL } = require('url');
 const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [
   {
     name: 'Hintertuer: der Bauer lock ist eingetragen (Bank, Juwelier, Personaltueren, Gefaengnis teilen ihn)',

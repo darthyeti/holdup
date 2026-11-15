@@ -4,16 +4,7 @@
 const path = require('path');
 const lib = require('../lib');
 
-// Seite mit WebGL 2: die normale, sonst eine aus einem eigenen Browser mit SwiftShader-Flags. Liefert { page, done } oder null.
-async function glPage(t) {
-  if (await t.page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env);
-  if (await page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 // 3D an, Spiel zuruecksetzen, ein paar Bilder zeichnen
 async function on3d(page) {
   return page.evaluate(async () => {

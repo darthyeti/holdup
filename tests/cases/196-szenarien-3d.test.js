@@ -14,15 +14,7 @@ const NEED = {
   casino: ['good', 'vault'], nb: ['nbRig', 'nbPress'], prison: ['lock', 'reader', 'ring'],
 };
 
-async function glPage(t) {
-  if (await t.page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env);
-  if (await page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 // Seitenhelfer: Szene wie tests/inpage/bild.js (Seed 5, Strasse im Sueden), Spieler an eine freie Stelle mit Sicht auf das Ziel stellen
 const H6 = `window.H6 = {
   scene(sc, ph, sd) { const D = __dbg; PX.scene(sc, sd || 5); PX.phase(ph || 'erkundung'); return D; },

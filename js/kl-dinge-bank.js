@@ -6,6 +6,21 @@ export function register(KL) {
   const T = 32, geo = (k, x, y, spec) => { const ins = spec.ins || 0, w = T - 2 * ins; return { cx: x * T + T / 2, cz: y * T + T / 2, w, top: spec.s[0][1] } };
   KL.obj('C', (k, x, y, c, spec) => { // Tresen: Holzfront, heller Deckel mit Messingkante, Noppen
     const { cx, cz, w, top } = geo(k, x, y, spec), B = k.brick; k.shadow(cx, cz, w + 9);
+    const L = k.X.LAY || {}, at = (dx, dy) => k.E.cellAt(x + dx, y + dy) === 'C';
+    const run = (dx, dy) => { let n = 1; for (let i = 1; i < 5 && at(dx * i, dy * i); i++) n++; for (let i = 1; i < 5 && at(-dx * i, -dy * i); i++) n++; return n };
+    if (L.casino && run(1, 0) <= 2 && run(0, 1) <= 2) { k.shadow(cx, cz, w + 9); return } // 2x2-Block: Standflaeche der Spielautomaten, der Automat (good:slot) ist der Koerper
+    if (L.casino) { // Spieltisch (Ticket 198 Abnahme): Holzfuss, gruener Filz, Holzrand nur an den Aussenseiten, Chipstapel, Kreis der Auslage
+      B(cx, cz, 0, w - 2, top - 4, w - 2, 0x6b3f22); B(cx, cz, top - 4, w + .6, 3, w + .6, 0x1f9a52);
+      for (const [dx, dy, px, pz, sx, sz] of [[0, -1, 0, -w / 2 + 1.5, w + .8, 3], [0, 1, 0, w / 2 - 1.5, w + .8, 3], [-1, 0, -w / 2 + 1.5, 0, 3, w + .8], [1, 0, w / 2 - 1.5, 0, 3, w + .8]]) if (!at(dx, dy)) B(cx + px, cz + pz, top - 1, sx, 4.2, sz, 0x8a5226);
+      B(cx, cz, top - .8, 14, .5, 14, 0x3cc47a); B(cx, cz, top - .5, 9, .5, 9, 0x1f9a52);
+      if ((x * 3 + y) % 3 === 0) { for (let i = 0; i < 4; i++) B(cx - 6, cz + 5, top - 1 + i * 1.6, 5, 1.4, 5, i % 2 ? 0xc4402f : 0xe9e5da); for (let i = 0; i < 3; i++) B(cx + 6, cz - 4, top - 1 + i * 1.6, 5, 1.4, 5, i % 2 ? 0x3a78cc : 0x1f2128) }
+      return;
+    }
+    if (L.jewel) { // Schaukasten (Ticket 198 Abnahme): Nussholzfuss, dunkles Samtkissen, Glasrahmen; der Schmuck kommt aus der Vitrine (vit)
+      B(cx, cz, 0, w, top - 6, w, 0x6a3f24); B(cx, cz, top - 6, w + .8, 2, w + .8, 0xe8b923, .2); B(cx, cz, top - 4, w - 1, 2.5, w - 1, 0x4a1f4a);
+      for (const [px, pz, sx, sz] of [[0, -w / 2 + .8, w, 1.4], [0, w / 2 - .8, w, 1.4], [-w / 2 + .8, 0, 1.4, w], [w / 2 - .8, 0, 1.4, w]]) B(cx + px, cz + pz, top - 1.5, sx, 3.4, sz, 0xd6ecf8, .1);
+      return;
+    }
     B(cx, cz, 0, w, top - 4, w, 0xa5683a); B(cx, cz, top - 4, w + .8, 4, w + .8, 0xf3ead2); B(cx, cz + w / 2 - .4, top - 8, w - 4, 2, 1, 0xe8b923, .15); B(cx, cz, 1, w - 6, 8, w + .4, 0x7d4a26);
     k.studs(cx, cz, w - 2, w - 2, top, 0xf3ead2);
   });

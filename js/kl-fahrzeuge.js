@@ -10,7 +10,7 @@ export function register(KL) {
     const wheel = colOf(KCar.wheel), glass = colOf(KCar.glass), rim = colOf(0xb9bfc7), dark = colOf(0x30343b), body = look.body.clone().multiplyScalar(.85), roof = look.pol ? colOf(0xa0a6b0) : look.roof.clone().multiplyScalar(.7), wr = 5.6, wz = Wc / 2 - 1.6;
     const lamps = (x0, x1, y) => { for (const s of [1, -1]) { part(R, x0, y, s * Wc * .32, 1.2, 3, 7, colOf(KCar.lamp), .8); part(R, x1, y, s * Wc * .32, 1.2, 3, 7, colOf(KCar.tail), .6) } };
     const bar = (x, y, on) => { const a = o.bl === 1; for (const s of [-1, 1]) part(R, x, y, s * Wc * .22, 4.6, 3.8, Wc * .34, colOf((s < 0) === a ? KCar.bar[0] : KCar.bar[1]), on ? 1.2 : .06) };
-    const studs = (x, y, sx, sz, kk) => { for (const a of [-1, 1]) for (const b of [-1, 1]) part(R, x + a * sx, y, b * sz, kk, 1.3, kk, roof) };
+    const studs = (x, y, sx, sz, kk) => { if (!KC.studs) return; for (const a of [-1, 1]) for (const b of [-1, 1]) part(R, x + a * sx, y, b * sz, kk, 1.3, kk, roof) };
     if (kind === 'wreck') {
       // ausgebrannt: dunkle Klotze, Dach eingedrueckt, Glut, Rauchfahne (Zeit aus der Spielzeit, je Wagen versetzt)
       const sc = colOf(KCar.scorch), cl = colOf(KCar.ember), fl = .3 + .25 * Math.sin(tt * 7 + o.x), dk2 = colOf(0x3a3330);

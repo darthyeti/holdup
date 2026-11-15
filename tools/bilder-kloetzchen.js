@@ -13,15 +13,15 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
   if (STIL !== 'x') await page.evaluate(async (stil) => { __dbg.view3d.kstil = +stil; await __dbg.view3d.set(true); }, STIL);
-  const prep = await page.evaluate(([sc, flow]) => {
-    const D = __dbg; if (sc === 'museum') D.setLage(['nacht']);
-    PX.scene(sc, 5); if (sc === 'museum') { D.setLage(['nacht']); D.buildSeed(5); D.ptClear(); }
+  const prep = await page.evaluate(([sc, flow, seed, lage]) => {
+    const D = __dbg; if (lage) D.setLage([lage]); else if (sc === 'museum') D.setLage(['nacht']);
+    PX.scene(sc, seed); if (lage || sc === 'museum') { D.setLage([lage || 'nacht']); D.buildSeed(seed); D.ptClear(); }
     PX.phase(flow === 'dinge' ? 'erkundung' : 'ueberfall'); const g = D.get(), me = g.me; me.hp = 1e9; me.armed = true; me.mag = 99; me.res = 99; D.mouse.t = -999; D.CFG.vanLock = 0;
     const W = D.world(), T = 32, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T));
     // freie Richtung vor dem Spieler: von Wand frei und 150 Pixel weit
     let best = 0, bd = -1; for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; let d = 0; while (d < 220 && free(me.x + Math.cos(a) * (d + 10), me.y + Math.sin(a) * (d + 10))) d += 10; if (d > bd) { bd = d; best = a } }
     window.__dir = best; me.a = best; return { dir: best, free: bd, at: [Math.round(me.x), Math.round(me.y)], night: D.LAY().theme && D.LAY().theme.tod };
-  }, [SC, FLOW]);
+  }, [SC, FLOW, +(process.env.SEED || 5), process.env.LAGE || '']);
   console.log(JSON.stringify(prep));
   // ein Bild: Spielschritte, zeichnen, Leinwand lesen, Mitte (Bildpunkte) des Geschehens zurueck
   const FR = [], shot = async (name, at) => {
