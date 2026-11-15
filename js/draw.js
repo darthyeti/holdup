@@ -420,6 +420,8 @@ else if(it.t==='good'&&it.rc)q('good',{n:it.k,rc:it.rc,done:it.done?1:0});else i
 if(DX.phase===1&&!DX.ended){
 if(L.cone)for(const n of DX.npcs)if(n.k==='grd'&&n.st!=='away'&&n.st!=='dead'&&n.st!=='ko'&&see(n.x,n.y))q('cone',{x:n.x,y:n.y,pts:coneRays(n.x,n.y,n.a,n.fov,n.rng*(DX.blk>0?CFG.ev.sight:1)*lgM('sight')),al:n.alert>0?1:0});
 if(L.lasers){const on=DX.camDown<=0;for(const l of L.lasers){const x0=l[0]*T,y0=l[1]*T,x1=l[2]*T,y1=l[3]*T;if(!see(x0,y0)&&!see(x1,y1)&&!see((x0+x1)/2,(y0+y1)/2))continue;q('laser',{x0,y0,x1,y1,on:on?1:0,f:on?.6+.25*Math.sin(t*9+x0*.1):0})}}}
+// Hauptschalter (E-Ziel Strom aus): Lage und Zustand (Kameras und Laser aus solange camDown laeuft)
+if(L.sw)q('sw',{x:L.sw.x,y:L.sw.y,on:DX.camDown>0?0:1});
 // Zapfsaeulen: heil (Anzeige) oder ausgebrannt (Raster u wird o)
 for(const p of L.pumps||[])q('pump',{x:p.x*T+16,y:p.y*T+16,ok:cell(p.x,p.y)==='u'?1:0});
 // Notenbank: Bohrer (laeuft, steht, Fortschritt), Loch und Ausstieg, Notenpresse mit Papier, gedruckte Buendel, Abgabe

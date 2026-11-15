@@ -109,13 +109,13 @@ export const V3CFG = {
     laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
     kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
       pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, card: { g: 's' },
-      frame: { g: 'l' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
+      frame: { g: 'l' }, sw: { g: 's' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
     src: {
-      rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'boden', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
+      rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'sw', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
       guards: 'figur', cams: 'hud', vit: 'vit', goods: 'good', cage: 'raster', pumps: 'pump', lasers: 'laser', bn: 'logik', polAt: 'logik', wb: 'logik', stl: 'logik', gAll: 'logik', cone: 'cone',
       hall: 'logik', jewel: 'logik', gas: 'logik', nb: 'nbRig', prison: 'lock', museum: 'logik', casino: 'logik', road: 'exit', stash: 'raster', meet: 'logik', turned: 'logik', q: 'logik', tries: 'logik',
       truck: 'tk', parked: 'parked', decor: 'fahrzeug', decorReal: 'fahrzeug', spots: 'raster', lockCells: 'lock', wins: 'raster', snp: 'figur',
-      'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'hud', 'it:lock': 'lock', 'it:sw': 'boden',
+      'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'hud', 'it:lock': 'lock', 'it:sw': 'sw',
       'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:tbag': 'bag',
       'it:vit': 'vit', 'it:good:cig': 'good', 'it:good:shelf': 'good', 'it:good:art': 'good', 'it:good:statue': 'good', 'it:good:relic': 'good', 'it:good:chips': 'good', 'it:good:slot': 'good', 'it:good:vip': 'good',
       'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
@@ -282,7 +282,14 @@ export function mkView3d(X) {
   const box = new THREE.BoxGeometry(1, 1, 1);
 
   let ground = null, curLay = null, curSt = null, gridKey = '', rev = -1, stat = [], cells = {}, grl = new Set();
-  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); groundTex.needsUpdate = true; st.groundUp++ }
+  // Klotz-Stil: Die Platte des Hauptschalters (paintTop der Karte, Rechteck [sw.x - 8, sw.y - 20, 16, 10]) steckt in der statischen Ebene. Der Kasten an der Wand ersetzt sie, darum wird sie auf der Bodenkopie
+  // mit einem Stueck Boden von daneben (eine Kachelhaelfte entfernt, bevorzugt freier Boden) uebermalt. 2D (X.st) bleibt unveraendert.
+  function hideSwitchPlate() {
+    const L = X.LAY; if (!L || !L.sw || !K || !K.on) return; const k = groundCv.width / (X.W * T), x0 = (L.sw.x - 9 - X.WX0 * T) * k, y0 = (L.sw.y - 21 - X.WY0 * T) * k, w = 18 * k, h = 12 * k, free = (dx, dy) => X.cell(Math.floor((L.sw.x + dx) / T), Math.floor((L.sw.y + dy) / T)) === '.';
+    const D = [[0, 16], [0, -16], [16, 0], [-16, 0], [0, 24]].find(d => free(d[0], d[1])) || [0, 16];
+    groundG.drawImage(groundCv, x0 + D[0] * k, y0 + D[1] * k, w, h, x0, y0, w, h);
+  }
+  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
     curLay = X.LAY; curSt = X.st;
@@ -695,6 +702,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     grille(o) { const G = C.scen.grille, tx = Math.floor(o.x / T), ty = Math.floor(o.y / T), hz = gridHz(tx, ty), X0 = tx * T, Y0 = ty * T, m = T / 2;
       for (let i = 0; i < G.n; i++) { const u = 4 + i * 8 + 1.5; sb('s', hz ? X0 + u : X0 + m, hz ? Y0 + m : Y0 + u, 0, G.w, 64, G.w, 0, 0x8f97a2) }
       for (const r of G.rail.slice(1)) sb('s', X0 + m, Y0 + m, r[0], hz ? T : G.w, r[1] - r[0], hz ? G.w : T, 0, 0x30343b) },
+    sw(o) { void o }, // Hauptschalter: nur der Kloetzchen-Stil baut den Schaltkasten (KL.obj 'sw'), klassisch bleibt die Platte der statischen Welt
     bar(o) { void o }, // Zustand der Barrikade (Stufe lv, Heile f): nur der Kloetzchen-Stil zeichnet Platten und Schaeden (KL.obj 'bar')
     parked(o) { sb('i', o.x + 64, o.y + 32, 0, 4 * T - 4, C.cars.civ.h, 2 * T - 6, 0, 0xffffff) },
   };
