@@ -10,6 +10,7 @@ export function register(KL) {
     // Farben (Ticket 223): satter Lack ohne Abdunklung (die Dunkelung aus #200 gegen Ueberstrahlen entfaellt, dafuer daempft der Kern das Blaulicht auf dem eigenen Lack), zivile Autos aus der Palette KCar.pal
     const wheel = colOf(KCar.wheel), glass = colOf(KCar.glass), rim = colOf(0xc9ced6), dark = colOf(0x2a2e35), wr = 5.6;
     const pal = KCar.pal && kind === 'civ' ? colOf(KCar.pal[(o.row | 0) % KCar.pal.length]) : null, body = look.pol ? colOf(0x2250c8) : (pal || look.body), white = colOf(0xd5dae1), roof = look.pol ? white : (pal ? pal.clone().multiplyScalar(1.08) : look.roof.clone().multiplyScalar(.92));
+    const cap = c => { const m = Math.max(c.r, c.g, c.b), t = colOf(0xd8dce2), top = Math.max(t.r, t.g, t.b) * .72; return m > top ? c.clone().multiplyScalar(top / m) : c };   // hellen Lack auf rund 0xd8dce2 mal .72 (linear) begrenzen, die Sonne hellt ihn wieder auf
     const shine = c => c.clone().multiplyScalar(1.35), bw = Wc * .92, wz = bw / 2 - 1;
     const lamps = (x0, x1, y, w) => { for (const s of [1, -1]) { part(R, x0, y, s * w, 1.4, 3.2, 7, colOf(KCar.lamp), 1.1); part(R, x1, y, s * w, 1.4, 3.2, 7, colOf(KCar.tail), .9) } };
     const bar = (x, y, on) => { const a = o.bl === 1; for (const s of [-1, 1]) part(R, x, y, s * Wc * .22, 4.6, 3.8, Wc * .34, colOf((s < 0) === a ? KCar.bar[0] : KCar.bar[1]), on ? 1.2 : .06) };
@@ -46,13 +47,13 @@ export function register(KL) {
         if (e.bar) bar(Lc * cx, cabY + ch + 2.4 + 4.4, o.bl);
       } else studs(Lc * cx, cabY + ch + 2.4 + 3.2, Lc * cl * .2, bw * .2, 3.4);
     } else {
-      const bodyH = H - 11, cabL = Lc * (kind === 'tk' ? .26 : .3), boxL = Lc - cabL - 1, tk = kind === 'tk', cabC = tk ? colOf(0x4d5762) : body, boxC = tk ? colOf(0x5d6872) : roof;
+      const bodyH = H - 11, cabL = Lc * (kind === 'tk' ? .26 : .3), boxL = Lc - cabL - 1, tk = kind === 'tk', cabC = tk ? colOf(0x4d5762) : cap(body), boxC = tk ? colOf(0x5d6872) : cap(roof), gl2 = colOf(0x131c2a);   // weisse Lieferwagen nicht ueberstrahlt: Lack hoechstens 0xd8dce2, Scheiben dunkler
       wheels(tk ? [.36, .12, -.14, -.38] : [.32, -.32]);
       part(R, 0, 8, 0, Lc, 6, bw * .96, dark);
       part(R, -Lc / 2 + boxL / 2, 11 + bodyH / 2, 0, boxL, bodyH, bw, boxC);
       part(R, -Lc / 2 + boxL / 2, 11 + bodyH + .7, 0, boxL * .84, 1.4, bw * .5, shine(boxC), .05); // Glanzstreifen auf dem Dach
       part(R, Lc / 2 - cabL / 2, 11 + bodyH * .25, 0, cabL, bodyH * .5, bw * .96, cabC); // Fahrerhaus unten (Lack)
-      part(R, Lc / 2 - cabL / 2 - cabL * .08, 11 + bodyH * .5 + bodyH * .15, 0, cabL * .84, bodyH * .3, bw * .88, glass, .03); // Scheiben
+      part(R, Lc / 2 - cabL / 2 - cabL * .08, 11 + bodyH * .5 + bodyH * .15, 0, cabL * .84, bodyH * .3, bw * .88, gl2); // Scheiben (dunkler als bei den Pkw)
       part(R, Lc / 2 - cabL / 2 - cabL * .1, 11 + bodyH * .8 + .7, 0, cabL * .6, 1.4, bw * .78, cabC); // Fahrerhausdach
       part(R, Lc / 2 + .2, 8.6, 0, 2.6, 5, bw * .98, dark); part(R, -Lc / 2 - .2, 8.6, 0, 2.6, 5, bw * .98, dark); // Stossstangen
       part(R, Lc / 2 + .7, 10.6, 0, 1.2, 3, bw * .3, rim, .12);
