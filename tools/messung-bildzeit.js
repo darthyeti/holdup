@@ -8,7 +8,7 @@
 // Gleiche Szenen wie der Pixel-Hash-Test (tests/inpage/bild.js, Seed 5, Strasse S), die Spielschleife steht still, gemessen wird nur draw() bei unveraendertem Zustand.
 // Headless-Chromium ohne GPU (--disable-accelerated-2d-canvas), auf dem Mac mit GPU ist es deutlich weniger. Vergleichbar sind nur Messungen auf derselben Maschine, ohne andere Last. Ausgangswerte: docs/tests-und-messwerte.md.
 const lib = require('../tests/lib.js');
-const args = process.argv.slice(2), N = +((args.find(a => a.startsWith('--n=')) || '--n=40').slice(4)), levels = args.filter(a => !a.startsWith('--')), D3 = args.includes('--3d'), NOSH = args.includes('--ohne-schatten');
+const args = process.argv.slice(2), N = +((args.find(a => a.startsWith('--n=')) || '--n=40').slice(4)), levels = args.filter(a => !a.startsWith('--')), D3 = args.includes('--3d'), KLO = args.includes('--kl'), NOSH = args.includes('--ohne-schatten');
 const LODS = D3 ? ((args.find(a => a.startsWith('--lod=')) || '--lod=0').slice(6)).split(',').map(Number) : [0];
 if (!levels.length) levels.push('mittel');
 
@@ -18,7 +18,8 @@ if (!levels.length) levels.push('mittel');
   for (const gfx of levels) {
     const page = await lib.openGame(env, { det: true, gfx, still: true });
     await lib.loadInpage(page, 'bild.js');
-    if (D3) { const i = await page.evaluate(async ([nosh, KL]) => { if (nosh && typeof V3OPT !== 'undefined') while (V3OPT.shadow !== 'aus') V3OPT.cycleShadow(); __dbg.view3d.kstil = +(KL||0); const i = await __dbg.view3d.set(true); const q = document.createElement('canvas').getContext('2d', { willReadFrequently: true }); window.PX_SYNC = () => { const V = __dbg.view3d.V; if (V && V.shown) { q.drawImage(V.el, 0, 0, 1, 1); q.getImageData(0, 0, 1, 1); } }; return i; }, [NOSH, process.env.KL]); if (i.state !== 'an') { console.log('3D nicht an: ' + JSON.stringify(i)); process.exit(1); } console.log('3D an: ' + i.gl + ', ' + i.gpu + (NOSH ? ', Schatten aus' : '')); }
+    if (KLO) await page.evaluate(() => { window.__kl = 1; });
+    if (D3) { const i = await page.evaluate(async (nosh) => { if (nosh && typeof V3OPT !== 'undefined') while (V3OPT.shadow !== 'aus') V3OPT.cycleShadow(); if (window.__kl) __dbg.view3d.kstil = 1; const i = await __dbg.view3d.set(true); const q = document.createElement('canvas').getContext('2d', { willReadFrequently: true }); window.PX_SYNC = () => { const V = __dbg.view3d.V; if (V && V.shown) { q.drawImage(V.el, 0, 0, 1, 1); q.getImageData(0, 0, 1, 1); } }; return i; }, NOSH); if (i.state !== 'an') { console.log('3D nicht an: ' + JSON.stringify(i)); process.exit(1); } console.log('3D an: ' + i.gl + ', ' + i.gpu + (NOSH ? ', Schatten aus' : '')); }
     for (const lod of LODS) {
       const sum = [0, 0, 0];
       for (const sc of (process.env.SC || 'bank,truck,jewel,gas,museum,casino,nb,prison').split(',')) {
