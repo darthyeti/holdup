@@ -13,7 +13,7 @@
 import * as THREE from '../assets/three.module.min.js';
 
 export const KL_API = 1;
-export const KL_FILES = ['kl-figuren.js', 'kl-fahrzeuge.js', 'kl-effekte.js', 'kl-dinge-allgemein.js', 'kl-dinge-bank.js', 'kl-dinge-juwelier.js', 'kl-dinge-tankstelle.js', 'kl-dinge-strasse.js', 'kl-dinge-museum.js', 'kl-dinge-casino.js', 'kl-dinge-notenbank.js', 'kl-dinge-gefaengnis.js'];
+export const KL_FILES = ['kl-figuren.js', 'kl-fahrzeuge.js', 'kl-effekte.js', 'kl-dinge-allgemein.js', 'kl-dinge-bank.js', 'kl-dinge-juwelier.js', 'kl-dinge-tankstelle.js', 'kl-dinge-strasse.js', 'kl-dinge-museum.js', 'kl-dinge-casino.js', 'kl-dinge-notenbank.js', 'kl-dinge-gefaengnis.js', 'kl-pickups.js'];
 
 export const KCFG = {
   // Masse der Figur in Weltpixeln (Figur rund 38 hoch, Kopf ein Wuerfel): Fuss (Laenge, Hoehe, Breite), Unter- und Oberschenkel, Beinbreite, Huefte, Becken, Rumpf, Arme, Hand, Kopf, Fase
@@ -201,8 +201,8 @@ void main() {
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
     { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olMat.uniforms.uC.value.set(olNt ? FG.look.outNight : FG.look.outDay); olMat.uniforms.uA.value = olNt ? FG.look.outNightA : 1 } carsNow = []; figsNow = F;
-    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pF.u = 0;
-    pAO.size(F.length + Cs.length); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
+    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pF.u = 0;
+    pAO.size(F.length + Cs.length + 40); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
     let gear = 0, lie = 0, hit = 0;
     for (const [o, e] of F) {
@@ -221,6 +221,7 @@ void main() {
       if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
     }
     prevCars = cars; primed = true;
+    kit.ao = ao; kit.fire('dyn', kit);   // Haken 'dyn': weitere dynamische Teile vor dem Abschluss der Pools (Aufnahmen, kl-pickups.js), Schatten ueber kit.ao
     pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pF.u = iF; pF.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
     if (X.alarm && E.lamps.length) { // Alarm im Raum: zwei kreisende rote Lampen an der Decke (naechste Lampen), nur im Ueberfall
       const P = X.me, L = E.lamps.slice().sort((a, b) => (P ? Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y) : 0)).slice(0, KC.alarm.n);
@@ -270,6 +271,7 @@ void main() {
     kit.fire('frame', kit);
   };
   let flashK = 0;
+  K.hasPk = () => !!(KL.fxs.dyn && KL.fxs.dyn.length);   // ein Bauer fuer die Aufnahmen (Haken dyn) ersetzt die Billboards in view3d
   K.flashK = () => flashK;
 
   // ---------- Welt: Kacheln mit Bauer (Moebel als Bausteine), Szenario-Teile ----------
