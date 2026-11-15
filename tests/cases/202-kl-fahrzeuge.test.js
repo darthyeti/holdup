@@ -2,12 +2,20 @@
 // ueber das Ereignis bx, Blendgranate ueber gb) lassen Teile und Funken fliegen, beim Client gleich wie beim Host (Test-Leitung). Kein Pixelvergleich. Ohne WebGL 2 uebersprungen.
 const path = require('path'), { pathToFileURL } = require('url');
 const lib = require('../lib');
-async function glPage(t) {
+// eine WebGL-Seite fuer die ganze Datei (jede eigene Umgebung schliesst beim Ende ihren Server, mehrere hintereinander lassen den naechsten Test beim Laden haengen); der letzte Test raeumt auf
+let shared = null;
+async function glPage(t, last) {
   const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
+  if (!shared) {
+    if (await ok(t.page)) return { page: t.page, done: async () => {} };
+    else {
+      const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
+      if (await ok(page)) shared = { page, close: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
+      else { await env.browser.close().catch(() => {}); env.srv.close(); shared = { none: true } }
+    }
+  }
+  if (shared.none) { t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null }
+  return { page: shared.page, done: async () => { if (last) { const s = shared; shared = null; await s.close() } } };
 }
 module.exports = [
   {
@@ -36,28 +44,6 @@ module.exports = [
     },
   },
   {
-    name: 'Kloetzchen-Effekte: Explosion (Ereignis bx) und Blendgranate (gb) lassen Teile, Funken und Rauch entstehen, Obergrenzen je Stufe gelten, keine Fehler',
-    timeout: 240000,
-    async run(t) {
-      const P = await glPage(t); if (!P) return;
-      try {
-        const r = await P.page.evaluate(`(async () => { const D = __dbg; D.setScenario('bank'); D.setSeedMode('random'); D.buildLay(D.layoutFor(5)); D.startHeist(); D.get().me.hp = 1e9;
-          for (let i = 0; i < 60; i++) D.update(1 / 30); D.view3d.kstil = 1; await D.view3d.set(true); D.draw(); D.draw();
-          const V = D.view3d.V, m = D.get().me, o = {}, run = n => { let mx = { deb: 0, sparks: 0, puffs: 0 }; for (let i = 0; i < n; i++) { D.get().me.hp = 1e9; D.update(1 / 30); D.draw(); const k = V.info().k; for (const q in mx) mx[q] = Math.max(mx[q], k[q]) } return mx };
-          o.base = run(4); D.evt('bx', [m.x + 60, m.y, 120, 1]); o.boom = run(8);
-          o.after = run(240); D.evt('gb', [m.x + 60, m.y, 0]); o.flash = run(8);
-          for (let j = 0; j < 12; j++) D.evt('bx', [m.x + 40 + j * 4, m.y + 20, 160, 1]); o.many = run(10);
-          o.err = V.info().err; o.q = V.info().k.q; await D.view3d.set(false); return o; })()`);
-        t.note(JSON.stringify(r));
-        t.ok(r.err === '', 'keine Fehler in der Ansicht');
-        t.ok(r.boom.deb >= 4 && r.boom.sparks > 0, 'Explosion: Teile ' + r.boom.deb + ', Funken ' + r.boom.sparks);
-        t.ok(r.flash.sparks > 0, 'Blendgranate: Funken ' + r.flash.sparks);
-        t.ok(r.many.deb <= [160, 320, 560][r.q] && r.many.sparks <= [60, 120, 220][r.q], 'Obergrenzen je Stufe ' + r.q + ': Teile ' + r.many.deb + ', Funken ' + r.many.sparks);
-        if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
-      } finally { await P.done(); }
-    },
-  },
-  {
     name: 'Kloetzchen-Effekte im Coop: eine Explosion zeigen Host und Client mit Teilen (Test-Leitung)',
     timeout: 300000,
     async run(t) {
@@ -76,6 +62,28 @@ module.exports = [
         t.note(JSON.stringify(r));
         t.ok(r.err.every(e => e === ''), 'keine Fehler');
         t.ok(r.deb[0] >= 4 && r.deb[1] >= 4 && r.sp[0] > 0 && r.sp[1] > 0, 'Host (' + r.deb[0] + ' Teile) und Client (' + r.deb[1] + ') zeigen die Explosion');
+        if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
+      } finally { await P.done(); }
+    },
+  },
+  {
+    name: 'Kloetzchen-Effekte: Explosion (Ereignis bx) und Blendgranate (gb) lassen Teile, Funken und Rauch entstehen, Obergrenzen je Stufe gelten, keine Fehler',
+    timeout: 240000,
+    async run(t) {
+      const P = await glPage(t, true); if (!P) return;
+      try {
+        const r = await P.page.evaluate(`(async () => { const D = __dbg; D.setScenario('bank'); D.setSeedMode('random'); D.buildLay(D.layoutFor(5)); D.startHeist(); D.get().me.hp = 1e9;
+          for (let i = 0; i < 60; i++) D.update(1 / 30); D.view3d.kstil = 1; await D.view3d.set(true); D.draw(); D.draw();
+          const V = D.view3d.V, m = D.get().me, o = {}, run = n => { let mx = { deb: 0, sparks: 0, puffs: 0 }; for (let i = 0; i < n; i++) { D.get().me.hp = 1e9; D.update(1 / 30); D.draw(); const k = V.info().k; for (const q in mx) mx[q] = Math.max(mx[q], k[q]) } return mx };
+          o.base = run(4); D.evt('bx', [m.x + 60, m.y, 120, 1]); o.boom = run(8);
+          o.after = run(240); D.evt('gb', [m.x + 60, m.y, 0]); o.flash = run(8);
+          for (let j = 0; j < 12; j++) D.evt('bx', [m.x + 40 + j * 4, m.y + 20, 160, 1]); o.many = run(10);
+          o.err = V.info().err; o.q = V.info().k.q; await D.view3d.set(false); return o; })()`);
+        t.note(JSON.stringify(r));
+        t.ok(r.err === '', 'keine Fehler in der Ansicht');
+        t.ok(r.boom.deb >= 4 && r.boom.sparks > 0, 'Explosion: Teile ' + r.boom.deb + ', Funken ' + r.boom.sparks);
+        t.ok(r.flash.sparks > 0, 'Blendgranate: Funken ' + r.flash.sparks);
+        t.ok(r.many.deb <= [160, 320, 560][r.q] && r.many.sparks <= [60, 120, 220][r.q], 'Obergrenzen je Stufe ' + r.q + ': Teile ' + r.many.deb + ', Funken ' + r.many.sparks);
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
     },
