@@ -23,6 +23,8 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     window.__dir = best; me.a = best; return { dir: best, free: bd, at: [Math.round(me.x), Math.round(me.y)], night: D.LAY().theme && D.LAY().theme.tod };
   }, [SC, FLOW, +(process.env.SEED || 5), process.env.LAGE || '']);
   console.log(JSON.stringify(prep));
+  // TOD=mittag|abend|nacht ...: Tageszeit der Karte erzwingen (theme.tod) und die Ansicht neu aufbauen
+  if (process.env.TOD) await page.evaluate(async (tod) => { __dbg.LAY().theme.tod = tod; __dbg.view3d.reset(); await __dbg.view3d.set(true); __dbg.draw(); }, process.env.TOD);
   // ein Bild: Spielschritte, zeichnen, Leinwand lesen, Mitte (Bildpunkte) des Geschehens zurueck
   const FR = [], shot = async (name, at) => {
     const r = await page.evaluate((at) => {
