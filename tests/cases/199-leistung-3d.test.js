@@ -4,14 +4,9 @@
 // Die anderen Tests laufen auf fester Stufe (window.__holdupV3Fix aus tests/lib.js), dieser schaltet die Regelung selbst ein (reg.fix = false).
 const lib = require('../lib');
 
-async function glPage(t, opts) {
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env, opts);
-  if (await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'))) return { page, env, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage: glShared } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
+// immer eine eigene Seite im gemeinsamen Browser (opts an openGame)
+const glPage = (t, opts) => glShared(t, Object.assign({ force: true }, opts));
 // 3D ueber die Optionen (nicht ueber den Debug-Wunsch, sonst regelt nichts), Spiel im Bild, Regelung an und von Hand gefuettert
 const OPT3D = `window.OPT3D = async (mode) => { const D = __dbg; V3OPT.setMode(mode || '3d'); await D.view3d.set(null); D.reset(); D.setFocus(true); for (let i = 0; i < 5; i++) D.update(1 / 30); D.draw(); await D.view3d.ready(); D.draw();
   const R = D.view3d.reg; R.manual = true; R.fix = false; R.reset(); return D.view3d.info(); };`;

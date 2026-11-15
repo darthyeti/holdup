@@ -9,15 +9,7 @@ const lib = require('../lib');
 const RUNTIME = 'XwYlv';   // nur zur Laufzeit: Barrikade, zerschossenes Fenster, Fensterbarrikade, geoeffnete Hintertuer, haltendes Fahrzeug
 const SCS = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb', 'prison'];
 
-async function glPage(t) {
-  if (await t.page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env);
-  if (await page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 // Zeichen im Raster je Szenario (mehrere Seeds, Bank auch gedreht), dazu die feste Klassikkarte
 async function gridChars(page) {
   return page.evaluate((SCS) => {
