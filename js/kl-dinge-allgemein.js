@@ -40,13 +40,29 @@ export function register(KL) {
   // ---------- Fundort des Codes: Buerogeraet je Art, dazu Zettel, solange der Code fehlt ----------
   // Teile [breite, tiefe, unten, hoehe, farbe, versatz]
   const NOTE = { bin: [[16, 16, 0, 18, 0x4fae6a], [18, 18, 18, 2, 0x2f7a47]], copy: [[24, 18, 0, 22, 0xe7ebef], [24, 18, 22, 3, 0x4aa8e8, 0], [22, 14, 25, 1.2, 0x2a2e36]],
-    coffee: [[24, 12, 0, 22, 0x8a4a2c], [10, 8, 22, 5, 0xe9ecef], [10, 4, 12, 3, 0x2d3238]], file: [[24, 22, 0, 40, 0x7f93ad], [20, 1, 10, 3, 0xd6dbe2], [20, 1, 24, 3, 0xd6dbe2]],
-    pin: [[22, 4, 6, 30, 0xb98f5a], [16, 1, 12, 8, 0xfff2a8], [8, 1, 22, 6, 0xf08a8a]], coat: [[2.5, 2.5, 0, 48, 0x7a5b3a], [14, 3, 46, 2, 0x7a5b3a], [7, 5, 20, 24, 0xd8412f, -4], [7, 5, 18, 22, 0x2f6fd8, 4]],
-    locker: [[18, 26, 0, 58, 0x3c7fd0], [17, 1, 40, 4, 0x1b3f6e], [17, 1, 16, 4, 0x1b3f6e], [2, 1, 28, 4, 0xe8b923]] };
+    coffee: [[24, 12, 0, 22, 0x8a4a2c], [10, 8, 22, 5, 0xe9ecef], [10, 4, 12, 3, 0x2d3238]], file: [[24, 22, 0, 40, 0x7f93ad], [20, 1, 10, 3, 0xd6dbe2], [20, 1, 24, 3, 0xd6dbe2]] };
+  // Wandarten (Ticket 228): stehen an der Wand der Kachel (die Karte waehlt Kacheln mit angrenzender Wand '#'), gebaut in Wandkoordinaten: u laengs der Wand, v Tiefe von der Wandflaeche weg, y Hoehe.
+  // Teile [u, v, unten, breite laengs, tiefe, hoehe, farbe]; ps ist der Platz fuer den Zettel [u, v, hoehe] (immer von oben sichtbar, auf einem Brett oder Regal, nie senkrecht an der Wand)
+  const WALL = {
+    coat: { ps: [3, 5, 48], p: [[0, .8, 8, 30, 1.6, 44, 0x8a6a42], [0, 4, 46, 30, 8, 2, 0x6b4e2e], [-7, 3.4, 12, 9, 4.4, 33, 0xd8412f], [6, 3.4, 12, 9, 4.4, 33, 0x2f6fd8], [-7, 3.4, 41, 7, 3.6, 4, 0xf59a88], [6, 3.4, 41, 7, 3.6, 4, 0x7fb0f5]] },
+    pin: { ps: [0, 5, 10], p: [[0, .8, 12, 28, 1.6, 32, 0xb98f5a], [0, 1.8, 16, 8, .8, 7, 0xfff2a8], [-8, 1.8, 28, 7, .8, 6, 0xf08a8a], [8, 1.8, 26, 7, .8, 8, 0x9ad0ff], [0, 4, 8, 24, 7, 2, 0x6b4e2e]] },
+    locker: { ps: [0, 9, 58], p: [[0, 9, 0, 18, 18, 58, 0x3c7fd0], [0, 18.3, 40, 16, 1, 4, 0x1b3f6e], [0, 18.3, 16, 16, 1, 4, 0x1b3f6e], [5, 18.6, 28, 2, 1, 5, 0xe8b923]] } };
+  // Seite der Wand: Richtung (nx, nz) von der Kachelmitte zur Wand (erste angrenzende '#'), Rueckfall Norden
+  const wallDir = (k, x, y) => { const tx = Math.floor(x / T), ty = Math.floor(y / T); for (const [dx, dz] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) if (k.E.cellAt(tx + dx, ty + dz) === '#') return [dx, dz]; return [0, -1] };
+  // Zettel (Ticket 228): gross, hell, leicht schraeg, mit Textzeilen und rotem Rand, ohne Leuchten
+  const paper = (k, x, z, t, rot) => { B(k, x, z, t, 14, 1.2, 11, rot, 0xfffbe6); B(k, x, z - 3, t + 1.2, 10, .5, 1.2, rot, 0x6b7280); B(k, x, z, t + 1.2, 10, .5, 1.2, rot, 0x6b7280); B(k, x - 5, z - 4.4, t + 1.2, 3, .5, 3, rot, 0xd9382c) };
   KL.obj('note', (k, o) => {
-    let t = o.n === 'desk' || o.n === 'mon' ? top(k, o.x, o.y) : 0; const P = NOTE[o.n] || (o.n === 'desk' || o.n === 'mon' || o.n === 'mgr' ? [] : NOTE.locker);
+    const W = WALL[o.n];
+    if (W) {
+      const [nx, nz] = wallDir(k, o.x, o.y), zx = nz !== 0, px = -nz, pz = nx;   // Querrichtung (laengs der Wand)
+      const at = (u, v) => [o.x + nx * (16 - v) + px * u, o.y + nz * (16 - v) + pz * u];
+      for (const [u, v, y0, su, sv, sh, c] of W.p) { const [wx, wz] = at(u, v); B(k, wx, wz, y0, zx ? su : sv, sh, zx ? sv : su, 0, c) }
+      if (o.paper) { const [wx, wz] = at(W.ps[0], W.ps[1]); paper(k, wx, wz, W.ps[2], zx ? -.25 : .25) }
+      return;
+    }
+    let t = o.n === 'desk' || o.n === 'mon' ? top(k, o.x, o.y) : 0; const P = NOTE[o.n] || (o.n === 'desk' || o.n === 'mon' || o.n === 'mgr' ? [] : NOTE.file);
     for (const q of P) { B(k, o.x + (q[5] || 0), o.y, q[2], q[0], q[3], q[1], 0, q[4]); t = Math.max(t, q[2] + q[3]) }
-    if (o.paper) { B(k, o.x, o.y, t, 10, 1, 8, 0, 0xffffff, .12); B(k, o.x + 1, o.y - 1, t + 1, 9, .8, 7, .12, 0xfff7c9, .12); B(k, o.x, o.y + .5, t + 1.8, 7, .3, 1, 0, 0xc23a2e) }
+    if (o.paper) paper(k, o.x, o.y, t, -.2);
   });
 
   // ---------- Beute: Geldbuendel (offener Tresor, Notenbank), Beutesack, leere Kassen und Automaten ----------
