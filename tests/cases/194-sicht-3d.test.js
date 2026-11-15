@@ -84,7 +84,7 @@ module.exports = [
           const C = D.get().cams; o.nc = C.length; o.seenC = C.filter(c => D.los(me.x, me.y, c.x, c.y)).length; D.draw(); o.c0 = D.view3d.cams();
           const k0 = C.map(c => c.k); C.forEach(c => c.k = true); D.draw(); o.c1 = D.view3d.cams(); C.forEach((c, i) => c.k = k0[i]); D.draw();
           return o; });
-        t.ok(g.losA && !g.losB && g.inn && !g.out && g.sil === 1, 'Gegner in Sicht als Figur (und Silhouette), ausserhalb weder Figur noch Silhouette (' + JSON.stringify(g) + ')');
+        t.ok(g.losA && !g.losB && g.inn && !g.out && g.sil === 0, 'Gegner in Sicht als Figur (ohne Silhouette, nicht verdeckt, Ticket 188), ausserhalb weder Figur noch Silhouette (' + JSON.stringify(g) + ')');
         t.ok(g.nc > 1 && g.c0 === g.seenC && g.c1 === g.nc, 'Kameras wie 2D: unbekannt nur in Sicht (' + g.c0 + ' von ' + g.nc + '), nach den Monitoren alle (' + g.c1 + ')');
         if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
@@ -148,6 +148,27 @@ module.exports = [
         t.ok(r.s0.on && r.s0.dark > .3, 'Zuschauer folgt einer Figur: Maske an (' + JSON.stringify(r.s0) + ')');
         t.ok(r.s1.all && !r.s1.on && r.s1.dark === 0, 'Zuschauer mit alles sehen: keine Maske, keine Abdunklung (' + JSON.stringify(r.s1) + ')');
         t.ok(r.s2.on && r.s2.dark > .3, 'alles sehen aus: Maske wieder an');
+        if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
+      } finally { await P.done(); }
+    },
+  },
+  {
+    name: '3D-Kegel (Ticket 176): Spitze des Kamera-Sichtkegels liegt auf dem Bildpunkt der Kamera, Strasse an allen vier Seiten',
+    timeout: 300000,
+    async run(t) {
+      const P = await glPage(t); if (!P) return;
+      try {
+        const page = P.page; await page.evaluate(HELP); const i0 = await page.evaluate(SETUP);
+        if (i0.state !== 'an') { t.ok(false, '3D nicht an: ' + JSON.stringify(i0)); return; }
+        for (const side of ['N', 'E', 'S', 'W']) {
+          const r = await page.evaluate(side => { const D = __dbg; D.setTurn(side); D.buildSeed('classic'); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset(); for (let i = 0; i < 5; i++) D.update(1 / 30);
+            const C = D.get().cams; C.forEach(c => { c.k = true; c.off = false; }); D.draw(); D.draw(); const q = D.view3d.camPts(), V = D.view3d.V;
+            return { n: C.length, q: q.map(o => ({ d: Math.hypot(o.cam[0] - o.apex[0], o.cam[1] - o.apex[1]), foot: Math.hypot(o.cam[0] - V.toScr(C[o.i].x, C[o.i].y, 0)[0], o.cam[1] - V.toScr(C[o.i].x, C[o.i].y, 0)[1]) })) }; }, side);
+          t.ok(r.n >= 2 && r.q.length >= 1, side + ': Kameras mit Kegel (' + r.q.length + ' von ' + r.n + ')');
+          t.ok(r.q.every(o => o.d < 1.5), side + ': Kegelspitze auf dem Bildpunkt der Kamera (Abstaende ' + r.q.map(o => o.d.toFixed(1)) + ')');
+          t.ok(r.q.every(o => o.foot > 15), side + ': Kamera haengt in Hoehe, nicht am Fusspunkt (Abstand zum Fusspunkt ' + r.q.map(o => o.foot.toFixed(0)) + ')');
+        }
+        await page.evaluate(() => { __dbg.setTurn(null); __dbg.view3d.set(false); });
         if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
     },
