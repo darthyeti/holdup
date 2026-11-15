@@ -50,7 +50,7 @@ export function register(KL) {
   // Fensterscheibe zerschossen (Ticket 207): W wird w (Zustand im Raster, Host rechnet, Clients bekommen es im Schnappschuss). Der Haken sieht den Wechsel von W nach w im Raster (E.cellAt) und laesst
   // kurz Glas-Kloetzchen fliegen: klein, hell, wenige (je Stufe), liegen nur kurz. Werte in KCFG.glass (hier als Vorgabe eingetragen: n je Grafikstufe, Groesse von bis, Tempo, Aufwaerts, Liegezeit, Funken).
   const winSt = new Map(); let winKey = '';
-  const glass = k => k.KC.glass || (k.KC.glass = { n: [6, 12, 18], size: [2, 4.2], k: .55, up: .55, rest: [.8, 1.6], em: .14, sparks: 6, col: [0xcfeeff, 0xa9d8f5, 0xe8f6ff] });
+  const glass = k => k.KC.glass || (k.KC.glass = { n: [6, 12, 18], size: [2, 4.2], k: .55, up: .55, rest: [.8, 1.6], em: .05, a: .45, sparks: 6, col: [0xcfeeff, 0xa9d8f5, 0xe8f6ff] });
   const windows = k => {
     const L = k.X.LAY, W = L && L.wins; if (!W) return;
     const key = W.length + ':' + (W[0] ? W[0].x + ',' + W[0].y : '') + ':' + (W.length ? W[W.length - 1].x + ',' + W[W.length - 1].y : ''); if (key !== winKey) { winKey = key; winSt.clear() }
@@ -60,7 +60,7 @@ export function register(KL) {
       if (was !== 'W' || c !== 'w') continue;
       const n = G.n[q] >> ((k.X.lod | 0) >= 3 ? 1 : 0), ax = Math.abs(w.iv[0]) > Math.abs(w.iv[1]) ? 1 : 0; // ax: 1 wenn die Scheibe in y-Richtung liegt (Wand laeuft entlang y)
       const parts = k.collect(() => { k.state(0, 1); k.rotY(w.px, w.py, 0, 1); for (let i = 0; i < n; i++) { const u = k.rr(-13, 13), s = k.rr(G.size[0], G.size[1]); k.part(k.root, ax ? 0 : u, k.rr(20, 46), ax ? u : 0, s, s * k.rr(.5, 1), s * k.rr(.6, 1), k.colOf(G.col[i % G.col.length]), G.em, k.rr(-.5, .5), k.rr(-.5, .5)) } });
-      k.spawnDeb(parts, w.px, w.py, { k: G.k, up: G.up, rest: G.rest, dir: [w.iv[0] * .5, w.iv[1] * .5] }); k.sparkAt(w.px, w.py, 32, G.sparks, 70, 1);
+      k.spawnDeb(parts, w.px, w.py, { glass: 1, k: G.k, up: G.up, rest: G.rest, dir: [w.iv[0] * .5, w.iv[1] * .5] }); k.sparkAt(w.px, w.py, 32, G.sparks, 70, 1);
     }
   };
   KL.fx('frame', (k) => {

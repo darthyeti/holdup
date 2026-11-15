@@ -30,6 +30,8 @@ export const KCFG = {
   deb: { g: 520, bounce: .38, fric: .62, rest: [5.5, 8.5], fade: .8, burstV: [70, 190], up: [140, 300], spin: 9, biasK: 70 },
   bloom: { thr: .9, knee: .1, s: [.26, .34], flash: .45 },
   alarm: { n: 2, spin: 3.2 },
+  // Glas-Splitter einer zerschossenen Scheibe (Ticket 207): Anzahl je Grafikstufe, Groesse von bis, Tempo, Aufwaerts, Liegezeit, Leuchten, Deckkraft, Funken, Farben
+  glass: { n: [6, 12, 18], size: [2, 4.2], k: .55, up: .55, rest: [.8, 1.6], em: .05, a: .45, sparks: 6, col: [0xcfeeff, 0xa9d8f5, 0xe8f6ff] },
   car: { pol: [0x2b55b8, 0xeef1f4], bar: [0xff3a30, 0x3a6bff], wheel: 0x24272d, glass: 0x1f3550, lamp: 0xfff1b8, tail: 0xff3b2e, scorch: 0x2a2522, ember: 0xff7a2a },
 };
 
@@ -117,6 +119,9 @@ void main() {
   const kMat = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS, uniforms: Object.assign({ uK: { value: new THREE.Vector4(...KC.plastic) } }, UV) });
   K.mats = [kMat];
   const kpool = (name, geo, order) => { const P = E.pool(name, geo, kMat, { iK: 2 }, true, order == null ? 2 : order, 1); E.pools.push(P); return P };
+  // Glas (Ticket 207): durchsichtig (Deckkraft KC.glass.a), ohne Tiefenschreiben, staerker spiegelnd; nur fuer Glas-Splitter des Zerfalls (spawnDeb mit glass: 1)
+  const kGlass = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS.replace('gl_FragColor = vec4(col, 1.0);', 'gl_FragColor = vec4(col, ' + (KC.glass ? KC.glass.a : .45).toFixed(3) + ');'), transparent: true, depthWrite: false, uniforms: Object.assign({ uK: { value: new THREE.Vector4(KC.plastic[0] * 1.5, KC.plastic[1] * 1.9, KC.plastic[2], KC.plastic[3]) } }, UV) });
+  const pG = E.pool('k-glas', boxGeo, kGlass, { iK: 2 }, true, 6, 0); E.pools.push(pG);
   const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox);
   // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
   const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
@@ -168,7 +173,7 @@ void main() {
       p.m.decompose(tp, tq, ts); const kx = tp.x - cx, kz = tp.z - cy, l = Math.hypot(kx, kz) || 1, v = rr(B.burstV[0], B.burstV[1]) * (o.k || 1);
       let bx = kx / l, bz = kz / l; if (o.dir) { bx = bx * .6 + o.dir[0] * .8; bz = bz * .6 + o.dir[1] * .8 } else if (me) { const mx = cx - me.x, mz = cy - me.y, ml = Math.hypot(mx, mz) || 1; bx += mx / ml * (B.biasK / 100); bz += mz / ml * (B.biasK / 100) }
       deb.push({ x: tp.x, y: tp.y, z: tp.z, q: tq.clone(), s: p.s.map(v => v * (o.scale || 1)), c: p.c, em: p.e + (o.em || 0), hot: o.em || 0, vx: bx * v + rr(-25, 25), vy: rr(B.up[0], B.up[1]) * (o.up || 1), vz: bz * v + rr(-25, 25),
-        wx: rr(-B.spin, B.spin), wy: rr(-B.spin, B.spin), wz: rr(-B.spin, B.spin), age: 0, rest: 0, life: o.rest ? rr(o.rest[0], o.rest[1]) : rr(B.rest[0], B.rest[1]), still: 0 });
+        wx: rr(-B.spin, B.spin), wy: rr(-B.spin, B.spin), wz: rr(-B.spin, B.spin), g: o.glass ? 1 : 0, age: 0, rest: 0, life: o.rest ? rr(o.rest[0], o.rest[1]) : rr(B.rest[0], B.rest[1]), still: 0 });
     }
     while (deb.length > capD()) deb.shift();
   };
@@ -244,14 +249,14 @@ void main() {
     for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i]; f.t += dt; if (f.t > .3) flashes.splice(i, 1) }
     let fl = 0; for (const f of flashes) fl = Math.max(fl, f.k * (1 - f.t / .3)); flashK = Math.max(flashK * Math.pow(.02, dt), fl);
     for (let i = deb.length - 1; i >= 0; i--) if (deb[i].rest && deb[i].still > deb[i].life + B.fade) deb.splice(i, 1);
-    pD.size(deb.length); deb.forEach((d, i) => {
+    let nG = 0; for (const d of deb) if (d.g) nG++; pD.size(deb.length - nG); pG.size(nG); let iD = 0, iG = 0; deb.forEach(d => { const Pq = d.g ? pG : pD, i = d.g ? iG++ : iD++;
       let k = 1; if (d.rest) { const u = d.still - d.life; if (u > 0) k = Math.max(0, 1 - u / B.fade); if (d.rest === 1) { d.rest = 2; // einrasten: die Achse, die am meisten nach oben zeigt, genau nach oben
           let bi = 0, bv = -1, sg = 1; for (let a = 0; a < 3; a++) { tv.set(a === 0 ? 1 : 0, a === 1 ? 1 : 0, a === 2 ? 1 : 0).applyQuaternion(d.q); if (Math.abs(tv.y) > bv) { bv = Math.abs(tv.y); bi = a; sg = tv.y < 0 ? -1 : 1 } }
           tv.set(bi === 0 ? 1 : 0, bi === 1 ? 1 : 0, bi === 2 ? 1 : 0).applyQuaternion(d.q).multiplyScalar(sg); tq2.setFromUnitVectors(tv, upV); d.q.premultiply(tq2); d.y = (d.gh || 0) + d.s[bi] / 2 } }
-      tp.set(d.x, d.y, d.z); ts.set(d.s[0] * k, d.s[1] * k, d.s[2] * k); pD.im.setMatrixAt(i, tm.compose(tp, d.q, ts)); pD.im.setColorAt(i, d.c);
-      pD.a.iK.setXY(i, 1, d.hot ? Math.max(0, d.em * Math.max(0, 1 - d.age / 1.6)) : d.em);
+      tp.set(d.x, d.y, d.z); ts.set(d.s[0] * k, d.s[1] * k, d.s[2] * k); Pq.im.setMatrixAt(i, tm.compose(tp, d.q, ts)); Pq.im.setColorAt(i, d.c);
+      Pq.a.iK.setXY(i, 1, d.hot ? Math.max(0, d.em * Math.max(0, 1 - d.age / 1.6)) : d.em);
     });
-    pD.u = deb.length; pD.finish();
+    pD.u = deb.length - nG; pD.finish(); pG.u = nG; pG.finish();
     const fp = E.fp; // Quads fuer die Ansicht: Funken, Rauch, Blitz
     for (const s of sparks) { const a = s.l / s.m, c = s.c ? [1, .78, .34] : [1, .62, .22]; fp(FA, s.x, s.y, s.h, 1.1, 3, c, Math.min(1, a * 1.6), -s.vx * .045, -s.vy * .045, 0, -s.vh * .045) }
     for (const s of puffs) { const a = s.l / s.m; fp(FN, s.x, s.y, s.h, s.s, 0, [.2 + .1 * a, .19 + .1 * a, .19 + .08 * a], s.a * Math.min(1, a * 2.2) * .8) }
@@ -325,7 +330,7 @@ void main() {
   K.sync = () => { const w = X.kstil ? 1 : 0; K.on = w > 0 && !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
   K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
-  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
+  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, kGlass, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
   return K;
 }
 mkKl.api = KL_API;
