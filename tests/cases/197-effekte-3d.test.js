@@ -6,16 +6,9 @@ const fs = require('fs');
 const path = require('path');
 const lib = require('../lib');
 
+const { glPage: glShared } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 // gfx: eigene Seite mit dieser Grafikstufe (Teilchen der Schuesse, Blut und Scherben gibt es erst ab Stufe mittel, wie in 2D)
-async function glPage(t, gfx) {
-  if (!gfx && await t.page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env, gfx ? { gfx } : undefined);
-  if (await page.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); })) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const glPage = (t, gfx) => glShared(t, gfx ? { gfx } : undefined);
 // Seitenhelfer: Bank (Seed 5, Strasse im Sueden), Spieler auf dem Gehweg vor der Bank, Teilchen leer, Ansicht lesen
 const H7 = `window.H7 = {
   bank(ph) { const D = __dbg; PX.scene('bank', 5); PX.phase(ph || 'erkundung'); const me = D.get().me; me.x = 860; me.y = 520; me.vx = me.vy = 0; for (let i = 0; i < 5; i++) { me.hp = 100; D.update(1 / 30); } D.ptClear(); D.mouse.t = -999; return me; },
