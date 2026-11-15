@@ -202,6 +202,9 @@ Damit ist die Bank für den Haltepunkt in 3D spielbar (Sicht wie 2D).
 ### 2.20b Durchgänge ohne Sturz (Ticket 177)
 
 - Die Höhentabelle `cells` in `js/view3d.js` gab `D`, `d` und `l` einen Sturz [50, 64] über der begehbaren Kachel. Jetzt haben `D`, `d`, `l` (und `g`) keinen Körper, die Durchgänge sind von oben offen wie 2D. Geschlossen bleiben `L` (Hintertür, Gitter) und `V` (Tresortür) bis zum Öffnen voll hoch, Fenster behalten Brüstung und Sturz. Verdeckung und Sichtmaske lesen weiter nur Wände. Test 191 (Durchgänge ohne Körper, Hintertür auf baut ohne `l`), Test 196 (offenes Gitter wird leichter statt schwerer), Bilder `docs/bilder/plan-3d/3d177-vorher.jpg` und `-nachher.jpg` (`tools/bilder-3d177.js`). 2D IDENTISCH, `VER` unverändert.
+### 2.19 Grafikfehler aus Spieltests (11. November 2026)
+
+- **Kamerakegel (Ticket 176).** Das Kamera-Icon hing in 3D auf Höhe 56 (`gnd(c.x,c.y,H)` in `cams3d`, `js/draw.js`), der Kegel lag mit der Spitze am Boden unter ihr, auf dem Bildschirm also versetzt. Jetzt liegt die Spitze auf dem Bildpunkt der Kamera (`toScr(x,y,56)`), der Rand am Boden (`toScr(x,y,0)`, 24 Segmente), Verlauf und Randlinie wie 2D. `DRAW_API` 10 (neu `camPts3d`, Debug `view3d.camPts()`). Test 194 (Spitze gegen Kamera-Bildpunkt, vier Straßenseiten), Bilder `docs/bilder/plan-3d/3d176-vorher-*` und `-nachher-*` (`tools/bilder-3d176.js`). 2D pixelgleich (IDENTISCH, 72 Bilder), `VER` unverändert.
 
 ## 3. Figuren
 
