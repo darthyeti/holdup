@@ -84,7 +84,7 @@ module.exports = [
           const C = D.get().cams; o.nc = C.length; o.seenC = C.filter(c => D.los(me.x, me.y, c.x, c.y)).length; D.draw(); o.c0 = D.view3d.cams();
           const k0 = C.map(c => c.k); C.forEach(c => c.k = true); D.draw(); o.c1 = D.view3d.cams(); C.forEach((c, i) => c.k = k0[i]); D.draw();
           return o; });
-        t.ok(g.losA && !g.losB && g.inn && !g.out && g.sil === 1, 'Gegner in Sicht als Figur (und Silhouette), ausserhalb weder Figur noch Silhouette (' + JSON.stringify(g) + ')');
+        t.ok(g.losA && !g.losB && g.inn && !g.out && g.sil === 0, 'Gegner in Sicht als Figur (ohne Silhouette, nicht verdeckt, Ticket 188), ausserhalb weder Figur noch Silhouette (' + JSON.stringify(g) + ')');
         t.ok(g.nc > 1 && g.c0 === g.seenC && g.c1 === g.nc, 'Kameras wie 2D: unbekannt nur in Sicht (' + g.c0 + ' von ' + g.nc + '), nach den Monitoren alle (' + g.c1 + ')');
         if (page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }

@@ -69,6 +69,9 @@ export const V3CFG = {
   fig: {
     dim: { foot: 2.2, shin: 5.5, thigh: 5.5, hipW: 3.2, legT: 4.6, torsoH: 10, torsoW: 12, torsoD: 9, armU: 5.2, armF: 5, armT: 4.2, head: 12, neck: .4 },
     seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
+    // look (Ticket 189): Figuren heben sich vom Boden ab. sat Saettigung der Kleidung, out Dicke des Umrisses in Weltpixeln (zweite, aufgeblasene Instanz je Teil, nur die Rueckseiten, outDay dunkel,
+    // outNight hell bei dunkler Szene), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
+    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0xdfe5f2 },
     hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
     out: {
       rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },
@@ -95,8 +98,8 @@ export const V3CFG = {
   xcol: { sh: [0xa9c3df, 0xd9b36a, 0xd9604f], rf: 0x2a2f36, bag: 0x6a5536, red: 0xff3a30, blue: 0x3a6bff, off: 0x3a3e46 },
   // Flaechenhelligkeit ohne Licht (Licht kommt mit 3D-5): Deckel, Suedseite (zur Kamera), Nordseite, Ost und West, Fuss (Seiten unten dunkler, bis wallH linear heller)
   shade: { top: 1, s: .84, n: .62, ew: .72, foot: .74 },
-  // Materialien der Kloetze: 0 Bild (Bodentextur, Deckel zeigen die 2D-Zeichnung, Seiten strecken die Randpixel), 1 Holz, 2 Metall, 3 Zaun; Glas eigens (durchsichtig)
-  mats: [null, 0x8a6a45, 0x5f6772, 0x8d959e], glass: 0xbfe6ff, glassA: .3,
+  // Materialien der Kloetze: 0 Bild (Bodentextur, Deckel zeigen die 2D-Zeichnung, Seiten strecken die Randpixel), 1 Holz, 2 Metall, 3 Zaun, 4 Mauerkrone (Fensterbruestung und -sturz, Farbe je Karte aus einer Wandkachel der 2D-Zeichnung, Ticket 178: sonst zeigt der Deckel das 2D-Fenster); Glas eigens (durchsichtig)
+  mats: [null, 0x8a6a45, 0x5f6772, 0x8d959e, 0x8a867e], crownMat: 4, glass: 0xbfe6ff, glassA: .42,
   // 3D-6 (Ticket 155) Szenario-Besonderheiten: scen3d in js/draw.js liefert je Bild die Teile (dieselbe Auswahl wie lyWorld), hier stehen die Bauplaene je Art (SCEN unten, Masse in Weltpixeln).
   // kinds: jede Art, die scen3d liefert, braucht einen Eintrag (Test 196, sonst zaehlt info().scen ?art und zeichnet nichts); g: Gruppe(n) der Teile (s Koerper beleuchtet, l Leuchten additiv, f Flaechen
   // durchsichtig, i Bildkloetze mit der 2D-Zeichnung als Deckel, c Sichtkegel). laserH Hoehe der Laser (Knie bis Huefte), cone Deckkraft der Sichtkegel wie 2D (ruhig, Alarm), grille Gitterstaebe je Kachel.
@@ -133,12 +136,12 @@ export const V3CFG = {
     gr: { flash: 0xe9e6d2, smoke: 0xa9b0bc, dec: 0xffc446, shell: 0xff8a3a, gas: 0x7a8a3c },
   },
   // Hoehentabelle je Kachelzeichen (jedes Zeichen des Rasters braucht einen Eintrag, Test 191): s Scheiben [unten, oben, Material] in Weltpixeln, ins Einzug je Seite,
-  // fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
+  // Durchgaenge (D, d, g, l, Ticket 177) haben keinen Koerper und keinen Sturz: von oben offen wie 2D, geschlossen sind sie L, V oder X. fence duenn quer zur Zaunrichtung, glass [unten, oben] Scheibe in der Mitte, open: Zeichen, deren Koerper wegfaellt, wenn X.vaultOpen gilt, dyn: zeichnet ein spaeteres Ticket (Fahrzeuge 3D-2)
   cells: {
     '.': { s: [] }, o: { s: [] }, g: { s: [] }, v: { s: [], dyn: 1 }, // v: Fahrzeuge zeichnet der dynamische Teil (3D-2a, cars)
-    '#': { s: [[0, 64]] }, P: { s: [[0, 64]], ins: 2 }, V: { s: [[0, 64, 2]], open: 1 }, L: { s: [[0, 64, 2]] }, l: { s: [[50, 64]] },
-    W: { s: [[0, 16], [50, 64]], glass: [16, 50] }, w: { s: [[0, 16], [50, 64]] }, Y: { s: [[0, 16], [50, 64], [18, 48, 1]] },
-    D: { s: [[50, 64]] }, d: { s: [[50, 64]] },
+    '#': { s: [[0, 64]], cut: 1 }, P: { s: [[0, 64]], ins: 2, cut: 1 }, V: { s: [[0, 64, 2]], open: 1, cut: 1 }, L: { s: [[0, 64, 2]], cut: 1 }, l: { s: [] },
+    W: { s: [[0, 16, 4]], glass: [16, 50], frame: [[16, 19], [47, 50]], cut: 1 }, w: { s: [[0, 16, 4]], frame: [[16, 19], [47, 50]], cut: 1 }, Y: { s: [[0, 16, 4], [18, 48, 1]], cut: 1 }, // Fenster: nur Bruestung, ueber der Oeffnung offen (kein Sturz, Ticket 178)
+    D: { s: [] }, d: { s: [] },
     C: { s: [[0, 24]] }, e: { s: [[0, 20]], ins: 1 }, m: { s: [[0, 22]], ins: 1 }, b: { s: [[0, 14]], ins: 3 }, r: { s: [[0, 26]], ins: 4 },
     A: { s: [[0, 46]], ins: 3 }, k: { s: [[0, 28]], ins: 2 }, q: { s: [[0, 30]], ins: 5 }, p: { s: [[0, 34]], ins: 6 }, u: { s: [[0, 40]], ins: 4 },
     N: { s: [[0, 36, 2]], ins: 1 }, f: { s: [[0, 26, 3]], fence: 1 }, X: { s: [[0, 30, 1]] },
@@ -202,9 +205,9 @@ vec3 gradeC(vec3 c) {
 `;
 // Shader der statischen Welt: Kloetze als Instanzen eines Einheitswuerfels, Bild-Koordinate aus der Weltlage (Seiten um edge nach innen versetzt, sie zeigen den Randpixel der Kachel),
 // Helligkeit je Flaechenrichtung aus V3CFG.shade. Farbraum wie MeshBasicMaterial (sRGB-Textur, Ausgabe ueber colorspace_fragment).
-const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
+const VS = `attribute float iCut; varying float vCut; uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
 void main() {
-  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz; vM = wp.xz - normal.xz * uVisIn; vN = normal;
+  vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vW = wp.xyz; vM = wp.xz - normal.xz * uVisIn; vN = normal; vCut = iCut;
   vec2 q = wp.xz - normal.xz * uEdge;
   vUv = vec2((q.x - uOrg.x) * uOrg.z, 1.0 - (q.y - uOrg.y) * uOrg.w);
   float s = normal.y > 0.5 ? uSh.x : normal.z > 0.5 ? uSh.y : normal.z < -0.5 ? uSh.z : uSh.w;
@@ -214,9 +217,9 @@ void main() {
 }`;
 // Schnitt (3D-3): uCut = Bildpunkt des Spielers (gl_FragCoord), Radius in Bildpunkten, Suedgrenze (Welt z des Spielers); uCutH Hoehe, ab der geschnitten wird, uCutS weicher Rand.
 // Geschnitten wird nur, was zwischen Kamera und Spieler liegt (suedlich von ihm), Waende hinter ihm bleiben stehen.
-const FS = VISF + LITF + `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
+const FS = VISF + LITF + `uniform sampler2D map; uniform vec3 uCol; uniform float uMap; uniform float uA; uniform vec4 uCut; uniform float uCutH; uniform float uCutS; varying float vCut; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
 void main() {
-  if (uCut.z > 0.0 && vW.y > uCutH + 0.01 && vW.z > uCut.w) { float d = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
+  if (uCut.z > 0.0 && vCut > 0.5 && vW.y > uCutH + 0.01 && vW.z > uCut.w) { float d = length(gl_FragCoord.xy - uCut.xy) / uCut.z;
     if (d < uCutS || (d < 1.0 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > (d - uCutS) / (1.0 - uCutS))) discard; }
   vec3 c = uMap > 0.5 ? texture2D(map, vUv).rgb : uCol;
   gl_FragColor = vec4(litC(c * vSh, vW, vN), uA);
@@ -232,7 +235,7 @@ export function mkView3d(X) {
   } catch (e) { return { on: false, err: 'kein WebGL 2 (' + String(e && e.message || e).slice(0, 60) + ')' }; }
   if (!ren.capabilities || !ren.capabilities.isWebGL2) { ren.dispose(); return { on: false, err: 'kein WebGL 2' }; }
   const glc = ren.getContext(), dbgInfo = glc.getExtension('WEBGL_debug_renderer_info');
-  const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, figParts: 0, figCalls: 0, gear: 0, fi: [], dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
+  const st = { q: 0, frames: 0, ms: 0, msAvg: 0, calls: 0, tris: 0, errs: 0, err: '', builds: 0, groundUp: 0, statBuilds: 0, inst: 0, decUp: 0, parts: [], vol: 0, figs: 0, cars: 0, fk: {}, ck: {}, lie: 0, hit: 0, xparts: 0, figParts: 0, figOl: 0, figCalls: 0, gear: 0, fi: [], dynCalls: 0, dynGrow: 0, visUp: 0, visOn: 0 };
   ren.setPixelRatio(1); ren.outputColorSpace = THREE.SRGBColorSpace; ren.setClearColor(C.clear);
   const el = ren.domElement;
   // 3D-9 (Ticket 158): Kontextverlust (Treiber, GPU-Reset, zu viele Kontexte) ist kein Absturz: die Ansicht meldet sich ab, der Kern zeichnet in 2D weiter
@@ -315,13 +318,18 @@ export function mkView3d(X) {
   // cells zaehlt die Kacheln mit Koerper je Zeichen (Test: Wandkoerper gleich Wandkacheln), Zeichen ohne Eintrag landen in cells['?'+c] und zeichnen nichts.
   const mtx = new THREE.Matrix4(), pos = new THREE.Vector3(), scl = new THREE.Vector3(), qid = new THREE.Quaternion();
   function buildStatic() {
-    for (const m of stat) { scene.remove(m); m.dispose() } stat = []; cells = {};
+    for (const m of stat) { scene.remove(m); m.geometry.dispose(); m.dispose() } stat = []; cells = {};
     const lists = C.mats.map(() => []), gl = [], spec = c => C.cells[c], cell = cellAt, wallish = c => { const s = spec(c); return !!s && !s.ins && !s.fence && s.s.some(q => q[0] === 0 && q[1] >= C.wallH) };
-    const add = (L, X0, Z0, X1, Z1, Y0, Y1) => L.push(X0, Z0, X1, Z1, Y0, Y1);
+    // cutF: gehoert der Koerper zu einem Wandteil (Tabelle cut), nur die schneidet der Schnitt um den Spieler (Ticket 190), Moebel und Objekte bleiben stehen
+    let cutF = 0; const add = (L, X0, Z0, X1, Z1, Y0, Y1) => { L.push(X0, Z0, X1, Z1, Y0, Y1); (L.f || (L.f = [])).push(cutF) };
     const x0 = X.WX0, y0 = X.WY0, vo = !!X.vaultOpen;
+    // Mauerkrone (Ticket 178): Farbe der Bruestung und des Sturzes aus der Mitte einer Wandkachel der 2D-Zeichnung (nach Moeglichkeit mit Wand in allen vier Nachbarn, dort ohne Kantenlinien)
+    { let pk = null; for (let y = y0; y < y0 + X.H && !(pk && pk[2]); y++) for (let x = x0; x < x0 + X.W; x++) if (cell(x, y) === '#') { const full = cell(x - 1, y) === '#' && cell(x + 1, y) === '#' && cell(x, y - 1) === '#' && cell(x, y + 1) === '#'; if (!pk || full) pk = [x, y, full]; if (full) break }
+      if (pk) try { const k = X.st.width / (X.W * T), q = X.st.getContext('2d').getImageData(Math.round(((pk[0] - x0) * T + 12) * k), Math.round(((pk[1] - y0) * T + 12) * k), 4, 4).data; let r = 0, g = 0, b = 0; for (let i = 0; i < q.length; i += 4) { r += q[i]; g += q[i + 1]; b += q[i + 2] } const n = q.length / 4; mats[C.crownMat].uniforms.uCol.value.setRGB(r / n / 255, g / n / 255, b / n / 255, THREE.SRGBColorSpace) } catch (e) {} }
     for (let y = y0; y < y0 + X.H; y++) for (let x = x0; x < x0 + X.W; x++) {
       const c = cell(x, y), s = spec(c);
       if (!s) { cells['?' + c] = (cells['?' + c] || 0) + 1; continue }
+      cutF = s.cut ? 1 : 0;
       if (!s.s.length || (s.open && vo)) continue;
       cells[c] = (cells[c] || 0) + 1;
       // 3D-6 Gefaengnis: geschlossenes Gitter (scen3d grl) statt Block nur der untere Riegel (ein Kloetzchen wie die Tabelle, die Zaehlung bleibt), Staebe und uebrige Riegel zeichnet SCEN.grille
@@ -330,13 +338,14 @@ export function mkView3d(X) {
       const hz = cell(x - 1, y) === c || cell(x + 1, y) === c || wallish(cell(x - 1, y)) || wallish(cell(x + 1, y));
       if (s.fence) { if (cell(x - 1, y) === 'f' || cell(x + 1, y) === 'f') { Z0 = y * T + 12; Z1 = y * T + 19 } else { X0 = x * T + 12; X1 = x * T + 19 } }
       for (const q of s.s) add(lists[q[2] || 0], X0, Z0, X1, Z1, q[0], q[1]);
+      if (s.frame) for (const f of s.frame) { if (hz) add(lists[2], x * T, y * T + 13, x * T + T, y * T + 19, f[0], f[1]); else add(lists[2], x * T + 13, y * T, x * T + 19, y * T + T, f[0], f[1]) }
       if (s.glass) { if (hz) add(gl, x * T, y * T + 14, x * T + T, y * T + 18, s.glass[0], s.glass[1]); else add(gl, x * T + 14, y * T, x * T + 18, y * T + T, s.glass[0], s.glass[1]) }
     }
     const mk = (L, mat, name, order) => {
       const n = L.length / 6; if (!n) return;
       const im = new THREE.InstancedMesh(box, mat, n); im.name = name; im.renderOrder = order || -1;
       for (let i = 0; i < n; i++) { const k = i * 6; pos.set((L[k] + L[k + 2]) / 2, (L[k + 4] + L[k + 5]) / 2, (L[k + 1] + L[k + 3]) / 2); scl.set(L[k + 2] - L[k], L[k + 5] - L[k + 4], L[k + 3] - L[k + 1]); im.setMatrixAt(i, mtx.compose(pos, qid, scl)) }
-      im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); if (mat !== glassMat) im.layers.enable(1); scene.add(im); stat.push(im);
+      im.geometry = box.clone(); im.geometry.setAttribute('iCut', new THREE.InstancedBufferAttribute(Float32Array.from(L.f || []), 1)); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); if (mat !== glassMat) im.layers.enable(1); scene.add(im); stat.push(im);
     };
     lists.forEach((L, i) => mk(L, mats[i], 'welt' + i));
     mk(gl, glassMat, 'glas', 3);
@@ -391,7 +400,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     vertexShader: 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
     fragmentShader: VISF + LITF + 'varying vec3 vC; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { gl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
   function pool(name, geo, mat, attrs, colors, order, cast) {
-    const P = { name, n: 0, cap: 0, im: null, a: {}, u: 0 };
+    const P = { name, n: 0, cap: 0, im: null, a: {}, u: 0, o: 0, k: '' };
     P.finish = () => { P.n = P.u; if (P.im) { P.im.count = P.u; P.im.visible = P.u > 0 } };
     P.size = need => {
       P.n = need; if (need > P.cap) {
@@ -415,11 +424,11 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     ball: smoothGeo(new THREE.SphereGeometry(.5, FSG.ball[0], FSG.ball[1])), dome: smoothGeo(new THREE.SphereGeometry(.5, FSG.dome[0], FSG.dome[1], 0, Math.PI * 2, 0, Math.PI / 2)), cyl: smoothGeo(new THREE.CylinderGeometry(.5, .5, 1, FSG.cyl)),
     box: smoothGeo(new THREE.BoxGeometry(1, 1, 1)),
   };
-  const figMat = new THREE.ShaderMaterial({ vertexColors: true, uniforms: Object.assign({}, UV),
+  const figMat = new THREE.ShaderMaterial({ vertexColors: true, side: THREE.DoubleSide, uniforms: Object.assign({ uLook: { value: new THREE.Vector4(FG.look.sat, 0, 0, 0) } }, UV),
     vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: VISF + LITF + 'varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { if (vA < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > vA) discard;\ngl_FragColor = vec4(litC(vC, vWp, normalize(vN)), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
-  const fpool = (name, geo) => pool(name, geo, figMat, { iA: 1 }, true, 2, 1);
-  const fP = { torso: fpool('fig-rumpf', figGeo.torso), cap: fpool('fig-glieder', figGeo.cap), head: fpool('fig-koepfe', figGeo.head), ball: fpool('fig-kugeln', figGeo.ball), dome: fpool('fig-kuppeln', figGeo.dome), cyl: fpool('fig-zylinder', figGeo.cyl), box: fpool('fig-boxen', figGeo.box) };
+    fragmentShader: VISF + LITF + 'uniform vec4 uLook; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { bool ol = vA > 1.5; float al = ol ? vA - 2.0 : vA; if (ol && gl_FrontFacing) discard; if (al < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > al) discard;\nvec3 nn = normalize(vN); float lu = dot(vC, vec3(0.299, 0.587, 0.114)); vec3 cc = ol ? vC : max(vec3(0.0), mix(vec3(lu), vC, uLook.x));\ngl_FragColor = vec4(ol ? cc : litC(cc, vWp, nn), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
+  const fpool = (name, geo, k) => { const P = pool(name, geo, figMat, { iA: 1 }, true, 2, 1); P.k = k; return P };
+  const fP = { torso: fpool('fig-rumpf', figGeo.torso, 'torso'), cap: fpool('fig-glieder', figGeo.cap, 'cap'), head: fpool('fig-koepfe', figGeo.head, 'head'), ball: fpool('fig-kugeln', figGeo.ball), dome: fpool('fig-kuppeln', figGeo.dome), cyl: fpool('fig-zylinder', figGeo.cyl), box: fpool('fig-boxen', figGeo.box) };
   // je Figur hoechstens (Rumpf, Glieder, Koepfe, Kugeln, Kuppeln, Zylinder, Boxen): fuer die Obergrenze der Instanzen
   const fMax = { torso: 1, cap: 9, head: 1, ball: 10, dome: 1, cyl: 2, box: 9 };
   const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1),
@@ -441,9 +450,14 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   const figInfo = [];
   let hitNow = 0, alNow = 1, nP = 0, topY = 0, sigN = 0;
   // Teil in Gelenk par: Mitte (x,y,z), Groesse (sx,sy,sz), Farbe, optional Drehung (rx,ry,rz) vor der Verschiebung
+  const OLK = { torso: 1, cap: 1, head: 1 }; // Teil-Arten mit Umriss (Haende, Fuesse, Huete und Zubehoer ohne, das spart rund 40 % der Dreiecke des Umrisses)
+  const fm2 = new THREE.Matrix4(); let olT = 0; const olC = new THREE.Color(); // olT Umrissdicke dieses Bildes (0 aus), olC Farbe
   const fput = (P, par, x, y, z, sx, sy, sz, col, rx, rz) => {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
     const i = P.u++; P.im.setMatrixAt(i, fm); P.im.setColorAt(i, hitNow ? hitC.copy(col).lerp(white, FG.hit) : col); P.a.iA.setX(i, alNow);
+    if (olT > 0 && OLK[P.k]) { // Umriss (Ticket 189): dieselbe Lage, aufgeblasen, nur Rueckseiten (alpha + 2 markiert ihn im Shader)
+      _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm2.multiplyMatrices(par, _l); const k = P.u++; P.o++; P.im.setMatrixAt(k, fm2); P.im.setColorAt(k, olC); P.a.iA.setX(k, alNow + 2);
+    }
     nP++; if (fm.elements[13] > topY) topY = fm.elements[13]; sigN += (fm.elements[12] * .7 + fm.elements[13] + fm.elements[14] * 1.3) * (1 + nP * .13);
   };
   const typeOf = (o, e) => (o.k === 'cop' || o.k === 'swat' || o.k === 'shield' || o.k === 'sniper') ? o.k : FG.row[o.row] || 'civA';
@@ -516,15 +530,34 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     figInfo.push([o.k, o.row, nP, Math.round(topY * 10) / 10, tHex, Math.round(sigN * 100) / 100]);
     return extra;
   }
+  // Sichtstrahl von der Kamera zu drei Punkten der Figur (Fuss, Mitte, Kopf) durch die Koerper der Kacheln (Hoehentabelle, eigene Kachel ausgenommen, offener Tresor ohne Koerper, v als Fahrzeug bis 26):
+  // verdeckt, wenn mindestens zwei Punkte blockiert sind. Nur das Stueck unter Wandhoehe wird abgeschritten.
+  const hidSamp = [8, 22, 36], hidTop = C.wallH + 4;
+  function hidden(o) {
+    camSet(); const cp = cam.position, ox = Math.floor(o.x / T), oy = Math.floor(o.y / T); let n = 0;
+    for (const hz of hidSamp) {
+      const dx = cp.x - o.x, dy = cp.y - hz, dz = cp.z - o.y, t1 = Math.min(1, Math.max(0, (dy - (hidTop - hz)) > 0 ? (hidTop - hz) / dy : 1)), N = Math.max(2, Math.ceil(Math.hypot(dx, dz) * t1 / 4)); let blocked = false;
+      for (let i = 1; i <= N && !blocked; i++) {
+        const f = t1 * i / N, x = o.x + dx * f, z = hz + dy * f, y = o.y + dz * f, tx = Math.floor(x / T), ty = Math.floor(y / T); if (tx === ox && ty === oy) continue;
+        const c = cellAt(tx, ty), e = C.cells[c]; if (!e || (e.open && X.vaultOpen)) continue;
+        if (c === 'v') { if (z < 26) blocked = true; continue }
+        for (const q of e.s) if (z >= q[0] && z <= q[1]) { blocked = true; break }
+      }
+      if (blocked) n++;
+    }
+    return n >= 2;
+  }
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
     let nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
-    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
+    // Silhouette (Ticket 188): nur fuer Figuren, die wirklich verdeckt sind. Das Sprite liegt als flaches Quadrat ueber der Figur und ragt in Waende dahinter, dort malte der Tiefentest es faelschlich orange
+    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie) && hidden(o)) : [];
     pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
-    for (const key in fP) { fP[key].size(F.length * fMax[key]); fP[key].u = 0 }
+    olT = FG.look.out || 0; { const th = (X.LAY && X.LAY.theme) || {}; olC.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) }
+    for (const key in fP) { fP[key].size(F.length * fMax[key] * (olT > 0 && OLK[key] ? 2 : 1)); fP[key].u = 0; fP[key].o = 0 }
     pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
     let iS = 0, iX = 0, lie = 0, hit = 0, gear = 0;
     const shA = pSh.a.iSA, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
@@ -534,9 +567,9 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       else { if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA) } if (o.fl) dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }) }
       gear += rigFig(o, e); if (o.hit) hit++; o._hs = lying ? FG.hsLie : cw ? FG.hsCow : FG.hs; void i;
     });
-    let figParts = 0, figCalls = 0; for (const key in fP) { const P = fP[key]; figParts += P.u; figCalls += P.u > 0 ? 1 : 0; P.finish() }
+    let figParts = 0, figCalls = 0, figOl = 0; for (const key in fP) { const P = fP[key]; figOl += P.o; figParts += P.u - P.o; figCalls += P.u > 0 ? 1 : 0; P.finish() }
     pShld.finish(); if (pShld.u > 0) figCalls++;
-    st.figParts = figParts; st.figCalls = figCalls; st.gear = gear; st.fi = figInfo.slice();
+    st.figParts = figParts; st.figOl = figOl; st.figCalls = figCalls; st.gear = gear; st.fi = figInfo.slice();
     Cs.forEach(([o, e], j) => {
       const i = F.length + j, h = e.h, dimK = o.dim ? C.wreckDim : 0;
       if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1] + 1, .4, o.a, o.L * .97, 1, o.W * .88); shA.setXY(iS++, 1, .3) }
@@ -822,8 +855,9 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     r = r == null ? 12 : r;
     if (!render()) return null; const A = grab();
     hide = o => Math.hypot(o.x - x, o.y - y) <= r; let B; try { render(); B = grab() } finally { hide = null }
-    let n = 0; for (let i = 0; i < A.length; i += 4) if (Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]) > 24) n++;
-    render(); return { vis: n / (w * h), n: w * h, box: bx };
+    let n = 0, m = 0, ds = 0, lo = 0; for (let i = 0; i < A.length; i += 4) { const d = Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]); if (d > 24) n++; if (d > 6) { m++; ds += d; if (d < 60) lo++ } }
+    // Kontrast (Ticket 189): mittlerer Farbabstand (Summe der RGB-Unterschiede 0 bis 765) der Figurenpixel zum Hintergrund ohne Figur, und Anteil der Figurenpixel unter 60 (verschmelzen mit dem Boden)
+    render(); return { vis: n / (w * h), n: w * h, box: bx, dist: m ? ds / m : 0, merge: m ? lo / m : 0, px: m };
   }
 
   // 3D-4 Sicht: X.vis() (js/draw.js vis3d) liefert null (alles sehen) oder Schluessel, Deckkraft, Kante und das Sichtpolygon (dieselbe Quelle wie die 2D-Dunkelzone, nur lokale Daten).
@@ -942,7 +976,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figOl: st.figOl, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
