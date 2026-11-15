@@ -441,6 +441,7 @@ if(DX.vanAlt&&DX.vanArr){for(const k of[-1,0]){const a=DX.LANE.pt(DX.LANE.van.st
 if((DX.vanArr||pnZone())&&!DX.ended){const e0=DX.LANE.pt(DX.LANE.exit.line,DX.LANE.exit.span[0]),e1=DX.LANE.pt(DX.LANE.exit.line,DX.LANE.exit.span[1]);q('exit',{x0:e0[0],y0:e0[1],x1:e1[0],y1:e1[1]})}
 for(const b of DX.bars)if(!(b.lv>0)&&b.rd&&DX.tk&&(DX.tk.st==='wait'||DX.tk.st==='drive')&&(DX.p.mat>0||sperre(b.g).k>0)){const c=b.cells[0];q('frame',{x0:c[0]*T+2,y0:c[1]*T+2,x1:c[0]*T+T-2,y1:c[1]*T+T-2,c:1,f:.4})}
 {const k=DX.tk;if(k&&k.st!=='wait'&&k.st!=='gone')q('tk',{x:k.x,y:k.y,L:TKL,W:TKH,fx:tkD()<0?-1:1,cargo:DX.cargoOpen?1:0,blink:L.mission.panne&&k.st==='stopped'&&!DX.ended?(((t*2.2)%1)<.5?1:0):0,smoke:k.tire<=0&&k.st==='drive'?1:0})}
+for(const b of DX.bars)if(b.lv>0)for(const c of b.cells)q('bar',{x:c[0]*T+16,y:c[1]*T+16,lv:b.lv,f:Math.max(0,Math.min(1,b.hp/(b.lv*CFG.bar.hp)))});
 const pk=[];for(const c of L.parked||[]){if(c.gone)continue;pk.push(c.x+','+c.y);q('parked',{x:c.x*T,y:c.y*T})}
 return{p:o,grl,key:grl.join(';')+'|'+pk.join(';')}}
 /* 3D-4 (Ticket 153): Sicht fuer die 3D-Ansicht, dieselbe Quelle wie die 2D-Dunkelzone in lyWorld (visPoly um DX.p, nur lokale Daten, beim Client also seine eigene Sicht), nur gelesen.

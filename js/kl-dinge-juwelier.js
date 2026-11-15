@@ -1,3 +1,3 @@
-/* Kloetzchen-Stil: Dinge (juwelier) (Ticket 198, Schritt 4). Bisher leer: hier tragen Bauer mit KL.obj(name, fn) ein (Beschreibung der Aufrufe in js/kl-kern.js und js/kl-dinge-bank.js).
-   Name mit einem Zeichen: Kachel des Rasters, sonst Art eines Szenario-Teils (V3CFG.scen.kinds), fn(k, o) mit k.dbrick(mx, mz, y0, sx, sy, sz, drehung, farbe, leuchten). Fehlt ein Bauer, zeichnet view3d wie ohne Stil. */
+/* Kloetzchen-Stil: Dinge des Juweliers (Ticket 198, Schritt 4a). Die Vitrine (vit) und das VIP-Stueck (good:vip) baut der Agent von Dinge B (js/kl-dinge-museum.js, passend fuer Museum und Juwelier),
+   damit nicht der zuletzt geladene Bauer gewinnt. Hier bleibt nichts Eigenes: Tresor, Tastenfeld und Beute des Juweliers laufen ueber die allgemeinen Bauer (js/kl-dinge-allgemein.js, Moebel js/kl-dinge-bank.js). */
 export function register(KL) { void KL; }
