@@ -12,14 +12,16 @@ export const KCFG = {
   // steifes Laufen: Laufphase in so viele Stufen je Umlauf eingerastet (Stop-Motion), Beinschwung und Armschwung
   step: 6, run: .78, swing: .7, tilt: .12,
   // Plastik: Glanzexponent, Staerke des Glanzlichts, Umgebung (Himmel in der Spiegelung), Rand (Fresnel)
-  plastic: [46, .85, .16, .55],
+  plastic: [46, .7, .04, .16],
+  // satte Spielzeugfarben: Saettigung und Figurengroesse (die Studie darf die Figuren etwas groesser zeigen als das Standard-3D)
+  sat: 1.4, size: 1.22,
   // Teile je Qualitaetsstufe (Grafik niedrig, mittel, hoch): Obergrenze fliegender Teile, Funken, Rauchpuffer, Bloom
   q: { debris: [160, 320, 560], sparks: [60, 120, 220], smoke: [24, 48, 80], bloom: [0, 1, 1], studs: [0, 1, 1] },
   // Zerfall: Schwerkraft (Weltpixel je s^2), Rueckprall, Reibung am Boden, Liegezeit der Teile, Dauer des Verschwindens
   deb: { g: 520, bounce: .38, fric: .62, rest: [5.5, 8.5], fade: .8, burstV: [70, 190], up: [140, 300], spin: 9, biasK: 70, casing: 2.4 },
   burst: ['cop', 'swat', 'grd', 'shield', 'sniper'],
   // Bloom: Schwelle (Helligkeit der sRGB-Werte), Staerke der beiden Stufen (halbe und viertel Aufloesung), Zuwachs durch Lichtblitze
-  bloom: { thr: .86, knee: .12, s: [.42, .55], flash: 1.0 },
+  bloom: { thr: .9, knee: .1, s: [.26, .34], flash: .45 },
   // Noppenraster (Weltpixel) der Bauplatte und der Wandkanten
   stud: 16, studH: 2.4, studR: 4.4, wall: 64,
   // Moebel als Bausteine: Zeichen im Raster -> Farbe, Noppen, Zusatz (Masse und Hoehe nimmt die Tabelle V3CFG.cells)
@@ -39,7 +41,8 @@ export function mkKlotz(E) {
   const K = { on: false, stil: 0, dead: false };
   const q = () => Math.max(0, Math.min(2, X.gfx | 0));
   const lod = () => X.lod | 0;
-  const colOf = E.colOf, rnd = (() => { let s = 196; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 } })();
+  const satC = new Map(), colOf = h => { let c = satC.get(h); if (!c) { c = E.colOf(h).clone(); const o = {}; c.getHSL(o); c.setHSL(o.h, Math.min(1, o.s * KC.sat), o.l); satC.set(h, c) } return c };
+  const rnd = (() => { let s = 196; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 } })();
   const rr = (a, b) => a + (b - a) * rnd();
 
   // ---------- Geometrie: Quader mit Fase (Einheitswuerfel), Noppe, Zylinder ----------
@@ -127,7 +130,7 @@ void main() {
 
   // ---------- Figur ----------
   function fig(o, e, col0) {
-    const T0 = typeOf(o, e), OT = FG.out[T0], k = 1 + ((e.r || 9) - 9) * FG.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6;
+    const T0 = typeOf(o, e), OT = FG.out[T0], k = (1 + ((e.r || 9) - 9) * FG.size) * KC.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6;
     const pw = Math.PI * 2 / KC.step, qw = run ? Math.round((o.w || 0) / pw) * pw : 0, sw = run ? Math.sin(qw) : 0, stepOdd = run ? (Math.round((o.w || 0) / pw) & 1) : 0;
     const gun = !lying && !kneel && o.ar && T0 !== 'sniper', rifle = !lying && !kneel && o.rf, shield = !lying && !kneel && o.sh >= 0, side = [1, -1];
     const top = colOf(OT.top), bot = colOf(OT.bot), skin = colOf(FG.skin), glv = colOf(OT.gl || FG.skin), hat = colOf(OT.hat || OT.bot), dark = colOf(FG.dark), eye = colOf(FG.eye), gunC = colOf(FG.gun), boot = colOf(FG.boot);
@@ -190,7 +193,7 @@ void main() {
 
   // ---------- Fahrzeug aus Bausteinen (Vorwaerts +x, oben +y, rechts +z) ----------
   const carLook = (o, e) => {
-    const rowC = E.carCol[o.row] || E.carCol[0], pol = o.k === 'pol' || (o.k === 'vh' && e.bar);
+    const rowC = (() => { const c = (E.carCol[o.row] || E.carCol[0]).clone(), h = {}; c.getHSL(h); return c.setHSL(h.h, Math.min(1, h.s * KC.sat), h.l) })(), pol = o.k === 'pol' || (o.k === 'vh' && e.bar);
     return { pol, body: pol ? colOf(KC.car.pol[0]) : rowC.clone().multiplyScalar(1.05), roof: pol ? colOf(KC.car.pol[1]) : rowC.clone().multiplyScalar(1.15) };
   };
   let carBlink = 0;
@@ -238,7 +241,9 @@ void main() {
   const topH = (x, y) => { const c = E.cellAt(Math.floor(x / T), Math.floor(y / T)), e = C.cells[c]; if (!e || (e.open && X.vaultOpen)) return 0; let h = 0; for (const s of e.s) if (s[0] === 0) h = Math.max(h, s[1]); return h };
   const capD = () => KC.q.debris[q()] >> (lod() >= 3 ? 1 : 0);
   function spawnDeb(parts, cx, cy, o) {
+    parts = parts.slice();
     const B = KC.deb, me = X.me;
+    if (o.split) { const more = []; for (const p of parts) { const big = Math.max(...p.s); if (big < 9) continue; const n = big > 40 ? 6 : big > 20 ? 4 : 2; p.s = p.s.map(v => v * .5); for (let i = 0; i < n; i++) more.push({ m: p.m.clone().multiply(new THREE.Matrix4().makeTranslation(rr(-.5, .5), rr(-.5, .5), rr(-.5, .5))), c: p.c, e: p.e, s: p.s.map(v => v * rr(.45, .8)) }) } parts = parts.concat(more) }
     for (const p of parts) {
       p.m.decompose(tp, tq, ts); const kx = tp.x - cx, kz = tp.z - cy, l = Math.hypot(kx, kz) || 1, v = rr(B.burstV[0], B.burstV[1]) * (o.k || 1);
       let bx = kx / l, bz = kz / l; if (o.dir) { bx = bx * .6 + o.dir[0] * .8; bz = bz * .6 + o.dir[1] * .8 }
@@ -257,7 +262,7 @@ void main() {
   }
   function burstCar(o, e, look) {
     out = []; carBlink = 0; car(Object.assign({}, o, { k: look.k || 'civ', bl: 0 }), e, look); const parts = out; out = null;
-    spawnDeb(parts, o.x, o.y, { k: 1.2, up: .85, em: .55, dir: null }); sparkAt(o.x, o.y, 16, 44, 240, 1); smokeAt(o.x, o.y, 12, 9, 1.8); flashes.push({ x: o.x, y: o.y, t: 0, k: 1.4 });
+    spawnDeb(parts, o.x, o.y, { k: 1.7, up: .75, em: .55, dir: null, split: 1, scale: .8 }); sparkAt(o.x, o.y, 16, 44, 200, 1); smokeAt(o.x, o.y, 12, 9, 1.8); flashes.push({ x: o.x, y: o.y, t: 0, k: .8 });
   }
   let carsNow = []; const seenKey = new Set(); let primed = false, lastT = null, prevCars = [], shotT = new Map(), alarmPh = 0, flashK = 0;
   K.reset = () => { seenKey.clear(); primed = false; deb.length = 0; sparks.length = 0; puffs.length = 0; flashes.length = 0; lastT = null; prevCars = []; shotT.clear() };
@@ -301,7 +306,7 @@ void main() {
   const sr = (c, a) => [c[0], c[1], c[2], a];
   K.step = (D0, FA, FN, dynL) => {
     const t = D0.t, dt = lastT == null ? 0 : Math.max(0, Math.min(.05, t - lastT)); if (lastT != null && t < lastT - 1) { K.reset(); lastT = t; return }
-    lastT = t; alarmPh += dt; carBlink += dt;
+    const dr = lastT == null ? 0 : Math.max(0, Math.min(1, t - lastT)); lastT = t; alarmPh += dr; carBlink += dr;
     for (const j of queue.splice(0)) {
       if (j.k === 'fig') burstFig(j.o, j.e);
       else if (j.k === 'car') burstCar(j.o, j.e, j.look);
@@ -325,8 +330,8 @@ void main() {
     // Funken und Rauch
     for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.l -= dt; if (s.l <= 0) { sparks.splice(i, 1); continue } s.vh -= B.g * .8 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.h += s.vh * dt; if (s.h < 1) { s.h = 1; s.vh = Math.abs(s.vh) * .35; s.vx *= .6; s.vy *= .6 } }
     for (let i = puffs.length - 1; i >= 0; i--) { const s = puffs[i]; s.l -= dt; if (s.l <= 0) { puffs.splice(i, 1); continue } s.x += s.vx * dt; s.y += s.vy * dt; s.h += s.vh * dt; s.s += 6 * dt }
-    for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i]; f.t += dt; if (f.t > .5) { flashes.splice(i, 1); continue } }
-    let fl = 0; for (const f of flashes) fl = Math.max(fl, f.k * (1 - f.t / .5));
+    for (let i = flashes.length - 1; i >= 0; i--) { const f = flashes[i]; f.t += dt; if (f.t > .3) { flashes.splice(i, 1); continue } }
+    let fl = 0; for (const f of flashes) fl = Math.max(fl, f.k * (1 - f.t / .3));
     flashK = Math.max(flashK * Math.pow(.02, dt), fl);
     // wegschmelzen: Teile in der Ruhe verschwinden nach life Sekunden, am Ende klein werden
     for (let i = deb.length - 1; i >= 0; i--) if (deb[i].rest && deb[i].still > deb[i].life + B.fade) deb.splice(i, 1);
@@ -343,15 +348,15 @@ void main() {
     const fp = E.fp, hc = E.hc;
     for (const s of sparks) { const a = s.l / s.m, c = s.c ? [1, .78, .34] : [1, .62, .22]; fp(FA, s.x, s.y, s.h, 1.1, 3, c, Math.min(1, a * 1.6), -s.vx * .045, -s.vy * .045, 0, -s.vh * .045) }
     for (const s of puffs) { const a = s.l / s.m; fp(FN, s.x, s.y, s.h, s.s, 0, [.2 + .1 * a, .19 + .1 * a, .19 + .08 * a], s.a * Math.min(1, a * 2.2) * .8) }
-    for (const f of flashes) { const a = 1 - f.t / .5; fp(FA, f.x, f.y, 14, 34 * f.k * (1 + f.t * 2), 0, hc(0xffb35a), .85 * a); fp(FA, f.x, f.y, 14, 12 * f.k, 0, hc(0xffffff), a) }
+    for (const f of flashes) { const a = 1 - f.t / .3; fp(FA, f.x, f.y, 14, 22 * f.k * (1 + f.t * 2), 0, hc(0xffb35a), .45 * a); fp(FA, f.x, f.y, 14, 7 * f.k, 0, hc(0xffffff), .6 * a) }
     // Leuchten der Bausteine: Haelo um Blaulicht, Heck- und Scheinwerfer, Bodenfarbe des Blaulichts, Alarmlampen
     for (const [o, e] of carsNow) {
       if (e.bar && o.bl) { const a = o.bl === 1, c1 = hc(a ? KC.car.bar[0] : KC.car.bar[1]), c2 = hc(a ? KC.car.bar[1] : KC.car.bar[0]), ca = Math.cos(o.a), sa = Math.sin(o.a), bh = (o.k === 'pol' ? 28 : 11 + (e.h - 11) * .76 + 2.4) + 2, bx = o.k === 'pol' ? -(o.L * C.carK[0]) * .03 : (o.L * C.carK[0]) / 2 - o.L * C.carK[0] * .15, wz = o.W * C.carK[1] * .22;
         for (const [sz, c] of [[-1, c1], [1, c2]]) { const lx = o.x + ca * bx - sa * sz * wz, ly = o.y + sa * bx + ca * sz * wz; fp(FA, lx, ly, bh, 13, 0, c, .72); fp(FA, lx, ly, bh, 5, 0, [1, 1, 1], .7) }
         fp(FA, o.x, o.y, .5, 92, 0, c1, .2, 0, 0, 1); fp(FA, o.x, o.y, .5, 60, 0, c2, .12, 0, 0, 1) }
     }
-    if (X.alarm && E.lamps.length) for (const l of dynL) if (l.k === 'alarm') fp(FA, l.x, l.y, 56, 16 + 24 * l.i, 0, hc(0xff2a1c), .22 + .6 * l.i);
-    for (const f of flashes) dynL.push({ k: 'boom', x: f.x, y: f.y, r: 220 * f.k, i: (1 - f.t / .5) * f.k });
+    if (X.alarm && E.lamps.length) { let n = 0; for (const l of dynL) if (l.k === 'alarm') { fp(FA, l.x, l.y, 56, 12 + 16 * l.i, 0, hc(0xff2a1c), .2 + .6 * l.i); const a = alarmPh * KC.alarm.spin + n++ * Math.PI; for (let j = 1; j <= 6; j++) fp(FA, l.x + Math.cos(a) * j * 22, l.y + Math.sin(a) * j * 22, .5, 10 + j * 6, 0, hc(0xff2a1c), .42 * l.i + .06, 0, 0, 1) } }
+    for (const f of flashes) dynL.push({ k: 'boom', x: f.x, y: f.y, r: 220 * f.k, i: (1 - f.t / .3) * f.k * .7 });
   };
 
   // ---------- Welt: Moebel als Bausteine, Noppen, Bauplatte, Fugen ----------
@@ -443,7 +448,7 @@ vec3 studC(vec3 c, vec2 w, inout vec3 n, float top) {
     const w = Math.max(0, Math.min(2, X.kstil | 0)); K.on = w > 0 && !K.dead; K.stil = w;
     if (w === applied) return false; const was = applied; applied = w; K.patch(w === 2); if (was === -1 && w === 0) return false; return true;
   };
-  K.info = () => ({ stil: K.stil, on: K.on, deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, studs: studsOn(), q: q(), cars: carsNow.length });
+  K.info = () => ({ alarmPh: Math.round(alarmPh * 100) / 100, stil: K.stil, on: K.on, deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, studs: studsOn(), q: q(), cars: carsNow.length });
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
   K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); studGeo.dispose(); fsGeo.dispose(); K.patch(false); K.dead = true; K.on = false; };
   return K;

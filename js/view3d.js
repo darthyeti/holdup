@@ -521,7 +521,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   // Stilstudie Kloetzchen: Figuren und Fahrzeuge zeichnet K (js/view3d-kloetzchen.js), die uebrigen Gruppen bleiben leer, die Silhouetten hinter Waenden (3D-3) laufen wie vorher
   function kDyn(F, Cs, S, fk, ck) {
     for (const P of [pSh, pBox, pTop, pShld].concat(Object.values(fP))) { P.size(0); P.u = 0; P.finish() }
-    pSil.size(S.length); const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, C.fig.hsK || 48, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
+    pSil.size(S.length); const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, C.fig.hsK || 56, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
     const r = K.dyn(F, Cs, dynL);
     st.figParts = r.parts; st.figCalls = 1; st.gear = r.gear; st.fi = []; st.sil = S.length; st.sk = sk; st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = r.lie; st.hit = r.hit; st.xparts = 0;
     st.dynCalls = pools.filter(P => P.im && P.im.visible).length;

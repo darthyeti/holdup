@@ -12,7 +12,7 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   const env = await lib.launch({ webgl: true });
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
-  await page.evaluate(async (stil) => { __dbg.view3d.kstil = +stil; await __dbg.view3d.set(true); }, STIL);
+  if (STIL !== 'x') await page.evaluate(async (stil) => { __dbg.view3d.kstil = +stil; await __dbg.view3d.set(true); }, STIL);
   const prep = await page.evaluate(([sc, flow]) => {
     const D = __dbg; if (sc === 'museum') D.setLage(['nacht']);
     PX.scene(sc, 5); if (sc === 'museum') { D.setLage(['nacht']); D.buildSeed(5); D.ptClear(); }
@@ -39,6 +39,13 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   if (FLOW === 'ueberblick') {
     const el = await page.$('main'), bb = await el.boundingBox(); await page.evaluate(() => { __dbg.draw(); __dbg.draw() });
     const f = path.join(OUT, `${SC}-s${STIL}-ueberblick.jpg`); await page.screenshot({ path: f, type: 'jpeg', quality: 88, clip: bb }); console.log(f);
+  } else if (FLOW === 'vergleich') {
+    // gleiche Szene (Polizei-Phase), Spielkamera mit HUD, Ausschnitt um den Spieler; Stil x ist 2D
+    const pos = await page.evaluate(() => { PX.phase('polizei'); const D = __dbg; D.get().me.hp = 1e9; D.draw(); D.draw(); const m = D.get().me, c = D.cam(), V = D.view3d.V; const s = V && V.shown ? V.toScr(m.x, m.y, 20) : [m.x - c[0], m.y - c[1]]; return s });
+    const el = await page.$('main'), bb = await el.boundingBox(), f = path.join(OUT, `${SC}-${STIL === 'x' ? '2d' : 's' + STIL}-vergleich.jpg`);
+    await page.screenshot({ path: f, type: 'jpeg', quality: 90, clip: bb });
+    const w = 520, h = 330, x0 = Math.max(0, Math.min(bb.width - w, pos[0] - w / 2)), y0 = Math.max(0, Math.min(bb.height - h, pos[1] - h * .55));
+    execFileSync('python3', ['-I', '-c', 'import sys\nfrom PIL import Image\nf=sys.argv[1]; b=[float(v) for v in sys.argv[2:6]]\nim=Image.open(f).convert("RGB").crop((int(b[0]),int(b[1]),int(b[0]+b[2]),int(b[1]+b[3])))\nim.resize((im.width*2,im.height*2),Image.LANCZOS).save(f,quality=90)', f, String(x0), String(y0), String(w), String(h)]); console.log(f);
   } else if (FLOW === 'laufen') {
     await step(1, 'D.keys.d=1;D.keys.w=0'); info = await shot('f0'); for (let k = 1; k < 8; k++) { await step(3, 'D.keys.d=1'); info = await shot('f' + k) } await step(1, 'for(const k of "wasd")delete D.keys[k]');
   } else if (FLOW === 'schiessen') {
