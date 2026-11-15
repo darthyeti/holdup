@@ -700,7 +700,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     const cones = [];
     for (const o of P) {
       const e = C.scen.kinds[o.k], b = SCEN[o.k], k = e && b ? o.k : '?' + o.k; kk[k] = (kk[k] || 0) + 1; if (!e || !b) continue;
-      const kb = K && K.on && K.sceneBuilder(o.k); if (o.k === 'cone') cones.push(o); else if (kb) kb(K.kit, o); else b(o); scenLast.push(o.k);
+      const kb = K && K.on && K.sceneBuilder(o); if (o.k === 'cone') cones.push(o); else if (kb) kb(K.kit, o); else b(o); scenLast.push(o.k);
     }
     if (K && K.on) K.scenEnd();
     for (const g in SB) {
@@ -999,7 +999,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
 
   // Kloetzchen-Stil (Ticket 196 und 198): Werkzeuge der Ansicht fuer js/kl-kern.js (mkKl), erst nach dem Bau von allem, Modul nur mit Schalter geladen (X.klotz)
   if (X.klotz) {
-    K = X.klotz({ X, C, scene, cam, ren, UV, UL, st, pool, pools, colOf, FG, typeOf, carCol, xcol, cellAt, mats, groundMat, shMat, flatGeo, GL: V3GLSL, fp, hc, get lamps() { return lamps } });
+    K = X.klotz({ X, C, scene, cam, ren, UV, UL, st, pool, pools, colOf, FG, typeOf, carCol, xcol, cellAt, topAt, mats, groundMat, shMat, flatGeo, GL: V3GLSL, fp, hc, get lamps() { return lamps } });
     for (const m of K.mats) litMats.push(m);
   }
   return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
