@@ -200,7 +200,7 @@ vec3 gradeC(vec3 c) {
   float d = length(gl_FragCoord.xy - uVig.xy); return c * (1.0 - uVigA * clamp((d - uVig.z) / max(1.0, uVig.w - uVig.z), 0.0, 1.0));
 }
 `;
-export const V3GLSL = { VISF, LITF }; // fuer js/view3d-kloetzchen.js (Ticket 196)
+export const V3GLSL = { VISF, LITF }; // fuer js/kl-kern.js (Ticket 196 und 198)
 // Shader der statischen Welt: Kloetze als Instanzen eines Einheitswuerfels, Bild-Koordinate aus der Weltlage (Seiten um edge nach innen versetzt, sie zeigen den Randpixel der Kachel),
 // Helligkeit je Flaechenrichtung aus V3CFG.shade. Farbraum wie MeshBasicMaterial (sRGB-Textur, Ausgabe ueber colorspace_fragment).
 const VS = `uniform vec4 uOrg; uniform vec4 uSh; uniform float uFoot; uniform float uWallH; uniform float uEdge; uniform float uVisIn; varying vec2 vUv; varying float vSh; varying vec3 vW; varying vec2 vM; varying vec3 vN;
@@ -227,7 +227,7 @@ void main() {
 
 export function mkView3d(X) {
   const C = V3CFG, T = X.T, VW = X.VW, VH = X.VH;
-  let ren, K = null; // K: Stilstudie Kloetzchen (Ticket 196, js/view3d-kloetzchen.js), nur mit Schalter und geladenem Modul, sonst null (dann ist alles wie vorher)
+  let ren, K = null; // K: Kloetzchen-Stil (Ticket 196 und 198, js/kl-kern.js), nur mit geladenem Modul (X.klotz), sonst null (dann ist alles wie vorher)
   try {
     ren = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   } catch (e) { return { on: false, err: 'kein WebGL 2 (' + String(e && e.message || e).slice(0, 60) + ')' }; }
@@ -518,23 +518,15 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     figInfo.push([o.k, o.row, nP, Math.round(topY * 10) / 10, tHex, Math.round(sigN * 100) / 100]);
     return extra;
   }
-  // Stilstudie Kloetzchen: Figuren und Fahrzeuge zeichnet K (js/view3d-kloetzchen.js), die uebrigen Gruppen bleiben leer, die Silhouetten hinter Waenden (3D-3) laufen wie vorher
-  function kDyn(F, Cs, S, fk, ck) {
-    for (const P of [pSh, pBox, pTop, pShld].concat(Object.values(fP))) { P.size(0); P.u = 0; P.finish() }
-    pSil.size(S.length); const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, C.fig.hsK || 56, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
-    const r = K.dyn(F, Cs, dynL);
-    st.figParts = r.parts; st.figCalls = 1; st.gear = r.gear; st.fi = []; st.sil = S.length; st.sk = sk; st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = r.lie; st.hit = r.hit; st.xparts = 0;
-    st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
-    dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
-  }
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
+    // Kloetzchen-Stil (js/kl-kern.js): Figuren und Fahrzeuge der Arten mit Bauer zeichnet K, der Rest laeuft wie sonst
+    const FK = [], CK = []; if (K && K.on) { for (let i = F.length - 1; i >= 0; i--) if (K.hasFig(F[i][0], F[i][1])) FK.unshift(F.splice(i, 1)[0]); for (let i = Cs.length - 1; i >= 0; i--) if (K.hasCar(Cs[i][0])) CK.unshift(Cs.splice(i, 1)[0]) }
     let nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
     for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
-    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
-    if (K && K.on) return kDyn(F, Cs, S, fk, ck);
+    const S = C.sil ? F.concat(FK).filter(([o, e]) => o.sc && !(e.lie || o.lie)) : [];
     pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
     for (const key in fP) { fP[key].size(F.length * fMax[key]); fP[key].u = 0 }
     pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
@@ -557,10 +549,11 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
       if (e.bar && o.bl) { const r = o.bl === 1; box(o.x, o.y, h, o.a, 5, 4, 9, -4, -6, r ? xcol.red[0] : xcol.blue[0]); box(o.x, o.y, h, o.a, 5, 4, 9, -4, 6, r ? xcol.blue[0] : xcol.red[0]) }
       put(pTop, j, o.x, o.y, h + .5, o.a, o.L * o.fx, 1, o.W * o.fy); pTop.a.iCell.setXYZW(j, 0, o.row, 0, 1); pTop.a.iDim.setX(j, dimK); void i;
     });
+    if (K && K.on) { const r = K.dyn(FK, CK, dynL); gear += r.gear; lie += r.lie; hit += r.hit; st.kParts = r.parts }
     const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, o._hs, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
     st.sil = S.length; st.sk = sk;
-    st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX + gear; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
-    dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
+    st.figs = F.length + FK.length; st.cars = Cs.length + CK.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX + gear; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
+    dynLast = { f: F.concat(FK).map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.concat(CK).map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
   }
 
   // 3D-6 (Ticket 155): Szenario-Besonderheiten. X.scen() (js/draw.js scen3d) liefert je Bild die Teile mit Zustand (dieselbe Auswahl wie lyWorld), SCEN baut daraus Kloetze in vier Gruppen:
@@ -670,12 +663,13 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   let scenLast = [], scKey = '';
   const scenPools = { s: pSc, l: pScL, f: pScF, i: pScI };
   function buildScen(S) {
-    const P = S ? S.p : [], kk = {}; SB = { s: [], l: [], f: [], i: [] }; scenLast = [];
+    const P = S ? S.p : [], kk = {}; SB = { s: [], l: [], f: [], i: [] }; scenLast = []; if (K && K.on) K.scenBegin();
     const cones = [];
     for (const o of P) {
       const e = C.scen.kinds[o.k], b = SCEN[o.k], k = e && b ? o.k : '?' + o.k; kk[k] = (kk[k] || 0) + 1; if (!e || !b) continue;
-      if (o.k === 'cone') cones.push(o); else b(o); scenLast.push(o.k);
+      const kb = K && K.on && K.sceneBuilder(o.k); if (o.k === 'cone') cones.push(o); else if (kb) kb(K.kit, o); else b(o); scenLast.push(o.k);
     }
+    if (K && K.on) K.scenEnd();
     for (const g in SB) {
       const L = SB[g], Pl = scenPools[g]; Pl.size(L.length);
       L.forEach((q, i) => { if (g === 'i') put(Pl, i, q[0], q[1], q[2] + q[4] / 2, q[6], q[3], q[4], q[5]); else { put(Pl, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); Pl.im.setColorAt(i, colOf(q[7])); if (Pl.a.iA) Pl.a.iA.setX(i, q[8]) } });
@@ -805,7 +799,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   function angle() { const a = +X.angle; return a >= 20 && a <= 30 ? a : 25 }
   function camSet() {
     tgt.set(X.camX + VW / 2, 0, X.camY + VH / 2 - C.camLead);
-    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180), a = angle() * Math.PI / 180;
+    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1), a = angle() * Math.PI / 180;
     cam.position.set(tgt.x, D * Math.cos(a), tgt.z + D * Math.sin(a)); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
   }
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), v3 = new THREE.Vector3();
@@ -969,11 +963,11 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [...Object.values(figGeo), cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); if (K) K.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
-  // Stilstudie Kloetzchen (Ticket 196): Werkzeuge der Ansicht fuer js/view3d-kloetzchen.js, erst nach dem Bau von allem, Modul nur mit Schalter geladen (X.klotz)
+  // Kloetzchen-Stil (Ticket 196 und 198): Werkzeuge der Ansicht fuer js/kl-kern.js (mkKl), erst nach dem Bau von allem, Modul nur mit Schalter geladen (X.klotz)
   if (X.klotz) {
     K = X.klotz({ X, C, scene, cam, ren, UV, UL, st, pool, pools, colOf, FG, typeOf, carCol, xcol, cellAt, mats, groundMat, shMat, flatGeo, GL: V3GLSL, fp, hc, get lamps() { return lamps } });
     for (const m of K.mats) litMats.push(m);
   }
-  return Object.assign(api, { hasK: !!K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
+  return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
 mkView3d.api = 10;
