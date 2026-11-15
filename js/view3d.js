@@ -71,7 +71,7 @@ export const V3CFG = {
     seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
     // look (Ticket 189): Figuren heben sich vom Boden ab. sat Saettigung der Kleidung, out Dicke des Umrisses in Weltpixeln (zweite, aufgeblasene Instanz je Teil, nur die Rueckseiten, outDay dunkel,
     // outNight hell bei dunkler Szene, seit Ticket 198 gedaempft: Mittelgrau, Dicke outNightW und Deckkraft outNightA, nur nachts), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
-    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0x7c879c, outNightW: .6, outNightA: .6 },
+    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0x9aa5ba, outNightW: .75, outNightA: .6 },
     hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
     out: {
       rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },

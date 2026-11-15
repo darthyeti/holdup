@@ -4,16 +4,16 @@
 const path = require('path'), fs = require('fs'), { execFileSync } = require('child_process');
 const ROOT = process.env.HOLDUP_ROOT || path.join(__dirname, '..');
 const lib = require(path.join(ROOT, 'tests', 'lib'));
-const [OUT, SC = 'bank', LAGE = 'nacht', STIL = '1'] = process.argv.slice(2);
+const [OUT, SC = 'bank', LAGE = 'nacht', STIL = '1', SEED = '13'] = process.argv.slice(2);   // Seed nur zur Karte (die Nacht wird ueber theme.tod erzwungen)
 (async () => {
   const env = await lib.launch({ webgl: true });
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
   const files = [];
-  await page.evaluate(async ([sc, lage, kl]) => {
-    const D = __dbg; D.view3d.kstil = +kl; await D.view3d.set(true); PX.scene(sc, 5); D.CFG.vanLock = 0; PX.phase('erkundung'); D.get().me.hp = 1e9;
-    const L = D.LAY(); if (lage !== 'tag') { L.mission.lg = (L.mission.lg || []).concat(lage); D.view3d.reset(); await D.view3d.set(true); }
-  }, [SC, LAGE, STIL]);
+  await page.evaluate(async ([sc, lage, kl, seed]) => {
+    const D = __dbg; D.view3d.kstil = +kl; await D.view3d.set(true); PX.scene(sc, +seed); D.CFG.vanLock = 0; PX.phase('erkundung'); D.get().me.hp = 1e9;
+    const L = D.LAY(); if (lage === 'nacht') { L.theme.tod = 'nacht'; D.view3d.reset(); await D.view3d.set(true); }   // echte dunkle Nachtszene (Himmel, Licht, Umriss), die Seed-Lage reicht bei der Bank nicht
+  }, [SC, LAGE, STIL, SEED]);
   for (const k of ['strasse', 'innen', 'gegner']) {
     const r = await page.evaluate(async (k) => {
       const D = __dbg, g = D.get(), me = g.me, W = D.world(), T = 32, L = D.LAY(), B = L.bld, free = (x, y) => !W.isSol(Math.floor(x / T), Math.floor(y / T)); g.en.length = 0; me.hp = 1e9;
@@ -29,7 +29,7 @@ const [OUT, SC = 'bank', LAGE = 'nacht', STIL = '1'] = process.argv.slice(2);
     console.log(k, JSON.stringify(r));
   }
   const args = files.flatMap(([f, s]) => [f, String(s[0]), String(s[1])]);
-  execFileSync('python3', ['-I', '-c', 'import sys,os\nfrom PIL import Image\nout=sys.argv[1]; a=sys.argv[2:]; w,h=200,170; S=Image.new("RGB",(w*3*2,h*2))\nfor i in range(3):\n    f,cx,cy=a[i*3],float(a[i*3+1]),float(a[i*3+2]); im=Image.open(f).convert("RGB"); x0=int(max(0,min(im.width-w,cx-w/2))); y0=int(max(0,min(im.height-h,cy-h/2))); S.paste(im.crop((x0,y0,x0+w,y0+h)).resize((w*2,h*2),Image.LANCZOS),(i*w*2,0)); os.remove(f)\nS.save(out,quality=90)', OUT, ...args]);
+  execFileSync('python3', ['-I', '-c', 'import sys,os\nfrom PIL import Image\nout=sys.argv[1]; a=sys.argv[2:]; w,h=420,300; S=Image.new("RGB",(w*3,h))\nfor i in range(3):\n    f,cx,cy=a[i*3],float(a[i*3+1]),float(a[i*3+2]); im=Image.open(f).convert("RGB"); x0=int(max(0,min(im.width-w,cx-w/2))); y0=int(max(0,min(im.height-h,cy-h/2))); S.paste(im.crop((x0,y0,x0+w,y0+h)),(i*w,0)); os.remove(f)\nS.save(out,quality=90)', OUT, ...args]);
   if (page.errors.length) console.log('Fehler', page.errors.slice(0, 3));
   await env.browser.close(); env.srv.close();
 })();
