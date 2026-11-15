@@ -11,19 +11,20 @@ async function glPage(t) {
   await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
 }
 const TILES = ['C', 'e', 'm', 'b', 'r', 'A', 'k', 'q', 'p', 'f', 'u', 'X'];           // Kacheln dieses Teils (g, P, V, Y, W, # bleiben schlicht)
-const KINDS = ['vault', 'pad', 'note', 'bundle', 'bag', 'dark', 'good', 'pump', 'tk'];
-const GOODS = ['cig', 'shelf'];
+const KINDS = ['vault', 'pad', 'note', 'bundle', 'bag', 'dark', 'pump', 'tk'];
+const GOODS = ['good:cig', 'good:shelf'];
 module.exports = [
   {
-    name: 'Kloetzchen-Dinge A: jede Kachelart und jedes Szenario-Teil von Bank, Juwelier, Tankstelle und Strasse hat einen Bauer, Beute-Verteiler KL.goods',
+    name: 'Kloetzchen-Dinge A: jede Kachelart und jedes Szenario-Teil von Bank, Juwelier, Tankstelle und Strasse hat einen Bauer, Beute-Stuecke als good:n',
     async run(t) {
       const root = lib.ROOT, K = await import(pathToFileURL(path.join(root, 'js', 'kl-kern.js')).href), V = await import(pathToFileURL(path.join(root, 'js', 'view3d.js')).href), KL = K.KL;
       t.eq(TILES.filter(c => !KL.hasObj(c)), [], 'Kacheln ohne Bauer');
       t.eq(KINDS.filter(c => !KL.hasObj(c)), [], 'Szenario-Teile ohne Bauer');
       t.eq(KINDS.filter(c => !V.V3CFG.scen.kinds[c]), [], 'Arten, die V3CFG nicht kennt');
       t.eq(TILES.filter(c => !V.V3CFG.cells[c]), [], 'Kacheln ohne Eintrag in der Hoehentabelle');
-      t.eq(GOODS.filter(g => typeof KL.goods[g] !== 'function'), [], 'Beute-Stuecke ohne Bauer');
-      t.ok(typeof KL.goods === 'object' && KL.util && typeof KL.util.top === 'function', 'Verteiler und Helfer da');
+      t.eq(GOODS.filter(g => !KL.hasObj(g)), [], 'Beute-Stuecke ohne Bauer');
+      t.ok(!KL.hasObj('good') && !KL.goods, 'kein allgemeines good: ein Beute-Stueck ohne Bauer zeichnet view3d klassisch (nie unsichtbar)');
+      t.ok(KL.util && typeof KL.util.top === 'function', 'Helfer da');
     },
   },
   {
@@ -77,12 +78,15 @@ module.exports = [
           a = sd(); o.gad = cnt(); o.err1 = a.err;
           const KL = K.KL, bak = {}; for (const n of ['d:trap', 'd:aid', 'd:dcy']) { bak[n] = KL.objs[n]; delete KL.objs[n]; } a = sd(); o.noHook = cnt(); o.err2 = a.err; Object.assign(KL.objs, bak);
           const B = D.bars()[0]; if (B) { B.lv = 2; B.hp = 60; for (const c of B.cells) {} a = sd(); o.bar2 = cnt(); const full = B.lv * D.CFG.bar.hp; B.hp = full; sd(); o.barOk = cnt(); B.hp = 1; sd(); o.barLow = cnt(); }
+          const sb = n => !!K.sceneBuilder({ k: 'good', n }), kc = K.sceneBuilder({ k: 'd:trap' }); o.good = [sb('cig'), sb('shelf'), sb('unbekannt'), !!kc]; const gb = KL.objs['good:cig']; delete KL.objs['good:cig']; o.goodOff = sb('cig'); sd(); o.err3 = V.info().err; KL.objs['good:cig'] = gb;
           await D.view3d.set(false); return o; })()`);
         if (r.i0) { t.note('3D nicht verfuegbar'); return; }
         t.note(JSON.stringify(r));
         t.ok(r.err1 === '' && r.err2 === '', 'keine Fehler');
         t.ok(r.gad > r.base, 'Gadgets am Boden sind Kloetze (' + r.base + ' auf ' + r.gad + ')');
         t.ok(r.noHook < r.gad, 'ohne Bauer faellt das Ding klassisch zurueck (' + r.noHook + ')');
+        t.eq(r.good, [true, true, false, true], 'Bauer-Wahl: good:cig, good:shelf da, unbekannte Unterart nicht, d:trap da');
+        t.ok(r.goodOff === false && r.err3 === '', 'ohne good:cig faellt das Stueck klassisch zurueck, ohne Fehler');
         if (r.barOk != null) t.ok(r.barLow > r.barOk, 'Barrikade: Schaden fuegt Teile hinzu (' + r.barOk + ' auf ' + r.barLow + ')');
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }

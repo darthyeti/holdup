@@ -1,13 +1,12 @@
 /* Kloetzchen-Stil: Dinge (allgemein) (Ticket 198, Schritt 4a). Bauer fuer Szenario-Teile (KL.obj mit Namen der Art, fn(k, o) je Bild mit k.dbrick(mx, mz, y0, sx, sy, sz, drehung, farbe, leuchten))
    und Kacheln (ein Zeichen, fn(k, x, y, ch, spec) beim Bau der Welt mit k.brick, k.studs, k.shadow, siehe js/kl-kern.js und js/kl-dinge-bank.js).
    Hier: Tresortuer (vault) und Tastenfeld (pad), Notizen/Fundorte des Codes (note), Geldbuendel (bundle), Beutesack (bag), leere Kassen und Automaten (dark), Zaun f, Barrikade X.
-   Dazu zwei Verteiler fuer andere Dateien: KL.goods (Beute-Stuecke nach Name n, Museum und Casino tragen ihre Arten dort ein) und KL.util (kleine Helfer).
+   Dazu KL.util (kleine Helfer). Beute-Stuecke (good) baut jede Datei fuer ihre eigenen Namen als KL.obj('good:'+n), fehlt der Bauer, zeichnet view3d klassisch (nie unsichtbar).
    Wande, Fenster, Tueren und Boden bleiben schlicht (Welt A), dort gibt es keinen Bauer. Alles aus Zustand der Karte und der Beute (scen3d), das auch ein Client hat. */
 // Oberkante des Koerpers der Kachel an (x, y) in Weltpixeln (wie view3d topAt), fuer Dinge, die auf Moebeln liegen
 function top(k, x, y) { const c = k.E.cellAt(Math.floor(x / k.T), Math.floor(y / k.T)), e = k.C.cells[c]; if (!e || (e.open && k.X.vaultOpen)) return 0; let h = 0; for (const s of e.s) if (s[0] === 0) h = Math.max(h, s[1]); return h }
 export function register(KL) {
   KL.util = { top };
-  KL.goods = KL.goods || {}; // Name n -> fn(k, o, rc, t): ein Beute-Stueck (o.done genommen), Juwelier, Tankstelle, Museum, Casino ergaenzen
   const T = 32, B = (k, ...a) => k.dbrick(...a);
 
   // ---------- Tresortuer: Handrad (zu) oder aufgeschwenktes Blatt (offen), Lage im Rahmen der Tuer wie die 2D-Zeichnung ----------
@@ -62,8 +61,6 @@ export function register(KL) {
     else { B(k, o.x, o.y, t, 15, 6.6, 12, 0, 0x2f343c); B(k, o.x, o.y + 6.3, t + 5, 5, 1.4, .6, 0, 0xe5392e, 1) }
   });
 
-  // ---------- Beute-Stuecke nach Name (Juwelier, Tankstelle, Museum, Casino): Verteiler ueber KL.goods ----------
-  KL.obj('good', (k, o) => { const r = o.rc, t = top(k, r[0] + r[2] / 2, r[1] + r[3] / 2), f = KL.goods[o.n]; if (f) f(k, o, r, t); else if (o.done) B(k, r[0] + r[2] / 2, r[1] + r[3] / 2, t, Math.max(2, r[2] - 6), .5, Math.max(2, r[3] - 6), 0, 0x1a1512) });
 
   // ---------- Zaun f: Pfosten und zwei Latten, quer zur Nachbarschaft; Barrikade X: Bretter, Balken, Nieten ----------
   const isF = (k, x, y) => k.E.cellAt(x, y) === 'f';

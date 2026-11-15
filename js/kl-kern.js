@@ -6,7 +6,7 @@
      KL.fig(art, (k, o, e) => extra)    Figur der Art (Ergebnis von V3CFG.fig typeOf: cop, swat, shield, sniper, grd, civA, civB, tel, mgr, rob0 bis rob3). Baut mit k.part in die Gelenke, liefert die Zahl der Zusatzteile.
      KL.car(art, (k, o, e, look) => 0)  Fahrzeug der Art (pol, civ, wreck, van, vh, tk), Mitte und Lage aus o.
      KL.obj(name, fn)                   Name mit einem Zeichen: Kachel des Rasters, fn(k, x, y, ch, spec) wird beim Bau der Welt gerufen (k.brick, k.studs, k.shadow), die Kachel verliert dann ihren Standardkoerper.
-                                        Name sonst: Art eines Szenario-Teils (scen3d, V3CFG.scen.kinds), fn(k, o) je Bild (k.dbrick fuer Kloetze), ersetzt den Bauplan in view3d.
+                                        Name sonst: Art eines Szenario-Teils (scen3d, V3CFG.scen.kinds), fn(k, o) je Bild (k.dbrick fuer Kloetze), ersetzt den Bauplan in view3d. 'art:unterart' (zum Beispiel good:statue mit o.n) gilt vor 'art'.
      KL.fx(name, fn)                    Effekt-Haken: 'frame' (k, ctx) je Bild mit Spielzeit, 'fig-tot' (k, {o,e}) neue Leiche, 'car-wreck' (k, {o,e,look}) neues Wrack, 'casing' (k, {o}) Schuss einer Figur.
    Das Werkzeug k (siehe mkKl): part, jt, rotY, collect, brick, spawnDeb, sparkAt, smokeAt, flash, fp, hc, addLight und Konstanten.
    Alles Zeichnen, nichts davon beruehrt Spielzustand oder Netz: Zerfall und Effekte entstehen aus dem Zustand, den auch ein Client hat (figs3d, fx3d), nicht aus Host-Code. */
@@ -141,7 +141,7 @@ void main() {
   }
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
-    X, C, E, KC, D, FG, T, THREE, colOf, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
+    X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
     state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on ? FG.look.out || 0 : 0 },
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
     collect(fn) { const was = out, r = []; out = r; try { fn() } finally { out = was } return r },
@@ -287,7 +287,8 @@ void main() {
   kit.dbrick = (x, z, y0, sx, sy, sz, a, col, em) => SD.push([x, z, y0, sx, sy, sz, a || 0, colOf(col), em || 0]);
   K.scenBegin = () => { SD.length = 0 };
   K.scenEnd = () => { const sm = q => Math.min(q[3], q[4], q[5]) < KC.small; for (const [P, L] of [[pT, SD.filter(q => !sm(q))], [pT2, SD.filter(sm)]]) { P.size(L.length); L.forEach((q, i) => { _p.set(q[0], q[2] + q[4] / 2, q[1]); _q.setFromAxisAngle(yAx, -q[6]); _s.set(q[3], q[4], q[5]); P.im.setMatrixAt(i, tm.compose(_p, _q, _s)); P.im.setColorAt(i, q[7]); P.a.iK.setXY(i, 1, q[8]) }); P.u = L.length; P.finish() } };
-  K.sceneBuilder = kind => (kind.length > 1 && KL.objs[kind]) || null;
+  // Bauer fuer ein Szenario-Teil o: erst die feine Art 'art:unterart' (zum Beispiel good:statue, o.n), dann die Art (good)
+  K.sceneBuilder = o => KL.objs[o.k + ':' + o.n] || (o.k.length > 1 && KL.objs[o.k]) || null;
 
   // ---------- Bloom ----------
   const fsGeo = new THREE.BufferGeometry(); fsGeo.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
@@ -322,7 +323,7 @@ void main() {
   let applied = -1;
   K.zoom = () => K.on ? KC.zoom : 1;
   K.sync = () => { const w = X.kstil ? 1 : 0; K.on = w > 0 && !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
-  K.info = () => ({ on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
+  K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
   K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
   return K;
