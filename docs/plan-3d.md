@@ -205,6 +205,10 @@ Damit ist die Bank für den Haltepunkt in 3D spielbar (Sicht wie 2D).
 ### 2.19 Grafikfehler aus Spieltests (11. November 2026)
 
 - **Kamerakegel (Ticket 176).** Das Kamera-Icon hing in 3D auf Höhe 56 (`gnd(c.x,c.y,H)` in `cams3d`, `js/draw.js`), der Kegel lag mit der Spitze am Boden unter ihr, auf dem Bildschirm also versetzt. Jetzt liegt die Spitze auf dem Bildpunkt der Kamera (`toScr(x,y,56)`), der Rand am Boden (`toScr(x,y,0)`, 24 Segmente), Verlauf und Randlinie wie 2D. `DRAW_API` 10 (neu `camPts3d`, Debug `view3d.camPts()`). Test 194 (Spitze gegen Kamera-Bildpunkt, vier Straßenseiten), Bilder `docs/bilder/plan-3d/3d176-vorher-*` und `-nachher-*` (`tools/bilder-3d176.js`). 2D pixelgleich (IDENTISCH, 72 Bilder), `VER` unverändert.
+### 2.21 Silhouette nur für verdeckte Figuren (Ticket 188, 12. November 2026)
+
+- **Befund:** Das Silhouetten-Sprite (`pSil`, `GreaterDepth`) liegt als flaches Quadrat (`silS` 84) in Höhe `_hs` über der Figur und ragt dabei in Wände hinter ihr. Dort lag es hinter der Wandfläche und wurde orange gemalt, auch wenn die Figur selbst frei zu sehen war (Till: Hut und Spiegelbild).
+- **Fix** in `js/view3d.js` (`hidden`): Die Silhouette gibt es nur für Figuren, die verdeckt sind. Je Figur laufen Sichtstrahlen von der Kamera zu Fuß, Mitte und Kopf (Höhe 8, 22, 36) durch die Körper der Kacheln (Höhentabelle, eigene Kachel ausgenommen, offener Tresor ohne Körper, `v` als Fahrzeug bis 26, nur das Stück unter Wandhöhe 68), verdeckt heißt mindestens zwei Punkte blockiert. Fahrzeuge, die erst im dynamischen Teil stehen, verdecken nicht (Grenze). Test 193: Spieler sichtbar südlich vor der Wand ohne Silhouette, Gegner hinter der Wand mit; der sichtbare Spieler hat in der Szene Gegner hinter Wand keine Silhouette mehr. Bilder `3d188-vorher.jpg`, `3d188-nachher.jpg` (`tools/bilder-3d188.js`). 2D IDENTISCH, `VER` unverändert.
 
 ## 3. Figuren
 
