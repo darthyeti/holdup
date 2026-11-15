@@ -99,6 +99,15 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       await page.evaluate(([w, armed, a]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.armed = !!armed; me.a = a; me.hp = 100; D.mouse.t = -999; D.draw(); D.draw() }, [w, armed, a]);
       info = await shot(`f${FR.length}`, null);
     }
+  } else if (FLOW === 'pickups') {
+    // Ticket 234: Aufnahmen (Munition, Medikit, unbekannte Zelle) als schwebende, drehende Klotzchen, vier Zeitpunkte, Tag und Nacht, nah in der Spielkamera
+    process.env.HALF = process.env.HALF || '80';
+    const c = await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; g.npcs.length = 0; g.cars.length = 0; const a = window.__dir, L = D.fxL(); L.pk.length = 0;
+      const at = (d, s, k) => ({ x: me.x + 60 + s, y: me.y + d, k }); L.pk.push(at(40, -34, 5), at(40, 0, 6), at(40, 34, 9)); const m = L.pk[1]; return [m.x, m.y, 14] });
+    for (const night of [0, 1]) {
+      if (night) await page.evaluate(async () => { const D = __dbg, L = D.LAY(); L.mission.lg = (L.mission.lg || []).concat('nacht'); D.view3d.reset(); await D.view3d.set(true); D.draw() });
+      for (let i = 0; i < 4; i++) { await page.evaluate(() => { const D = __dbg; for (let j = 0; j < 12; j++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); D.draw() }); info = await shot(`f${FR.length}`, c); }
+    }
   } else if (FLOW === 'explosion') {
     await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; const c = g.cars.find(q => q.civ && !q.dead) || g.cars[0]; window.__car = c; });
     info = await shot('f0', 'car'); await page.evaluate(() => { const D = __dbg; D.get().me.hp = 1e9; D.carBlow(window.__car, 0) });

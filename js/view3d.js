@@ -828,7 +828,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     }
     pThg.size(TH.length); TH.forEach((q, i) => { put(pThg, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); pThg.im.setColorAt(i, colOf(q[7])) });
     // Aufnahmen (Munition, Verbandszeug): 2D-Bild aus props.png liegend, wippt wie in 2D
-    pPk.size(D.pk.length); D.pk.forEach((k, i) => { put(pPk, i, k.x, k.y, FC.pkH + 1.5 + k.b, 0, FC.pkS, 1, FC.pkS); pPk.a.iCell.setXYZW(i, k.k, 0, 0, 1); pPk.a.iDim.setX(i, 0) }); n.pk = D.pk.length;
+    const kpk = K && K.on && K.hasPk(); pPk.size(kpk ? 0 : D.pk.length); if (!kpk) D.pk.forEach((k, i) => { put(pPk, i, k.x, k.y, FC.pkH + 1.5 + k.b, 0, FC.pkS, 1, FC.pkS); pPk.a.iCell.setXYZW(i, k.k, 0, 0, 1); pPk.a.iDim.setX(i, 0) }); n.pk = D.pk.length;
     fxSt = { n, skip, add: FA.length / 12, nrm: FN.length / 12, th: TH.length, pk: D.pk.length, calls: [pFxA, pFxN, pThg, pPk].filter(P => P.im && P.im.visible).length };
     fxLast = { pk: D.pk.map(k => [Math.round(k.x), Math.round(k.y), k.k]), gr: grL };
   }
