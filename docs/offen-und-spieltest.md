@@ -11,6 +11,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Spieltest (ungespielt, kurz)
 
+- **Fenster zerschießen (Ticket 207):** Eigene Kugeln brechen Scheiben (ein Treffer, `CFG.win.hits`), in 3D fliegen kurz Glas-Klötzchen. Beobachten: lässt das Loch zu viele Polizeikugeln durch, und wird es mit Brettern (`wbar`) rechtzeitig wieder dicht?
 - **3D-Gerüst** (Ticket #149, Vorschau im PR, dort Optionen, Ansicht 3D, oder `#debug&3d`): Nur der gekippte Boden mit HUD darüber, noch ohne Figuren und Wände (auch du bist unsichtbar). Lädt es bei dir ohne Meldung, wie wirkt der Winkel zwischen 20 und 30 Grad?
 - **3D-Welt** (Ticket #150, Vorschau im PR mit `#debug&3d`): Wände, Fenster mit Glas, Türen, Tresen und Möbel stehen jetzt als Körper (Figuren und Autos fehlen noch). Lesen sich Räume und Türen, und stört die Wandhöhe beim Blick nach Norden?
 - **3D-Figuren** (Ticket #151, Vorschau im PR mit `#debug&3d`): Alle Figuren und Fahrzeuge stehen jetzt als Aufsteller (Körper plus das gewohnte Sprite obendrauf), Namen und Balken schweben über den Köpfen. Erkennst du Polizei, Geiseln und dich selbst auf einen Blick, und wirken die Autos als Deckung?

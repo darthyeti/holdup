@@ -1,6 +1,6 @@
 // Ticket 196: Bilder und Bildfolgen der Stilstudie Kloetzchen (docs/bilder/stil-kloetzchen/). Aufruf:
 //   cd tests && HOLDUP_CHROME=/opt/pw-browsers/chromium node ../tools/bilder-kloetzchen.js <ordner> <szene bank|museum> <stil 0|1|2> <ablauf> [Bildbreite]
-// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
+// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, fenster, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
 // Es wird die WebGL-Leinwand selbst gelesen (ohne HUD, doppelte Aufloesung bei Grafik hoch), ein Ausschnitt um das Geschehen, Bildfolgen als Streifen (Pillow). Stil 0 ist das heutige 3D zum Vergleich.
 const path = require('path'), fs = require('fs'), { execFileSync } = require('child_process');
 const lib = require(path.join(__dirname, '..', 'tests', 'lib'));
@@ -119,6 +119,12 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     });
     await step(1); info = await shot('alle', 'at');
     await page.evaluate(() => { window.__X.figs = window.__orig });
+  } else if (FLOW === 'fenster') {
+    // Glas-Zerfall (Ticket 207): Spieler steht vor der ersten Scheibe, ein Schuss, Bildfolge um die Scheibe
+    await page.evaluate(() => { const D = __dbg, g = D.get(), m = g.me, w = D.LAY().wins[0]; g.en.length = 0; m.hp = 1e9; m.x = w.px + w.iv[0] * 70; m.y = w.py + w.iv[1] * 70; m.a = Math.atan2(-w.iv[1], -w.iv[0]); for (let i = 0; i < 30; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: w.px, y: w.py }; window.__w = w; });
+    info = await shot('f0', 'at');
+    await page.evaluate(() => { const D = __dbg, w = window.__w, m = D.get().me; D.get().bl.push({ id: 9901, x: m.x, y: m.y, vx: -w.iv[0] * 700, vy: -w.iv[1] * 700, l: .8, o: 1, own: m.id, d: 20, ov: 0 }) });
+    for (const n of [2, 1, 2, 3, 4, 6, 10, 20]) { await step(n, 'D.get().me.hp=1e9'); info = await shot('f' + FR.length, 'at') }
   } else if (FLOW === 'pumpe') {
     // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
     await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });
