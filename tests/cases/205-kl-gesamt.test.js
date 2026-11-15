@@ -1,19 +1,14 @@
 // Klotzchen-Abnahme (Ticket 198, Integrationspruefung fuer den Coop-Test): alle acht Szenarien mit Kloetzchen durch alle Phasen (Erkundung, Ueberfall, Polizei, Flucht)
 // ohne Fehler, mit draw() und unter der Dreiecks- und Draw-Call-Grenze; Coop (Test-Leitung) mit Explosion und Zerfall, Client ohne Fehler und mit Teilen; Rueckfall auf den klassischen Stil und ohne WebGL.
-// Ohne WebGL 2 im Test-Chromium wird der 3D-Teil uebersprungen (wie Test 190 und 200).
+// Ohne WebGL 2 im Test-Chromium wird der 3D-Teil uebersprungen (wie Test 190 und 200). Die drei langen Tests sind slow (voller Lauf), Coop gesamt und Rueckfall laufen im schnellen Lauf.
 const lib = require('../lib');
 const SCS = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb', 'prison'];
 const TRIS = 150000, CALLS = 120, SEEDS = [5, 3];
-async function glPage(t) {
-  const ok = p => p.evaluate(() => !!document.createElement('canvas').getContext('webgl2'));
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [
   {
     name: 'Kloetzchen gesamt: alle acht Szenarien durch Erkundung, Ueberfall, Polizei und Flucht ohne Fehler, draw() laeuft, Dreiecke und Draw Calls unter der Grenze',
+    slow: true,   // rund 100 s und mehr in SwiftShader: nur im vollen Lauf (nachts, voller-lauf), die CI-Schnelllaeufe lassen es aus
     timeout: 900000,
     async run(t) {
       const P = await glPage(t); if (!P) return;
@@ -86,7 +81,7 @@ module.exports = [
     name: 'Kloetzchen-Rueckfall: der gemerkte Stil klassisch (F7, #klassisch) zeichnet die Low-Poly-Figuren, ohne Schalter ist Kloetzchen Standard, ohne WebGL laeuft das Spiel in 2D weiter',
     timeout: 300000,
     async run(t) {
-      const env = await lib.launch({ webgl: true });
+      const P = await glPage(t); if (!P) return; const env = P.env;
       try {
         const open = async (hash, nogl, stil) => {
           const ctx = await env.browser.newContext({ viewport: { width: 1000, height: 640 } });
@@ -103,14 +98,15 @@ module.exports = [
         if (gl) { const b = await open('#debug&3d'); const r = await run(b.page); t.note('standard ' + JSON.stringify(r)); t.ok(r.kl === 1 && r.figsK > 0 && r.figParts === 0 && r.err === '', 'ohne Schalter: Kloetzchen sind Standard: ' + JSON.stringify(r)); t.eq(b.page.errors, [], 'Standard: keine JS-Fehler'); await b.ctx.close(); }
         { const c = await open('#debug&3d', true); const r = await c.page.evaluate(async () => { const D = __dbg; D.reset(); D.startHeist(false, D.get().me); D.draw(); await D.view3d.ready(); for (let i = 0; i < 120; i++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); const cv = document.getElementById('c'); return { st: D.view3d.state, el: !!document.getElementById('c3d'), mid: cv.getContext('2d').getImageData(480, 270, 1, 1).data[3], phase: D.get().phase } });
           t.note('ohne WebGL ' + JSON.stringify(r)); t.ok(r.st === 'rueckfall' && !r.el && r.mid === 255, 'ohne WebGL: Rueckfall auf 2D, das Spiel zeichnet weiter: ' + JSON.stringify(r)); t.eq(c.page.errors, [], 'ohne WebGL: keine JS-Fehler'); await c.ctx.close(); }
-      } finally { await env.browser.close().catch(() => {}); env.srv.close(); }
+      } finally { await P.done(); }
     },
   },
   {
     name: 'Kloetzchen Rundenwechsel: Autoexplosion, dann neuer Auftrag, dreimal hintereinander, ohne Haenger, WebGL-Fehler und Wachstum; danach laedt eine neue Seite im selben Browser zuegig (Verdacht aus Test 202)',
+    slow: true,   // rund 100 s und mehr in SwiftShader: nur im vollen Lauf (nachts, voller-lauf), die CI-Schnelllaeufe lassen es aus
     timeout: 400000,
     async run(t) {
-      const env = await lib.launch({ webgl: true });
+      const P = await glPage(t); if (!P) return; const env = P.env;
       try {
         const page = await lib.openGame(env, { hash: '#debug&3d' });
         if (!await page.evaluate(() => !!document.createElement('canvas').getContext('webgl2'))) { t.note('kein WebGL 2, uebersprungen'); return; }
@@ -136,11 +132,12 @@ module.exports = [
         const t1 = Date.now(), p2 = await lib.openGame(env, { hash: '#debug&3d' }); const ms = Date.now() - t1;
         t.ok(ms < 20000, 'neue Seite im selben Browser nach der Explosion in ' + ms + ' ms geladen');
         await p2.ctx.close().catch(() => {});
-      } finally { await env.browser.close().catch(() => {}); env.srv.close(); }
+      } finally { await P.done(); }
     },
   },
   {
     name: 'Kloetzchen-Coop Rundenwechsel: Autoexplosion, Host startet den naechsten Auftrag, der Client zeichnet weiter ohne Fehler und ohne Haenger',
+    slow: true,   // rund 100 s und mehr in SwiftShader: nur im vollen Lauf (nachts, voller-lauf), die CI-Schnelllaeufe lassen es aus
     timeout: 400000,
     async run(t) {
       const P = await glPage(t); if (!P) return;
