@@ -102,4 +102,21 @@ export function register(KL) {
       br(11, 15.6, 30, 5, 9, 1.6, 0x20252c); br(11, 16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); br(11, -15.6, 30, 5, 9, 1.6, 0x20252c); br(11, -16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); // Leser mit gruener LED
     }
   });
+
+  // ---------- Hauptschalter (Szenario-Teil 'sw', LAY.sw, E-Ziel Strom aus): Schaltkasten an der naechsten Wand ----------
+  // Grauer Metallkasten etwa halbe Wandhoehe, gelb-schwarzes Warnschild mit Blitz, grosser roter Hebel, darueber eine Lampe. Strom an (o.on): Hebel oben, Lampe gruen; nach Strom aus (Kameras aus):
+  // Hebel unten, Lampe rot. Die Wand im Ruecken folgt den Nachbarkacheln (zuerst Norden, dann Westen, Osten, Sueden), ohne Wand steht der Kasten mit Blick nach Sueden in der Kachelmitte.
+  KL.obj('sw', (k, o) => {
+    const T_ = k.T, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), cell = k.E.cellAt, wall = (a, b) => { const e = k.C.cells[cell(a, b)]; return !!e && e.s.some(q => q[0] === 0 && q[1] >= k.C.wallH) };
+    const D = [[0, -1], [-1, 0], [1, 0], [0, 1]].find(d => wall(tx + d[0], ty + d[1])) || [0, -1], cx = tx * T_ + T_ / 2, cz = ty * T_ + T_ / 2, pu = [-D[1], D[0]];
+    // u entlang der Wand, w Abstand von der Wandflaeche nach innen (Wand bei w = 0), Kloetze am Rand der Kachel
+    const br = (u, w, y0, su, sh, sw_, col, em) => { const px = cx + D[0] * (T_ / 2 - w) + pu[0] * u, pz = cz + D[1] * (T_ / 2 - w) + pu[1] * u, ax = D[0] !== 0; k.dbrick(px, pz, y0, ax ? sw_ : su, sh, ax ? su : sw_, 0, col, em) };
+    const on = o.on, metal = 0x8f98a6, dark = 0x2a2f37;
+    br(0, 3, 14, 20, 34, 6, metal); br(0, 6.4, 15, 17, 32, .8, 0xaab3c0);                       // Kasten und Tuerblatt
+    for (const sx of [-1, 1]) for (const sy of [16, 45]) br(sx * 8, 6.9, sy, 1.6, 1.6, .6, 0xd8dde4);  // Nieten
+    br(-5, 7, 36, 8, 8, .8, 0xffc83a); br(-5, 7.5, 37, 2, 6, .5, 0x1a1d22); br(-6.6, 7.5, 39.6, 3, 1.6, .5, 0x1a1d22); br(-3.4, 7.5, 36.8, 3, 1.6, .5, 0x1a1d22); // Warnschild mit Blitz
+    br(4, 7, 20, 4.4, 17, .7, dark);                                                             // Hebelschlitz
+    br(4, 8, on ? 31 : 20, 3, 6, 2, 0xe5392e); br(4, 9.4, on ? 36 : 17.5, 5.6, 5.6, 4.4, 0xff4a3a);  // Hebel mit grossem Knauf: oben (an) oder unten (aus)
+    br(0, 4.5, 50, 9, 3, 4, dark); br(0, 7.4, 50.4, 5, 2.2, 1.2, on ? 0x4cf06a : 0xff3a2e, 1.8); // Lampe: gruen oder rot
+  });
 }
