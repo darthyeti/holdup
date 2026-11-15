@@ -99,11 +99,17 @@ module.exports = [
         let sd = 1; for (; sd < 200; sd++) { D.buildLay(D.layoutFor(sd)); if (D.get().npcs.filter(q => q.k === 'grd').length === 1) break; }
         let np = 0; const o = {};
         const leicht = { net: 1, grace: 999, carry: { grd: 0, staff: 0 } }, scharf = { net: 0, stare: 0, grace: 0, carry: { grd: 100, staff: 100 } };
-        o.leicht = stealth.live({ n: 3, k: 2, trials: 3, cfg: leicht, idle: 20 });
-        o.scharf = stealth.live({ n: 1, k: 4, trials: 8, cfg: scharf, idle: 20 });
+        // Ticket 194: stealth.live wuerfelt Plan und Wartezeit mit Math.random. Mit Rate 100 bleibt ein Lauf nur in rund 37 % ohne Alarm, bei 8 Laeufen waren alle ohne Alarm in rund 1 % der
+        // Durchlaeufe (gemessen, der Test wurde in der CI gelegentlich rot). Deshalb ein fester Seed (mulberry32, danach Math.random zurueck) und 24 statt 8 Laeufe (Restwahrscheinlichkeit unter 1e-9).
+        const rnd0 = Math.random; let sx = 0x1e5a7c3d; Math.random = () => { sx = (sx + 0x6D2B79F5) | 0; let z = Math.imul(sx ^ (sx >>> 15), 1 | sx); z = (z + Math.imul(z ^ (z >>> 7), 61 | z)) ^ z; return ((z ^ (z >>> 14)) >>> 0) / 4294967296; };
+        try {
+          o.leicht = stealth.live({ n: 3, k: 2, trials: 3, cfg: leicht, idle: 20 });
+          o.scharf = stealth.live({ n: 1, k: 4, trials: 24, cfg: scharf, idle: 20 });
+        } finally { Math.random = rnd0; }
         o.spieler = D.get().players.length;
         return o;
       });
+      t.note('Erfolgsquote ohne Alarm: leicht ' + r.leicht + ', scharf ' + r.scharf.toFixed(3) + ' (24 Laeufe, fester Seed)');
       t.eq(r.leicht, 1, 'ohne Alarmmoeglichkeit (Gnadenfrist 999 s) gelingt jeder Lauf zu dritt');
       t.ok(r.scharf < 1, 'mit Rate 100 fuer den Rucksack scheitert mindestens ein Lauf: ' + r.scharf);
       t.eq(r.spieler, 1, 'die Seite ist danach wieder solo (setN 1)');
