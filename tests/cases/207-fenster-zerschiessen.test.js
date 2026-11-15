@@ -1,12 +1,6 @@
 // Ticket 207: Spielerkugeln zerschiessen Fenster (W wird w, Host rechnet, Client bekommt das Raster), Polizeikugeln nicht, danach geht wbar (Y) weiter. Ohne 3D (die Optik pruefen Test 202 und die Bilder).
 const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');
 module.exports = [
   {
     name: 'Fenster zerschiessen: eine Spielerkugel macht aus W ein w (Ereignis gl), eine Polizeikugel nicht, Bretter (wbar) gehen danach, mit mehreren Treffern nach CFG.win.hits',
@@ -56,7 +50,7 @@ module.exports = [
     name: 'Fenster zerschiessen in 3D (Kloetzchen): beim Bruch fliegen Glas-Kloetzchen und Funken, die Zahl bleibt unter der Obergrenze der Stufe, keine Fehler',
     timeout: 240000,
     async run(t) {
-      const P = await glPage(t); if (!P) return;
+      const P = await glPage(t, true); if (!P) return;
       try {
         const r = await P.page.evaluate(`(async () => { const D = __dbg; D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); const me = D.get().me; me.hp = 1e9; D.view3d.kstil = 1; await D.view3d.set(true);
           for (let i = 0; i < 40; i++) D.update(1 / 30); D.draw(); D.draw(); const V = D.view3d.V, W = D.LAY().wins, w = W[0], o = {};
