@@ -50,7 +50,7 @@ module.exports = [
     name: 'Fenster zerschiessen in 3D (Kloetzchen): beim Bruch fliegen Glas-Kloetzchen und Funken, die Zahl bleibt unter der Obergrenze der Stufe, keine Fehler',
     timeout: 240000,
     async run(t) {
-      const P = await glPage(t, true); if (!P) return;
+      const P = await glPage(t); if (!P) return;
       try {
         const r = await P.page.evaluate(`(async () => { const D = __dbg; D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); const me = D.get().me; me.hp = 1e9; D.view3d.kstil = 1; await D.view3d.set(true);
           for (let i = 0; i < 40; i++) D.update(1 / 30); D.draw(); D.draw(); const V = D.view3d.V, W = D.LAY().wins, w = W[0], o = {};

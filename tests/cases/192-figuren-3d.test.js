@@ -5,16 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const lib = require('../lib');
 
-async function glPage(t, coop) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (!coop && await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage: glShared } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
+// coop: eigene Seite im gemeinsamen Browser statt der Standard-Seite
+const glPage = (t, coop) => glShared(t, coop ? { force: true } : undefined);
 // in der Seite: 2D zeichnen und die Figuren- und Fahrzeugbilder zaehlen, dann 3D zeichnen und die Liste der Ansicht holen (D eine Instanz)
 const COUNT = `async (D) => {
   const P = CanvasRenderingContext2D.prototype, di = P.drawImage; let ch = 0, car = 0;
