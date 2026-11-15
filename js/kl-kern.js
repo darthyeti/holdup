@@ -23,6 +23,8 @@ export const KCFG = {
   // Plastik: Glanzexponent, Staerke des Glanzlichts, Himmelsspiegelung, Rand (Fresnel); satte Farben und Figurengroesse; Kamera naeher (Faktor auf den Abstand, 1 wie ohne Stil)
   plastic: [46, .7, .04, .16], sat: 1.4, size: 1.22, zoom: .8,
   // je Grafikstufe (niedrig, mittel, hoch): Obergrenzen fliegender Teile, Funken, Rauchpuffer, Bloom an, Wandkanten-Noppen
+  // Kleinteile: Klotz mit kleinster Kante unter small Weltpixeln wird ein Quader ohne Fase (12 statt 108 Dreiecke), sonst zu viele Dreiecke in den Moebeln
+  small: 4.5,
   q: { debris: [160, 320, 560], sparks: [60, 120, 220], smoke: [24, 48, 80], bloom: [0, 1, 1] },
   // Zerfall: Schwerkraft, Rueckprall, Reibung, Liegezeit (von bis), Verschwinden, Anfangsgeschwindigkeit, Aufwaerts, Drehung, Zug weg vom Spieler (Prozent), Huelsen
   deb: { g: 520, bounce: .38, fric: .62, rest: [5.5, 8.5], fade: .8, burstV: [70, 190], up: [140, 300], spin: 9, biasK: 70 },
@@ -75,7 +77,7 @@ export function mkKl(E) {
     }
     return g;
   }
-  const boxGeo = bevelBox(D.bevel), studGeo = new THREE.CylinderGeometry(.42, .5, 1, 7).translate(0, .5, 0);
+  const flatBox = new THREE.BoxGeometry(1, 1, 1), boxGeo = bevelBox(D.bevel), studGeo = new THREE.CylinderGeometry(.42, .5, 1, 7).translate(0, .5, 0);
 
   // ---------- Plastik-Shader: Licht, Schatten, Punktlichter und Nebel wie die Welt (litC), dazu Glanz, Himmelsspiegelung, Rand, Eigenleuchten (iK.y), Deckkraft als Raster (iK.x) ----------
   const VS = `attribute vec2 iK; varying vec3 vC; varying vec2 vK; varying vec2 vM; varying vec3 vWp; varying vec3 vN;
@@ -115,7 +117,7 @@ void main() {
   const kMat = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS, uniforms: Object.assign({ uK: { value: new THREE.Vector4(...KC.plastic) } }, UV) });
   K.mats = [kMat];
   const kpool = (name, geo, order) => { const P = E.pool(name, geo, kMat, { iK: 2 }, true, order == null ? 2 : order, 1); E.pools.push(P); return P };
-  const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo);
+  const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox);
   // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
   const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
     vertexShader: 'varying vec2 vM; void main() {\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
@@ -274,16 +276,17 @@ void main() {
     });
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = E.cellAt(x, y), f = KL.objs[c]; if (f && c.length === 1 && C.cells[c]) f(wk, x, y, c, C.cells[c]) }
     const mk = (L, geo, name, f) => { if (!L.length) return; const im = new THREE.InstancedMesh(geo.clone(), kMat, L.length), ik = new THREE.InstancedBufferAttribute(new Float32Array(L.length * 2), 2); im.geometry.setAttribute('iK', ik); im.name = name; im.frustumCulled = false; im.layers.enable(1); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(L.length * 3), 3); f(im, ik); im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; scene.add(im); worldMeshes.push(im) };
-    mk(B, boxGeo, 'k-moebel', (im, ik) => B.forEach((b, i) => { _p.set(b[0], b[2] + b[4] / 2, b[1]); _q.setFromAxisAngle(yAx, b[8]); _s.set(b[3], b[4], b[5]); im.setMatrixAt(i, tm.compose(_p, _q, _s)); im.setColorAt(i, b[6]); ik.setXY(i, 1, b[7]) }));
+    const sm = B.filter(b => Math.min(b[3], b[4], b[5]) < KC.small), bg = B.filter(b => Math.min(b[3], b[4], b[5]) >= KC.small), put = (L, name) => mk(L, name === 'k-moebel' ? boxGeo : flatBox, name, (im, ik) => L.forEach((b, i) => { _p.set(b[0], b[2] + b[4] / 2, b[1]); _q.setFromAxisAngle(yAx, b[8]); _s.set(b[3], b[4], b[5]); im.setMatrixAt(i, tm.compose(_p, _q, _s)); im.setColorAt(i, b[6]); ik.setXY(i, 1, b[7]) }));
+    put(bg, 'k-moebel'); put(sm, 'k-moebel-klein');
     mk(S, studGeo, 'k-noppen', (im, ik) => S.forEach((s, i) => { _p.set(s[0], s[2], s[1]); _q.identity(); _s.set(8.8, 2.4, 8.8); im.setMatrixAt(i, tm.compose(_p, _q, _s)); im.setColorAt(i, s[3]); ik.setXY(i, 1, 0) }));
     if (A.length) { const im = new THREE.InstancedMesh(E.flatGeo.clone(), E.shMat, A.length), ik = new THREE.InstancedBufferAttribute(new Float32Array(A.length * 2), 2); im.geometry.setAttribute('iSA', ik); im.renderOrder = 1; im.frustumCulled = false; A.forEach((a, i) => { _p.set(a[0], .4, a[1]); _q.identity(); _s.set(a[2], 1, a[2]); im.setMatrixAt(i, tm.compose(_p, _q, _s)); ik.setXY(i, 1, .3) }); im.instanceMatrix.needsUpdate = true; scene.add(im); worldMeshes.push(im) }
-    K.stats = { bricks: B.length, studs: S.length, ao: A.length };
+    K.stats = { small: sm.length, bricks: B.length, studs: S.length, ao: A.length };
   };
   // Szenario-Teile (KL.obj mit Namen der Art): je Bild gesammelt und in einem Pool gezeichnet. Ruft view3d in buildScen.
   const SD = [];
   kit.dbrick = (x, z, y0, sx, sy, sz, a, col, em) => SD.push([x, z, y0, sx, sy, sz, a || 0, colOf(col), em || 0]);
   K.scenBegin = () => { SD.length = 0 };
-  K.scenEnd = () => { pT.size(SD.length); SD.forEach((q, i) => { _p.set(q[0], q[2] + q[4] / 2, q[1]); _q.setFromAxisAngle(yAx, -q[6]); _s.set(q[3], q[4], q[5]); pT.im.setMatrixAt(i, tm.compose(_p, _q, _s)); pT.im.setColorAt(i, q[7]); pT.a.iK.setXY(i, 1, q[8]) }); pT.u = SD.length; pT.finish() };
+  K.scenEnd = () => { const sm = q => Math.min(q[3], q[4], q[5]) < KC.small; for (const [P, L] of [[pT, SD.filter(q => !sm(q))], [pT2, SD.filter(sm)]]) { P.size(L.length); L.forEach((q, i) => { _p.set(q[0], q[2] + q[4] / 2, q[1]); _q.setFromAxisAngle(yAx, -q[6]); _s.set(q[3], q[4], q[5]); P.im.setMatrixAt(i, tm.compose(_p, _q, _s)); P.im.setColorAt(i, q[7]); P.a.iK.setXY(i, 1, q[8]) }); P.u = L.length; P.finish() } };
   // Bauer fuer ein Szenario-Teil o: erst die feine Art 'art:unterart' (zum Beispiel good:statue, o.n), dann die Art (good)
   K.sceneBuilder = o => KL.objs[o.k + ':' + o.n] || (o.k.length > 1 && KL.objs[o.k]) || null;
 
@@ -322,7 +325,7 @@ void main() {
   K.sync = () => { const w = X.kstil ? 1 : 0; K.on = w > 0 && !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
   K.info = () => ({ dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
-  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
+  K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
   return K;
 }
 mkKl.api = KL_API;

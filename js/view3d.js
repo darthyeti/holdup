@@ -109,7 +109,7 @@ export const V3CFG = {
     laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
     kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
       pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, card: { g: 's' },
-      frame: { g: 'l' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
+      frame: { g: 'l' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
     src: {
       rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'boden', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
       guards: 'figur', cams: 'hud', vit: 'vit', goods: 'good', cage: 'raster', pumps: 'pump', lasers: 'laser', bn: 'logik', polAt: 'logik', wb: 'logik', stl: 'logik', gAll: 'logik', cone: 'cone',
@@ -691,6 +691,7 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     grille(o) { const G = C.scen.grille, tx = Math.floor(o.x / T), ty = Math.floor(o.y / T), hz = gridHz(tx, ty), X0 = tx * T, Y0 = ty * T, m = T / 2;
       for (let i = 0; i < G.n; i++) { const u = 4 + i * 8 + 1.5; sb('s', hz ? X0 + u : X0 + m, hz ? Y0 + m : Y0 + u, 0, G.w, 64, G.w, 0, 0x8f97a2) }
       for (const r of G.rail.slice(1)) sb('s', X0 + m, Y0 + m, r[0], hz ? T : G.w, r[1] - r[0], hz ? G.w : T, 0, 0x30343b) },
+    bar(o) { void o }, // Zustand der Barrikade (Stufe lv, Heile f): nur der Kloetzchen-Stil zeichnet Platten und Schaeden (KL.obj 'bar')
     parked(o) { sb('i', o.x + 64, o.y + 32, 0, 4 * T - 4, C.cars.civ.h, 2 * T - 6, 0, 0xffffff) },
   };
   let scenLast = [], scKey = '';
@@ -755,8 +756,10 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   const fp = (L, x, z, h, s, sh, col, a, dx, dz, fl, dy) => { if (!(a > .004) || !(s > 0)) return; L.push(x, h, z, s, dx || 0, dy || 0, dz || 0, sh + (fl ? 4 : 0), col[0], col[1], col[2], Math.min(1, a)) };
   const ring = (L, x, z, h, r, w, col, a) => { const s = r + w / 2; fp(L, x, z, h, s, 2, col, a, Math.min(1, w / s), 0, 1) };
   const thing = (x, z, y0, sx, sy, sz, a, col) => TH.push([x, z, y0, sx, sy, sz, a || 0, col]);
+  // Kloetzchen-Haken (Ticket 198): Gadgets am Boden baut KL.obj('d:'+art) aus Kloetzen (fn(kit, q)), sonst thing() wie vorher. ktUsed: die Kloetze muessen nach buildFx noch einmal in den Pool (K.scenEnd)
+  let ktUsed = 0; const kt = (n, q) => { const f = K && K.on && K.sceneBuilder({ k: 'd:' + n }); if (!f) return false; f(K.kit, q); ktUsed = 1; return true };
   function buildFx() {
-    const D = X.fx ? X.fx() : null; FA = []; FN = []; TH = []; const n = {};
+    const D = X.fx ? X.fx() : null; ktUsed = 0; FA = []; FN = []; TH = []; const n = {};
     if (!D) { for (const P of [pFxA, pFxN, pThg, pPk]) P.size(0); fxSt = { n }; return }
     const cnt = k => { n[k] = (n[k] || 0) + 1 };
     // Teilchen aus pt (Art je V3CFG.fx.pt, unbekannte zaehlen als ?art)
@@ -788,7 +791,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     const seenG = new Set(), grL = [];
     for (const q of D.gr) {
       seenG.add(q.id); let h = 0; if (q.st === 'fly') { if (!grT.has(q.id) || grT.get(q.id) < q.t) grT.set(q.id, Math.max(q.t, .01)); const f = Math.max(0, Math.min(1, 1 - q.t / grT.get(q.id))); h = (q.k === 'shell' ? FC.shellArc : FC.grArc) * 4 * f * (1 - f) }
-      thing(q.x, q.y, h, 7, 6, 7, 0, FC.gr[q.k] || FC.gr.gas); if (q.bk) fp(FA, q.x, q.y, h + 7, 3, 0, hc(0xff4a3a), 1); cnt('gr'); grL.push([q.id, q.k, q.st, Math.round(h * 10) / 10]);
+      if (!kt('gr', Object.assign({ h }, q))) thing(q.x, q.y, h, 7, 6, 7, 0, FC.gr[q.k] || FC.gr.gas); if (q.bk) fp(FA, q.x, q.y, h + 7, 3, 0, hc(0xff4a3a), 1); cnt('gr'); grL.push([q.id, q.k, q.st, Math.round(h * 10) / 10]);
     }
     for (const id of grT.keys()) if (!seenG.has(id)) grT.delete(id);
     // Wolken: Gas (gruen, Rand als Ring wie die Wirkung) und Rauch (grau, als Wand in die Hoehe), weiche Flecken wie die 2D-Flecken
@@ -803,15 +806,16 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     // Dinge am Boden: Fallen (Wirkradius als Ring, Zuendlicht), Notfallkoffer (Kreuz, Puls), Ablenker (Puls, Blinklicht), brennende Wracks (Schein)
     for (const q of D.tr) {
       ring(FA, q.x, q.y, .6, q.r, 1.5, lc(q.armed ? '255,90,70' : '255,210,90'), q.armed ? .28 : .22);
-      if (q.k === 'mine') thing(q.x, q.y, 0, 14, 3, 14, 0, 0x2a2d33); else { thing(q.x, q.y, 0, 18, 8, 8, 0, 0x3a4034); thing(q.x, q.y - 3, 8, 14, 2, 2, 0, 0x2a2d33) }
+      if (kt('trap', q)) { /* Kloetze */ } else if (q.k === 'mine') thing(q.x, q.y, 0, 14, 3, 14, 0, 0x2a2d33); else { thing(q.x, q.y, 0, 18, 8, 8, 0, 0x3a4034); thing(q.x, q.y - 3, 8, 14, 2, 2, 0, 0x2a2d33) }
       if (q.bl) fp(FA, q.x, q.y, q.k === 'mine' ? 4 : 10, 3, 0, hc(q.armed ? 0xff4a3a : 0xffc446), 1); cnt('tr');
     }
     for (const q of D.aid) {
       ring(FA, q.x, q.y, .6, q.r, 1.5, lc('110,235,130'), .3 * q.al); ring(FA, q.x, q.y, .7, 10 + q.ph * (q.r - 10), 2, lc('110,235,130'), .45 * (1 - q.ph) * q.al);
-      thing(q.x, q.y, 0, 16, 8, 12, 0, 0xe9efe9); thing(q.x, q.y, 8, 3, .6, 9, 0, 0x2fbf52); thing(q.x, q.y, 8, 9, .6, 3, 0, 0x2fbf52); cnt('aid');
+      if (!kt('aid', q)) { thing(q.x, q.y, 0, 16, 8, 12, 0, 0xe9efe9); thing(q.x, q.y, 8, 3, .6, 9, 0, 0x2fbf52); thing(q.x, q.y, 8, 9, .6, 3, 0, 0x2fbf52) } cnt('aid');
     }
-    for (const q of D.dcy) { ring(FA, q.x, q.y, .7, 8 + q.ph * 40, 2, lc('255,196,70'), .8 * (1 - q.ph)); thing(q.x, q.y, 0, 10, 6, 8, 0, 0x2a2d33); if (q.bl) fp(FA, q.x, q.y, 7, 3, 0, hc(0xffc446), 1); cnt('dcy') }
+    for (const q of D.dcy) { ring(FA, q.x, q.y, .7, 8 + q.ph * 40, 2, lc('255,196,70'), .8 * (1 - q.ph)); if (!kt('dcy', q)) thing(q.x, q.y, 0, 10, 6, 8, 0, 0x2a2d33); if (q.bl) fp(FA, q.x, q.y, 7, 3, 0, hc(0xffc446), 1); cnt('dcy') }
     for (const q of D.burn) { fp(FA, q.x, q.y, 20, 64, 0, lc('255,120,40'), q.f); cnt('burn') }
+    if (ktUsed && K && K.on) K.scenEnd();
     if (K && K.on) K.step(D, FA, FN, dynL);
     // Puffer belegen
     for (const [P, L] of [[pFxA, FA], [pFxN, FN]]) {
