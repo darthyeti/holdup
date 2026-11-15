@@ -298,6 +298,9 @@ void main() {
   // Szenario-Teile (KL.obj mit Namen der Art): je Bild gesammelt und in einem Pool gezeichnet. Ruft view3d in buildScen.
   const SD = [];
   kit.dbrick = (x, z, y0, sx, sy, sz, a, col, em) => SD.push([x, z, y0, sx, sy, sz, a || 0, colOf(col), em || 0]);
+  // gesammelte Teile (kit.collect) als Szenario-Kloetze setzen (nur Drehung um die Hochachse): fuer Fahrzeuge und Figuren als Szenario-Teil (zum Beispiel geparkte Autos)
+  const _m = new THREE.Matrix4(), _pp = new THREE.Vector3(), _qq = new THREE.Quaternion(), _ss = new THREE.Vector3();
+  kit.emit = parts => { for (const p of parts) { p.m.decompose(_pp, _qq, _ss); SD.push([_pp.x, _pp.z, _pp.y - _ss.y / 2, _ss.x, _ss.y, _ss.z, -2 * Math.atan2(_qq.y, _qq.w), p.c, p.e || 0]) } void _m };
   K.scenBegin = () => { SD.length = 0 };
   K.scenEnd = () => { const sm = q => Math.min(q[3], q[4], q[5]) < KC.small; for (const [P, L] of [[pT, SD.filter(q => !sm(q))], [pT2, SD.filter(sm)]]) { P.size(L.length); L.forEach((q, i) => { _p.set(q[0], q[2] + q[4] / 2, q[1]); _q.setFromAxisAngle(yAx, -q[6]); _s.set(q[3], q[4], q[5]); P.im.setMatrixAt(i, tm.compose(_p, _q, _s)); P.im.setColorAt(i, q[7]); P.a.iK.setXY(i, 1, q[8]) }); P.u = L.length; P.finish() } };
   // Bauer fuer ein Szenario-Teil o: erst die feine Art 'art:unterart' (zum Beispiel good:statue, o.n), dann die Art (good)

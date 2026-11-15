@@ -1,7 +1,12 @@
 /* Kloetzchen-Stil: Dinge der Strasse (Ticket 198, Schritt 4a). Szenario-Teil tk: Zubehoer am Panzerwagen (Kasten und Dach zeichnet KL.car 'tk'): offene Ladetuer mit Geld, Warnblinker bei Panne, Rauch am platten Reifen.
    o.x, o.y Mitte, o.L Laenge, o.W Breite, o.fx Fahrtrichtung (-1 oder 1), o.cargo Ladetuer offen, o.blink Blinker an, o.smoke Reifen platt. Fluchtlinie (exit), Rahmen (frame) und geparkte Autos (parked)
-   bleiben beim klassischen Bauplan (Linien aus Licht, Bild-Kloetze), die zeichnet view3d wie ohne Stil. */
+   bleiben beim klassischen Bauplan (Linien aus Licht, Bild-Kloetze), die zeichnet view3d wie ohne Stil. parked baut ein Auto aus Klotzchen wie die fahrenden. */
 export function register(KL) {
+  // geparkte Autos (Transporter): ein ziviles Auto aus dem Fahrzeug-Bauer (KL.cars.civ), als Szenario-Kloetze (kit.emit), Farbe nach Lage (Zeile der Palette)
+  KL.obj('parked', (k, o) => {
+    const e = k.C.cars.civ, car = { k: 'civ', x: o.x + 64, y: o.y + 32, a: 0, L: 128, W: 64, row: (Math.round(o.x / 32) + 3 * Math.round(o.y / 32)) % ((k.KC.car.pal || [0, 0, 0, 0]).length), bl: 0, dim: 0 }, look = k.carLook(car, e);
+    k.emit(k.collect(() => KL.cars.civ(k, car, e, look)));
+  });
   KL.obj('tk', (k, o) => {
     const b = o.x - o.fx * o.L / 2, H = k.C.cars.tk.h, B = (...a) => k.dbrick(...a);
     if (o.cargo) {
