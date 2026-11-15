@@ -62,4 +62,30 @@ module.exports = [
       } finally { await P.done(); }
     },
   },
+  {
+    name: 'Kloetzchen-Dinge A: Gadgets am Boden (Mine, Claymore, Notfallkoffer, Ablenker, Granate) und Barrikaden-Zustand kommen aus Kloetzen, ohne Bauer klassisch, Schaden aendert die Teile',
+    timeout: 240000,
+    async run(t) {
+      const P = await glPage(t); if (!P) return;
+      try {
+        await lib.loadInpage(P.page, 'bild.js');
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+          PX.scene('bank', 5); PX.phase('ueberfall'); const me = D.get().me, V = D.view3d.V, K = V.kl(), cnt = () => ['k-dinge', 'k-dinge-klein'].reduce((a, n) => a + (V.scene.getObjectByName(n) ? V.scene.getObjectByName(n).count : 0), 0);
+          const sd = () => { for (let i = 0; i < 3; i++) { me.hp = 100; D.update(1 / 30); } D.draw(); D.draw(); return V.info(); };
+          let a = sd(); o.base = cnt(); o.baseKl = a.k.on;
+          const x = me.x, y = me.y; D.traps().push({ k: 'mine', x: x + 40, y, a: 5, id: 91 }, { k: 'claw', x: x - 40, y, a: 5, id: 92 }); D.aids().push({ x, y: y + 40, id: 93, t: 5 }); D.dcyList().push({ x, y: y - 40, id: 94, t: 5 });
+          a = sd(); o.gad = cnt(); o.err1 = a.err;
+          const KL = K.KL, bak = {}; for (const n of ['d:trap', 'd:aid', 'd:dcy']) { bak[n] = KL.objs[n]; delete KL.objs[n]; } a = sd(); o.noHook = cnt(); o.err2 = a.err; Object.assign(KL.objs, bak);
+          const B = D.bars()[0]; if (B) { B.lv = 2; B.hp = 60; for (const c of B.cells) {} a = sd(); o.bar2 = cnt(); const full = B.lv * D.CFG.bar.hp; B.hp = full; sd(); o.barOk = cnt(); B.hp = 1; sd(); o.barLow = cnt(); }
+          await D.view3d.set(false); return o; })()`);
+        if (r.i0) { t.note('3D nicht verfuegbar'); return; }
+        t.note(JSON.stringify(r));
+        t.ok(r.err1 === '' && r.err2 === '', 'keine Fehler');
+        t.ok(r.gad > r.base, 'Gadgets am Boden sind Kloetze (' + r.base + ' auf ' + r.gad + ')');
+        t.ok(r.noHook < r.gad, 'ohne Bauer faellt das Ding klassisch zurueck (' + r.noHook + ')');
+        if (r.barOk != null) t.ok(r.barLow > r.barOk, 'Barrikade: Schaden fuegt Teile hinzu (' + r.barOk + ' auf ' + r.barLow + ')');
+        if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
+      } finally { await P.done(); }
+    },
+  },
 ];

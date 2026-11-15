@@ -81,4 +81,25 @@ export function register(KL) {
     for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) B_(cx + a * (w / 2 - 3), cz + b * (w / 2 - 5), 30, 2.4, 1.2, 2.4, 0xd8dde4);
     B_(cx, cz, 14, 3, 3, w + .6, 0xd8dde4, .1, .78); k.studs(cx, cz, w - 8, w - 8, 30.8, 0xc98d52);
   });
+
+  // ---------- Barrikade im Zustand (scen3d 'bar', je Kachel): Stufe lv (Stahlplatten), Heile f (Schaeden) auf dem Grundkoerper der Kachel X ----------
+  KL.obj('bar', (k, o) => {
+    const x = o.x, z = o.y, f = o.f, w = T - 2;
+    for (let i = 1; i < o.lv && i < 3; i++) { B(k, x, z + w / 2 - 1, 3 + (i - 1) * 12, w - 6, 10, 2, 0, 0x8d97a6); for (const a of [-1, 1]) B(k, x + a * (w / 2 - 6), z + w / 2, 5 + (i - 1) * 12, 2.2, 2.2, 1.2, 0, 0xe8edf3) }
+    if (f < .75) { B(k, x - 6, z + w / 2 - 1.2, 20, 9, 7, 1.4, 0, 0x2a1d12); B(k, x + 8, z + w / 2 - 1, 8, 6, 5, 1.4, 0, 0x2a1d12) }
+    if (f < .5) { B(k, x + 4, z - 2, 30, 9, 5, 4, .5, 0x6f4a28); B(k, x - 8, z + 3, 31, 6, 4, 3, -.4, 0xa07040) }
+    if (f < .25) { B(k, x, z + w / 2 - 1, 12, 13, 12, 1.6, 0, 0x14100c); B(k, x - 10, z + 6, 30, 8, 8, 4, .7, 0x6f4a28); B(k, x + 11, z - 5, 31, 7, 6, 4, -.8, 0x6f4a28) }
+  });
+
+  // ---------- Gadgets am Boden ('d:' plus Art, fn(k, q) wie die Szenario-Teile, ein Haken in view3d buildFx; q aus fx3d): Falle (trap), Notfallkoffer (aid), Ablenker (dcy), Granate (gr) ----------
+  KL.obj('d:trap', (k, q) => {
+    const lamp = q.armed ? 0xff3a2e : 0xffc23a;
+    if (q.k === 'mine') { for (const a of [0, .785]) B(k, q.x, q.y, 0, 13, 3, 13, a, 0x4a5a30); B(k, q.x, q.y, 3, 7, 1.6, 7, .4, 0x2f3a22); B(k, q.x, q.y, 4.6, 3, 2, 3, 0, lamp, 1.3) }
+    else if (q.k === 'claw') { B(k, q.x, q.y, 3, 18, 8, 4, 0, 0x5b7a35); B(k, q.x, q.y + 2.4, 4, 14, 6, 1, 0, 0x2f4a1c); for (const a of [-1, 1]) B(k, q.x + a * 6, q.y - 2, 0, 1.4, 4, 1.4, 0, 0x2a2e36); B(k, q.x, q.y, 11, 3, 2, 3, 0, lamp, 1.3) }
+    else { B(k, q.x, q.y, 0, 12, 5, 8, 0, 0xd9c28a); B(k, q.x, q.y, 5, 12, .8, 8, 0, 0xb09a62); B(k, q.x - 3, q.y, 5.8, 2.6, 1.6, 2.6, 0, lamp, 1.3); B(k, q.x + 2.5, q.y, 5.8, 4, 1, 4, 0, 0x2a2e36) }
+  });
+  KL.obj('d:aid', (k, q) => { B(k, q.x, q.y, 0, 16, 8, 12, 0, 0xf5f8f5); B(k, q.x, q.y, 8, 17, 1.4, 13, 0, 0xd8dde4); B(k, q.x, q.y + 6.1, 2, 6, 5, .8, 0, 0xe5392e); B(k, q.x, q.y + 6.1, 3.8, 2, 1.6, .9, 0, 0xffffff, .3); B(k, q.x, q.y + 6.1, 2.5, 2, 4, .9, 0, 0xffffff); B(k, q.x, q.y + 6.2, 3.6, 5, 1.6, .9, 0, 0xffffff); B(k, q.x, q.y, 9.4, 6, 1.8, 1.6, 0, 0x6a6a72) });
+  KL.obj('d:dcy', (k, q) => { B(k, q.x, q.y, 0, 10, 5, 8, 0, 0x3a4a60); B(k, q.x, q.y, 5, 6, 2, 5, 0, 0xffc23a, .4); B(k, q.x, q.y, 7, 3, 3, 3, 0, 0xff9a2e, q.bl ? 1.4 : .2) });
+  const GR = { flash: 0xf4f0d8, smoke: 0xb4bcc8, dec: 0xffc23a, shell: 0xff8a3a, gas: 0x9fbf3c };
+  KL.obj('d:gr', (k, q) => { const c = GR[q.k] || GR.gas; B(k, q.x, q.y, q.h, 5.4, 6.4, 5.4, .3, c); B(k, q.x, q.y, q.h + 6.4, 3.4, 1.6, 3.4, 0, 0x2a2e36); B(k, q.x + 2.6, q.y, q.h + 7, 2.6, 1, 1, 0, 0xd8dde4) });
 }
