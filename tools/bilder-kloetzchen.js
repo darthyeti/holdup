@@ -77,6 +77,16 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     await page.evaluate(() => { PX.phase('polizei'); const D = __dbg; D.get().me.hp = 1e9; D.get().en.length = 0; D.callVan && D.callVan(); for (let i = 0; i < 90; i++) D.update(1 / 30); });
     const ids = await page.evaluate(() => { const g = __dbg.get(), out = []; const pol = g.cars.find(c => !c.civ && !c.dead), civ = g.cars.find(c => c.civ && !c.dead); window.__cs = [pol, civ].filter(Boolean); return window.__cs.map(c => c.civ ? 'civ' : 'pol'); });
     for (let i = 0; i < ids.length; i++) { await page.evaluate(i => { const c = window.__cs[i], m = __dbg.get().me; m.x = c.x + 70; m.y = c.y + 50; __dbg.update(1 / 30); window.__at = c }, i); info = await shot('a' + i, 'at') }
+  } else if (FLOW === 'alle') {
+    // alle Fahrzeugarten nebeneinander (X.figs der Ansicht wird fuer das Bild ersetzt): pol mit Blaulicht, civ in zwei Farben, wreck, van, vh, tk, jeweils nach rechts und links fahrend
+    const r = await page.evaluate(() => {
+      const D = __dbg, V = D.view3d.V, X = V.kl().kit.X, m = D.get().me, orig = X.figs; window.__orig = orig; window.__X = X;
+      const row = (k, i, o) => Object.assign({ k, x: m.x - 260 + i * 140, y: m.y - 30, a: 0, row: 1, L: 128, W: 64, fx: 1, fy: 1, dim: 0, bl: 0 }, o || {}), cs = [row('pol', 0, { bl: 1 }), row('civ', 1, { row: 2 }), row('civ', 2, { row: 5 }), row('wreck', 3, { dim: 1 }), row('van', 4, { row: 0 }), row('vh', 5, { row: 3, bl: 2 }), row('tk', 7, { row: 4, L: 224, W: 96, a: 0 })];
+      const cl = cs.map(c => Object.assign({}, c, { y: c.y + 100, fx: -1, a: Math.PI }));
+      X.figs = () => ({ f: [], c: cs.concat(cl) }); m.x += 0; window.__at = { x: m.x + 150, y: m.y + 20 }; return cs.length;
+    });
+    await step(1); info = await shot('alle', 'at');
+    await page.evaluate(() => { window.__X.figs = window.__orig });
   } else if (FLOW === 'pumpe') {
     // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
     await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });
