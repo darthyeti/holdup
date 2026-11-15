@@ -286,6 +286,10 @@ export function mkView3d(X) {
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
     curLay = X.LAY; curSt = X.st;
+    // Aendert sich die Kartengroesse (Wechsel von Menue-Hintergrund oder Auftrag zu Auftrag), muss die Textur neu angelegt werden: WebGL 2 legt Texturen mit fester Groesse an, ein neues Bild anderer Groesse landete sonst
+    // in der alten Flaeche (Boden, Spuren und Sichtmaske stale, erst ein neuer Kontext, zum Beispiel F7, baute alles richtig)
+    { const dw = Math.max(1, X.st.width / 2 / C.decalDiv | 0), dh = Math.max(1, X.st.height / 2 / C.decalDiv | 0), vw = Math.max(1, Math.ceil(X.W * T / C.visDiv)), vh = Math.max(1, Math.ceil(X.H * T / C.visDiv));
+      if (groundCv.width !== X.st.width || groundCv.height !== X.st.height) groundTex.dispose(); if (decCv.width !== dw || decCv.height !== dh) decTex.dispose(); if (visCv.width !== vw || visCv.height !== vh) visTex.dispose() }
     groundCv.width = X.st.width; groundCv.height = X.st.height; refreshGround();
     decCv.width = Math.max(1, X.st.width / 2 / C.decalDiv | 0); decCv.height = Math.max(1, X.st.height / 2 / C.decalDiv | 0); refreshDecal();
     U0.uOrg.value.set(ox, oz, 1 / WP, 1 / HP); UV.uVisO.value.set(ox, oz, 1 / WP, 1 / HP);
