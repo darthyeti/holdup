@@ -160,7 +160,7 @@ void main() {
   // Oberkante des Koerpers der Kachel an (x, y) (Tresen 24, Wand 64) aus der Hoehentabelle: Teile prallen von Waenden ab und bleiben auf Kanten liegen
   const topH = (x, y) => { const c = E.cellAt(Math.floor(x / T), Math.floor(y / T)), e = C.cells[c]; if (!e || (e.open && X.vaultOpen)) return 0; let h = 0; for (const s of e.s) if (s[0] === 0) h = Math.max(h, s[1]); return h };
   const capD = () => KC.q.debris[q()] >> (lod() >= 3 ? 1 : 0);
-  // parts aus collect; o: k Tempo, up Aufwaerts, em Glut, dir (Richtung), scale, split (grosse Teile in viele kleine teilen)
+  // parts aus collect; o: k Tempo, up Aufwaerts, em Glut, dir (Richtung), scale, split (grosse Teile in viele kleine teilen), rest [von, bis] Liegezeit in Sekunden (sonst KC.deb.rest)
   kit.spawnDeb = (parts, cx, cy, o) => {
     parts = parts.slice(); o = o || {}; const B = KC.deb, me = X.me;
     if (o.split) { const more = []; for (const p of parts) { const big = Math.max(...p.s); if (big < 9) continue; const n = big > 40 ? 6 : big > 20 ? 4 : 2; p.s = p.s.map(v => v * .5); for (let i = 0; i < n; i++) more.push({ m: p.m.clone().multiply(new THREE.Matrix4().makeTranslation(rr(-.5, .5), rr(-.5, .5), rr(-.5, .5))), c: p.c, e: p.e, s: p.s.map(v => v * rr(.45, .8)) }) } parts = parts.concat(more) }
@@ -168,7 +168,7 @@ void main() {
       p.m.decompose(tp, tq, ts); const kx = tp.x - cx, kz = tp.z - cy, l = Math.hypot(kx, kz) || 1, v = rr(B.burstV[0], B.burstV[1]) * (o.k || 1);
       let bx = kx / l, bz = kz / l; if (o.dir) { bx = bx * .6 + o.dir[0] * .8; bz = bz * .6 + o.dir[1] * .8 } else if (me) { const mx = cx - me.x, mz = cy - me.y, ml = Math.hypot(mx, mz) || 1; bx += mx / ml * (B.biasK / 100); bz += mz / ml * (B.biasK / 100) }
       deb.push({ x: tp.x, y: tp.y, z: tp.z, q: tq.clone(), s: p.s.map(v => v * (o.scale || 1)), c: p.c, em: p.e + (o.em || 0), hot: o.em || 0, vx: bx * v + rr(-25, 25), vy: rr(B.up[0], B.up[1]) * (o.up || 1), vz: bz * v + rr(-25, 25),
-        wx: rr(-B.spin, B.spin), wy: rr(-B.spin, B.spin), wz: rr(-B.spin, B.spin), age: 0, rest: 0, life: rr(B.rest[0], B.rest[1]), still: 0 });
+        wx: rr(-B.spin, B.spin), wy: rr(-B.spin, B.spin), wz: rr(-B.spin, B.spin), age: 0, rest: 0, life: o.rest ? rr(o.rest[0], o.rest[1]) : rr(B.rest[0], B.rest[1]), still: 0 });
     }
     while (deb.length > capD()) deb.shift();
   };
