@@ -39,7 +39,7 @@ module.exports = [
             if (L.truck) { const k = D.tk(); tg = [k.x, k.y]; } else if (L.pumps) { const q = L.pumps[0]; tg = [q.x * 32 + 16, q.y * 32 + 16]; } else if (L.vit) tg = [L.vit[0].x, L.vit[0].y]; else { const v = L.vault.door; tg = [v[0] * 32 + 16, v[1] * 32 + 32]; }
             const W = D.world(), me = g.me; let best = null; for (const rr of [90, 120, 150, 180, 220]) { for (let k = 0; k < 16 && !best; k++) { const a = Math.PI / 2 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 8, x = tg[0] + Math.cos(a) * rr, y = tg[1] + Math.sin(a) * rr; if (!W.isSol(Math.floor(x / 32), Math.floor(y / 32)) && W.cell(Math.floor(x / 32), Math.floor(y / 32)) !== 'v' && D.los(x, y, tg[0], tg[1])) best = [x, y]; } if (best) break; }
             best = best || [me.x, me.y]; for (let k = 0; k < 12; k++) { me.x = best[0]; me.y = best[1]; me.vx = me.vy = 0; me.hp = 100; D.update(1 / 30); } D.draw(); D.draw();
-            const V = D.view3d.V, i = V.info(), sm = V.scene.getObjectByName('k-dinge'), mb = V.scene.getObjectByName('k-moebel');
+            const V = D.view3d.V, i = V.info(), sm = { count: ['k-dinge', 'k-dinge-klein'].reduce((a, n) => a + (V.scene.getObjectByName(n) ? V.scene.getObjectByName(n).count : 0), 0) }, mb = V.scene.getObjectByName('k-moebel');
             o[sc] = { err: i.err, errs: i.errs, calls: i.calls, tris: i.tris, k: i.k && { on: i.k.on, world: i.k.world }, dinge: sm ? sm.count : -1, moebel: mb ? mb.count : -1, kinds: Object.keys(i.scen), list: V.scen() };
           }
           const K = D.view3d.V.kl(); o.cut = K.mats.map(m => m.fragmentShader.includes('uCut') || m.vertexShader.includes('uCut'));
