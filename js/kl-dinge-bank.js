@@ -102,4 +102,27 @@ export function register(KL) {
       br(11, 15.6, 30, 5, 9, 1.6, 0x20252c); br(11, 16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); br(11, -15.6, 30, 5, 9, 1.6, 0x20252c); br(11, -16.4, 36, 3, 2.4, .6, 0x4cf06a, 1.8); // Leser mit gruener LED
     }
   });
+
+  // ---------- Ueberwachungskamera (Ticket 221, Szenario-Teil 'cam' aus scen3d): Wandhalter, Gehaeuse, Linse, LED ----------
+  // Die Kamera haengt an einer Mauer (js/maps.js mountCams): Platte an der Wand, Arm zum Drehpunkt, darauf ein laengliches Gehaeuse mit Haube, dunkler Linse vorn und roter LED, gedreht nach dem Blickwinkel o.a
+  // (mit Schwung wie im Spiel). Aus (o.off: Hauptschalter oder ausgeschaltet): LED dunkel, Linse matt. Alarm (o.al): LED orange. Hoehe 56 wie das 2D-Bild auf dem HUD.
+  KL.obj('cam', (k, o) => {
+    const T_ = k.T, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), cell = k.E.cellAt, wall = (a, b) => { const q = cell(a, b); return q === '#' || q === 'P' || q === 'V' };
+    const dirs = [[0, -1], [-1, 0], [1, 0], [0, 1]].filter(d => wall(tx + d[0], ty + d[1])), vx = Math.cos(o.a0), vz = Math.sin(o.a0);
+    const W = dirs.sort((p, q) => (p[0] * vx + p[1] * vz) - (q[0] * vx + q[1] * vz))[0] || null;      // die Mauer am weitesten gegen die Blickrichtung
+    const B = (x, z, y0, sx, sy, sz, a, col, em) => k.dbrick(x, z, y0, sx, sy, sz, a, col, em), H = 52;
+    const white = o.off ? 0xaab0b8 : 0xe9edf1, shade = o.off ? 0x6c727a : 0x9aa3ae, dark = 0x14181d;
+    if (W) { // Wandplatte an der Mauerflaeche (Kachelrand), Arm nach innen bis zum Drehpunkt (o.x, o.y)
+      const fx = (tx + .5) * T_ + W[0] * T_ / 2, fz = (ty + .5) * T_ + W[1] * T_ / 2, ax = W[0] !== 0, L = Math.max(2, -((o.x - fx) * W[0] + (o.y - fz) * W[1]));
+      B(fx - W[0] * .8, fz - W[1] * .8, H - 3, ax ? 1.6 : 8, 10, ax ? 8 : 1.6, 0, 0x4a525c);        // Platte
+      B(fx - W[0] * L / 2, fz - W[1] * L / 2, H - .5, ax ? L : 3, 3, ax ? 3 : L, 0, 0x4a525c);        // Arm
+    }
+    const ca = o.a;
+    const cx = o.x + Math.cos(ca) * 3.5, cz = o.y + Math.sin(ca) * 3.5;
+    B(o.x, o.y, H - 2, 4, 3, 4, 0, 0x2a2f37);                                                     // Gelenk
+    B(cx, cz, H, 13, 6.4, 6.4, ca, white); B(cx, cz, H + 6.4, 12, 1.4, 6.8, ca, shade);           // Gehaeuse und Haube
+    B(cx + Math.cos(ca) * 7, cz + Math.sin(ca) * 7, H + .9, 1.8, 4.4, 4.4, ca, dark);              // Linse vorn
+    B(cx + Math.cos(ca) * 7.6, cz + Math.sin(ca) * 7.6, H + 2.2, .6, 1.6, 1.6, ca, o.off ? 0x2a3038 : 0x3a8bff, o.off ? 0 : .8); // Glanz der Linse
+    B(cx - Math.cos(ca) * 3, cz - Math.sin(ca) * 3, H + 7.6, 1.8, 1.8, 1.8, 0, o.off ? 0x3a2220 : o.al ? 0xffa22a : 0xff2a22, o.off ? 0 : 1.9); // LED
+  });
 }
