@@ -79,11 +79,12 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     for (let i = 0; i < ids.length; i++) { await page.evaluate(i => { const c = window.__cs[i], m = __dbg.get().me; m.x = c.x + 70; m.y = c.y + 50; __dbg.update(1 / 30); window.__at = c }, i); info = await shot('a' + i, 'at') }
   } else if (FLOW === 'alle') {
     // alle Fahrzeugarten nebeneinander (X.figs der Ansicht wird fuer das Bild ersetzt): pol mit Blaulicht, civ in zwei Farben, wreck, van, vh, tk, jeweils nach rechts und links fahrend
+    await page.evaluate(() => { const D = __dbg, m = D.get().me; m.y += 150; m.x -= 100; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } });
     const r = await page.evaluate(() => {
       const D = __dbg, V = D.view3d.V, X = V.kl().kit.X, m = D.get().me, orig = X.figs; window.__orig = orig; window.__X = X;
-      const row = (k, i, o) => Object.assign({ k, x: m.x - 260 + i * 140, y: m.y - 30, a: 0, row: 1, L: 128, W: 64, fx: 1, fy: 1, dim: 0, bl: 0 }, o || {}), cs = [row('pol', 0, { bl: 1 }), row('civ', 1, { row: 2 }), row('civ', 2, { row: 5 }), row('wreck', 3, { dim: 1 }), row('van', 4, { row: 0 }), row('vh', 5, { row: 3, bl: 2 }), row('tk', 7, { row: 4, L: 224, W: 96, a: 0 })];
-      const cl = cs.map(c => Object.assign({}, c, { y: c.y + 100, fx: -1, a: Math.PI }));
-      X.figs = () => ({ f: [], c: cs.concat(cl) }); m.x += 0; window.__at = { x: m.x + 150, y: m.y + 20 }; return cs.length;
+      const row = (k, i, o) => Object.assign({ k, x: m.x - 150 + (i % 4) * 135, y: m.y - 75 + (i >= 4 ? 90 : 0), a: 0, row: 1, L: 128, W: 64, fx: 1, fy: 1, dim: 0, bl: 0 }, o || {}), cs = [row('pol', 0, { bl: 1 }), row('civ', 1, { row: 2 }), row('civ', 2, { row: 5 }), row('wreck', 3, { dim: 1 }), row('van', 4, { row: 0 }), row('vh', 5, { row: 3, bl: 2 }), row('tk', 6, { row: 4, L: 224, W: 96, x: m.x + 330 })];
+      const cl = [];
+      X.figs = () => ({ f: orig().f, c: cs.concat(cl) }); m.x += 0; window.__at = { x: m.x + 220, y: m.y + 5 }; return cs.length;
     });
     await step(1); info = await shot('alle', 'at');
     await page.evaluate(() => { window.__X.figs = window.__orig });
