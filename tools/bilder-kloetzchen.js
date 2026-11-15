@@ -1,6 +1,6 @@
 // Ticket 196: Bilder und Bildfolgen der Stilstudie Kloetzchen (docs/bilder/stil-kloetzchen/). Aufruf:
 //   cd tests && HOLDUP_CHROME=/opt/pw-browsers/chromium node ../tools/bilder-kloetzchen.js <ordner> <szene bank|museum> <stil 0|1|2> <ablauf> [Bildbreite]
-// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
+// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
 // Es wird die WebGL-Leinwand selbst gelesen (ohne HUD, doppelte Aufloesung bei Grafik hoch), ein Ausschnitt um das Geschehen, Bildfolgen als Streifen (Pillow). Stil 0 ist das heutige 3D zum Vergleich.
 const path = require('path'), fs = require('fs'), { execFileSync } = require('child_process');
 const lib = require(path.join(__dirname, '..', 'tests', 'lib'));
@@ -26,7 +26,7 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   // ein Bild: Spielschritte, zeichnen, Leinwand lesen, Mitte (Bildpunkte) des Geschehens zurueck
   const FR = [], shot = async (name, at) => {
     const r = await page.evaluate((at) => {
-      const D = __dbg; D.draw(); const V = D.view3d.V, i = V.info(), q = i.q || 1, g = D.get(), m = g.me; let p = [m.x, m.y, 20]; if (at === 'car') { const c = g.cars.find(c => c.dead) || g.cars[0]; if (c) p = [c.x, c.y, 10] } else if (at) p = at;
+      const D = __dbg; D.draw(); const V = D.view3d.V, i = V.info(), q = i.q || 1, g = D.get(), m = g.me; let p = [m.x, m.y, 20]; if (at === 'car') { const c = g.cars.find(c => c.dead) || g.cars[0]; if (c) p = [c.x, c.y, 10] } else if (at === 'at') { const q = window.__at; p = [q.x, q.y, 10] } else if (at === 'boom') p = [window.__bx, window.__by, 10]; else if (at) p = at;
       const s = V.toScr(p[0], p[1], p[2]); return { url: V.el.toDataURL('image/jpeg', .93), c: [s[0] * q, s[1] * q], q, k: i.k, calls: i.calls, tris: i.tris, err: i.err };
     }, at);
     const f = path.join(tmp, name + '.jpg'); fs.writeFileSync(f, Buffer.from(r.url.split(',')[1], 'base64'));
@@ -72,6 +72,16 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; const c = g.cars.find(q => q.civ && !q.dead) || g.cars[0]; window.__car = c; });
     info = await shot('f0', 'car'); await page.evaluate(() => { const D = __dbg; D.get().me.hp = 1e9; D.carBlow(window.__car, 0) });
     for (const n of [1, 2, 3, 5, 9, 16, 30]) { await step(n); info = await shot('f' + FR.length, 'car') }
+  } else if (FLOW === 'autos') {
+    // Streifenwagen mit Blaulicht, ziviles Auto, Fluchtwagen: je ein Bild um den Wagen (Phase Polizei, Spieler daneben); mit SC=truck auch Panzerwagen
+    await page.evaluate(() => { PX.phase('polizei'); const D = __dbg; D.get().me.hp = 1e9; D.get().en.length = 0; D.callVan && D.callVan(); for (let i = 0; i < 90; i++) D.update(1 / 30); });
+    const ids = await page.evaluate(() => { const g = __dbg.get(), out = []; const pol = g.cars.find(c => !c.civ && !c.dead), civ = g.cars.find(c => c.civ && !c.dead); window.__cs = [pol, civ].filter(Boolean); return window.__cs.map(c => c.civ ? 'civ' : 'pol'); });
+    for (let i = 0; i < ids.length; i++) { await page.evaluate(i => { const c = window.__cs[i], m = __dbg.get().me; m.x = c.x + 70; m.y = c.y + 50; __dbg.update(1 / 30); window.__at = c }, i); info = await shot('a' + i, 'at') }
+  } else if (FLOW === 'pumpe') {
+    // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
+    await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });
+    info = await shot('f0', 'boom'); await page.evaluate(() => { __dbg.evt('bx', [window.__bx, window.__by, 120, 1]) });
+    for (const n of [1, 2, 3, 5, 9, 16, 30]) { await step(n); info = await shot('f' + FR.length, 'boom') }
   } else if (FLOW === 'alarm') {
     await page.evaluate(() => PX.phase('polizei')); info = await shot('f0', null); for (let k = 0; k < 7; k++) { await step(5, 'D.get().me.hp=1e9'); info = await shot('f' + FR.length, null) }
   }
