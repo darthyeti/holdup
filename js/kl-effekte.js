@@ -10,6 +10,15 @@ export function register(KL) {
     const parts = k.collect(() => { k.state(0, 1); k.rotY(x, y, 0, 1); for (let i = 0; i < n; i++) { const a = k.rr(0, 6.283), d = k.rr(2, 9), w = s * k.rr(.7, 1.4); k.part(k.root, Math.cos(a) * d, k.rr(6, 14), Math.sin(a) * d, w, w * k.rr(.5, 1), w * k.rr(.8, 1.3), k.colOf(cols[i % cols.length]), 0, k.rr(-.6, .6), k.rr(-.6, .6)) } });
     k.spawnDeb(parts, x, y, Object.assign({ k: 1 }, o));
   };
+  // Platten laengs der laengsten Achse teilen, bis keine laenger ist als maxL (Weltpixel, vor dem Skalieren): grosse Dachplatten fliegen sonst als riesige Flaechen durchs Bild
+  const cut = (k, parts, maxL) => {
+    const T = k.THREE, out = [];
+    for (const p of parts) {
+      const ax = p.s.indexOf(Math.max(...p.s)), n = Math.min(6, Math.ceil(p.s[ax] / maxL)); if (n <= 1) { out.push(p); continue }
+      for (let i = 0; i < n; i++) { const t = [0, 0, 0]; t[ax] = (i - (n - 1) / 2) * p.s[ax] / n; const s2 = p.s.slice(); s2[ax] = p.s[ax] / n * .96; out.push({ m: p.m.clone().multiply(new T.Matrix4().makeTranslation(t[0], t[1], t[2])), c: p.c, e: p.e, s: s2 }) }
+    }
+    return out;
+  };
   const PLASTIC = [0xd9dde2, 0xff8a3a, 0x3b3f46, 0xffd23a], GASC = [0x8fb53a, 0xc7d946, 0x5e6b2c], SMK = [0xb9bfc7, 0x8a919b, 0x5b616b];
   KL.fx('fig-tot', (k, { o, e, art }) => {
     const o2 = Object.assign({}, o, { col: 6, lie: 0, hit: 0, al: 1, ar: 0 }), e2 = Object.assign({}, e, { lie: 0 }), b = KL.figs[art];
@@ -19,11 +28,11 @@ export function register(KL) {
   KL.fx('car-wreck', (k, { o, e, look }) => {
     const kk = look.k && look.k !== 'wreck' && KL.cars[look.k] ? look.k : 'civ', b = KL.cars[kk]; if (!b) return;
     lastWreck = { x: o.x, y: o.y, t: k.time };
-    const parts = k.collect(() => b(k, Object.assign({}, o, { k: kk, bl: 0 }), e, look)), big = parts.filter(p => Math.max(...p.s) >= 12), small = parts.filter(p => Math.max(...p.s) < 12);
+    const Lc = o.L * k.C.carK[0], parts = cut(k, k.collect(() => b(k, Object.assign({}, o, { k: kk, bl: 0 }), e, look)), Lc * .22), big = parts.filter(p => Math.max(...p.s) >= 12), small = parts.filter(p => Math.max(...p.s) < 12);
     // wenige grosse Teile flach zur Seite (niedrig, hoechstens Wandhoehe), viele kleine hoch und weit; die grossen werden halbiert, damit sie kein Dach durchschlagen
-    k.spawnDeb(big, o.x, o.y, { k: 1.25, up: .3, em: .5, scale: .8 }); k.spawnDeb(small, o.x, o.y, { k: 1.6, up: .85, em: .55, split: 1, scale: .85 });
-    bricks(k, o.x, o.y, 12, PLASTIC, 5, { k: 1.4, up: .8, em: .4 });
-    k.sparkAt(o.x, o.y, 16, 44, 200, 1); k.sparkAt(o.x, o.y, 30, 14, 120, 0); k.smokeAt(o.x, o.y, 12, 9, 1.8); k.flash(o.x, o.y, .9);
+    k.spawnDeb(big, o.x, o.y, { k: 1.25, up: .25, em: .5, scale: .85 }); k.spawnDeb(small, o.x, o.y, { k: 1.6, up: .6, em: .55, scale: .85 });
+    bricks(k, o.x, o.y, 12, PLASTIC, 5, { k: 1.4, up: .55, em: .4 });
+    k.sparkAt(o.x, o.y, 16, 44, 200, 1); k.sparkAt(o.x, o.y, 30, 14, 120, 0); k.smokeAt(o.x, o.y, 12, 9, 1.8); k.flash(o.x, o.y, .7);
   });
   KL.fx('casing', (k, { o }) => {
     const kk = Math.round(o.x / 40) + ':' + Math.round(o.y / 40), lt = shot.get(kk) || -9; if (k.time - lt <= .09) return; shot.set(kk, k.time); if (shot.size > 64) shot.clear();
@@ -50,6 +59,8 @@ export function register(KL) {
       }
     }
     tPrev = k.time;
+    for (let i = k.flashes.length - 1; i >= 0; i--) if (k.flashes[i].t > .11) k.flashes.splice(i, 1);
+    for (const l of k.light) if ((l.k === 'red' || l.k === 'blue') && l.car) l.i = .5;
     for (const [o, e] of k.cars) if (e.bar && o.bl) {
       const a = o.bl === 1, c1 = hc(a ? KC.car.bar[0] : KC.car.bar[1]), c2 = hc(a ? KC.car.bar[1] : KC.car.bar[0]), h = KL.carHead(o), ca = Math.cos(h), sa = Math.sin(h), Lc = o.L * k.C.carK[0],
         bh = (o.k === 'pol' ? 36 : 11 + (e.h - 11) * .76 + 3.4) + 2, bx = o.k === 'pol' ? -Lc * .03 : Lc / 2 - Lc * .15, wz = o.W * k.C.carK[1] * .22;
