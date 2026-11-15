@@ -4,16 +4,7 @@
 // Kein Pixelvergleich. Ohne WebGL 2 (auch nicht mit SwiftShader-Flags) ueberspringt der Test mit Meldung.
 const lib = require('../lib');
 
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true });
-  const page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close();
-  t.note('kein WebGL 2 im Test-Chromium (auch nicht mit SwiftShader-Flags), 3D-Teil uebersprungen');
-  return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 async function coopPage(t) { const P = await glPage(t); if (!P) return null; await lib.loadTool(P.page, 'loopnet.js'); await lib.loadInpage(P.page, 'coop.js'); return P; }
 const jsErr = (t, P) => { if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | ')); };
 

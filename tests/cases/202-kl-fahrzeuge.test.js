@@ -55,7 +55,7 @@ module.exports = [
     name: 'Kloetzchen-Effekte im Coop: eine Explosion zeigen Host und Client mit Teilen (Test-Leitung)',
     timeout: 300000,
     async run(t) {
-      const P = await glPage(t, true); if (!P) return;
+      const P = await glPage(t); if (!P) return;
       try {
         await lib.loadTool(P.page, 'loopnet.js'); await lib.loadInpage(P.page, 'coop.js');
         const r = await P.page.evaluate(`(async () => {

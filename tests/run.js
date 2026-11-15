@@ -72,12 +72,15 @@ async function runParallel(files) {
     const tcs = match.filter(tc => !(FAST && tc.slow));
     if (!tcs.length) { skipP += match.length; continue; }
     const w = wj[base] ? (FAST ? wj[base].fast : wj[base].all) : 10 * tcs.length;
-    items.push({ base, w: Math.max(1, w) });
+    items.push({ base, w: Math.max(1, w), gl: /glshare/.test(fs.readFileSync(file, 'utf8')) });   // gl: Datei nutzt den gemeinsamen SwiftShader-Browser
   }
   const n = Math.min(JOBS, items.length);
   if (n < 2) return null;   // nichts zu verteilen: sequentiell weiter
   const bins = Array.from({ length: n }, () => ({ files: [], w: 0 }));
-  for (const it of items.sort((a, b) => b.w - a.w)) { const b = bins.reduce((m, x) => x.w < m.w ? x : m); b.files.push(it.base); b.w += it.w; }
+  // Alle Dateien mit 3D (SwiftShader rechnet auf der CPU und nimmt mehrere Kerne) laufen in EINEM Kindprozess hintereinander: mehrere SwiftShader-Browser gleichzeitig liessen in der CI auf wenigen Kernen
+  // den Seitenaufruf (page.goto, 30 s) in den Timeout laufen. Die anderen Dateien verteilen sich auf die uebrigen Kinder.
+  for (const it of items.filter(x => x.gl)) { bins[0].files.push(it.base); bins[0].w += it.w; }
+  for (const it of items.filter(x => !x.gl).sort((a, b) => b.w - a.w)) { const b = bins.reduce((m, x) => x.w < m.w ? x : m); b.files.push(it.base); b.w += it.w; }
   const basePort = +process.env.HOLDUP_PORT || 18765, pixBin = bins.findIndex(b => b.files.includes('70-menues.test.js'));
   let next = 1;
   const t0 = Date.now(), tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'holdup-tests-'));
@@ -150,6 +153,7 @@ async function runParallel(files) {
     }
   } finally {
     // Beenden mit Zeitlimit: Chromium kehrt aus close() gelegentlich nicht zurueck (Ursache des einmaligen Haengers beim ersten Coop-Lauf), process.exit raeumt dann auf
+    await require('./glshare').closeShared();   // gemeinsamer WebGL-Browser der 3D-Tests
     await Promise.race([env.browser.close().catch(() => {}), new Promise(r => setTimeout(r, 8000))]);
     env.srv.close();
   }
