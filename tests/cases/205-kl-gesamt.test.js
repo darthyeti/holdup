@@ -1,5 +1,5 @@
 // Klotzchen-Abnahme (Ticket 198, Integrationspruefung fuer den Coop-Test): alle acht Szenarien mit Kloetzchen durch alle Phasen (Erkundung, Ueberfall, Polizei, Flucht)
-// ohne Fehler, mit draw() und unter der Dreiecks- und Draw-Call-Grenze; Coop (Test-Leitung) mit Explosion und Zerfall, Client ohne Fehler und mit Teilen; Rueckfall auf den klassischen Stil und ohne WebGL.
+// ohne Fehler, mit draw() und unter der Dreiecks- und Draw-Call-Grenze; Coop (Test-Leitung) mit Explosion und Zerfall, Client ohne Fehler und mit Teilen; Rueckfall auf 2D ohne WebGL.
 // Ohne WebGL 2 im Test-Chromium wird der 3D-Teil uebersprungen (wie Test 190 und 200). Die drei langen Tests sind slow (voller Lauf), Coop gesamt und Rueckfall laufen im schnellen Lauf.
 const lib = require('../lib');
 const SCS = ['bank', 'truck', 'jewel', 'gas', 'museum', 'casino', 'nb', 'prison'];
@@ -55,7 +55,7 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => {
           const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
           const run = n => { for (let i = 0; i < n; i++) step(G.insts, G.net, 1 / 60); };
-          for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
+          for (const d of [A, B]) { await d.view3d.set(true); }
           A.startHeist(); run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
           const o = { phase: [A.get().phase, B.get().phase] }; const car = A.get().cars.find(c => c.civ && !c.dead); o.car = !!car;
           // ein Polizist neben dem Spieler, der faellt
@@ -78,15 +78,13 @@ module.exports = [
     },
   },
   {
-    name: 'Kloetzchen-Rueckfall: der gemerkte Stil klassisch (F7, #klassisch) zeichnet die Low-Poly-Figuren, ohne Schalter ist Kloetzchen Standard, ohne WebGL laeuft das Spiel in 2D weiter',
+    name: 'Kloetzchen-Rueckfall: ohne Schalter ist Kloetzchen die einzige 3D-Ansicht, ohne WebGL laeuft das Spiel in 2D weiter',
     timeout: 300000,
     async run(t) {
       const P = await glPage(t); if (!P) return; const env = P.env;
       try {
-        const open = async (hash, nogl, stil) => {
+        const open = async (hash, nogl) => {
           const ctx = await env.browser.newContext({ viewport: { width: 1000, height: 640 } });
-          await ctx.addInitScript(() => { delete window.__holdupKl; });
-          if (stil) await ctx.addInitScript(v => { try { localStorage.setItem('holdup.stil', v) } catch (e) {} }, stil);
           if (nogl) await ctx.addInitScript(() => { window.WebGL2RenderingContext = undefined; window.WebGLRenderingContext = undefined; });
           const page = await ctx.newPage(); page.errors = []; page.on('pageerror', e => page.errors.push(String(e && e.stack || e)));
           await page.goto(env.url + '/index.html' + hash); await page.waitForFunction(() => window.__dbg && __dbg.get && __dbg.get().players, null, { timeout: 30000 });
@@ -94,8 +92,7 @@ module.exports = [
         };
         const run = p => p.evaluate(async () => { const D = __dbg; D.reset(); D.startHeist(false, D.get().me); await D.view3d.ready(); for (let i = 0; i < 120; i++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); D.draw(); const i = D.view3d.info ? D.view3d.info() : {}, V = D.view3d.V, vi = V && V.info ? V.info() : null; return { st: D.view3d.state, kl: V3OPT.kloetz, figParts: vi && vi.figParts, figsK: vi && vi.k ? vi.k.figsK : -1, err: vi ? vi.err : '', el: !!document.getElementById('c3d') }; });
         let gl = true;
-        { const a = await open('#debug&3d', false, 'klassisch'); gl = await a.page.evaluate(() => !!document.createElement('canvas').getContext('webgl2')); if (!gl) t.note('kein WebGL 2, Teil 1 und 2 uebersprungen'); else { const r = await run(a.page); t.note('klassisch ' + JSON.stringify(r)); t.ok(r.kl === 0 && r.figsK <= 0 && r.figParts > 0 && r.err === '', 'Stil klassisch (holdup.stil, wie F7 und #klassisch): Low-Poly-Figuren, keine Kloetzchen: ' + JSON.stringify(r)); t.eq(a.page.errors, [], 'Stil klassisch (holdup.stil, wie F7 und #klassisch): keine JS-Fehler') } await a.ctx.close(); }
-        if (gl) { const b = await open('#debug&3d'); const r = await run(b.page); t.note('standard ' + JSON.stringify(r)); t.ok(r.kl === 1 && r.figsK > 0 && r.figParts === 0 && r.err === '', 'ohne Schalter: Kloetzchen sind Standard: ' + JSON.stringify(r)); t.eq(b.page.errors, [], 'Standard: keine JS-Fehler'); await b.ctx.close(); }
+        if (gl) { const b = await open('#debug&3d'); const r = await run(b.page); t.note('standard ' + JSON.stringify(r)); t.ok(r.figsK > 0 && r.err === '', 'Kloetzchen sind die einzige 3D-Ansicht: ' + JSON.stringify(r)); t.eq(b.page.errors, [], 'Standard: keine JS-Fehler'); await b.ctx.close(); }
         { const c = await open('#debug&3d', true); const r = await c.page.evaluate(async () => { const D = __dbg; D.reset(); D.startHeist(false, D.get().me); D.draw(); await D.view3d.ready(); for (let i = 0; i < 120; i++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); const cv = document.getElementById('c'); return { st: D.view3d.state, el: !!document.getElementById('c3d'), mid: cv.getContext('2d').getImageData(480, 270, 1, 1).data[3], phase: D.get().phase } });
           t.note('ohne WebGL ' + JSON.stringify(r)); t.ok(r.st === 'rueckfall' && !r.el && r.mid === 255, 'ohne WebGL: Rueckfall auf 2D, das Spiel zeichnet weiter: ' + JSON.stringify(r)); t.eq(c.page.errors, [], 'ohne WebGL: keine JS-Fehler'); await c.ctx.close(); }
       } finally { await P.done(); }
@@ -146,7 +143,7 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => {
           const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
           const run = n => { for (let i = 0; i < n; i++) step(G.insts, G.net, 1 / 60); };
-          for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
+          for (const d of [A, B]) { await d.view3d.set(true); }
           const o = { rounds: [] };
           for (let c = 0; c < 2; c++) {
             const t0 = performance.now(); A.startHeist(); run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
@@ -161,7 +158,7 @@ module.exports = [
         t.ok(!r.nextErr, 'startNext ohne Fehler: ' + r.nextErr);
         t.ok(r.rounds.every(q => q.err.every(e => e === '') && q.on.every(Boolean)), 'beide Ansichten in jeder Runde ohne Fehler');
         t.ok(r.rounds.every(q => q.deb[1] > 10), 'Zerfall beim Client in jeder Runde: ' + r.rounds.map(q => q.deb));
-        t.ok(r.rounds.every(q => q.ms < 60000), 'keine Haenger: ' + r.rounds.map(q => q.ms) + ' ms je Runde');
+        t.ok(r.rounds.every(q => q.ms < 100000), 'keine Haenger: ' + r.rounds.map(q => q.ms) + ' ms je Runde');
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
     },

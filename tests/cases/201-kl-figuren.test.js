@@ -28,7 +28,7 @@ module.exports = [
         t.note(JSON.stringify(r));
         t.ok(r.spot, 'freier Platz fuer die Reihe');
         t.eq(r.have, [], 'Arten ohne Bauer');
-        t.ok(r.i.err === '' && r.i.figParts === 0 && r.i.figsK >= 12, 'Reihe aus Teilen ohne Fehler: ' + JSON.stringify(r.i));
+        t.ok(r.i.err === '' && r.i.figsK >= 12, 'Reihe aus Teilen ohne Fehler: ' + JSON.stringify(r.i));
         t.ok(r.per > 12 && r.per < 90, 'Teile je Figur im Rahmen (12 bis 90): ' + r.per.toFixed(1));
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
