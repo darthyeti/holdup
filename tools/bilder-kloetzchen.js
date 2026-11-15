@@ -56,6 +56,19 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       return out.slice(0, 8) });
     console.log(JSON.stringify(targets));
     for (const t of targets) { await page.evaluate(([x, y]) => { const D = __dbg, m = D.get().me; m.x = x - 60; m.y = y + 40; m.vx = m.vy = 0; D.update(1 / 30); D.update(1 / 30); D.draw() }, t.slice(1, 3)); process.env.HALF = '190'; info = await shot('d' + FR.length, t.slice(1, 4)) }
+  } else if (FLOW === 'tresor') {
+    // Tresor zu, offen, Spieler im Tresor (Ticket 198 Tresor): Spieler vor der Tuer, dann Tresor oeffnen (Beute-Objekt act), dann in den Raum dahinter
+    const V0 = await page.evaluate(() => { const D = __dbg, L = D.LAY(), T = 32, v = L.vault; if (!v) return null; const m = D.get(); return { door: [v.door[0] * T, v.door[1] * T], o: v.o, dir: v.dir, mid: [v.door[0] * T + 32, v.door[1] * T + 32] } });
+    console.log(JSON.stringify(V0)); if (!V0) process.exit(1);
+    const put = async (dx, dy, n) => { await page.evaluate(([x, y]) => { const D = __dbg, m = D.get().me; m.x = x; m.y = y; m.vx = m.vy = 0; D.update(1 / 30); D.update(1 / 30) }, [V0.mid[0] + dx, V0.mid[1] + dy]); process.env.HALF = '150'; return shot(n, [V0.mid[0], V0.mid[1], 20]) };
+    const side = V0.o === 'h' ? [0, 1] : [1, 0]; // Gangseite grob: ausprobieren
+    info = await put(-60 * V0.dir * side[0] - 0, -60 * V0.dir * side[1], 'zu');
+    await page.evaluate(() => { const D = __dbg, g = D.get(), it = g.its.find(i => i.t === 'vault'); try { it.act(g.me) } catch (e) { } if (!D.get().vaultOpen) { const c = g.its.find(i => i.t === 'vault'); c && c.act && c.act(g.me) } D.update(1 / 30) });
+    console.log('offen', await page.evaluate(() => __dbg.get().vaultOpen));
+    info = await put(-60 * V0.dir * side[0], -60 * V0.dir * side[1], 'offen');
+    info = await put(40 * V0.dir * side[0], 40 * V0.dir * side[1], 'drin');
+    const bu = await page.evaluate(() => { const b = __dbg.get().its.find(i => i.t === 'bundle' && !i.done); if (!b) return null; const m = __dbg.get().me; m.x = b.x - 50; m.y = b.y + 30; m.vx = m.vy = 0; __dbg.update(1 / 30); __dbg.update(1 / 30); return [b.x, b.y, 8] });
+    if (bu) { process.env.HALF = '110'; info = await shot('buendel', bu) }
   } else if (FLOW === 'laufen') {
     await step(1, 'D.keys.d=1;D.keys.w=0'); info = await shot('f0'); for (let k = 1; k < 8; k++) { await step(3, 'D.keys.d=1'); info = await shot('f' + k) } await step(1, 'for(const k of "wasd")delete D.keys[k]');
   } else if (FLOW === 'schiessen') {
