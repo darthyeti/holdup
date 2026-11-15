@@ -1,13 +1,7 @@
 // Kloetzchen-Stil, Dinge Teil B (Ticket 198, Schritt 4c und 4d): Museum, Casino, Notenbank, Gefaengnis zeichnen ihre Szenario-Teile aus Kloetzchen (KL.obj), ohne Bauer faellt jede Art auf den
 // klassischen Bauplan zurueck. Kein Pixelvergleich. Ohne WebGL 2 uebersprungen.
 const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [{
   name: 'Kloetzchen Dinge B: Museum, Casino, Notenbank und Gefaengnis zeichnen Szenario-Teile als Kloetzchen (k-dinge), ohne Bauer faellt jede Art auf den klassischen Plan zurueck, keine Fehler',
   timeout: 280000,

@@ -1,14 +1,7 @@
 // Szenenwechsel in der 3D-Ansicht (Ticket 198, Eilfund): Wechselt die Karte (Menue-Hintergrund zum Auftrag, Auftrag zu Auftrag) in einer laufenden Ansicht, muss das Bild dasselbe sein wie in einer neu
 // angelegten Ansicht (Taste F7). Ursache des Fehlers: WebGL 2 legt Texturen mit fester Groesse an, ein Bild anderer Groesse (Boden, Spuren, Sichtmaske) landete in der alten Flaeche. Kein Pixelvergleich mit Gold,
 // nur Ansicht gegen Ansicht. Ohne WebGL 2 uebersprungen.
-const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); });
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [{
   name: 'Szenenwechsel in laufender 3D-Ansicht: Bild gleich dem einer neu angelegten Ansicht (Boden, Spuren und Sichtmaske folgen der neuen Kartengroesse), mit Kloetzchen und klassisch',
   timeout: 280000,
