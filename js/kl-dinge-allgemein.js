@@ -14,10 +14,13 @@ export function register(KL) {
     const X0 = o.x, Y0 = o.y, h = o.h, m = u => o.dir < 0 ? 2 * X0 + T - u : u, w = (u, v) => h ? [X0 + (v - Y0), Y0 + (u - X0)] : [u, v];
     const bx = (u0, u1, v0, v1, y0, hh, col, em) => { const a = w(m(u0), v0), b = w(m(u1), v1); B(k, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, y0, Math.abs(b[0] - a[0]), hh, Math.abs(b[1] - a[1]), 0, col, em) };
     const steel = 0x8d97a6, dark = 0x2f343c, gold = 0xe8b923;
-    if (o.open) {
-      bx(X0 - 3, X0 + 3, Y0 - 2, Y0 + 2 * T + 2, 0, 60, steel); bx(X0 - 4, X0 - 3, Y0 + 2, Y0 + 2 * T - 2, 6, 48, 0xb7c0cd);
-      for (let i = 0; i < 4; i++) { const v = Y0 + 8 + i * 16; bx(X0 - 5, X0 - 4, v - 2, v + 2, 52, 4, gold); bx(X0 - 5, X0 - 4, v - 2, v + 2, 8, 4, gold) }
-      bx(X0 + T, X0 + 2 * T, Y0 + 2, Y0 + 2 * T - 2, 0, .5, 0xffd264, .55); // warmes Licht aus dem Raum am Boden
+    if (o.open) { // offen (Ticket 198 Tresor): Tuerblatt etwa 100 Grad aufgeschwenkt, liegt am Gang an der Wand (Angel am oberen Ende der Oeffnung), Bolzen eingefahren, Durchgang frei, nur zwei Pfosten als Rahmen
+      const L = 2 * T - 6;
+      bx(X0 - 3, X0 + 3, Y0 - 3, Y0, 0, 62, dark); bx(X0 - 3, X0 + 3, Y0 + 2 * T, Y0 + 2 * T + 3, 0, 62, dark);                       // Pfosten der Oeffnung
+      bx(X0 - 2 - L, X0 - 2, Y0 - 5, Y0 + 1, 2, 56, steel); bx(X0 - 2 - L, X0 - 2, Y0 - 5.6, Y0 - 5, 6, 48, 0xb7c0cd);              // Blatt an der Wand, helle Aussenseite
+      bx(X0 - 2 - L - 1.4, X0 - 2 - L, Y0 - 5, Y0 + 1, 8, 8, gold); bx(X0 - 2 - L - 1.4, X0 - 2 - L, Y0 - 5, Y0 + 1, 46, 8, gold);      // eingefahrene Bolzen an der freien Kante
+      bx(X0 - 2 - L / 2 - 4, X0 - 2 - L / 2 + 4, Y0 + 1, Y0 + 3, 24, 8, gold); bx(X0 - 2 - L / 2 - 1.5, X0 - 2 - L / 2 + 1.5, Y0 + 1, Y0 + 3, 20, 16, gold); // Handrad am Blatt (Innenseite)
+      bx(X0 - 2, X0 + 3, Y0 - 5, Y0 + 1, 14, 6, 0x5a626d);                                                                               // Angel
     } else {
       const c = Y0 + T;
       bx(X0 - 4, X0, c - 13, c + 13, 18, 26, 0xa7b0be); bx(X0 - 5, X0 - 4, c - 11, c + 11, 20, 22, 0x6e7886);               // runde Platte als Stufenblock
@@ -47,8 +50,9 @@ export function register(KL) {
   });
 
   // ---------- Beute: Geldbuendel (offener Tresor, Notenbank), Beutesack, leere Kassen und Automaten ----------
-  const stack = (k, x, z, y0, n) => { for (let i = 0; i < n; i++) { B(k, x, z, y0 + i * 3.6, 14, 3.4, 9, i % 2 ? .06 : -.05, 0x2f9e4f); B(k, x, z, y0 + i * 3.6, 4, 3.45, 9.2, i % 2 ? .06 : -.05, 0xf2ecd0) } }
-  KL.obj('bundle', (k, o) => { const t = top(k, o.x, o.y); stack(k, o.x, o.y, t, 2); B(k, o.x, o.y, t + 7.2, 14, .6, 9, 0, 0x7ee34a, .3) });
+  // Geldbuendel (Ticket 198 Tresor): gross und auffaellig (rund doppelte Groesse): Stapel aus drei satt gruenen Buendeln mit heller Banderole und goldenem Siegel, oben ein leuchtender Streifen
+  const stack = (k, x, z, y0, n) => { for (let i = 0; i < n; i++) { const a = (i % 2 ? .1 : -.08), yy = y0 + i * 6.2; B(k, x, z, yy, 26, 6, 16, a, 0x2fb457, .1); B(k, x, z, yy - .1, 5.4, 6.2, 16.4, a, 0xf6f0d6); B(k, x + 1.6, z, yy + 6, 2.2, .5, 16.6, a, 0xe8b923, .3) } }
+  KL.obj('bundle', (k, o) => { const t = top(k, o.x, o.y); stack(k, o.x, o.y, t, 3); B(k, o.x, o.y, t + 18.8, 25, .8, 15, 0, 0x7ee34a, .8) });
   KL.obj('bag', (k, o) => {
     const t = top(k, o.x, o.y);
     B(k, o.x, o.y, t, 15, 6, 12, 0, 0x8a6a3a); B(k, o.x, o.y, t + 6, 12, 5, 10, .25, 0xa8824a); B(k, o.x, o.y, t + 11, 6, 3, 6, .5, 0x8a6a3a);   // Sack in drei Stufen
