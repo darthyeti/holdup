@@ -91,6 +91,14 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     });
     process.env.HALF = '470'; info = await shot('f0', rp);
     process.env.HALF = '150'; await shot('f1', [rp[0] - 4 * 40, rp[1], 18]); await shot('f2', [rp[0] + 1.2 * 40, rp[1], 18]);
+  } else if (FLOW === 'waffen') {
+    // Ticket 217: der Spieler mit Pistole, SMG, Sturmgewehr und verstaut, nah (Spielkamera) in zwei Blickrichtungen
+    await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; g.npcs.length = 0; g.cars.length = 0; g.me.vx = g.me.vy = 0 });
+    process.env.HALF = process.env.HALF || '70';
+    for (const a of [0, 2.2]) for (const [w, armed] of [['pistol', 1], ['smg', 1], ['rifle', 1], ['pistol', 0]]) {
+      await page.evaluate(([w, armed, a]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.armed = !!armed; me.a = a; me.hp = 100; D.mouse.t = -999; D.draw(); D.draw() }, [w, armed, a]);
+      info = await shot(`f${FR.length}`, null);
+    }
   } else if (FLOW === 'explosion') {
     await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; const c = g.cars.find(q => q.civ && !q.dead) || g.cars[0]; window.__car = c; });
     info = await shot('f0', 'car'); await page.evaluate(() => { const D = __dbg; D.get().me.hp = 1e9; D.carBlow(window.__car, 0) });
