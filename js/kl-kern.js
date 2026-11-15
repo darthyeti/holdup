@@ -276,7 +276,7 @@ void main() {
   let worldMeshes = [];
   const tileChars = () => Object.keys(KL.objs).filter(k => k.length === 1);
   K.cells = null;
-  const mkCells = () => { const tc = tileChars(); K.cells = Object.fromEntries(Object.entries(C.cells).map(([k, v]) => [k, tc.includes(k) ? Object.assign({}, v, { s: [] }) : v])) }; mkCells();
+  const mkCells = () => { const tc = tileChars(); K.cells = Object.fromEntries(Object.entries(C.cells).map(([k, v]) => [k, KL.cellOver && KL.cellOver[k] ? KL.cellOver[k] : tc.includes(k) ? Object.assign({}, v, { s: [] }) : v])) }; mkCells(); // KL.cellOver: Hoehentabelle einer Kachel nur im Kloetzchen-Stil (zum Beispiel L: nur der Sturz, Tuer und Pfosten bauen die Kloetze)
   K.world = () => {
     for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; K.stats = null; if (!K.on) return;
     const B = [], S = [], A = [];
