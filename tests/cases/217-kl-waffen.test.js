@@ -1,13 +1,7 @@
 // Kloetzchen-Waffen in der Hand (Ticket 217, js/kl-figuren.js, js/draw.js figs3d Feld wp, CFG.wpn tip): je Waffenart das richtige Modell und die richtige Pose, verstaut ohne Waffe,
 // der Coop-Client sieht die Waffe des Hosts, Muendungsfeuer am Lauf (CFG.wpn.*.tip). Ohne WebGL 2 uebersprungen.
 const lib = require('../lib');
-async function glPage(t) {
-  const ok = p => p.evaluate(() => !!document.createElement('canvas').getContext('webgl2'));
-  if (await ok(t.page)) return { page: t.page, done: async () => {} };
-  const env = await lib.launch({ webgl: true }), page = await lib.openGame(env);
-  if (await ok(page)) return { page, done: async () => { await page.ctx.close().catch(() => {}); await env.browser.close().catch(() => {}); env.srv.close(); } };
-  await env.browser.close().catch(() => {}); env.srv.close(); t.note('kein WebGL 2, 3D-Teil uebersprungen'); return null;
-}
+const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [
   {
     name: 'Kloetzchen-Waffen: Pistole, SMG und Sturmgewehr haben je ein eigenes Modell und eine eigene Pose, verstaut keine Waffe, Muendungsfeuer-Abstand je Waffe in CFG',
