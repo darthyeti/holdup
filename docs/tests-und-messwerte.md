@@ -193,3 +193,21 @@ Netz für das Auslagern des Zeichnens (`js/draw.js`, Plan Auslagern Schritt 4) u
 - **Abnahme (6. November 2026).** Dreimal hintereinander gleiche Hashes, auch in je frischem Browser; 72 verschiedene Hashes. Mutanten: eine Farbe im Zeichnen (Vignette Stufe mittel 0.2 zu 0.21) wird erkannt (Stufe mittel rot, niedrig und hoch unverändert, wie erwartet), ebenso ein Text im HUD (`ZIEL` zu `ZIELE`, alle Tests rot).
 - **Bildzeit** `node tools/messung-bildzeit.js [niedrig mittel hoch] [--n=40] [--3d] [--ohne-schatten] [--lod=0,1,2,3]` (`--3d`: 3D-Ansicht an, wartet je Bild auf die Grafik, im Container SwiftShader, nur relativ zu 2D, Werte in docs/plan-3d.md, Abschnitte 2.8 bis 2.17; seit 3D-9 mit Draw Calls und Dreiecken je Szene in der Phase Polizei und einer Zeile Mittel, dem Mittel der Mediane über die acht Szenen je Phase; `--lod` misst je Stufe der Selbstregelung, 0 voll, 1 Schatten aus, 2 Auflösung mal 0,75, 3 Teilchen halbiert, die Regelung selbst schaltet beim Messen nie): Median und 90. Perzentil von `draw()` je Szenario und Phase bei stehender Szene, dieselben Szenen wie der Hash. Ausgangswert vor dem Auslagern (Headless-Chromium ohne GPU im Container mit 4 Kernen, Last von anderen Agenten, Mittel über die drei Phasen, Median in ms; auf dem Mac mit GPU deutlich weniger): niedrig rund 18 bis 28 (Museum am teuersten, rund 25), mittel rund 26 bis 35 (Museum rund 34), hoch rund 27 bis 37. Die Stufe mittel kostet rund 8 ms mehr als niedrig (Überlagerung und Sichtkante), hoch ist von mittel kaum zu unterscheiden. Streuung der Messung durch Fremdlast rund plus minus 3 ms: Nach dem Auslagern nur Unterschiede ab rund 10 % als echt werten und am besten mehrfach messen. Einzelwerte (Median / p90) liegen im PR 143.
 
+## Kameras an Wänden (Ticket 221)
+
+Regel (`mountCams` in `js/maps.js`, `validateMap` Regel `kamera-wand`): Eine Kamera hängt an einer Mauer (`#`, Pfeiler `P`, Tresortür `V`), Fenster, Glastüren und Hintertüren zählen nicht. Hinter der Kamera (entgegen `a0`, je Achse nur bei mehr als .38 Blickanteil) liegt eine Mauer, bei Diagonalen genügt eine der beiden Achsen. `mountCams` setzt jede Kandidatin auf die nächste freie Bodenkachel (`.` oder `o`) mit Mauer im Rücken (Radius 2, sonst 4), dreht den Blick höchstens .95 von der Mauer weg und rückt sie 6 px vor die Fläche. Kandidatinnen ohne Platz oder doppelt auf einer Kachel fallen weg, Reichweite, Öffnung und Schwung bleiben. Gefängnis: die feste Kamera mitten im Raum (14.5, 10.5) und die der Hof-Listen werden damit an die nächste Mauer verschoben, weil in 3D frei schwebende Kameras falsch wirken (Entscheidung des Leitstands, 15. November 2026). Bank: die Kandidaten bei y = -0,4 (außerhalb der Nordwand) rücken an die Fassade.
+
+Messung `tools/messung-kamera.js` (Seeds 1 bis 200, begehbare Bodenkacheln `.` im Kegel mit Schwung und freier Sicht, vorher gegen nachher):
+
+| Szenario | Kameras je Karte | ohne Mauer im Rücken | Abdeckung vorher | Abdeckung nachher |
+|---|---|---|---|---|
+| Bank | 6,61 | 723 auf 0 | 57,8 % | 57,5 % |
+| Juwelier | 5,62 auf 5,52 | 461 auf 0 | 61,3 % | 55,6 % |
+| Tankstelle | 2,8 | 176 auf 0 | 51,0 % | 53,5 % |
+| Museum | 3,96 | 45 auf 0 | 34,7 % | 34,8 % |
+| Casino | 9,39 | 371 auf 0 | 69,2 % | 70,1 % |
+| Notenbank | 6,0 | 577 auf 0 | 30,1 % | 30,8 % |
+| Gefängnis | 6,0 | 200 auf 0 | 34,6 % | 34,7 % |
+
+Größte Änderung: Juwelier, minus 5,7 Punkte (minus 9 Prozent relativ), alles unter der 15-Prozent-Schwelle, deshalb ohne Ausgleich. Die Schleichmessung `tools/stealth.js` betrachtet nur Wachen und ändert sich nicht (Juwelier, Seeds 1 bis 40, eine Wache: win 1, unseen 0,94, wait 1,1 s, naive 0,71, timed 1). Test `221-kamera-wand` (Seeds 1 bis 500 je Szenario ohne Kamera-Fehler, 3D-Kamera). Die goldenen Schnappschüsse (10, 26, 34, 37, 39, 42, 43) wurden mit Freigabe neu geschrieben: nur Hashwerte, Raster und Zähler gleich. Abgeleitet ändern sich das Kamera-Tag in `mission.tags` und der Fundort des Zettels (`noteAt`, dessen Kandidaten meiden die Kameras).
+

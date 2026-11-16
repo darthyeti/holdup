@@ -12,15 +12,21 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
           D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); await D.view3d.set(true); D.draw(); D.draw();
           const K = D.view3d.V.kl(), k = K.kit, KL = K.KL; k.state(0, 1);
-          const fig = (wp, ar) => ({ k: 'pl', x: 0, y: 0, a: 0, row: 1, col: 0, hit: 0, lie: 0, al: 1, sh: -1, rf: 0, bag: 0, fl: 0, w: 0, ar, wp });
-          const read = (wp, ar) => { const ps = k.collect(() => KL.figs.rob0(k, fig(wp, ar), { r: 9 })); let fx = -1e9, n = ps.length; for (const p of ps) fx = Math.max(fx, p.m.elements[12] + Math.abs(p.m.elements[0]) * .5); return { n, fx: Math.round(fx * 10) / 10 } };
-          o.stow = read('rifle', 0); o.pistol = read('pistol', 1); o.smg = read('smg', 1); o.rifle = read('rifle', 1); o.none = read(undefined, 1);
+          const fig = (wp, ar, ln, sw) => ({ k: 'pl', x: 0, y: 0, a: 0, row: 1, col: 0, hit: 0, lie: 0, al: 1, sh: -1, rf: 0, bag: 0, fl: 0, w: 0, ar, wp, ln: ln || 0, sw: sw || null });
+          const lum = c => c.r * .3 + c.g * .59 + c.b * .11;
+          const read = (wp, ar, ln, sw, nBody) => { const ps = k.collect(() => KL.figs.rob0(k, fig(wp, ar, ln, sw), { r: 9 })); let fx = -1e9, top = -1e9, n = ps.length; for (const p of ps) { fx = Math.max(fx, p.m.elements[12] + Math.abs(p.m.elements[0]) * .5); top = Math.max(top, p.m.elements[13]) } const wpn = nBody == null ? [] : ps.slice(nBody), dark = wpn.filter(p => lum(p.c) < .06).length; return { n, fx: Math.round(fx * 10) / 10, top: Math.round(top * 10) / 10, nw: wpn.length, dark } };
+          o.stow = read('rifle', 0); const nb = o.stow.n; o.pistol = read('pistol', 1, 0, null, nb); o.smg = read('smg', 1, 0, null, nb); o.rifle = read('rifle', 1, 0, null, nb); o.none = read(undefined, 1);
+          o.prec = read('pistol', 1, 0, 'rifle', nb); o.launch = read('pistol', 1, 0, 'launch', nb); o.lean = read('pistol', 0, 1); o.stand = read('pistol', 0, 0);
           o.tip = ['pistol', 'smg', 'rifle'].map(w => D.CFG.wpn[w].tip);
           await D.view3d.set(false); return o; })()`);
         t.note(JSON.stringify(r));
         t.ok(r.stow.n < r.pistol.n && r.pistol.n < r.smg.n && r.smg.n < r.rifle.n, 'Teile je Waffe: verstaut ' + r.stow.n + ' < Pistole ' + r.pistol.n + ' < SMG ' + r.smg.n + ' < Sturmgewehr ' + r.rifle.n);
         t.ok(r.stow.fx < r.pistol.fx - 5, 'verstaut ohne Waffe: weiteste Stelle vorn ' + r.stow.fx + ' gegen Pistole ' + r.pistol.fx);
         t.ok(r.rifle.fx > r.smg.fx && r.rifle.fx > r.pistol.fx, 'Sturmgewehr reicht am weitesten nach vorn: ' + [r.pistol.fx, r.smg.fx, r.rifle.fx]);
+        // dunkle Waffen: mindestens die Haelfte der Waffenteile fast schwarz (Rest Akzent: Griff, Magazin, Schaft)
+        for (const w of ['pistol', 'smg', 'rifle', 'prec', 'launch']) t.ok(r[w].nw >= 3 && r[w].dark / r[w].nw >= .5 && r[w].dark < r[w].nw, w + ': ' + r[w].dark + ' von ' + r[w].nw + ' Waffenteilen dunkel, mindestens ein Akzent');
+        t.ok(r.prec.fx > r.rifle.fx && r.launch.n > r.stow.n, 'Praezisionsgewehr laenger als das Sturmgewehr (' + r.prec.fx + ' gegen ' + r.rifle.fx + '), Granatwerfer hat eigene Teile');
+        t.ok(r.lean.top < r.stand.top - 1 && r.lean.fx > r.stand.fx + 1.5, 'Lehnen: tiefer (' + r.lean.top + ' gegen ' + r.stand.top + ') und vorgebeugt (' + r.lean.fx + ' gegen ' + r.stand.fx + ')');
         t.eq(r.none.n, r.pistol.n, 'ohne Waffenart (Gegner, aeltere Zustaende) gilt die Pistole');
         t.ok(r.tip.every(v => v > 15 && v < 40) && r.tip[2] > r.tip[0], 'Muendungsabstand je Waffe in CFG.wpn.*.tip: ' + r.tip);
         // Laufspitze nah am Muendungsfeuer: die weiteste Stelle der Teile (Mitte plus halbe Laenge) liegt hoechstens 4 Pixel neben dem Abstand in CFG

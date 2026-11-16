@@ -35,11 +35,6 @@ export function register(KL) {
     const p = o.pts || [], col = o.al ? 0xff6e5a : 0xffe9aa, r = Math.max(1, ...p.map(q => Math.hypot(q[0] - o.x, q[1] - o.y)));
     for (let i = 0; i < p.length; i += 3) { const dx = p[i][0] - o.x, dy = p[i][1] - o.y, L = Math.hypot(dx, dy); for (let s = 20; s < L; s += 26) { const f = s / r; k.glow(o.x + dx * s / L, o.y + dy * s / L, .6, 15 + 7 * f, col, (o.al ? .16 : .12) * (1 - f * .8), true) } }
   });
-  // geparkte Autos (Transporter): ein Auto der Art civ aus den Fahrzeug-Bauern, als Szenario-Kloetze
-  KL.obj('parked', (k, o) => {
-    const e = k.C.cars.civ, car = { k: 'civ', x: o.x + 64, y: o.y + 32, a: 0, L: 128, W: 64, row: (Math.round(o.x / 32) + Math.round(o.y / 32)) & 3, bl: 0, dim: 0 }, look = k.carLook(car, e);
-    k.emit(k.collect(() => KL.cars.civ(k, car, e, look)));
-  });
   // Unbekannte Beute-Unterart: schlichter Kloetzchen-Kasten auf dem Rechteck (kein klassischer Bildklotz), genommen nur ein dunkler Fleck
   const COL = [0x3a9ad9, 0xe5603a, 0x4fb858, 0xe5c33a, 0xb36af0];
   KL.obj('good', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, t = k.topAt(cx, cz); if (o.done) { k.dbrick(cx, cz, t, r[2] - 6, .5, r[3] - 6, 0, 0x16110c); return } const c = COL[(String(o.n).length + Math.round(cx / 32)) % COL.length]; k.dbrick(cx, cz, t, Math.max(8, r[2] - 8), 10, Math.max(8, r[3] - 8), 0, c, .15); k.dbrick(cx, cz, t + 10, Math.max(6, r[2] - 12), 1.6, Math.max(6, r[3] - 12), 0, 0xf4ecd8, .2) });

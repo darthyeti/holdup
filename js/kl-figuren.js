@@ -13,7 +13,7 @@ export function register(KL) {
   const base = (k, o, e, art) => {
     const { part, jt, rotY, colOf, KC, D, FG } = k, OT = Object.assign({}, FG.out[art], PAL[art]), rob = art.startsWith('rob'), kk = (1 + ((e.r || 9) - 9) * FG.size) * KC.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6;
     const pw = Math.PI * 2 / KC.step, qw = run ? Math.round((o.w || 0) / pw) * pw : 0, sw = run ? Math.sin(qw) : 0, stepOdd = run ? (Math.round((o.w || 0) / pw) & 1) : 0;
-    const gun = !lying && !kneel && o.ar && art !== 'sniper', wk = gun ? (o.wp === 'smg' || o.wp === 'rifle' ? o.wp : 'pistol') : null, aRifle = wk === 'rifle', rifle = !lying && !kneel && (o.rf || aRifle), shield = !lying && !kneel && o.sh >= 0, side = [1, -1];
+    const gun = !lying && !kneel && o.ar && art !== 'sniper', wk = gun ? (o.sw === 'launch' ? 'launch' : o.sw === 'rifle' ? 'prec' : o.wp === 'smg' || o.wp === 'rifle' ? o.wp : 'pistol') : null, aRifle = wk === 'rifle' || wk === 'prec' || wk === 'launch', leanP = !lying && !kneel && !!o.ln, rifle = !lying && !kneel && (o.rf || aRifle), shield = !lying && !kneel && o.sh >= 0, side = [1, -1];
     const top = colOf(OT.top), bot = colOf(OT.bot), skin = colOf(FG.skin), glv = colOf(OT.gl || FG.skin), hat = colOf(OT.hat || OT.bot), dark = colOf(FG.dark), eye = colOf(FG.eye), gunC = colOf(FG.gun), boot = colOf(FG.boot);
     k.state(o.hit, o.al);
     rotY(o.x, o.y, o.a, kk); mRoot.copy(k.root);
@@ -29,6 +29,7 @@ export function register(KL) {
     if (wk === 'smg') { sh[0] = [-.12, .95]; el[0] = 1.05; sh[1] = [.14, -.12]; el[1] = .2 }
     if (rifle) { sh[0] = [-.45, 1.2]; el[0] = .5; sh[1] = [-.15, 1.45]; el[1] = .25 }
     if (shield) { sh[1] = [-.1, 1.15]; el[1] = .3 }
+    if (leanP) { lean = .34; hipY -= 1.6; bob = 0; hip[0] = hip[1] = .22; kn[0] = kn[1] = -.42 }
     if (kneel) { sh[0] = [2.55, -.35]; sh[1] = [2.55, -.35]; el[0] = el[1] = 2.2 }
     if (lying) { sh[0] = [.35, 0]; sh[1] = [1.35, 0]; el[0] = .3; el[1] = .2 }
     jt(mB, mH, 0, hipY + bob, 0); jt(mH, mT, 0, D.pelvH * .8, 0, 0, 0, -lean);
@@ -67,10 +68,13 @@ export function register(KL) {
       part(mKn[i], (D.footL - lt) / 2, -D.shin - D.footH / 2 + .4, 0, D.footL, D.footH, D.footW, boot);
     }
     let extra = 0;
-    const weapC = colOf(0x9aa3af);
-    if (wk === 'pistol') { jt(mE[0], mD, 0, -D.armF - D.hand * .3, 0); part(mD, 4, -.2, 0, 9, 2.3, 2.6, weapC); part(mD, 8.8, -.2, 0, 1.6, 1.6, 1.6, gunC); part(mD, .6, -2.4, 0, 2.2, 4.2, 1.7, gunC); extra++ }
-    if (wk === 'smg') { jt(mE[0], mD, 0, -D.armF - D.hand * .3, 0, 1.15, 0, -(sh[0][1] + el[0])); part(mD, 3.8, 0, 0, 9.6, 2.8, 3.2, weapC); part(mD, 9.8, .2, 0, 4.4, 1.7, 1.7, gunC); part(mD, 2.2, -4.2, 0, 2.2, 6.4, 2.6, gunC); part(mD, 5.5, 1.9, 0, 3, 1, 1.4, gunC); extra++ }
-    if (aRifle) { const hr = tH * .82; part(mT, 7.2, hr, 1.5, 11, 2.7, 3, weapC); part(mT, 17.8, hr + .3, 1.5, 13, 1.7, 1.7, gunC); part(mT, 14.5, hr + .1, 1.5, 6, 2.6, 3, gunC); part(mT, -1.8, hr - .6, 1.5, 7.4, 3.4, 2.1, colOf(FG.stock)); part(mT, 8.2, hr - 3.6, 1.5, 2.2, 5.4, 1.9, gunC); part(mT, 9, hr + 2, 1.5, 4.4, 1.2, 1.2, gunC); extra++ }
+    const weapC = colOf(0x2a2d33), gunD = colOf(0x131519), accOr = colOf(0xc9742a), accBr = colOf(0x7a4b25);
+    if (wk === 'pistol') { jt(mE[0], mD, 0, -D.armF - D.hand * .3, 0); part(mD, 4, -.2, 0, 9, 2.3, 2.6, weapC); part(mD, 8.8, -.2, 0, 1.6, 1.6, 1.6, gunD); part(mD, .6, -2.4, 0, 2.2, 4.2, 1.9, accBr); extra++ }
+    if (wk === 'smg') { jt(mE[0], mD, 0, -D.armF - D.hand * .3, 0, 1.15, 0, -(sh[0][1] + el[0])); part(mD, 3.8, 0, 0, 9.6, 2.8, 3.2, weapC); part(mD, 9.8, .2, 0, 4.4, 1.7, 1.7, gunD); part(mD, 2.2, -4.2, 0, 2.2, 6.4, 2.6, accOr); part(mD, 5.5, 1.9, 0, 3, 1, 1.4, gunD); extra++ }
+    if (wk === 'rifle') { const hr = tH * .82; part(mT, 7.2, hr, 1.5, 11, 2.7, 3, weapC); part(mT, 17.8, hr + .3, 1.5, 13, 1.7, 1.7, gunD); part(mT, 14.5, hr + .1, 1.5, 6, 2.6, 3, gunD); part(mT, -1.8, hr - .6, 1.5, 7.4, 3.4, 2.1, accBr); part(mT, 8.2, hr - 3.6, 1.5, 2.2, 5.4, 1.9, accBr); part(mT, 9, hr + 2, 1.5, 4.4, 1.2, 1.2, gunD); extra++ }
+    // Sonderwaffen des eigenen Spielers (Shift): Praezisionsgewehr mit Zielfernrohr, Granatwerfer als Rohr auf der Schulter
+    if (wk === 'prec') { const hr = tH * .82; part(mT, 8, hr, 1.5, 12, 2.7, 3, weapC); part(mT, 21.5, hr + .3, 1.5, 18, 1.5, 1.5, gunD); part(mT, 10, hr + 3, 1.5, 9, 2.4, 2.4, gunD); part(mT, 15, hr + 3, 1.5, .8, 2, 2, colOf(0x7ea6c8)); part(mT, -2, hr - .6, 1.5, 8, 3.4, 2.1, accBr); part(mT, 9, hr - 3.4, 1.5, 2.2, 4.6, 1.9, accBr); extra++ }
+    if (wk === 'launch') { const hr = tH * .82; part(mT, 8, hr + .6, 1.5, 18, 4, 4, colOf(0x3f4630)); part(mT, 17.6, hr + .6, 1.5, 2.4, 5.2, 5.2, gunD); part(mT, -1.4, hr + .6, 1.5, 2.4, 5, 5, gunD); part(mT, 7, hr - 3.4, 1.5, 2, 4.2, 2, accOr); part(mT, 9, hr + 3.4, 1.5, 5, 1, 1.2, gunD); extra++ }
     else if (o.rf && rifle) { const L0 = 18; part(mT, D.torsoD / 2 + L0 / 2 - 4, tH * .82, 1.5, L0, 1.8, 1.5, gunC); part(mT, D.torsoD / 2 - 5, tH * .82 - .7, 1.5, 5.5, 3.2, 1.7, colOf(FG.stock)); part(mT, D.torsoD / 2 + 4, tH * .82 + 1.8, 1.5, 6, 1.8, 1.8, gunC); extra++ }
     if (shield) { const c = k.xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]; part(mB, D.torsoD / 2 + 5, 16.5, -1.5, 1.8, 27, 17, c, .12); part(mB, D.torsoD / 2 + 6, 22, -1.5, .8, 5, 11, dark); extra++ }
     if (o.bag) { part(mT, -D.torsoD / 2 - 4.4, tH * .52, 0, 7.4, 12.6, 10, colOf(0xc79a3c)); part(mT, -D.torsoD / 2 - 1.2, tH * .84, 0, 1.6, 2.2, 6, colOf(FG.dark)); extra++ }

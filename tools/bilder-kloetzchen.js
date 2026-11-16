@@ -101,6 +101,28 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       await page.evaluate(([w, armed, a]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.armed = !!armed; me.a = a; me.hp = 100; D.mouse.t = -999; D.draw(); D.draw() }, [w, armed, a]);
       info = await shot(`f${FR.length}`, null);
     }
+  } else if (FLOW === 'waffen2') {
+    // Ticket 232: alle Waffen in der Hand (Pistole, SMG, Sturmgewehr, Praezisionsgewehr, Granatwerfer), Lehnen und verstaut, Tag und Nacht, nah in der Spielkamera
+    await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; g.npcs.length = 0; g.cars.length = 0; g.me.vx = g.me.vy = 0 });
+    process.env.HALF = process.env.HALF || '90';
+    const poses = [['pistol', 'p'], ['smg', 'p'], ['rifle', 'p'], ['rifle', 'prec'], ['pistol', 'launch'], ['pistol', 'lean'], ['pistol', 'stow']];
+    for (const night of [0, 1]) {
+      if (night) await page.evaluate(async () => { const D = __dbg, L = D.LAY(); L.mission.lg = (L.mission.lg || []).concat('nacht'); D.view3d.reset(); await D.view3d.set(true); D.draw() });
+      for (const [w, mode] of poses) {
+        await page.evaluate(([w, mode]) => { const D = __dbg, me = D.get().me; me.kit.w = w; me.kit.sk = mode === 'prec' ? { A3: 1 } : mode === 'launch' ? { A4: 1 } : {}; me.sx = 3; me.ak = 3; me.armed = mode !== 'stow'; me.a = .5; me.units = 0; me.hp = 100; me.ln = mode === 'lean' ? 1 : 0; D.mouse.t = -999;
+          const want = mode === 'prec' || mode === 'launch'; if (want !== !!D.spw()) document.getElementById('c').dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', shiftKey: true })); D.draw(); D.draw(); return [mode, D.spw(), D.spwKind(me)] }, [w, mode]).then(r => process.env.DBGW && console.log(JSON.stringify(r)));
+        info = await shot(`f${FR.length}`, null);
+      }
+    }
+  } else if (FLOW === 'pickups') {
+    // Ticket 234: Aufnahmen (Munition, Medikit, unbekannte Zelle) als schwebende, drehende Klotzchen, vier Zeitpunkte, Tag und Nacht, nah in der Spielkamera
+    process.env.HALF = process.env.HALF || '80';
+    const c = await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; g.npcs.length = 0; g.cars.length = 0; const a = window.__dir, L = D.fxL(); L.pk.length = 0;
+      const at = (d, s, k) => ({ x: me.x + 60 + s, y: me.y + d, k }); L.pk.push(at(40, -34, 5), at(40, 0, 6), at(40, 34, 9)); const m = L.pk[1]; return [m.x, m.y, 14] });
+    for (const night of [0, 1]) {
+      if (night) await page.evaluate(async () => { const D = __dbg, L = D.LAY(); L.mission.lg = (L.mission.lg || []).concat('nacht'); D.view3d.reset(); await D.view3d.set(true); D.draw() });
+      for (let i = 0; i < 4; i++) { await page.evaluate(() => { const D = __dbg; for (let j = 0; j < 12; j++) { D.get().me.hp = 100; D.update(1 / 30) } D.draw(); D.draw() }); info = await shot(`f${FR.length}`, c); }
+    }
   } else if (FLOW === 'explosion') {
     await page.evaluate(() => { const D = __dbg, g = D.get(), me = g.me; g.en.length = 0; const c = g.cars.find(q => q.civ && !q.dead) || g.cars[0]; window.__car = c; });
     info = await shot('f0', 'car'); await page.evaluate(() => { const D = __dbg; D.get().me.hp = 1e9; D.carBlow(window.__car, 0) });
@@ -127,6 +149,13 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
     info = await shot('f0', 'at');
     await page.evaluate(() => { const D = __dbg, w = window.__w, m = D.get().me; D.get().bl.push({ id: 9901, x: m.x, y: m.y, vx: -w.iv[0] * 700, vy: -w.iv[1] * 700, l: .8, o: 1, own: m.id, d: 20, ov: 0 }) });
     for (const n of [2, 1, 2, 3, 4, 6, 10, 20]) { await step(n, 'D.get().me.hp=1e9'); info = await shot('f' + FR.length, 'at') }
+  } else if (FLOW === 'moebel') {
+    // Strassenmoebel (Ticket 229): vier Ausschnitte um Kisten und Faesser draussen (mindestens 5 Zellen o im 5 mal 5), die Szene wie bei SC
+    const tiles = await page.evaluate(() => { const D = __dbg, W = D.world(), T = 32, out = []; for (let y = 0; y < W.H; y++) for (let x = 0; x < W.W; x++) { const c = W.cell(x, y); if (c !== 'k' && c !== 'q') continue; let o = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (W.cell(x + dx, y + dy) === 'o') o++; if (o >= 5) out.push([x * T + 16, y * T + 16]) } const pick = []; for (const q of out) if (pick.every(p => Math.hypot(p[0] - q[0], p[1] - q[1]) > 150)) pick.push(q); return pick.slice(0, 4) });
+    for (let i = 0; i < tiles.length; i++) {
+      await page.evaluate((t) => { const D = __dbg, m = D.get().me; D.get().en.length = 0; const W = D.world(), T = 32; let best = null; for (let r = 40; r <= 120 && !best; r += 20) for (let a = 0; a < 16 && !best; a++) { const x = t[0] + Math.cos(a * .39) * r, y = t[1] + Math.sin(a * .39) * r; if (!W.isSol(Math.floor(x / T), Math.floor(y / T))) best = [x, y] } m.x = best ? best[0] : t[0]; m.y = best ? best[1] : t[1]; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } window.__at = { x: t[0], y: t[1] }; D.draw(); D.draw() }, tiles[i]);
+      info = await shot('m' + i, 'at');
+    }
   } else if (FLOW === 'fundorte') {
     // Fundorte des Tresorcodes (Ticket 228): je Art ohne und mit Zettel an einer Wandkachel der Bank (X.scen der Ansicht wird ersetzt), Ausschnitt um den Fundort
     const kinds = ['bin', 'copy', 'coffee', 'file', 'pin', 'coat', 'locker', 'mgr'];

@@ -70,8 +70,8 @@ export const V3CFG = {
     dim: { foot: 2.2, shin: 5.5, thigh: 5.5, hipW: 3.2, legT: 4.6, torsoH: 10, torsoW: 12, torsoD: 9, armU: 5.2, armF: 5, armT: 4.2, head: 12, neck: .4 },
     seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
     // look (Ticket 189): Figuren heben sich vom Boden ab. sat Saettigung der Kleidung, out Dicke des Umrisses in Weltpixeln (zweite, aufgeblasene Instanz je Teil, nur die Rueckseiten, outDay dunkel,
-    // outNight hell bei dunkler Szene), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
-    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0xdfe5f2 },
+    // outNight hell bei dunkler Szene, seit Ticket 198 gedaempft: Mittelgrau, Dicke outNightW und Deckkraft outNightA, nur nachts), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
+    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0x9aa5ba, outNightW: .75, outNightA: .6 },
     hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
     out: {
       rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },
@@ -109,13 +109,13 @@ export const V3CFG = {
     laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
     kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
       pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, card: { g: 's' },
-      frame: { g: 'l' }, sw: { g: 's' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
+      frame: { g: 'l' }, cam: { g: 's' }, sw: { g: 's' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
     src: {
       rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'sw', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
-      guards: 'figur', cams: 'hud', vit: 'vit', goods: 'good', cage: 'raster', pumps: 'pump', lasers: 'laser', bn: 'logik', polAt: 'logik', wb: 'logik', stl: 'logik', gAll: 'logik', cone: 'cone',
+      guards: 'figur', cams: 'cam', vit: 'vit', goods: 'good', cage: 'raster', pumps: 'pump', lasers: 'laser', bn: 'logik', polAt: 'logik', wb: 'logik', stl: 'logik', gAll: 'logik', cone: 'cone',
       hall: 'logik', jewel: 'logik', gas: 'logik', nb: 'nbRig', prison: 'lock', museum: 'logik', casino: 'logik', road: 'exit', stash: 'raster', meet: 'logik', turned: 'logik', q: 'logik', tries: 'logik',
       truck: 'tk', parked: 'parked', decor: 'fahrzeug', decorReal: 'fahrzeug', spots: 'raster', lockCells: 'lock', wins: 'raster', snp: 'figur',
-      'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'hud', 'it:lock': 'lock', 'it:sw': 'sw',
+      'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'cam', 'it:lock': 'lock', 'it:sw': 'sw',
       'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:tbag': 'bag',
       'it:vit': 'vit', 'it:good:cig': 'good', 'it:good:shelf': 'good', 'it:good:art': 'good', 'it:good:statue': 'good', 'it:good:relic': 'good', 'it:good:chips': 'good', 'it:good:slot': 'good', 'it:good:vip': 'good',
       'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
@@ -290,7 +290,13 @@ export function mkView3d(X) {
     const D = [[0, 16], [0, -16], [16, 0], [-16, 0], [0, 24]].find(d => free(d[0], d[1])) || [0, 16];
     groundG.drawImage(groundCv, x0 + D[0] * k, y0 + D[1] * k, w, h, x0, y0, w, h);
   }
-  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); groundTex.needsUpdate = true; st.groundUp++ }
+  // Klotz-Stil (Ticket 229): Kisten und Faesser (k, q) zeichnet die Objektebene X.so der Karte als 2D-Bild auf den Boden. Die Strassenmoebel (kl-dinge-bank.js) ersetzen sie mit anderer Grundflaeche, darum schien die alte Kiste
+  // (brauner Rahmen mit Eckbeschlaegen) darunter durch. Auf der Bodenkopie wird die Kachel aus der statischen Ebene X.st neu gemalt (Boden ohne Objekt). 2D (X.st, X.so) bleibt unveraendert.
+  function hideStreetProps() {
+    if (!K || !K.on) return; const k = groundCv.width / (X.W * T), w = T * k;
+    for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = X.cell(x, y); if (c !== 'k' && c !== 'q') continue; const sx = (x - X.WX0) * w, sy = (y - X.WY0) * w; groundG.clearRect(sx, sy, w, w); groundG.drawImage(X.st, sx, sy, w, w, sx, sy, w, w) }
+  }
+  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); hideStreetProps(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
     curLay = X.LAY; curSt = X.st;
@@ -584,7 +590,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     }
     pThg.size(TH.length); TH.forEach((q, i) => { put(pThg, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); pThg.im.setColorAt(i, colOf(q[7])) });
     // Aufnahmen (Munition, Verbandszeug): 2D-Bild aus props.png liegend, wippt wie in 2D
-    pPk.size(D.pk.length); D.pk.forEach((k, i) => { put(pPk, i, k.x, k.y, FC.pkH + 1.5 + k.b, 0, FC.pkS, 1, FC.pkS); pPk.a.iCell.setXYZW(i, k.k, 0, 0, 1); pPk.a.iDim.setX(i, 0) }); n.pk = D.pk.length;
+    const kpk = K && K.on && K.hasPk(); pPk.size(kpk ? 0 : D.pk.length); if (!kpk) D.pk.forEach((k, i) => { put(pPk, i, k.x, k.y, FC.pkH + 1.5 + k.b, 0, FC.pkS, 1, FC.pkS); pPk.a.iCell.setXYZW(i, k.k, 0, 0, 1); pPk.a.iDim.setX(i, 0) }); n.pk = D.pk.length;
     fxSt = { n, skip, add: FA.length / 12, nrm: FN.length / 12, th: TH.length, pk: D.pk.length, calls: [pFxA, pFxN, pThg, pPk].filter(P => P.im && P.im.visible).length };
     fxLast = { pk: D.pk.map(k => [Math.round(k.x), Math.round(k.y), k.k]), gr: grL };
   }

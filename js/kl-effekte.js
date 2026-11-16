@@ -76,7 +76,7 @@ export function register(KL) {
     }
     tPrev = k.time;
     for (let i = k.flashes.length - 1; i >= 0; i--) if (k.flashes[i].t > .11) k.flashes.splice(i, 1);
-    for (const l of k.light) if ((l.k === 'red' || l.k === 'blue') && l.car) l.i = .5;
+    for (const l of k.light) if ((l.k === 'red' || l.k === 'blue') && l.car) l.i = l.car === 'pol' ? .5 : .22;   // Vans: das Licht sitzt knapp ueber dem hohen Dach und brannte es aus
     for (const [o, e] of k.cars) if (e.bar && o.bl) {
       const a = o.bl === 1, c1 = hc(a ? KC.car.bar[0] : KC.car.bar[1]), c2 = hc(a ? KC.car.bar[1] : KC.car.bar[0]), h = KL.carHead(o), ca = Math.cos(h), sa = Math.sin(h), Lc = o.L * k.C.carK[0],
         bh = (o.k === 'pol' ? 36 : 11 + (e.h - 11) * .76 + 3.4) + 2, bx = o.k === 'pol' ? -Lc * .03 : Lc / 2 - Lc * .15, wz = o.W * k.C.carK[1] * .22;

@@ -13,7 +13,7 @@
 import * as THREE from '../assets/three.module.min.js';
 
 export const KL_API = 1;
-export const KL_FILES = ['kl-figuren.js', 'kl-fahrzeuge.js', 'kl-effekte.js', 'kl-dinge-allgemein.js', 'kl-dinge-welt.js', 'kl-dinge-bank.js', 'kl-dinge-juwelier.js', 'kl-dinge-tankstelle.js', 'kl-dinge-strasse.js', 'kl-dinge-museum.js', 'kl-dinge-casino.js', 'kl-dinge-notenbank.js', 'kl-dinge-gefaengnis.js'];
+export const KL_FILES = ['kl-figuren.js', 'kl-fahrzeuge.js', 'kl-effekte.js', 'kl-dinge-allgemein.js', 'kl-dinge-welt.js', 'kl-dinge-bank.js', 'kl-dinge-juwelier.js', 'kl-dinge-tankstelle.js', 'kl-dinge-strasse.js', 'kl-dinge-museum.js', 'kl-dinge-casino.js', 'kl-dinge-notenbank.js', 'kl-dinge-gefaengnis.js', 'kl-pickups.js'];
 
 export const KCFG = {
   // Masse der Figur in Weltpixeln (Figur rund 38 hoch, Kopf ein Wuerfel): Fuss (Laenge, Hoehe, Breite), Unter- und Oberschenkel, Beinbreite, Huefte, Becken, Rumpf, Arme, Hand, Kopf, Fase
@@ -138,7 +138,7 @@ void main() {
   const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), white = new THREE.Color(1, 1, 1), hitC = new THREE.Color(), yAx = new THREE.Vector3(0, 1, 0);
   const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
   const mats = n => Array.from({ length: n }, () => new THREE.Matrix4());
-  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, olT = 0;
+  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, olT = 0, olNt = false;
   // Teil im Gelenk par: Mitte (x,y,z), Groesse, Farbe, Leuchten em, Drehung (rx, rz) vor der Verschiebung. Im Sammelmodus (collect) wird nur gemerkt, sonst in den Pool geschrieben.
   function part(par, x, y, z, sx, sy, sz, col, em, rx, rz) {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
@@ -153,7 +153,7 @@ void main() {
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
     X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
-    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on ? FG.look.out || 0 : 0 },
+    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on && FG.look.out ? (olNt ? FG.look.outNightW : FG.look.out) : 0 },
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
     collect(fn) { const was = out, r = []; out = r; try { fn() } finally { out = was } return r },
     time: 0, dt: 0, FA: null, FN: null, light: null,
@@ -204,9 +204,9 @@ void main() {
   const genCar = (k, o) => { k.state(0, 1); k.rotY(o.x, o.y, o.a, 1); k.part(k.root, 0, 10, 0, o.L * .9, 20, o.W * .8, gray); return 0 };
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
-    { const th = (X.LAY && X.LAY.theme) || {}; olMat.uniforms.uC.value.set(X.night || th.tod === 'nacht' || th.tod === 'daemmerung' ? FG.look.outNight : FG.look.outDay) } carsNow = []; figsNow = F;
-    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6) | 0); pF.u = 0;
-    pAO.size(F.length + Cs.length); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
+    { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olMat.uniforms.uC.value.set(olNt ? FG.look.outNight : FG.look.outDay); olMat.uniforms.uA.value = olNt ? FG.look.outNightA : 1 } carsNow = []; figsNow = F;
+    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pF.u = 0;
+    pAO.size(F.length + Cs.length + 40); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
     let gear = 0, lie = 0, hit = 0;
     for (const [o, e] of F) {
@@ -225,6 +225,7 @@ void main() {
       if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
     }
     prevCars = cars; primed = true;
+    kit.ao = ao; kit.fire('dyn', kit);   // Haken 'dyn': weitere dynamische Teile vor dem Abschluss der Pools (Aufnahmen, kl-pickups.js), Schatten ueber kit.ao
     pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pF.u = iF; pF.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
     if (X.alarm && E.lamps.length) { // Alarm im Raum: zwei kreisende rote Lampen an der Decke (naechste Lampen), nur im Ueberfall
       const P = X.me, L = E.lamps.slice().sort((a, b) => (P ? Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y) : 0)).slice(0, KC.alarm.n);
@@ -275,6 +276,7 @@ void main() {
     kit.fire('frame', kit);
   };
   let flashK = 0;
+  K.hasPk = () => !!(KL.fxs.dyn && KL.fxs.dyn.length);   // ein Bauer fuer die Aufnahmen (Haken dyn) ersetzt die Billboards in view3d
   K.flashK = () => flashK;
 
   // ---------- Welt: Kacheln mit Bauer (Moebel als Bausteine), Szenario-Teile ----------

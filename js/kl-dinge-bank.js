@@ -57,17 +57,43 @@ export function register(KL) {
     B(cx + 3, fz + .5, 17, 10, 3, .8, 0x15191f); B(cx + 3, fz + .9, 17.6, 8, 1.6, .6, 0xffd23a, 1.6); // Ausgabeschlitz
     B(cx, cz, top, 8, 2, 8, 0xffd23a, 1.5); B(cx, cz, top + 2, 4, 2, 4, 0xffffff, 1.2); // Lampe
   });
-  KL.obj('k', (k, x, y, c, spec) => { // Kiste: Holz mit Deckelrahmen, Latten und Eisenecken
+  const kisteIn = (k, x, y, c, spec) => { // Kiste: Holz mit Deckelrahmen, Latten und Eisenecken
     const { cx, cz, w, top } = geo(k, x, y, spec), B = k.brick; k.shadow(cx, cz, w + 9);
     B(cx, cz, 0, w, top - 3, w, 0xe0aa52); B(cx, cz, top - 3, w + 1.2, 3, w + 1.2, 0xb87d2e); for (const a of [-1, 1]) B(cx + a * (w / 2 - 1.5), cz, 0, 3, top - 3, w + 1, 0x8a5a24); B(cx, cz, top * .4, w + 1, 2.6, w + 1.2, 0x8a5a24);
     for (const a of [-1, 1]) for (const b of [-1, 1]) B(cx + a * (w / 2 - .6), cz + b * (w / 2 - .6), top - 1, 2, 2, 2, 0xd8dde4); k.studs(cx, cz, w - 2, w - 2, top, 0xb87d2e);
-  });
-  KL.obj('q', (k, x, y, c, spec) => { // Fass: achtkantig aus zwei gedrehten Quadern, zwei Ringe, Deckel
+  };
+  const fassIn = (k, x, y, c, spec) => { // Fass: achtkantig aus zwei gedrehten Quadern, zwei Ringe, Deckel
     const { cx, cz, w, top } = geo(k, x, y, spec), B = k.brick; k.shadow(cx, cz, w + 9); const r = w * .86;
     for (const a of [0, .785]) B(cx, cz, 0, r, top, r, 0xd9402c, 0, a);
     for (const a of [0, .785]) { B(cx, cz, top * .2, r + 1.2, 2.6, r + 1.2, 0x2a2e36, 0, a); B(cx, cz, top * .62, r + 1.2, 2.6, r + 1.2, 0x2a2e36, 0, a) }
     for (const a of [0, .785]) B(cx, cz, top, r - 3, 1.4, r - 3, 0xf0b32c, 0, a); k.studs(cx, cz, 9, 9, top + 1.4, 0xf0b32c);
-  });
+  };
+  // ---------- Strassenmoebel (Ticket 229, Stufe 1, nur Optik): k und q draussen (mindestens 5 Zellen 'o' im 5 mal 5 um die Kachel) bekommen je nach Ort andere Gestalten, gleiche Grundflaeche und Hoehe wie Kiste und Fass ----------
+  // Wahl fest aus der Kachelposition (kein Zufall, Host und Client gleich): allein stehende Kacheln nach Hash, Nachbarn gleicher Art nach dem Muster x + 2y (benachbart nie gleich)
+  const outdoor = (k, x, y) => { let o = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (k.E.cellAt(x + dx, y + dy) === 'o') o++; return o >= 5 };
+  const pickV = (k, x, y, ch, n) => { let same = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (k.E.cellAt(x + dx, y + dy) === ch) same = true; const h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0; return same ? (x + 2 * y) % n : (h >>> 7) % n };
+  // Je Gestalt hoechstens ein grosser Klotz (kleinste Kante ab KC.small, mit Fase, 108 Dreiecke), der Rest Kleinteile ohne Fase (12 Dreiecke), wie bei Kiste und Fass: so bleibt der Dreieckszuwachs unter einem Prozent
+  const KQ = [ // q: Mülltonne grau, Mülltonne grün, Pflanzkübel mit Busch, Streugutkiste, Poller-Gruppe
+    (k, cx, cz, w, top, B) => { const r = w * .78; B(cx, cz, 0, r, top * .9, r, 0x8a949f); B(cx, cz, top * .9, r + 2, 3, r + 2, 0x59616b); B(cx + r * .5 + 1, cz, top * .45, 2.4, 3, 8, 0x3c424a); B(cx, cz, top * .9 + 3, 6, 2.4, 3, 0x2f343b) },
+    (k, cx, cz, w, top, B) => { const r = w * .78; B(cx, cz, 0, r, top * .9, r, 0x2f9e55); B(cx, cz, top * .9, r + 2, 3, r + 2, 0x1f6e3c); B(cx - r * .5 - 1, cz, top * .45, 2.4, 3, 8, 0x1a4a2b); B(cx, cz, top * .9 + 3, 6, 2.4, 3, 0xe8e8e8) },
+    (k, cx, cz, w, top, B) => { B(cx, cz, 0, w * .86, top * .5, w * .86, 0xc5b79a); B(cx, cz, top * .5, w * .92, 2.4, w * .92, 0x9c8e72); for (let i = 0; i < 3; i++) B(cx, cz, top * .5 + 2.4 + i * 4.2, (w * .8) * (1 - i * .2), 4.2, (w * .8) * (1 - i * .2), i === 1 ? 0x4fd05a : 0x2fb246, 0, i * .5); B(cx + 4, cz - 3, top * .5 + 15, 3.4, 3, 3.4, 0xff6a8a, .1) },
+    (k, cx, cz, w, top, B) => { B(cx, cz, 0, w * .86, top * .6, w * .62, 0xf0b32c); B(cx, cz, top * .6, w * .9, 3, w * .66, 0x2a2e36); B(cx, cz, top * .3, w * .88, 3, w * .64, 0x2a2e36); B(cx - 5, cz + w * .32, top * .36, 7, 4, .8, 0xffffff) },
+    (k, cx, cz, w, top, B) => { for (const dx of [-8, 0, 8]) for (const dz of dx === 0 ? [0] : [-4, 4]) { B(cx + dx, cz + dz, 0, 4.4, top * .8, 4.4, 0xd8412f); B(cx + dx, cz + dz, top * .55, 4.4, 3, 4.4, 0xf2f2f2) } }];
+  const KK = [ // k: Müllcontainer, Zeitungsbox, Stromkasten, Paketstation, Holzkiste
+    (k, cx, cz, w, top, B) => { B(cx, cz, 3, w * .96, top * .7, w * .86, 0x2f6f4e); B(cx, cz, 3 + top * .7, w * .98, 3, w * .9, 0x1f4a34); B(cx, cz, 3 + top * .7 + 3, w * .5, 1.6, w * .7, 0x3f8a64); for (const a of [-1, 1]) B(cx + a * (w * .38), cz + w * .46, 0, 4, 4, 2.4, 0x23262b); B(cx - w * .3, cz + w * .44, top * .45, 6, 4, .8, 0xe8e8e8) },
+    (k, cx, cz, w, top, B) => { B(cx, cz, 0, w * .56, 4.4, w * .56, 0x23262b); B(cx, cz, 4.4, w * .62, top - 8, w * .62, 0x2f6fd8); B(cx, cz, top - 3.6, w * .66, 3, w * .66, 0x1a4aa0); B(cx, cz + w * .31, top * .5, w * .4, 6, .8, 0x1f3550); B(cx, cz + w * .32, top * .5 - 6, w * .3, 2, .8, 0xe8e8e8) },
+    (k, cx, cz, w, top, B) => { B(cx, cz, 0, w * .84, top, w * .56, 0xaab2bb); B(cx, cz, top, w * .9, 2, w * .62, 0x7c8590); B(cx - 4, cz + w * .29, top * .55, 7, 7, .8, 0xf0c92c); B(cx - 4, cz + w * .3, top * .55 + 1.5, 1.4, 3, .6, 0x2a2e36); B(cx + 5, cz + w * .29, top * .3, 8, 3, .8, 0x59616b) },
+    (k, cx, cz, w, top, B) => { B(cx, cz, 0, w * .92, top, w * .62, 0xf0b32c); B(cx, cz, top, w * .96, 2, w * .66, 0x2a2e36); for (const [a, b] of [[-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]) B(cx + a * w * .28, cz + w * .32, 3 + b * (top * .42), w * .22, top * .34, .8, 0xffffff, 0, 0) },
+    null];
+  const street = (list, ch) => (k, x, y, c, spec) => {
+    const { cx, cz, w, top } = geo(k, x, y, spec);
+    if (!outdoor(k, x, y)) return null;
+    const f = list[pickV(k, x, y, ch, list.length)]; if (!f) return null;
+    k.shadow(cx, cz, w + 9); f(k, cx, cz, w, top, k.brick); return true;
+  };
+  const kStreet = street(KK, 'k'), qStreet = street(KQ, 'q');
+  KL.obj('k', (k, x, y, c, spec) => { if (!kStreet(k, x, y, c, spec)) kisteIn(k, x, y, c, spec) });
+  KL.obj('q', (k, x, y, c, spec) => { if (!qStreet(k, x, y, c, spec)) fassIn(k, x, y, c, spec) });
   KL.obj('p', (k, x, y, c, spec) => { // Pflanze: Topf, drei Blattstufen, rote Bluete
     const { cx, cz, w } = geo(k, x, y, spec), B = k.brick; k.shadow(cx, cz, w + 9);
     B(cx, cz, 0, w * .9, 13, w * .9, 0xd4602f); B(cx, cz, 11, w * .98, 3, w * .98, 0xb04a22); B(cx, cz, 14, w * .8, 1.2, w * .8, 0x5a3b22);
@@ -102,6 +128,29 @@ export function register(KL) {
       br(-8, 0, 0, 6, 48, 29, steel); br(-8, 0, 22, 6.4, 3, 29, dark); br(-4.6, 0, 21, 1, 3, 14, 0xf0f3f7);                              // duenn an die Laibung geklapptes Blatt mit Rippe und Stange
       br(13.5, 16.9, 23, 4, 10, 1.8, 0x20252c); br(13.5, 17.9, 30.4, 2.4, 2.4, .6, 0x4cf06a, 1.8); br(13.5, -16.9, 23, 4, 10, 1.8, 0x20252c); br(13.5, -17.9, 30.4, 2.4, 2.4, .6, 0x4cf06a, 1.8); // Leser mit gruener LED
     }
+  });
+
+  // ---------- Ueberwachungskamera (Ticket 221, Szenario-Teil 'cam' aus scen3d): Wandhalter, Gehaeuse, Linse, LED ----------
+  // Die Kamera haengt an einer Mauer (js/maps.js mountCams): Platte an der Wand, Arm zum Drehpunkt, darauf ein laengliches Gehaeuse mit Haube, dunkler Linse vorn und roter LED, gedreht nach dem Blickwinkel o.a
+  // (mit Schwung wie im Spiel). Aus (o.off: Hauptschalter oder ausgeschaltet): LED dunkel, Linse matt. Alarm (o.al): LED orange. Hoehe 56 wie das 2D-Bild auf dem HUD.
+  KL.obj('cam', (k, o) => {
+    const T_ = k.T, tx = Math.floor(o.x / T_), ty = Math.floor(o.y / T_), cell = k.E.cellAt, wall = (a, b) => { const q = cell(a, b); return q === '#' || q === 'P' || q === 'V' };
+    const dirs = [[0, -1], [-1, 0], [1, 0], [0, 1]].filter(d => wall(tx + d[0], ty + d[1])), vx = Math.cos(o.a0), vz = Math.sin(o.a0);
+    const W = dirs.sort((p, q) => (p[0] * vx + p[1] * vz) - (q[0] * vx + q[1] * vz))[0] || null;      // die Mauer am weitesten gegen die Blickrichtung
+    const B = (x, z, y0, sx, sy, sz, a, col, em) => k.dbrick(x, z, y0, sx, sy, sz, a, col, em), H = 52;
+    const white = o.off ? 0xaab0b8 : 0xe9edf1, shade = o.off ? 0x6c727a : 0x9aa3ae, dark = 0x14181d;
+    if (W) { // Wandplatte an der Mauerflaeche (Kachelrand), Arm nach innen bis zum Drehpunkt (o.x, o.y)
+      const fx = (tx + .5) * T_ + W[0] * T_ / 2, fz = (ty + .5) * T_ + W[1] * T_ / 2, ax = W[0] !== 0, L = Math.max(2, -((o.x - fx) * W[0] + (o.y - fz) * W[1]));
+      B(fx - W[0] * .8, fz - W[1] * .8, H - 3, ax ? 1.6 : 8, 10, ax ? 8 : 1.6, 0, 0x4a525c);        // Platte
+      B(fx - W[0] * L / 2, fz - W[1] * L / 2, H - .5, ax ? L : 3, 3, ax ? 3 : L, 0, 0x4a525c);        // Arm
+    }
+    const ca = o.a;
+    const cx = o.x + Math.cos(ca) * 3.5, cz = o.y + Math.sin(ca) * 3.5;
+    B(o.x, o.y, H - 2, 4, 3, 4, 0, 0x2a2f37);                                                     // Gelenk
+    B(cx, cz, H, 13, 6.4, 6.4, ca, white); B(cx, cz, H + 6.4, 12, 1.4, 6.8, ca, shade);           // Gehaeuse und Haube
+    B(cx + Math.cos(ca) * 7, cz + Math.sin(ca) * 7, H + .9, 1.8, 4.4, 4.4, ca, dark);              // Linse vorn
+    B(cx + Math.cos(ca) * 7.6, cz + Math.sin(ca) * 7.6, H + 2.2, .6, 1.6, 1.6, ca, o.off ? 0x2a3038 : 0x3a8bff, o.off ? 0 : .8); // Glanz der Linse
+    B(cx - Math.cos(ca) * 3, cz - Math.sin(ca) * 3, H + 7.6, 1.8, 1.8, 1.8, 0, o.off ? 0x3a2220 : o.al ? 0xffa22a : 0xff2a22, o.off ? 0 : 1.9); // LED
   });
 
   // ---------- Hauptschalter (Szenario-Teil 'sw', LAY.sw, E-Ziel Strom aus): Schaltkasten an der naechsten Wand ----------

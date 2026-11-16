@@ -33,9 +33,24 @@ export function register(KL) {
     k.dbrick(cx, cz, t + 2.5, r[2] - 8, 1.6, r[3] - 8, 0, 0x7a1f30);
     if (n === 'relic') { k.dbrick(cx, cz, t + 4.1, 8, 6, 8, 0, 0xffd23a, .6); k.dbrick(cx, cz, t + 10.1, 4, 5, 4, .4, 0xff4a5a, .9) } else { k.dbrick(cx - 4, cz, t + 4.1, 6, 3, 6, 0, 0xf4f4ff, .5); k.dbrick(cx + 4, cz, t + 4.1, 6, 5, 6, 0, 0x3ac4d9, .8) } });
   // Laser: Sender an beiden Enden, Strahl als duenner leuchtender Klotz in Knie bis Huefthoehe, aus nur ein matter Strich
+  // Lichtschranke (Ticket 239): duenner satter roter Kern mit schwachem dunkelroten Schein (kein Pastell, kein dicker Balken), Flimmern ueber o.f; Sender und Empfaenger sind kleine dunkle Metallgehaeuse mit
+  // roter Linse auf Strahlhoehe, flach an der Wand (die Enden der Linie liegen in der Mauerkachel: von dort so weit zur Gegenseite, bis die Kachel frei ist, dort sitzt die Rueckseite des Gehaeuses, der
+  // Strahl beginnt an der Linse). Aus (o.on falsch): Linsen dunkel, kein Strahl, kein Ersatzbalken.
   KL.obj('laser', (k, o) => {
-    const H = k.C.scen.laserH, L = Math.hypot(o.x1 - o.x0, o.y1 - o.y0), a = Math.atan2(o.y1 - o.y0, o.x1 - o.x0), mx = (o.x0 + o.x1) / 2, mz = (o.y0 + o.y1) / 2;
-    for (const [x, y] of [[o.x0, o.y0], [o.x1, o.y1]]) { k.dbrick(x, y, 0, 6, H + 4, 6, 0, o.on ? 0xcc3333 : 0x555566); if (o.on) k.dbrick(x, y, H + 4, 4, .8, 4, 0, 0xff4040, 1) }
-    if (L < .5) return; if (o.on) { k.dbrick(mx, mz, H - .8, L, 1.6, 1.6, a, 0xff6e78, .6 + o.f); k.dbrick(mx, mz, H - 2.4, L, .6, 4.8, a, 0xff2832, .25 * o.f) } else k.dbrick(mx, mz, H - .5, L, .6, 1, a, 0x969aaa);
+    const H = k.C.scen.laserH, T_ = k.T, cell = k.E.cellAt, wall = (x, y) => { const e = k.C.cells[cell(Math.floor(x / T_), Math.floor(y / T_))]; return !!e && e.s.some(q => q[0] === 0 && q[1] >= k.C.wallH) };
+    const L0 = Math.hypot(o.x1 - o.x0, o.y1 - o.y0); if (L0 < 1) return; const ux = (o.x1 - o.x0) / L0, uy = (o.y1 - o.y0) / L0, a = Math.atan2(uy, ux);
+    const face = (x, y, sx, sy) => { let n = 0; while (wall(x, y) && n++ < 48) { x += sx; y += sy } return [x, y] };          // Mauerflaeche: vom Ende zur Gegenseite, bis die Kachel frei ist
+    const f0 = face(o.x0, o.y0, ux, uy), f1 = face(o.x1, o.y1, -ux, -uy), D = 4.2, W = 7.5, HH = 9;
+    for (const [f, s, e] of [[f0, 1, [o.x0, o.y0]], [f1, -1, [o.x1, o.y1]]]) {
+      const cx = f[0] + ux * s * D / 2, cz = f[1] + uy * s * D / 2;
+      if (!wall(e[0], e[1])) k.dbrick(cx, cz, 0, D + 1, H - HH / 2, 5, a, 0x2b3038);                                                          // freistehend: Saeule
+      k.dbrick(cx, cz, H - HH / 2, D, HH, W, a, 0x2b3038); k.dbrick(cx, cz, H + HH / 2 - 1.2, D + .4, 1.2, W + .4, a, 0x464e5a);                    // Gehaeuse und Deckplatte
+      k.dbrick(f[0] + ux * s * (D + .5), f[1] + uy * s * (D + .5), H - 1.4, 1.2, 2.8, 2.8, a, o.on ? 0xff1010 : 0x2e2226, o.on ? 1.1 : 0);          // Linse
+    }
+    const b0 = [f0[0] + ux * (D + 1.1), f0[1] + uy * (D + 1.1)], b1 = [f1[0] - ux * (D + 1.1), f1[1] - uy * (D + 1.1)], L = Math.hypot(b1[0] - b0[0], b1[1] - b0[1]);
+    if (!o.on || L < 1 || (b1[0] - b0[0]) * ux + (b1[1] - b0[1]) * uy < 0) return;
+    const mx = (b0[0] + b1[0]) / 2, mz = (b0[1] + b1[1]) / 2;
+    k.dbrick(mx, mz, H - .25, L, .5, .5, a, 0xff0a0a, .5 + .5 * o.f);                                                                          // Kern
+    k.dbrick(mx, mz, H - 1, L, 2, 2.6, a, 0xb00000, .15 + .3 * o.f);                                                                              // Schein
   });
 }
