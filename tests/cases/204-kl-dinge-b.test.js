@@ -3,13 +3,13 @@
 const lib = require('../lib');
 const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
 module.exports = [{
-  name: 'Kloetzchen Dinge B: Museum, Casino, Notenbank und Gefaengnis zeichnen Szenario-Teile als Kloetzchen (k-dinge), ohne Bauer faellt jede Art auf den klassischen Plan zurueck, keine Fehler',
+  name: 'Kloetzchen Dinge B: Museum, Casino, Notenbank und Gefaengnis zeichnen Szenario-Teile als Kloetzchen (k-dinge), ohne Bauer fehlt die Art (kein klassischer Rueckweg), keine Fehler',
   timeout: 280000,
   async run(t) {
     const P = await glPage(t); if (!P) return;
     try {
       const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
-        D.view3d.kstil = 1; await D.view3d.set(true);
+        await D.view3d.set(true);
         for (const sc of ['museum', 'casino', 'nb', 'prison']) {
           D.setN(sc === 'prison' ? 2 : 1); if (sc === 'prison') D.setPz(1); D.sessReset(); D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5);
           for (let i = 0; i < 60; i++) { D.get().me.hp = 1e9; D.update(1 / 30); }
@@ -22,8 +22,7 @@ module.exports = [{
       for (const sc of ['museum', 'casino', 'nb', 'prison']) {
         const q = r[sc];
         t.ok(q.err === '', sc + ': keine Fehler ' + q.err);
-        t.ok(q.dinge > 0 && q.dingeOhne === 0, sc + ': Szenario-Teile als Kloetzchen (' + q.dinge + '), ohne Bauer keine, Fallback zeichnet klassisch (' + q.classic.join(' -> ') + ')');
-        t.ok(q.classic[1] >= q.classic[0], sc + ': ohne Bauer zeichnet der klassische Plan mindestens so viele Koerper');
+        t.ok(q.dinge > 0 && q.dingeOhne === 0, sc + ': Szenario-Teile als Kloetzchen (' + q.dinge + '), ohne Bauer keine (' + q.classic.join(' -> ') + ')');
       }
       if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
     } finally { await P.done(); }

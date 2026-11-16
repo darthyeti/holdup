@@ -1,6 +1,6 @@
 // Ticket 196: Bilder und Bildfolgen der Stilstudie Kloetzchen (docs/bilder/stil-kloetzchen/). Aufruf:
 //   cd tests && HOLDUP_CHROME=/opt/pw-browsers/chromium node ../tools/bilder-kloetzchen.js <ordner> <szene bank|museum> <stil 0|1|2> <ablauf> [Bildbreite]
-// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, fenster, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
+// Abläufe: ueberblick (ganze Spielkamera, mit HUD), laufen, schiessen, zerfall, explosion, autos, pumpe, fluchtwagen, fenster, alarm. Das Spiel laeuft nicht von allein (still), jeder Ablauf steuert Spielschritte (__dbg.update) und zeichnet danach.
 // Es wird die WebGL-Leinwand selbst gelesen (ohne HUD, doppelte Aufloesung bei Grafik hoch), ein Ausschnitt um das Geschehen, Bildfolgen als Streifen (Pillow). Stil 0 ist das heutige 3D zum Vergleich.
 const path = require('path'), fs = require('fs'), { execFileSync } = require('child_process');
 const lib = require(path.join(__dirname, '..', 'tests', 'lib'));
@@ -12,7 +12,7 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
   const env = await lib.launch({ webgl: true });
   const page = await lib.openGame(env, { still: true, gfx: process.env.GFX || 'hoch' });
   await lib.loadInpage(page, 'bild.js');
-  if (STIL !== 'x') await page.evaluate(async (stil) => { __dbg.view3d.kstil = +stil; await __dbg.view3d.set(true); }, STIL);
+  if (STIL !== 'x') await page.evaluate(async (stil) => { await __dbg.view3d.set(true); }, STIL);
   const prep = await page.evaluate(([sc, flow, seed, lage]) => {
     const D = __dbg; if (lage) D.setLage([lage]); else if (sc === 'museum') D.setLage(['nacht']);
     PX.scene(sc, seed); if (lage || sc === 'museum') { D.setLage([lage || 'nacht']); D.buildSeed(seed); D.ptClear(); }
@@ -166,6 +166,17 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       info = await shot('n' + FR.length, 'at');
     }
     await page.evaluate(() => { __dbg.view3d.V.kl().kit.X.scen = window.__scen0 });
+  } else if (FLOW === 'fluchtwagen') {
+    // Fluchtwagen (Ticket 245): die vier Varianten (LAY.seed waehlt sie) je fahrend (Tuer zu) und wartend (Tuer offen), Streifen aus X.figs wie bei 'alle'
+    const seeds = JSON.parse(process.env.VSEEDS || '[4,3,2,1]');   // LAY.seed fuer die Varianten 0 bis 3
+    await page.evaluate(() => { const D = __dbg, m = D.get().me; m.y += 150; m.x -= 100; for (let i = 0; i < 40; i++) { m.hp = 1e9; D.update(1 / 30) } });
+    for (let vi = 0; vi < 4; vi++) for (const wait of [0, 1]) {
+      await page.evaluate(async ([seed, wait]) => { const D = __dbg, V = D.view3d.V, X = V.kl().kit.X, m = D.get().me; if (!window.__figs0) window.__figs0 = X.figs; D.LAY().seed = seed; window.__vx = 0;
+        const mk = dx => ({ k: 'van', x: m.x + 170 + dx, y: m.y - 30, a: 0, row: 0, L: 128, W: 64, fx: 1, fy: 1, dim: 0, bl: 0 }); X.figs = () => { const o = window.__figs0(); if (!wait) window.__vx += 6; return { f: o.f, c: [mk(wait ? 0 : window.__vx)] } };
+        window.__at = { x: m.x + 170, y: m.y - 30 }; for (let i = 0; i < (wait ? 25 : 4); i++) { D.update(1 / 30); D.draw() } }, [seeds[vi], wait]);
+      info = await shot('v' + FR.length, 'at');
+    }
+    await page.evaluate(() => { __dbg.view3d.V.kl().kit.X.figs = window.__figs0 });
   } else if (FLOW === 'pumpe') {
     // Explosion einer Zapfsaeule oder (ohne Tankstelle) einer Sprengung: Bildfolge um den Boom (wie explosion)
     await page.evaluate(() => { const D = __dbg, g = D.get(); g.en.length = 0; D.get().me.hp = 1e9; const m = g.me; window.__bx = m.x + 60; window.__by = m.y; });
