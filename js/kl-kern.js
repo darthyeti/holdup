@@ -35,7 +35,8 @@ export const KCFG = {
   // Glas-Splitter einer zerschossenen Scheibe (Ticket 207): Anzahl je Grafikstufe, Groesse von bis, Tempo, Aufwaerts, Liegezeit, Leuchten, Deckkraft, Funken, Farben
   glass: { n: [6, 12, 18], size: [2, 4.2], k: .55, up: .55, rest: [.8, 1.6], em: .05, a: .45, sparks: 6, col: [0xcfeeff, 0xa9d8f5, 0xe8f6ff] },
   // pal: Lackfarben der zivilen Autos (gesaettigt, nach der Zeile aus cars.png gewaehlt), Streifenwagen blau und weiss (pol, Dach und Seiten 0xd5dae1 in kl-fahrzeuge.js)
-  car: { pal: [0xd8322b, 0x2f6fd6, 0xe8b21c, 0x2f9e55, 0xe8741f, 0x7b4fc4, 0x1fa3b4, 0xc9ced6, 0x2b2f38], pol: [0x2b55b8, 0xeef1f4], bar: [0xff3a30, 0x3a6bff], wheel: 0x24272d, glass: 0x1f3550, lamp: 0xfff1b8, tail: 0xff3b2e, scorch: 0x2a2522, ember: 0xff7a2a },
+  // Fluchtwagen (Ticket 245): fpal Grundfarben der vier Varianten (Lieferwagen cremeweiss, Kleinbus dunkel, Pickup oliv, Kastenwagen beige), facc Firmenfarben, ftarp Plane
+  car: { fpal: [0xe8e4d4, 0x2a3340, 0x6a7b52, 0xb7b08a], facc: [0xd8412f, 0x1f6fd0, 0x2f9e55, 0xe8a31c], ftarp: 0x4a6b8a, pal: [0xd8322b, 0x2f6fd6, 0xe8b21c, 0x2f9e55, 0xe8741f, 0x7b4fc4, 0x1fa3b4, 0xc9ced6, 0x2b2f38], pol: [0x2b55b8, 0xeef1f4], bar: [0xff3a30, 0x3a6bff], wheel: 0x24272d, glass: 0x1f3550, lamp: 0xfff1b8, tail: 0xff3b2e, scorch: 0x2a2522, ember: 0xff7a2a },
 };
 
 // Ausgabe in sRGB selbst kodieren: auf dem Bildschirm dasselbe wie bisher, beim Zeichnen in die Zwischenflaeche des Bloom (die ohne Kodierung linear bliebe) bleiben Nebel und Farbkorrektur im selben Farbraum.
