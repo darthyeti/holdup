@@ -524,7 +524,7 @@ g.restore()}
 let hud3dN=[];//3D-9 (Ticket 158): HUD-Marken mit Weltbezug des letzten 3D-Bildes (tg E-Anzeige, lean, line, fx Beute-Text) mit Weltstelle w und Bildpunkt s, nur fuer Tests (hud3d())
 let funk3dN=[];//Funkmarken des letzten 3D-Bildes (Art, Spieler, Bildpunkt), nur fuer Tests (funk3d())
 let ring3dAt=null;//letzter Bodenring (Welt x, y, Bild x, y), nur fuer Tests (ring3d())
-function ring3d(V,x,y){const s=V.toScr(x,y,0),a=V.toScr(x+16,y,0),b=V.toScr(x,y+16,0);g.save();g.setTransform(2*(a[0]-s[0])/16,2*(a[1]-s[1])/16,2*(b[0]-s[0])/16,2*(b[1]-s[1])/16,2*s[0],2*s[1]);g.lineWidth=1.6;g.strokeStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(0,0,10,0,6.283);g.stroke();g.strokeStyle='rgba(120,255,140,.8)';g.lineWidth=1;g.beginPath();g.arc(0,0,10,0,6.283);g.stroke();g.restore();ring3dAt=[x,y,s[0],s[1]]}
+function ring3d(V,x,y){const s=V.toScr(x,y,0);ring3dAt=[x,y,s[0],s[1]]}   // Ticket 246: nur noch der Zielpunkt am Boden (fuer Tests), kein Ring mehr unter dem Fadenkreuz; die Ringe der Wurfgeraete, Fallen und des Granatwerfers zeichnet aim3d
 function draw0(){
 const V3=DX.v3Frame(DX.scr==='play');V3c=null;hud3dN=[];
 if(DX.scr!=='play'){DX.drawMenu();drawChat();return}
@@ -542,7 +542,7 @@ drawFunkHud();for(const f of DX.fx){g.globalAlpha=Math.min(1,f.t);g.fillStyle='#
 let ax=DX.p.x-DX.camX+Math.cos(DX.p.a)*90,ay=DX.p.y-DX.camY+Math.sin(DX.p.a)*90;if(DX.time-DX.mouse.t<4){ax=DX.mouse.sx;ay=DX.mouse.sy}
 if(v3&&DX.time-DX.mouse.t>=4){const q=V3.toScr(DX.p.x+Math.cos(DX.p.a)*90,DX.p.y+Math.sin(DX.p.a)*90,V3.cfg.aimH);ax=q[0];ay=q[1]}
 if(DX.focus&&DX.p===DX.me&&live(DX.me)&&DX.me.armed){const sw=DX.spwOn&&spwCan(),gp=sw?5:4+(DX.p.wp.spread+.05*DX.p.mv+DX.p.rec+lsp(DX.p))*180;g.strokeStyle=sw?(spwKind(DX.me)==='rifle'?'rgba(150,215,255,.95)':'rgba(255,170,60,.95)'):'rgba(120,255,140,.95)';g.lineWidth=1.6;g.beginPath();g.moveTo(ax-gp-6,ay);g.lineTo(ax-gp,ay);g.moveTo(ax+gp,ay);g.lineTo(ax+gp+6,ay);g.moveTo(ax,ay-gp-6);g.lineTo(ax,ay-gp);g.moveTo(ax,ay+gp);g.lineTo(ax,ay+gp+6);g.stroke()}
-/* 3D-3 (Ticket 152): Bodenring am Zielpunkt, der Weltpunkt der Maus (Waffenhoehe) senkrecht auf den Boden, Zeichnung folgt der Bodenebene (ring3d) */
+/* 3D-3 (Ticket 152): Zielpunkt am Boden, der Weltpunkt der Maus (Waffenhoehe) senkrecht auf den Boden (ring3d, seit Ticket 246 ohne Zeichnung) */
 if(v3&&DX.focus&&DX.p===DX.me&&live(DX.me)&&DX.me.armed)ring3d(V3,DX.mouse.x,DX.mouse.y)
 if(!DX.ended)hud();if(SND.isMuted()){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('TON AUS (M)',VW-12,VH-52);g.textAlign='left'}
 if(MLOCK.on&&MLOCK.can&&DX.plWant()&&!DX.plHeld()&&DX.focus&&!DX.paused&&!DX.ended){g.textAlign='right';g.font='11px monospace';g.fillStyle='#8d95a1';g.fillText('KLICKEN: MAUS FANGEN',VW-12,VH-(SND.isMuted()?68:52));g.textAlign='left'}
