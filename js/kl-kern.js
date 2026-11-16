@@ -130,10 +130,10 @@ void main() {
   const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox), pF = kpool('k-kloetze-klein', flatBox);
   // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
   const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
-    vertexShader: 'varying vec2 vM; void main() {\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: E.GL.VISF + 'uniform vec3 uC; uniform float uA; varying vec2 vM; void main() { if (uA < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > uA) discard; gl_FragColor = vec4(uC, 1.0);\n#include <colorspace_fragment>\n gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM); }' });
-  olMat.uniforms.uC = { value: new THREE.Color() }; olMat.uniforms.uA = { value: 1 };
-  const pO = E.pool('k-umriss', boxGeo, olMat, {}, false, 2); E.pools.push(pO);
+    vertexShader: 'attribute vec4 iO; varying vec4 vO; varying vec2 vM; void main() { vO = iO;\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: E.GL.VISF + 'varying vec4 vO; varying vec2 vM; void main() { if (vO.a < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > vO.a) discard; gl_FragColor = vec4(vO.rgb, 1.0);\n#include <colorspace_fragment>\n gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM); }' });
+  const olCd = new THREE.Color(), olCn = new THREE.Color(), olTmp = new THREE.Color(); let olCol = olCd, olA = 1;
+  const pO = E.pool('k-umriss', boxGeo, olMat, { iO: 4 }, false, 2); E.pools.push(pO);
   const pAO = E.pool('k-kontakt', E.flatGeo, E.shMat, { iSA: 2 }, false, 1); E.pools.push(pAO);
 
   // ---------- Werkzeug fuer die Bauer ----------
@@ -150,12 +150,20 @@ void main() {
     if (Math.min(sx, sy, sz) < KC.small) { const j = iF++; pF.im.setMatrixAt(j, fm); pF.im.setColorAt(j, c); pF.a.iK.setXY(j, alNow, em || 0) }
     else { const i = iB++; pB.im.setMatrixAt(i, fm); pB.im.setColorAt(i, c); pB.a.iK.setXY(i, alNow, em || 0) }
     nP++;
-    if (olT > 0 && Math.min(sx, sy, sz) >= 3.9) { _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l); pO.im.setMatrixAt(iO++, fm) }
+    if (olT > 0 && Math.min(sx, sy, sz) >= 3.9) { _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l); pO.a.iO.setXYZW(iO, olCol.r, olCol.g, olCol.b, olA); pO.im.setMatrixAt(iO++, fm) }
   }
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
     X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
-    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on && FG.look.out ? (olNt ? FG.look.outNightW : FG.look.out) : 0 },
+    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al },
+    // Umriss je Figur (Ticket 248, Tills Wahl): Spielerfiguren eine duenne Linie in der Teamfarbe (o.sc), alle anderen leise (duenn, halbtransparent, dunkel am Tag, hell bei Nacht). Werte in FG.look (plW, plA, npcW, npcA)
+    outline(on, o) {
+      if (!on || !FG.look.out) { olT = 0; return }
+      const L = FG.look;
+      if (o && o.k === 'pl' && o.sc) { olT = L.out * L.plW; olCol = olTmp.set(o.sc); olA = L.plA }
+      else { olT = (olNt ? L.outNightW : L.out) * L.npcW; olCol = olNt ? olCn : olCd; olA = (olNt ? L.outNightA : 1) * L.npcA }
+    },
+    olState: () => ({ t: olT, a: olA, c: olCol.getHex() }),
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
     collect(fn) { const was = out, r = []; out = r; try { fn() } finally { out = was } return r },
     time: 0, dt: 0, FA: null, FN: null, light: null,
@@ -206,7 +214,7 @@ void main() {
   const genCar = (k, o) => { k.state(0, 1); k.rotY(o.x, o.y, o.a, 1); k.part(k.root, 0, 10, 0, o.L * .9, 20, o.W * .8, gray); return 0 };
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
-    { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olMat.uniforms.uC.value.set(olNt ? FG.look.outNight : FG.look.outDay); olMat.uniforms.uA.value = olNt ? FG.look.outNightA : 1 } carsNow = []; figsNow = F;
+    { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olCd.set(FG.look.outDay); olCn.set(FG.look.outNight) } carsNow = []; figsNow = F;
     pB.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pF.u = 0;
     pAO.size(F.length + Cs.length + 40); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
@@ -215,7 +223,7 @@ void main() {
       const art = E.typeOf(o, e), lying = !!(e.lie || o.lie);
       if (o.k === 'tot' && KL.fxs['fig-tot'] && !o.noBurst) { const key = 't' + Math.round(o.x) + ',' + Math.round(o.y) + ',' + o.row; if (!seenKey.has(key)) { seenKey.add(key); if (primed) queue.push({ n: 'fig-tot', a: { o: Object.assign({}, o), e, art } }) } if (K.burstArts.has(art)) continue }
       if (lying) { ao(o.x + 3, o.y + 4, o.a, 54, 30, 0, .3 * o.al); lie++ } else { ao(o.x, o.y, 0, 24, 21, 0, .42); if (o.fl) { dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }); if (queue.length < 48) queue.push({ n: 'casing', a: { o: Object.assign({}, o) } }) } }
-      kit.outline(!lying || true); if (!KL.figs[art]) fb.fig[art] = (fb.fig[art] || 0) + 1; gear += (KL.figs[art] || genFig)(kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
+      kit.outline(true, o); if (!KL.figs[art]) fb.fig[art] = (fb.fig[art] || 0) + 1; gear += (KL.figs[art] || genFig)(kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
     }
     const cars = [];
     for (const [o, e] of Cs) {
@@ -365,7 +373,7 @@ void main() {
   let applied = -1;
   K.zoom = () => K.on ? KC.zoom : 1;
   K.sync = () => { const w = 1; K.on = !K.dead; if (w === applied) return false; const was = applied; applied = w; return !(was === -1 && w === 0) };
-  K.info = () => ({ ol: { n: iO, c: olMat.uniforms.uC.value.getHex() }, fb, dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB + iF, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
+  K.info = () => ({ ol: { n: iO, c: (olNt ? olCn : olCd).getHex(), a: olNt ? FG.look.outNightA : 1 }, fb, dinge: SD.length, on: K.on, files: KL.files.slice(), figs: Object.keys(KL.figs), cars: Object.keys(KL.cars), objs: Object.keys(KL.objs), deb: deb.length, sparks: sparks.length, puffs: puffs.length, parts: iB + iF, bloom: K.bloom, passCalls: K.passCalls, flash: Math.round(flashK * 100) / 100, world: K.stats || null, q: q(), carsK: carsNow.length, figsK: figsNow.length, alarmPh: Math.round(alarmPh * 100) / 100, zoom: K.zoom() });
   K.dingeList = () => SD.map(q => q.slice(0, 7));
   K.debris = () => deb.map(d => [Math.round(d.x), Math.round(d.y * 10) / 10, Math.round(d.z), d.rest]);
   K.dispose = () => { for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; for (const r of [rtS, rtA, rtA2, rtB, rtB2]) r && r.dispose(); for (const m of [kMat, kGlass, olMat, mBright, mBlur, mComp]) m.dispose(); boxGeo.dispose(); flatBox.dispose(); studGeo.dispose(); fsGeo.dispose(); K.dead = true; K.on = false };
