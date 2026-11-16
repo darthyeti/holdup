@@ -276,6 +276,10 @@ Farben aus der eigenen Palette `KCFG.car.fpal` (nicht die `pal` der zivilen Auto
 
 `KL.obj('good:chips')` in `js/kl-dinge-casino.js` baut je Tisch (Block von 4 mal 2 Kacheln, `o.rc` ist nur seine Chipfläche an der Spielerseite) eine von vier Arten, gewählt über die Tischlage (`KL.casinoTable`, Kachel-Hash): Roulette (Oktagon mit Kessel und Zahlenfeld, grün), Blackjack (Halbkreis mit Spielplätzen und Kartenschlitten, blau), Poker (Oval mit goldener Reling, burgunder), Würfel (Rechteck mit Banden und zwei Würfeln, lindgrün). Voll: farbige Chipstapel mit leichtem Glanz an der Spielerseite. Abgeräumt (`o.done`): Filz dunkelgrau, keine Chips, leere offene Chipablage mit goldener Kante und ein umgeworfener Stuhl. Nur Darstellung. Test `244-kl-casino-tische`, Bildbogen `docs/bilder/stil-kloetzchen/casino-tische-voll-leer.jpg` (Tag und Nacht, voll und leer, zwei Seeds).
 
+#### Alarmlicht (Ticket 247)
+
+Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänden statt an den Deckenlampen, die dem Spieler am nächsten sind (die wanderten mit). `pickBeacons` in `js/kl-kern.js` wählt beim Bau der Welt (`K.world`) aus dem Raster: Bodenkacheln im Gebäude mit `#` im Rücken, nach einem festen Kachel-Hash sortiert, Mindestabstand `KCFG.alarm.gap` 8 Kacheln, höchstens `max` 16, also bei Host und Clients gleich. Modell aus Klötzchen (Platte, Sockel, roter Glaskörper, Kappe). Im Überfall leuchten die `n` 3 nächsten zum Spieler, die anderen blenden mit `rate` weich aus und ein (`fade`, kein Springen); jede dreht mit eigener Phase, Punktlicht in Höhe `h` 40, Schein vor dem Glas und Strahl über den Boden nur zur Raumseite (`js/kl-effekte.js`). Test `247-kl-alarmlicht` (feste Plätze, Mauer im Rücken, Abstand, höchstens vier leuchten, kein Sprung), Bildfolge `docs/bilder/stil-kloetzchen/alarmlicht-bildfolge.jpg` (Gang durch die Bank im Überfall).
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
