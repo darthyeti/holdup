@@ -278,16 +278,17 @@ Farben aus der eigenen Palette `KCFG.car.fpal` (nicht die `pal` der zivilen Auto
 
 ### 2.26 Umriss der Spielerfiguren weniger dominant (Ticket 248, 16. November 2026)
 
-Till (Coop-Test): Die Außenlinien der Figuren wirken auch nach #222 zu dominant. Der Klötzchen-Stil hat deshalb vier Umrissstile zum Vergleich, umschaltbar mit **F6** in der 3D-Ansicht (Banner mit dem Namen, gemerkt in `localStorage holdup.umriss`, Debug `__dbg.view3d.olv`):
+Till (Coop-Test): Die Außenlinien der Figuren wirken auch nach #222 zu dominant. Vier Stile standen in der Vorschau zur Wahl (wie bisher, dünn halbtransparent, nur bei ähnlichem Grund, Spielerfarbe, umschaltbar mit F6). **Entschieden (Till, 16. November 2026): "dünne Farblinie in Spielerfarbe".** Fest gebaut, Umschalter und übrige Stile entfernt:
 
-| Stil | Name | Breite, Deckkraft | Wirkung |
-|---|---|---|---|
-| 0 | wie bisher | `FG.look.out` 1,1 (Nacht 0,75), voll (Nacht `outNightA` 0,6) | schwarz am Tag, hell bei Nacht |
-| 1 | dünn, halbtransparent (**Standard**) | 55 Prozent der Breite, halbe Deckkraft (Dither) | wie bisher, nur leiser |
-| 2 | nur bei ähnlichem Grund | Breite wie bisher, Deckkraft nach Farbabstand der Figur (Oberteil) zur Helligkeit des Bodens (`groundLum` aus der Bodentextur): ähnlich voll, ab 0,34 Abstand 0 | Umriss nur dort, wo die Figur mit dem Boden verschmilzt |
-| 3 | in der Spielerfarbe | 80 Prozent der Breite, 90 Prozent Deckkraft, nur Spielerfiguren (`o.sc`), andere wie bisher | Mitspieler sofort am Rand erkennbar |
+- **Spielerfiguren:** dünne Linie in der Teamfarbe (`o.sc`), 55 Prozent der bisherigen Breite (`FG.look.plW`), Deckkraft 0,95 (`plA`), Tag und Nacht gleich.
+- **Alle anderen Figuren** (Polizei, Zivilisten, Wachen): leise, 55 Prozent der Breite (`npcW`), halbe Deckkraft (`npcA`, Dither), dunkel am Tag (`outDay`), hell bei Nacht (`outNight`, Deckkraft dazu `outNightA`).
+- **Hinter Wänden** bleibt die Silhouette (2.21) unverändert, sie ist ein eigener Pool in der Spielerfarbe.
 
-Umsetzung: `kit.outline(on, o)` in `js/kl-kern.js` bestimmt Breite, Farbe und Deckkraft je Figur, der Umriss-Pool `k-umriss` trägt sie je Instanz (`iO`: Farbe und Deckkraft, vorher zwei Uniforms). Nur Darstellung, kein Netzformat, 2D unverändert, die klassischen Low-Poly-Figuren (nicht mehr im Spiel) hatten ihren Umriss aus 2.23. Test `248-kl-umriss`, Bildbogen `docs/bilder/stil-kloetzchen/umriss-stile.jpg` (Tag oben, Nacht unten, Stile 0 bis 3 von links nach rechts). Till wählt, danach wird der Standard festgelegt und der Rest entfernt.
+Umsetzung: `kit.outline(on, o)` in `js/kl-kern.js`, der Umriss-Pool `k-umriss` trägt Farbe und Deckkraft je Instanz (`iO`), Werte in `V3CFG.fig.look` (`js/view3d.js`). Nur Darstellung, kein Netzformat, 2D unverändert. Test `248-kl-umriss`, Bild Tag und Nacht (Spieler links in Orange): `docs/bilder/stil-kloetzchen/umriss-fest.jpg`.
+
+#### Alarmlicht (Ticket 247)
+
+Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänden statt an den Deckenlampen, die dem Spieler am nächsten sind (die wanderten mit). `pickBeacons` in `js/kl-kern.js` wählt beim Bau der Welt (`K.world`) aus dem Raster: Bodenkacheln im Gebäude mit `#` im Rücken, nach einem festen Kachel-Hash sortiert, Mindestabstand `KCFG.alarm.gap` 8 Kacheln, höchstens `max` 16, also bei Host und Clients gleich. Modell aus Klötzchen (Platte, Sockel, roter Glaskörper, Kappe). Im Überfall leuchten die `n` 3 nächsten zum Spieler, die anderen blenden mit `rate` weich aus und ein (`fade`, kein Springen); jede dreht mit eigener Phase, Punktlicht in Höhe `h` 40, Schein vor dem Glas und Strahl über den Boden nur zur Raumseite (`js/kl-effekte.js`). Test `247-kl-alarmlicht` (feste Plätze, Mauer im Rücken, Abstand, höchstens vier leuchten, kein Sprung), Bildfolge `docs/bilder/stil-kloetzchen/alarmlicht-bildfolge.jpg` (Gang durch die Bank im Überfall).
 
 ## 3. Figuren
 

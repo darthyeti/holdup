@@ -31,7 +31,8 @@ export const KCFG = {
   // Zerfall: Schwerkraft, Rueckprall, Reibung, Liegezeit (von bis), Verschwinden, Anfangsgeschwindigkeit, Aufwaerts, Drehung, Zug weg vom Spieler (Prozent), Huelsen
   deb: { g: 520, bounce: .38, fric: .62, rest: [5.5, 8.5], fade: .8, burstV: [70, 190], up: [140, 300], spin: 9, biasK: 70 },
   bloom: { thr: .9, knee: .1, s: [.26, .34], flash: .45 },
-  alarm: { n: 2, spin: 3.2 },
+  // Alarm: so viele feste Rundumleuchten leuchten gleichzeitig (die naechsten zum Spieler), Drehung, Geschwindigkeit des Ein- und Ausblendens, Mindestabstand der Leuchten in Kacheln, hoechstens so viele je Karte, Hoehe des Lichts
+  alarm: { n: 3, spin: 3.2, rate: 3.5, gap: 8, max: 16, h: 40 },
   // Glas-Splitter einer zerschossenen Scheibe (Ticket 207): Anzahl je Grafikstufe, Groesse von bis, Tempo, Aufwaerts, Liegezeit, Leuchten, Deckkraft, Funken, Farben
   glass: { n: [6, 12, 18], size: [2, 4.2], k: .55, up: .55, rest: [.8, 1.6], em: .05, a: .45, sparks: 6, col: [0xcfeeff, 0xa9d8f5, 0xe8f6ff] },
   // pal: Lackfarben der zivilen Autos (gesaettigt, nach der Zeile aus cars.png gewaehlt), Streifenwagen blau und weiss (pol, Dach und Seiten 0xd5dae1 in kl-fahrzeuge.js)
@@ -56,7 +57,7 @@ export const KL = {
 
 export function mkKl(E) {
   const { X, C, scene, ren, UV, st } = E, KC = KCFG, D = KC.dim, FG = C.fig, T = X.T, LC = C.light;
-  if (!LC.pl.alarm) LC.pl.alarm = { h: 58, r: 240, col: [1, .16, .1], i: 3.2 };
+  if (!LC.pl.alarm) LC.pl.alarm = { h: KC.alarm.h, r: 240, col: [1, .16, .1], i: 3.2 };
   const K = { on: false, dead: false, KL };
   const q = () => Math.max(0, Math.min(2, X.gfx | 0)), lod = () => X.lod | 0;
   const satC = new Map(), colOf = h => { let c = satC.get(h); if (!c) { c = E.colOf(h).clone(); const o = {}; c.getHSL(o); c.setHSL(o.h, Math.min(1, o.s * KC.sat), o.l); satC.set(h, c) } return c };
@@ -154,14 +155,13 @@ void main() {
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
     X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
-    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, // Umriss je Figur (Ticket 248, Stile X.olv, Taste F6): 0 wie bisher, 1 duenner und halbtransparent, 2 nur bei aehnlichem Grund (Farbabstand Figur zu Boden), 3 in der Spielerfarbe
+    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al },
+    // Umriss je Figur (Ticket 248, Tills Wahl): Spielerfiguren eine duenne Linie in der Teamfarbe (o.sc), alle anderen leise (duenn, halbtransparent, dunkel am Tag, hell bei Nacht). Werte in FG.look (plW, plA, npcW, npcA)
     outline(on, o) {
       if (!on || !FG.look.out) { olT = 0; return }
-      const v = X.olv | 0, w0 = olNt ? FG.look.outNightW : FG.look.out; let w = w0, a = olNt ? FG.look.outNightA : 1, c = olNt ? olCn : olCd;
-      if (v === 1) { w = w0 * .55; a *= .5 }
-      else if (v === 2 && o && E.groundLum) { const T0 = FG.out[E.typeOf(o, {})]; const h = T0 ? T0.top : 0x808080, lf = ((h >> 16 & 255) * .299 + (h >> 8 & 255) * .587 + (h & 255) * .114) / 255; a *= Math.max(0, Math.min(1, 1 - Math.abs(lf - E.groundLum(o.x, o.y)) / .34)); if (a < .05) { olT = 0; return } }
-      else if (v === 3 && o && o.k === 'pl' && o.sc) { c = olTmp.set(o.sc); w = w0 * .8; a = olNt ? .85 : .9 }
-      olT = w; olCol = c; olA = a;
+      const L = FG.look;
+      if (o && o.k === 'pl' && o.sc) { olT = L.out * L.plW; olCol = olTmp.set(o.sc); olA = L.plA }
+      else { olT = (olNt ? L.outNightW : L.out) * L.npcW; olCol = olNt ? olCn : olCd; olA = (olNt ? L.outNightA : 1) * L.npcA }
     },
     olState: () => ({ t: olT, a: olA, c: olCol.getHex() }),
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
@@ -237,10 +237,11 @@ void main() {
     prevCars = cars; primed = true;
     kit.ao = ao; kit.fire('dyn', kit);   // Haken 'dyn': weitere dynamische Teile vor dem Abschluss der Pools (Aufnahmen, kl-pickups.js), Schatten ueber kit.ao
     pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pF.u = iF; pF.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
-    if (X.alarm && E.lamps.length) { // Alarm im Raum: zwei kreisende rote Lampen an der Decke (naechste Lampen), nur im Ueberfall
-      const P = X.me, L = E.lamps.slice().sort((a, b) => (P ? Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y) : 0)).slice(0, KC.alarm.n);
-      L.forEach((l, i) => { const f = .5 + .5 * Math.sin(alarmPh * KC.alarm.spin + i * Math.PI); dynL.push({ k: 'alarm', x: l.x, y: l.y, i: .15 + .85 * f }) });
-    }
+    // Alarm (Ticket 247): feste Rundumleuchten an den Waenden (K.beacons, beim Bau der Welt aus dem Raster gewaehlt, gleich fuer alle). Die naechsten KC.alarm.n zum Spieler leuchten, die anderen blenden weich aus (fade),
+    // so springt nichts, wenn man sich bewegt. Jede dreht mit eigener Phase, der Schein faellt von der Wand in den Raum (nx, ny zeigt von der Wand weg).
+    { const bc = K.beacons, P = X.me, dtF = Math.min(.1, kit.dr || .016), on = !!X.alarm;
+      if (bc.length) { const near = new Set(on ? bc.map(b => [b, P ? Math.hypot(b.x - P.x, b.y - P.y) : 0]).sort((a, b) => a[1] - b[1]).slice(0, KC.alarm.n).map(q => q[0]) : []);
+        bc.forEach((b, i) => { b.fade += ((near.has(b) ? 1 : 0) - b.fade) * Math.min(1, dtF * KC.alarm.rate); if (b.fade < .01) { b.fade = 0; return } const f = .5 + .5 * Math.sin(alarmPh * KC.alarm.spin + i * 2.1); dynL.push({ k: 'alarm', x: b.x, y: b.y, i: (.15 + .85 * f) * b.fade, nx: b.nx, ny: b.ny, a: alarmPh * KC.alarm.spin + i * 2.1 }) }) } }
     return { gear, lie, hit, parts: iB + iF };
   };
   K.burstArts = new Set(['cop', 'swat', 'grd', 'shield', 'sniper']); // Arten, deren Leiche zerfaellt (die Leiche selbst wird dann nicht gezeichnet)
@@ -294,6 +295,21 @@ void main() {
   const tileChars = () => Object.keys(KL.objs).filter(k => k.length === 1);
   K.cells = null;
   const mkCells = () => { const tc = tileChars().filter(c => !(KL.objOpts[c] && KL.objOpts[c].keep)); K.cells = Object.fromEntries(Object.entries(C.cells).map(([k, v]) => [k, KL.cellOver && KL.cellOver[k] ? KL.cellOver[k] : tc.includes(k) ? Object.assign({}, v, { s: [] }) : v])) }; mkCells(); // KL.cellOver: Hoehentabelle einer Kachel nur im Kloetzchen-Stil (zum Beispiel L: nur der Sturz, Tuer und Pfosten bauen die Kloetze)
+  // ---------- Rundumleuchten (Ticket 247): feste Plaetze an Waenden aus dem Raster (gleich bei Host und Clients), Modell aus Kloetzen ----------
+  K.beacons = [];
+  function pickBeacons() {
+    const B = X.LAY && X.LAY.bld, out = []; if (!B) return out; const cell = E.cellAt, wallC = (x, y) => cell(x, y) === '#', D4 = [[0, -1], [-1, 0], [1, 0], [0, 1]], A = KC.alarm, cand = [];
+    for (let y = B.y0; y <= B.y1; y++) for (let x = B.x0; x <= B.x1; x++) { if (cell(x, y) !== '.') continue; const d = D4.find(d => wallC(x + d[0], y + d[1])); if (d) cand.push({ x, y, d, h: (Math.imul(x + 11, 73856093) ^ Math.imul(y + 7, 19349663)) >>> 0 }) }
+    cand.sort((a, b) => a.h - b.h);
+    for (const c of cand) { if (out.length >= A.max) break; if (out.some(o => Math.hypot(o.tx - c.x, o.ty - c.y) < A.gap)) continue;
+      out.push({ tx: c.x, ty: c.y, x: (c.x + .5) * T + c.d[0] * (T / 2 - 4.5), y: (c.y + .5) * T + c.d[1] * (T / 2 - 4.5), nx: -c.d[0], ny: -c.d[1], d: c.d, fade: 0 }) }
+    return out;
+  }
+  // Modell: Platte an der Wand, Sockel, roter Glaskoerper (aus dem Raster gebaut, immer da, der Schein kommt mit dem Alarm), Kappe
+  function beaconBody(wk, b) {
+    const br = (w, y0, su, sh, sw, col, em) => { const px = (b.tx + .5) * T + b.d[0] * (T / 2 - w), pz = (b.ty + .5) * T + b.d[1] * (T / 2 - w), ax = b.d[0] !== 0; wk.brick(px, pz, y0, ax ? sw : su, sh, ax ? su : sw, col, em || 0) };
+    br(1.1, 35, 9, 10, 2.2, 0x3a4048); br(3.2, 37, 6, 6, 2, 0x2a2e36); br(7, 36, 6.4, 8, 5.6, 0xa81c14, .08); br(7, 44, 5, 1.6, 4.2, 0x2a2e36);
+  }
   K.world = () => {
     for (const m of worldMeshes) { scene.remove(m); m.dispose && m.dispose() } worldMeshes = []; K.stats = null; if (!K.on) return;
     const B = [], S = [], A = [];
@@ -303,6 +319,7 @@ void main() {
       shadow: (cx, cz, size) => A.push([cx, cz, size]),
     });
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = E.cellAt(x, y), f = KL.objs[c]; if (f && c.length === 1 && C.cells[c]) f(wk, x, y, c, C.cells[c]) }
+    K.beacons = pickBeacons(); for (const b of K.beacons) beaconBody(wk, b);   // Rundumleuchten (Ticket 247)
     const mk = (L, geo, name, f) => { if (!L.length) return; const im = new THREE.InstancedMesh(geo.clone(), kMat, L.length), ik = new THREE.InstancedBufferAttribute(new Float32Array(L.length * 2), 2); im.geometry.setAttribute('iK', ik); im.name = name; im.frustumCulled = false; im.layers.enable(1); im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(L.length * 3), 3); f(im, ik); im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; scene.add(im); worldMeshes.push(im) };
     const sm = B.filter(b => Math.min(b[3], b[4], b[5]) < KC.small), bg = B.filter(b => Math.min(b[3], b[4], b[5]) >= KC.small), put = (L, name) => mk(L, name === 'k-moebel' ? boxGeo : flatBox, name, (im, ik) => L.forEach((b, i) => { _p.set(b[0], b[2] + b[4] / 2, b[1]); _q.setFromAxisAngle(yAx, b[8]); _s.set(b[3], b[4], b[5]); im.setMatrixAt(i, tm.compose(_p, _q, _s)); im.setColorAt(i, b[6]); ik.setXY(i, 1, b[7]) }));
     put(bg, 'k-moebel'); put(sm, 'k-moebel-klein');

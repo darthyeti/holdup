@@ -91,14 +91,13 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
         const npc = (kind, row, st) => g.npcs.push({ id: 7000 + i, k: kind, row, x, y, a: 0, w: 0, mvg: false, st: st || 'idle', r: 8, kt: 20 }); if (k === 'civ') npc('civ', 3); if (k === 'tel') npc('tel', 5); if (k === 'mgr') npc('mgr', 6); if (k === 'kneel') npc('civ', 4, 'cower'); if (k === 'ko') npc('civ', 3, 'ko') });
       g.en.forEach(e => { e.a = .6 }); g.npcs.forEach(n => { n.a = .6 }); return [spot[0] + 5.5 * 40, spot[1], 18];
     });
-    if (process.env.OLV) {
-      // Ticket 248: Umrissstile 0 bis 3 (Taste F6), Tag oben, Nacht unten, die Reihe der Rollen mit dem Spieler ganz links
+    if (process.env.TAGNACHT) {
+      // Ticket 248: die Reihe der Rollen bei Tag und Nacht (Umriss), der Spieler ganz links
       process.env.HALF = process.env.HALF || '250';
       for (const night of [0, 1]) {
         if (night) await page.evaluate(async () => { const D = __dbg, L = D.LAY(); L.mission.lg = (L.mission.lg || []).concat('nacht'); D.view3d.reset(); await D.view3d.set(true); D.draw() });
-        for (const v of [0, 1, 2, 3]) { await page.evaluate(v => { __dbg.view3d.olv = v; __dbg.draw(); __dbg.draw() }, v); info = await shot(`f${FR.length}`, [rp[0] - 60, rp[1], 18]); }
+        await page.evaluate(() => { __dbg.draw(); __dbg.draw() }); info = await shot(`f${FR.length}`, [rp[0] - 150, rp[1], 18]);
       }
-      await page.evaluate(() => { __dbg.view3d.olv = 0 });
     } else {
         process.env.HALF = '470'; info = await shot('f0', rp);
     process.env.HALF = '150'; await shot('f1', [rp[0] - 4 * 40, rp[1], 18]); await shot('f2', [rp[0] + 1.2 * 40, rp[1], 18]);

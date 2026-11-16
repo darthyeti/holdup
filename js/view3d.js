@@ -71,7 +71,8 @@ export const V3CFG = {
     seg: { cap: [1, 7], torso: [2, 8], head: [9, 6], ball: [6, 3], dome: [8, 3], cyl: 8 }, shade: [.76, 1], hs: 40, hsCow: 28, hsLie: 1.2, run: .75, swing: .7, tilt: .18,
     // look (Ticket 189): Figuren heben sich vom Boden ab. sat Saettigung der Kleidung, out Dicke des Umrisses in Weltpixeln (zweite, aufgeblasene Instanz je Teil, nur die Rueckseiten, outDay dunkel,
     // outNight hell bei dunkler Szene, seit Ticket 198 gedaempft: Mittelgrau, Dicke outNightW und Deckkraft outNightA, nur nachts), out 0 schaltet ihn ab. Eine Aufhellung brachte auf hellem Boden weniger Kontrast (Messung tools/messung-kontrast-3d.js), der Umriss wirkt auf hell und dunkel.
-    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0x9aa5ba, outNightW: .75, outNightA: .6 },
+    // Umriss: out Breite (Weltpixel), Spieler duenne Linie in der Teamfarbe (plW Anteil der Breite, plA Deckkraft), alle anderen leise (npcW, npcA, Nacht outNight*), Ticket 248
+    look: { sat: 1.35, out: 1.1, outDay: 0x15171d, outNight: 0x9aa5ba, outNightW: .75, outNightA: .6, plW: .55, plA: .95, npcW: .55, npcA: .5 },
     hit: .7, size: .05, shieldA: .78, stock: 0x6b4a2c, skin: 0xe3b690, dark: 0x33353d, boot: 0x2a2c33, gun: 0x2a2c33, eye: 0x1a1a1a, gold: 0xd9b440, visor: 0x7ea6c8, bag: 0x7a6038, sleeve: 0xe9ecef,
     out: {
       rob0: { top: 0xd9772e, bot: 0x33353d, head: 'mask', gl: 0x33353d }, rob1: { top: 0x3f78d8, bot: 0x33353d, head: 'mask', gl: 0x33353d },
@@ -296,10 +297,7 @@ export function mkView3d(X) {
     if (!K || !K.on) return; const k = groundCv.width / (X.W * T), w = T * k;
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = X.cell(x, y); if (c !== 'k' && c !== 'q') continue; const sx = (x - X.WX0) * w, sy = (y - X.WY0) * w; groundG.clearRect(sx, sy, w, w); groundG.drawImage(X.st, sx, sy, w, w, sx, sy, w, w) }
   }
-  // Helligkeit des Bodens an einer Stelle (0 bis 1) aus der Bodentextur, je 8 Pixel gemerkt (Umrissstil 2 im Kloetzchen-Stil, Ticket 248)
-  const gLum = new Map();
-  const groundLum = (x, y) => { try { const k = groundCv.width / (X.W * T), px = Math.max(0, Math.min(groundCv.width - 1, Math.floor((x - X.WX0 * T) * k))), py = Math.max(0, Math.min(groundCv.height - 1, Math.floor((y - X.WY0 * T) * k))), key = (px >> 3) + ',' + (py >> 3); let v = gLum.get(key); if (v === undefined) { const d = groundG.getImageData(px, py, 1, 1).data; v = (d[0] * .299 + d[1] * .587 + d[2] * .114) / 255; gLum.set(key, v) } return v } catch (e) { return .5 } };
-  function refreshGround() { gLum.clear(); groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); hideStreetProps(); groundTex.needsUpdate = true; st.groundUp++ }
+  function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); hideStreetProps(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
     curLay = X.LAY; curSt = X.st;
@@ -772,7 +770,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
 
   // Kloetzchen-Stil (Ticket 196 und 198): Werkzeuge der Ansicht fuer js/kl-kern.js (mkKl), erst nach dem Bau von allem, Modul nur mit Schalter geladen (X.klotz)
   if (X.klotz) {
-    K = X.klotz({ X, C, scene, cam, ren, UV, UL, st, groundLum, pool, pools, colOf, FG, typeOf, carCol, xcol, cellAt, topAt, mats, groundMat, shMat, flatGeo, GL: V3GLSL, fp, hc, get lamps() { return lamps } });
+    K = X.klotz({ X, C, scene, cam, ren, UV, UL, st, pool, pools, colOf, FG, typeOf, carCol, xcol, cellAt, topAt, mats, groundMat, shMat, flatGeo, GL: V3GLSL, fp, hc, get lamps() { return lamps } });
     for (const m of K.mats) litMats.push(m);
   }
   return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
