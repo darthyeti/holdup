@@ -84,7 +84,7 @@ export function mkKl(E) {
     }
     return g;
   }
-  const flatBox = new THREE.BoxGeometry(1, 1, 1), boxGeo = bevelBox(D.bevel), studGeo = new THREE.CylinderGeometry(.42, .5, 1, 7).translate(0, .5, 0);
+  const wheelGeo = new THREE.CylinderGeometry(.5, .5, 1, 16).rotateX(Math.PI / 2), flatBox = new THREE.BoxGeometry(1, 1, 1), boxGeo = bevelBox(D.bevel), studGeo = new THREE.CylinderGeometry(.42, .5, 1, 7).translate(0, .5, 0);
 
   // ---------- Plastik-Shader: Licht, Schatten, Punktlichter und Nebel wie die Welt (litC), dazu Glanz, Himmelsspiegelung, Rand, Eigenleuchten (iK.y), Deckkraft als Raster (iK.x) ----------
   const VS = `attribute vec2 iK; varying vec3 vC; varying vec2 vK; varying vec2 vM; varying vec3 vWp; varying vec3 vN;
@@ -127,7 +127,7 @@ void main() {
   // Glas (Ticket 207): durchsichtig (Deckkraft KC.glass.a), ohne Tiefenschreiben, staerker spiegelnd; nur fuer Glas-Splitter des Zerfalls (spawnDeb mit glass: 1)
   const kGlass = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: FS.replace('gl_FragColor = vec4(col, 1.0);', 'gl_FragColor = vec4(col, ' + (KC.glass ? KC.glass.a : .45).toFixed(3) + ');'), transparent: true, depthWrite: false, uniforms: Object.assign({ uK: { value: new THREE.Vector4(KC.plastic[0] * 1.5, KC.plastic[1] * 1.9, KC.plastic[2], KC.plastic[3]) } }, UV) });
   const pG = E.pool('k-glas', boxGeo, kGlass, { iK: 2 }, true, 6, 0); E.pools.push(pG);
-  const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox), pF = kpool('k-kloetze-klein', flatBox);
+  const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox), pF = kpool('k-kloetze-klein', flatBox), pW = kpool('k-raeder', wheelGeo);
   // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
   const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
     vertexShader: 'attribute vec4 iO; varying vec4 vO; varying vec2 vM; void main() { vO = iO;\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
@@ -140,8 +140,15 @@ void main() {
   const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), white = new THREE.Color(1, 1, 1), hitC = new THREE.Color(), yAx = new THREE.Vector3(0, 1, 0);
   const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
   const mats = n => Array.from({ length: n }, () => new THREE.Matrix4());
-  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, olT = 0, olNt = false;
+  let hitNow = 0, alNow = 1, out = null, iB = 0, iF = 0, nP = 0, iO = 0, iW = 0, olT = 0, olNt = false;
   // Teil im Gelenk par: Mitte (x,y,z), Groesse, Farbe, Leuchten em, Drehung (rx, rz) vor der Verschiebung. Im Sammelmodus (collect) wird nur gemerkt, sonst in den Pool geschrieben.
+  // Rad (Ticket 257): runder Zylinder (16 Segmente, Achse entlang z, Durchmesser d, Breite w) im Gelenk par; im Sammelmodus (Zerfall) ein Quader gleicher Masse wie bei part
+  function wheel(par, x, y, z, d, w, col, em) {
+    _p.set(x, y, z); _q.identity(); _s.set(d, d, w); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
+    const c = hitNow ? hitC.copy(col).lerp(white, FG.hit) : col;
+    if (out) { out.push({ m: fm.clone(), c: c.clone(), e: em || 0, s: [d, d, w] }); return }
+    const i = iW++; pW.im.setMatrixAt(i, fm); pW.im.setColorAt(i, c); pW.a.iK.setXY(i, alNow, em || 0); nP++;
+  }
   function part(par, x, y, z, sx, sy, sz, col, em, rx, rz) {
     _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
     const c = hitNow ? hitC.copy(col).lerp(white, FG.hit) : col;
@@ -154,7 +161,7 @@ void main() {
   }
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
-    X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
+    X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, wheel, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
     state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al },
     // Umriss je Figur (Ticket 248, Tills Wahl): Spielerfiguren eine duenne Linie in der Teamfarbe (o.sc), alle anderen leise (duenn, halbtransparent, dunkel am Tag, hell bei Nacht). Werte in FG.look (plW, plA, npcW, npcA)
     outline(on, o) {
@@ -215,7 +222,7 @@ void main() {
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
     { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olCd.set(FG.look.outDay); olCn.set(FG.look.outNight) } carsNow = []; figsNow = F;
-    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pF.u = 0;
+    pB.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pF.u = 0; pW.size((Cs.length * 10 + 8) | 0); pW.u = 0; iW = 0;
     pAO.size(F.length + Cs.length + 40); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
     let gear = 0, lie = 0, hit = 0;
@@ -236,7 +243,7 @@ void main() {
     }
     prevCars = cars; primed = true;
     kit.ao = ao; kit.fire('dyn', kit);   // Haken 'dyn': weitere dynamische Teile vor dem Abschluss der Pools (Aufnahmen, kl-pickups.js), Schatten ueber kit.ao
-    pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pF.u = iF; pF.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
+    pAO.u = nAO; pAO.finish(); pB.u = iB; pB.finish(); pF.u = iF; pF.finish(); pW.u = iW; pW.finish(); pO.u = iO; pO.finish(); pO.im.instanceMatrix.needsUpdate = true;
     // Alarm (Ticket 247): feste Rundumleuchten an den Waenden (K.beacons, beim Bau der Welt aus dem Raster gewaehlt, gleich fuer alle). Die naechsten KC.alarm.n zum Spieler leuchten, die anderen blenden weich aus (fade),
     // so springt nichts, wenn man sich bewegt. Jede dreht mit eigener Phase, der Schein faellt von der Wand in den Raum (nx, ny zeigt von der Wand weg).
     { const bc = K.beacons, P = X.me, dtF = Math.min(.1, kit.dr || .016), on = !!X.alarm;
