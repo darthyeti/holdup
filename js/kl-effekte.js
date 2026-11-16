@@ -83,6 +83,8 @@ export function register(KL) {
       for (const [sz, c] of [[-1, c1], [1, c2]]) { const lx = o.x + ca * bx - sa * sz * wz, ly = o.y + sa * bx + ca * sz * wz; fp(k.FA, lx, ly, bh, 13, 0, c, .72); fp(k.FA, lx, ly, bh, 5, 0, [1, 1, 1], .7) }
       fp(k.FA, o.x, o.y, .5, 92, 0, c1, .2, 0, 0, 1); fp(k.FA, o.x, o.y, .5, 60, 0, c2, .12, 0, 0, 1);
     }
-    if (X.alarm) { let n = 0; for (const l of k.light) if (l.k === 'alarm') { fp(k.FA, l.x, l.y, 56, 12 + 16 * l.i, 0, hc(0xff2a1c), .2 + .6 * l.i); const a = k.alarmPh * KC.alarm.spin + n++ * Math.PI; for (let j = 1; j <= 6; j++) fp(k.FA, l.x + Math.cos(a) * j * 22, l.y + Math.sin(a) * j * 22, .5, 10 + j * 6, 0, hc(0xff2a1c), .42 * l.i + .06, 0, 0, 1) } }
+    if (X.alarm || k.light.some(l => l.k === 'alarm')) for (const l of k.light) if (l.k === 'alarm') { // feste Rundumleuchte an der Wand: Schein vor dem Glas, drehender Strahl in den Raum (nur auf der Raumseite, nx und ny zeigen von der Wand weg)
+      fp(k.FA, l.x + l.nx * 4, l.y + l.ny * 4, 40, 10 + 14 * l.i, 0, hc(0xff2a1c), .2 + .6 * l.i);
+      const a = l.a; for (let j = 1; j <= 6; j++) { const dx = Math.cos(a), dy = Math.sin(a), side = dx * l.nx + dy * l.ny; fp(k.FA, l.x + dx * j * 22, l.y + dy * j * 22, .5, 10 + j * 6, 0, hc(0xff2a1c), Math.max(0, .12 + .5 * Math.max(0, side)) * (.42 * l.i + .06) / .48, 0, 0, 1) } }
   });
 }
