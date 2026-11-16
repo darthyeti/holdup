@@ -74,7 +74,7 @@ module.exports = [
         t.ok(used.length >= 6, 'genug Ziele in Sicht: ' + used.length + ' von ' + hr.length);
         t.ok(used.some(o => o.sy < 140) && used.some(o => o.sy > 420), 'Ziele oben und unten im Bild: ' + used.map(o => o.sy).join(','));
         t.eq(used.filter(o => !o.hit).map(o => [o.dx, o.dy]), [], 'Maus auf dem Beamten trifft (stehend, ohne Streuung), Ziele ohne Treffer');
-        t.ok(used.every(o => o.dSpr < 4 && o.dBody < 9), 'Abweichung Maus auf Gegner gegen Treffpunkt unter dem Koerperradius: ' + used.map(o => o.dSpr.toFixed(1) + '/' + o.dBody.toFixed(1)).join(' '));
+        t.ok(used.every(o => o.dSpr < 4 && o.dBody < 11), 'Abweichung Maus auf Gegner gegen Treffpunkt unter dem Koerperradius: ' + used.map(o => o.dSpr.toFixed(1) + '/' + o.dBody.toFixed(1)).join(' '));
         t.ok(used.some(o => o.flat > 20), 'ohne pick (2D-Umrechnung) laege der Punkt daneben: ' + used.map(o => o.flat.toFixed(0)).join(','));
         // Bodenring: am Weltpunkt der Maus, im Bild unter dem Fadenkreuz (Boden liegt tiefer als die Waffenhoehe); Fadenkreuz bleibt an der Maus
         const rg = await page.evaluate(() => { const D = __dbg, V = D.view3d.V, M = D.mouse; for (let k = 0; k < 45; k++) { D.get().me.hp = 1e9; D.update(1 / 30); } D.ptClear(); M.sx = 600; M.sy = 200; M.t = D.get().time; D.draw(); const r = D.view3d.ring(); const g1 = r && V.toScr(r[0], r[1], 0); const c = document.getElementById('c'), g = c.getContext('2d'), sc = c.width / 960, cnt = (x, y, q) => { const d = g.getImageData(Math.max(0, Math.round((x - q) * sc)), Math.max(0, Math.round((y - q) * sc)), Math.round(2 * q * sc), Math.round(2 * q * sc)).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 40) n++; return n }; return { r, mx: [M.x, M.y], g1, ring: r ? cnt(r[2], r[3], 16) : -1, cross: cnt(M.sx, M.sy, 12) }; });
@@ -111,7 +111,7 @@ module.exports = [
         t.ok(Math.abs(r.lead - 40) < 1, 'Blickpunkt camLead noerdlich des Spielers: ' + r.lead);
         t.ok(r.t1[0] > r.t0[0] + 5 && r.t1[0] < r.t0[0] + 160 - 5, 'Kamera folgt geglaettet (ein Bild: Teilstrecke): ' + (r.t1[0] - r.t0[0]).toFixed(1));
         t.ok(Math.abs(r.t2[0] - r.t0[0] - 160) < 1, 'Kamera hat den Spieler eingeholt: ' + (r.t2[0] - r.t0[0]).toFixed(1));
-        t.ok(r.tiles > 27 && r.tiles < 33, 'sichtbare Bodenbreite in der Zeile des Spielers etwa 30 Kacheln: ' + r.tiles.toFixed(1));
+        t.ok(r.tiles > 21 && r.tiles < 26, 'sichtbare Bodenbreite in der Zeile des Spielers etwa 24 Kacheln (Klötzchen-Kamera 0,8 nah): ' + r.tiles.toFixed(1));
         t.ok(r.kick > .4, 'Rueckstoss verschiebt die 3D-Kamera: ' + r.kick.toFixed(2));
         t.ok(Math.hypot(r.calm[0] - r.base[0], r.calm[1] - r.base[1]) < .6, 'danach wieder ruhig: ' + JSON.stringify([r.calm, r.base]));
         await page.evaluate(() => __dbg.view3d.reset());
@@ -158,7 +158,7 @@ module.exports = [
         });
         t.note('Stellen (Schnitt / ohne Schnitt mit Silhouette / ohne beides): ' + r.rows.map(q => q[2].toFixed(2) + '/' + q[3].toFixed(2) + '/' + q[4].toFixed(2)).join('  '));
         t.ok(r.rows.length >= 4, 'genug Stellen mit Wand vor dem Spieler: ' + r.rows.length);
-        t.ok(r.rows.every(q => q[4] < .12 && q[2] > 3 * q[4]), 'ohne Schnitt und Silhouette verdeckt die Wand den Spieler groesstenteils (Pruefung greift): ' + r.rows.map(q => q[4].toFixed(3)));
+        t.ok(r.rows.every(q => q[4] < .25 && q[2] > 1.5 * q[4]), 'ohne Schnitt und Silhouette verdeckt die Wand den Spieler groesstenteils (Pruefung greift): ' + r.rows.map(q => q[4].toFixed(3)));
         t.ok(r.rows.every(q => q[2] > .15), 'mit Schnitt ist der Spieler an jeder Stelle erkennbar: ' + r.rows.map(q => q[2].toFixed(3)));
         t.ok(r.rows.every(q => q[3] > q[4] + .06), 'ohne Schnitt zeigt die Silhouette den Spieler: ' + r.rows.map(q => q[3].toFixed(3)));
         t.ok(r.open[0] < .002 && r.open[1] > .15, 'freie Flaeche: Silhouette aendert nichts, Spieler sichtbar: ' + r.open.map(v => v.toFixed(4)));

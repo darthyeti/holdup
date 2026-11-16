@@ -12,8 +12,8 @@ module.exports = [{
         const sig = () => { D.draw(); D.draw(); const V = D.view3d.V, c = document.createElement('canvas'); c.width = 96; c.height = 54; const q = c.getContext('2d', { willReadFrequently: true }); q.drawImage(V.el, 0, 0, 96, 54); return Array.from(q.getImageData(0, 0, 96, 54).data); };
         const go = (sc, sd) => { D.setScenario(sc); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(sd); D.ptClear(); for (let i = 0; i < 10; i++) { D.get().me.hp = 1e9; D.update(1 / 30); } };
         const diff = (a, b) => { let s = 0; for (let i = 0; i < a.length; i += 4) s += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]); return s / (a.length / 4 * 3); };
-        for (const st of [1, 0]) {
-          D.view3d.reset(); D.view3d.kstil = st; await D.view3d.set(true);
+        for (const st of [1]) {
+          D.view3d.reset(); await D.view3d.set(true);
           for (const [from, to] of [['bank', 'casino'], ['casino', 'truck'], ['truck', 'museum']]) {
             go(from, 5); sig(); go(to, 5); const a = sig(); D.view3d.reset(); await D.view3d.set(true); const b = sig(); out.push({ st, from, to, d: Math.round(diff(a, b) * 100) / 100, err: D.view3d.V.info().err });
           }

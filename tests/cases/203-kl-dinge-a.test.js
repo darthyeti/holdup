@@ -17,7 +17,7 @@ module.exports = [
       t.eq(KINDS.filter(c => !V.V3CFG.scen.kinds[c]), [], 'Arten, die V3CFG nicht kennt');
       t.eq(TILES.filter(c => !V.V3CFG.cells[c]), [], 'Kacheln ohne Eintrag in der Hoehentabelle');
       t.eq(GOODS.filter(g => !KL.hasObj(g)), [], 'Beute-Stuecke ohne Bauer');
-      t.ok(!KL.hasObj('good') && !KL.goods, 'kein allgemeines good: ein Beute-Stueck ohne Bauer zeichnet view3d klassisch (nie unsichtbar)');
+      t.ok(KL.hasObj('good'), 'allgemeines good da: ein Beute-Stueck ohne eigenen Bauer wird ein schlichter Kasten (nie unsichtbar)');
       t.ok(KL.util && typeof KL.util.top === 'function', 'Helfer da');
     },
   },
@@ -28,7 +28,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         await lib.loadInpage(P.page, 'bild.js');
-        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
           for (const sc of ['bank', 'jewel', 'gas', 'truck']) {
             PX.scene(sc, 5); PX.phase(sc === 'truck' ? 'ueberfall' : 'erkundung'); const g = D.get(), L = D.LAY(); let tg;
             if (L.truck) { const k = D.tk(); tg = [k.x, k.y]; } else if (L.pumps) { const q = L.pumps[0]; tg = [q.x * 32 + 16, q.y * 32 + 16]; } else if (L.vit) tg = [L.vit[0].x, L.vit[0].y]; else { const v = L.vault.door; tg = [v[0] * 32 + 16, v[1] * 32 + 32]; }
@@ -49,7 +49,7 @@ module.exports = [
         t.ok(r.bank.k.world.bricks > 60 && r.bank.moebel > 0, 'Bank: Moebel als Kloetze (' + r.bank.k.world.bricks + ' Kloetze)');
         t.ok(r.bank.list.includes('vault') && r.bank.list.includes('pad'), 'Bank: Tresortuer und Tastenfeld da');
         t.ok(r.bank.dinge > 0, 'Bank: Szenario-Teile aus Kloetzen (' + r.bank.dinge + ')');
-        t.ok(r.jewel.list.includes('vit') && r.jewel.k.world.bricks > 0, 'Juwelier: Vitrinen da (Bauer von Dinge B, sonst klassisch)');
+        t.ok(r.jewel.list.includes('vit') && r.jewel.k.world.bricks > 0, 'Juwelier: Vitrinen da (Bauer von Dinge B)');
         t.ok(r.gas.k.world.bricks > 0 && r.gas.list.includes('pump'), 'Tankstelle: Zapfsaeulen (' + r.gas.k.world.bricks + ' Kloetze)');
         t.ok(r.truck.dinge >= 0 && r.truck.list.includes('tk'), 'Transporter: Panzerwagen-Zubehoer');
         t.ok(r.cut.every(c => !c), 'Moebel-Material hat keinen Wandschnitt (Moebel bleiben stehen)');
@@ -64,7 +64,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         await lib.loadInpage(P.page, 'bild.js');
-        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
           PX.scene('bank', 5); PX.phase('ueberfall'); const me = D.get().me, V = D.view3d.V, K = V.kl(), cnt = () => ['k-dinge', 'k-dinge-klein'].reduce((a, n) => a + (V.scene.getObjectByName(n) ? V.scene.getObjectByName(n).count : 0), 0);
           const sd = () => { for (let i = 0; i < 3; i++) { me.hp = 100; D.update(1 / 30); } D.draw(); D.draw(); return V.info(); };
           let a = sd(); o.base = cnt(); o.baseKl = a.k.on;
@@ -78,9 +78,9 @@ module.exports = [
         t.note(JSON.stringify(r));
         t.ok(r.err1 === '' && r.err2 === '', 'keine Fehler');
         t.ok(r.gad > r.base, 'Gadgets am Boden sind Kloetze (' + r.base + ' auf ' + r.gad + ')');
-        t.ok(r.noHook < r.gad, 'ohne Bauer faellt das Ding klassisch zurueck (' + r.noHook + ')');
-        t.eq(r.good, [true, true, false, true], 'Bauer-Wahl: good:cig, good:shelf da, unbekannte Unterart nicht, d:trap da');
-        t.ok(r.goodOff === false && r.err3 === '', 'ohne good:cig faellt das Stueck klassisch zurueck, ohne Fehler');
+        t.ok(r.noHook < r.gad, 'ohne Bauer fehlt das Ding, es gibt keinen klassischen Rueckweg mehr (' + r.noHook + ')');
+        t.eq(r.good, [true, true, true, true], 'Bauer-Wahl: good:cig, good:shelf da, unbekannte Unterart ueber das allgemeine good, d:trap da');
+        t.ok(r.goodOff === true && r.err3 === '', 'ohne good:cig baut das allgemeine good das Stueck, ohne Fehler');
         if (r.barOk != null) t.ok(r.barLow > r.barOk, 'Barrikade: Schaden fuegt Teile hinzu (' + r.barOk + ' auf ' + r.barLow + ')');
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
