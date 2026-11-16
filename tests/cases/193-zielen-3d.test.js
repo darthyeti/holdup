@@ -23,7 +23,7 @@ const SETUP = `(async () => { const D = __dbg; const i0 = await D.view3d.set(tru
 
 module.exports = [
   {
-    name: '3D-Zielen: Rundlauf pick(toScr) unter 1 px am Boden und in Waffenhoehe bei 20, 25 und 30 Grad, Maus auf Gegner trifft (oben und unten im Bild), Bodenring am Zielpunkt',
+    name: '3D-Zielen: Rundlauf pick(toScr) unter 1 px am Boden und in Waffenhoehe bei 20, 25 und 30 Grad, Maus auf Gegner trifft (oben und unten im Bild), Zielpunkt am Boden ohne Ring',
     timeout: 300000,
     async run(t) {
       const P = await glPage(t); if (!P) return;
@@ -77,8 +77,9 @@ module.exports = [
         t.ok(used.every(o => o.dSpr < 4 && o.dBody < 9), 'Abweichung Maus auf Gegner gegen Treffpunkt unter dem Koerperradius: ' + used.map(o => o.dSpr.toFixed(1) + '/' + o.dBody.toFixed(1)).join(' '));
         t.ok(used.some(o => o.flat > 20), 'ohne pick (2D-Umrechnung) laege der Punkt daneben: ' + used.map(o => o.flat.toFixed(0)).join(','));
         // Bodenring: am Weltpunkt der Maus, im Bild unter dem Fadenkreuz (Boden liegt tiefer als die Waffenhoehe); Fadenkreuz bleibt an der Maus
-        const rg = await page.evaluate(() => { const D = __dbg, V = D.view3d.V, M = D.mouse; for (let k = 0; k < 45; k++) { D.get().me.hp = 1e9; D.update(1 / 30); } D.ptClear(); M.sx = 600; M.sy = 200; M.t = D.get().time; D.draw(); const r = D.view3d.ring(); const g1 = r && V.toScr(r[0], r[1], 0); return { r, mx: [M.x, M.y], g1 }; });
-        t.ok(rg.r && Math.hypot(rg.r[0] - rg.mx[0], rg.r[1] - rg.mx[1]) < .01 && Math.hypot(rg.r[2] - rg.g1[0], rg.r[3] - rg.g1[1]) < .01, 'Bodenring am Zielpunkt: ' + JSON.stringify(rg));
+        const rg = await page.evaluate(() => { const D = __dbg, V = D.view3d.V, M = D.mouse; for (let k = 0; k < 45; k++) { D.get().me.hp = 1e9; D.update(1 / 30); } D.ptClear(); M.sx = 600; M.sy = 200; M.t = D.get().time; D.draw(); const r = D.view3d.ring(); const g1 = r && V.toScr(r[0], r[1], 0); const c = document.getElementById('c'), g = c.getContext('2d'), sc = c.width / 960, cnt = (x, y, q) => { const d = g.getImageData(Math.max(0, Math.round((x - q) * sc)), Math.max(0, Math.round((y - q) * sc)), Math.round(2 * q * sc), Math.round(2 * q * sc)).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 40) n++; return n }; return { r, mx: [M.x, M.y], g1, ring: r ? cnt(r[2], r[3], 16) : -1, cross: cnt(M.sx, M.sy, 12) }; });
+        t.ok(rg.r && Math.hypot(rg.r[0] - rg.mx[0], rg.r[1] - rg.mx[1]) < .01 && Math.hypot(rg.r[2] - rg.g1[0], rg.r[3] - rg.g1[1]) < .01, 'Zielpunkt am Boden (Weltpunkt der Maus unter dem Fadenkreuz): ' + JSON.stringify(rg));
+        t.ok(rg.ring >= 0 && rg.ring < rg.cross * 1.3, 'kein Ring mehr unter dem Fadenkreuz (Ticket 246): Bildpunkte um den Zielpunkt ' + rg.ring + ' gegen ' + rg.cross + ' am Fadenkreuz (mit Ring waren es rund das Doppelte)');
         t.ok(rg.r && rg.r[3] > 200 && rg.r[3] - 200 < 20, 'Ring am Boden etwas unter der Maus: ' + (rg.r && rg.r[3]));
         await page.evaluate(() => __dbg.view3d.reset());
         if (page !== t.page && page.errors.length) t.ok(false, 'JS-Fehler: ' + page.errors.slice(0, 2).join(' | '));
