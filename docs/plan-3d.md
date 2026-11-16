@@ -261,6 +261,17 @@ Till hat entschieden (15. November 2026): Klötzchen mit Welt A (Figuren, Fahrze
 - **Fundorte des Tresorcodes (Ticket 228).** `KL.obj('note')` in `kl-dinge-allgemein.js`: Wandarten (`coat`, `pin`, `locker`, Tabelle `WALL`) stehen an der Wand der Kachel (erste angrenzende `#`, `wallDir`) und sind in Wandkoordinaten gebaut (u längs der Wand, v Tiefe, Höhe): die Garderobe als Rückwand mit Regal und zwei hängenden Mänteln (rot, blau) mit helleren Kragen, die Pinnwand als Korkbrett mit drei Zetteln und Ablage, der Spind mit Türen und Griff. Der Zettel (solange der Code fehlt) ist größer (14 mal 11), hell, leicht schräg, mit Textzeilen und rotem Eck, ohne Leuchten, und liegt immer von oben sichtbar (auf Regal, Ablage, Gerät oder Boden, nie senkrecht an der Wand). Teile je Fundort 2 bis 6, mit Zettel höchstens 10 (Test `229-kl-fundorte`). Bilder `fundorte-tag-nacht.jpg` (je vier Arten pro Reihe ohne und mit Zettel, oben Tag, unten Nacht, Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fundorte`).
 - **Grenzen.** Silhouetten hinter Wänden bleiben flache Sprites, Schild opak, Szenario-Teile ohne Bauer klassisch, Möbel nur der Bank.
 
+### 2.26 Fluchtwagen mit Abwechslung (Ticket 245, 16. November 2026)
+
+Der Fluchtwagen (`van` in `js/kl-fahrzeuge.js`, Funktion `flucht`) war immer derselbe Lieferwagen. Jetzt eine von vier Varianten je Auftrag, gewählt aus `LAY.seed` (die Karte, bei Host und Client gleich, ohne Zufall), mit gleicher Grundfläche, Höhe und Kollision (nur Optik, keine Änderung an Spiellogik, Größe oder Netzformat):
+
+- **0 Lieferwagen** cremeweiß mit Firmenstreifen (Firmenfarbe aus `KCFG.car.facc`) und Logo auf dem Dach.
+- **1 Dunkler Kleinbus** mit getönter Fensterfläche, dunklem Dach und Dachträgern.
+- **2 Pickup mit Plane**: olivfarbenes Fahrerhaus, offene Ladefläche mit Bordwänden, blaue Plane in drei Stufen mit Spannseilen.
+- **3 Alter Kastenwagen** in Beige mit vier Rostflecken, blauem Fahrerhaus und Dachträgern.
+
+Farben aus der eigenen Palette `KCFG.car.fpal` (nicht die `pal` der zivilen Autos), Plane `ftarp`. Fluchtwagen-Merkmale: Der Fahrer sitzt im Fahrerhaus (Kopf mit Mütze über der Scheibe). Steht der Wagen still (Position gleich seit 0,35 s Spielzeit aus `figs3d`, auch beim Client gleich), steht die Schiebetür offen (Lieferwagen, Kleinbus), die Hecktür (Kastenwagen) oder die Heckklappe (Pickup). Teile 26 bis 32 je Wagen (Grenze 40, Test `231-kl-fluchtwagen`). Vorhut (`vh`) und Panzerwagen (`tk`) unverändert. Bilder `fluchtwagen-varianten.jpg` (oben Tag, unten Nacht, je Variante fahrend und wartend), Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fluchtwagen`.
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
