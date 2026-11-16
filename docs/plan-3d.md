@@ -294,6 +294,10 @@ Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänd
 
 Till (Coop-Test): Fadenkreuz plus Kreis darunter verwirrt. Geprüft, ob der Kreis eine Funktion hat: Der Ring aus `ring3d` (`js/draw.js`) war nur der Weltpunkt der Maus in Waffenhöhe, senkrecht auf den Boden gelegt (Ticket 152), ohne Funktion für Zielen, Treffer oder Reichweite, er stand bei jeder bewaffneten Figur unter dem Fadenkreuz. Er entfällt: `ring3d` rechnet nur noch den Zielpunkt (`ring3d()` für Tests), zeichnet nichts. **Bleiben** die Ringe mit Funktion, die `aim3d` zeichnet: Wurfgeräte (Rauch, Ablenker: Wurfweite, Wirkradius, blockiert, max. Weite), Fallen (Ort, Auslöse- und Wirkradius), Granatwerfer (Zielpunkt, Radius) und die Linie des Präzisionsgewehrs. 2D unverändert. Test `193-zielen-3d` prüft, dass um den Zielpunkt nur noch die Bildpunkte des Fadenkreuzes liegen. Bild vorher und nachher: `docs/bilder/stil-kloetzchen/zielcursor-vorher-nachher.jpg`, Werkzeug `tools/bilder-cursor.js`.
 
+#### Tresortür schwenkt ganz auf (Ticket 254)
+
+Die offene Tresortür (`KL.obj('vault')`, `js/kl-dinge-allgemein.js`) stand mit rund 100 Grad im Gang. Jetzt liegt das Blatt (6 dick, 56 hoch) ganz aufgeschwenkt flach an der Mauer neben der Öffnung, 1,5 vor der Mauerfläche auf der Gangseite, mit Angelbändern am Pfosten, Handrad auf der Außenseite und eingefahrenen Bolzen an der freien Kante. Gewählt wird die Seite mit mehr Mauerkacheln neben der Öffnung (zuerst Norden bzw. kleineres v), die Länge ist durch die Mauerlänge begrenzt (höchstens 2 Kacheln minus 6). Nur Darstellung, Kollision und geschlossene Tür unverändert. Test `254-kl-tresortuer` (alle vier Lagen und beide Seiten, ohne Browser), Bild `docs/bilder/stil-kloetzchen/tresortuer-vorher-nachher.jpg` (Bank, Notenbank, links vorher, rechts nachher).
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
