@@ -52,7 +52,7 @@ module.exports = [
     async run(t) {
       const P = await glPage(t); if (!P) return;
       try {
-        const r = await P.page.evaluate(`(async () => { const D = __dbg; D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); const me = D.get().me; me.hp = 1e9; D.view3d.kstil = 1; await D.view3d.set(true);
+        const r = await P.page.evaluate(`(async () => { const D = __dbg; D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); const me = D.get().me; me.hp = 1e9; await D.view3d.set(true);
           for (let i = 0; i < 40; i++) D.update(1 / 30); D.draw(); D.draw(); const V = D.view3d.V, W = D.LAY().wins, w = W[0], o = {};
           o.pre = V.info().k.deb; const sx = w.px - w.iv[0] * 40, sy = w.py - w.iv[1] * 40;
           D.get().bl.push({ id: 9900, x: sx, y: sy, vx: w.iv[0] * 700, vy: w.iv[1] * 700, l: .8, o: 1, own: me.id, d: 20, ov: 0 }); let mx = 0, sp = 0;

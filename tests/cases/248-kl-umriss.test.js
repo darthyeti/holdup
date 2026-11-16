@@ -8,7 +8,7 @@ module.exports = [{
     const P = await glPage(t); if (!P) return;
     try {
       const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
-        D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); D.view3d.kstil = 1; await D.view3d.set(true); D.draw(); D.draw();
+        D.setScenario('bank'); D.buildLay(D.layoutFor(5)); D.startHeist(); await D.view3d.set(true); D.draw(); D.draw();
         const K = D.view3d.V.kl(), k = K.kit, T = D.get().me; o.start = D.view3d.olv;
         const fig = (kind, sc) => ({ k: kind, x: T.x, y: T.y, a: 0, row: kind === 'cop' ? 0 : 1, col: 0, hit: 0, lie: 0, al: 1, sh: -1, rf: 0, bag: 0, fl: 0, w: 0, ar: 0, sc });
         o.st = {}; for (const v of [0, 1, 2, 3]) { D.view3d.olv = v; D.draw(); D.draw(); k.outline(true, fig('pl', '#3f78d8')); const pl = k.olState(); k.outline(true, fig('cop', '#ff0000')); const cop = k.olState(); o.st[v] = { pl, cop, err: D.view3d.V.info().err } }

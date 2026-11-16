@@ -230,6 +230,7 @@ void main() {
 
 export function mkView3d(X) {
   const C = V3CFG, T = X.T, VW = X.VW, VH = X.VH;
+  if (!X.klotz) return { on: false, err: 'js/kl-kern.js nicht geladen' };
   let ren, K = null; // K: Kloetzchen-Stil (Ticket 196 und 198, js/kl-kern.js), nur mit geladenem Modul (X.klotz), sonst null (dann ist alles wie vorher)
   try {
     ren = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -380,7 +381,7 @@ export function mkView3d(X) {
   // Fuenf Draw Calls fuer alles, was sich bewegt: Schatten, Koerper (Zylinder), Sprites (chars.png und chars_flash.png in einem Shader), Kloetze (Fahrzeugkaesten und Zusatzteile), Fahrzeugdaecher (cars.png).
   // Jede Gruppe ist ein InstancedMesh, das bei Bedarf in Zweierpotenzen waechst (st.dynGrow), Instanzen werden jedes Bild neu belegt (wer nicht mehr gesehen wird, faellt einfach weg).
   const tex = img => { const t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true; return t };
-  const chTex = tex(X.ch), carTex = tex(X.cars);
+  const chTex = tex(X.ch);
   const CH_C = Math.round(X.ch.width / 128), CH_R = Math.round(X.ch.height / 128), CAR_R = Math.round(X.cars.height / 128);
   // mittlere Farbe je Zeile eines Sprite-Bogens (deckende Pixel einer Spalte), fuer Koerper und Karosserie (aus dem Prototyp)
   function rowCols(img, cw, chh, rows, col) {
@@ -405,7 +406,6 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
   gl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);
 }`;
   const sprMat = (m, f, gx, gy) => new THREE.ShaderMaterial({ vertexShader: SVS, fragmentShader: SFS, side: THREE.DoubleSide, uniforms: Object.assign({ map: { value: m }, mapF: { value: f }, uGrid: { value: new THREE.Vector2(gx, gy) } }, UV) });
-  const topMat = sprMat(carTex, carTex, 1, CAR_R);
   // 3D-3 Silhouette: dasselbe Sprite als einfarbige Flaeche, nur wo etwas davor liegt (Tiefentest groesser, schreibt keine Tiefe), nach allem anderen gezeichnet
   const silMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthFunc: THREE.GreaterDepth, side: THREE.DoubleSide, uniforms: { map: { value: chTex }, uGrid: { value: new THREE.Vector2(CH_C, CH_R) }, uA: { value: C.silA } },
     vertexShader: 'attribute vec4 iCell; attribute vec3 iCol; uniform vec2 uGrid; varying vec2 vUv; varying vec3 vC; void main() { vUv = vec2((iCell.x + uv.x) / uGrid.x, 1.0 - (iCell.y + 1.0 - uv.y) / uGrid.y); vC = iCol; gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0); }',
@@ -437,123 +437,16 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     };
     return P;
   }
-  // 3D-2b (Ticket 160) Low-Poly-Figuren: ein Material fuer alle Teile (wie colMat, dazu Deckkraft je Instanz als Raster fuer verblassende Tote), sechs Grundkoerper als sechs InstancedMesh fuer
-  // ALLE Figuren (ein Draw Call je Teil-Art, nicht je Figur), dazu das durchsichtige Schild. Die Kapsel ist normiert (Durchmesser 1, Hoehe 1,5), der Rest hat Durchmesser oder Kantenlaenge 1.
-  const FG = C.fig, FD = FG.dim, FSG = FG.seg;
-  const smoothGeo = g => { const n = g.attributes.normal, c = new Float32Array(n.count * 3); for (let i = 0; i < n.count; i++) { const v = FG.shade[0] + (FG.shade[1] - FG.shade[0]) * (n.getY(i) * .5 + .5); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = v } g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g };
-  const figGeo = {
-    cap: smoothGeo(new THREE.CapsuleGeometry(.5, .5, FSG.cap[0], FSG.cap[1])), torso: smoothGeo(new THREE.CapsuleGeometry(.5, .5, FSG.torso[0], FSG.torso[1])), head: smoothGeo(new THREE.SphereGeometry(.5, FSG.head[0], FSG.head[1])),
-    ball: smoothGeo(new THREE.SphereGeometry(.5, FSG.ball[0], FSG.ball[1])), dome: smoothGeo(new THREE.SphereGeometry(.5, FSG.dome[0], FSG.dome[1], 0, Math.PI * 2, 0, Math.PI / 2)), cyl: smoothGeo(new THREE.CylinderGeometry(.5, .5, 1, FSG.cyl)),
-    box: smoothGeo(new THREE.BoxGeometry(1, 1, 1)),
-  };
-  const figMat = new THREE.ShaderMaterial({ vertexColors: true, side: THREE.DoubleSide, uniforms: Object.assign({ uLook: { value: new THREE.Vector4(FG.look.sat, 0, 0, 0) } }, UV),
-    vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { vC = color;\n#ifdef USE_INSTANCING_COLOR\nvC *= instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; vWp = wp.xyz; vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: VISF + LITF + 'uniform vec4 uLook; varying vec3 vC; varying float vA; varying vec2 vM; varying vec3 vWp; varying vec3 vN; void main() { bool ol = vA > 1.5; float al = ol ? vA - 2.0 : vA; if (ol && gl_FrontFacing) discard; if (al < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > al) discard;\nvec3 nn = normalize(vN); float lu = dot(vC, vec3(0.299, 0.587, 0.114)); vec3 cc = ol ? vC : max(vec3(0.0), mix(vec3(lu), vC, uLook.x));\ngl_FragColor = vec4(ol ? cc : litC(cc, vWp, nn), 1.0);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gradeC(gl_FragColor.rgb), vM);\n}' });
-  const fpool = (name, geo, k) => { const P = pool(name, geo, figMat, { iA: 1 }, true, 2, 1); P.k = k; return P };
-  const fP = { torso: fpool('fig-rumpf', figGeo.torso, 'torso'), cap: fpool('fig-glieder', figGeo.cap, 'cap'), head: fpool('fig-koepfe', figGeo.head, 'head'), ball: fpool('fig-kugeln', figGeo.ball), dome: fpool('fig-kuppeln', figGeo.dome), cyl: fpool('fig-zylinder', figGeo.cyl), box: fpool('fig-boxen', figGeo.box) };
-  // je Figur hoechstens (Rumpf, Glieder, Koepfe, Kugeln, Kuppeln, Zylinder, Boxen): fuer die Obergrenze der Instanzen
-  const fMax = { torso: 1, cap: 9, head: 1, ball: 10, dome: 1, cyl: 2, box: 9 };
-  const pSh = pool('schatten', flatGeo, shMat, { iSA: 2 }, false, 1),
-    pBox = pool('kloetze', cubeGeo, colMat, {}, true, 2, 1), pTop = pool('daecher', flatGeo, topMat, { iCell: 4, iDim: 1 }, false, 4),
-    pSil = pool('silhouetten', flatGeo, silMat, { iCell: 4, iCol: 3 }, false, 9), pools = [pSh, pBox, pTop, pSil].concat(Object.values(fP));
+  const FG = C.fig;
+  const pSil = pool('silhouetten', flatGeo, silMat, { iCell: 4, iCol: 3 }, false, 9), pools = [pSil];
   const silCol = {}, silOf = c => silCol[c] || (silCol[c] = new THREE.Color(c));
-  const qr = new THREE.Quaternion(), yAx = new THREE.Vector3(0, 1, 0), tc = new THREE.Color();
+  const qr = new THREE.Quaternion(), yAx = new THREE.Vector3(0, 1, 0);
   // Instanz i einer Gruppe setzen: Lage (x,z) in Weltpixeln, Hoehe y, Drehung a (2D-Winkel, um die Hochachse), Groesse; Ortsversatz lx, lz im Figurenrahmen wie g.translate nach g.rotate
   function put(P, i, x, y, h, a, sx, sy, sz, lx, lz) { const c = Math.cos(a), s = Math.sin(a); lx = lx || 0; lz = lz || 0; pos.set(x + c * lx - s * lz, h, y + s * lx + c * lz); qr.setFromAxisAngle(yAx, -a); scl.set(sx, sy, sz); P.im.setMatrixAt(i, mtx.compose(pos, qr, scl)) }
   const kinds = (o, L, T) => { const k = T[L.k] ? L.k : '?' + L.k; o[k] = (o[k] || 0) + 1; return T[L.k] };
   let dynLast = { f: [], c: [] }, hide = null, dynL = [];
-  // 3D-2b: Rig der Figuren. Lokale Achsen: +x vorn (Blickrichtung a), +y oben, +z rechts. Gelenke sind Matrizen (Wurzel, Becken, Rumpf, Schulter, Ellbogen, Hand, Huefte, Knie), jedes Teil sitzt als
-  // Instanz in seinem Gelenk. Haltung aus dem Zustand von figs3d: col < 6 laeuft (Laufphase w), col 8 kniet mit Haenden am Kopf (geduckt, ergeben, Geisel), lie liegt auf dem Ruecken, ar haelt die Waffe vor sich.
-  const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _l = new THREE.Matrix4(), fm = new THREE.Matrix4(), hitC = new THREE.Color(), white = new THREE.Color(1, 1, 1);
-  const mRoot = new THREE.Matrix4(), mB = new THREE.Matrix4(), mH = new THREE.Matrix4(), mT = new THREE.Matrix4(), mS = [new THREE.Matrix4(), new THREE.Matrix4()], mE = [new THREE.Matrix4(), new THREE.Matrix4()],
-    mD = new THREE.Matrix4(), mK = new THREE.Matrix4(), mG = new THREE.Matrix4(), mL = new THREE.Matrix4(), mR = new THREE.Matrix4();
-  // Gelenk: out = par * Verschiebung * Drehung (Euler ZXY: erst um x (zur Seite), dann um z (vor und zurueck))
-  const jt = (par, out, x, y, z, rx, ry, rz) => { _p.set(x, y, z); _e.set(rx || 0, ry || 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(1, 1, 1); _l.compose(_p, _q, _s); return out.multiplyMatrices(par, _l) };
-  const figInfo = [];
-  let hitNow = 0, alNow = 1, nP = 0, topY = 0, sigN = 0;
-  // Teil in Gelenk par: Mitte (x,y,z), Groesse (sx,sy,sz), Farbe, optional Drehung (rx,ry,rz) vor der Verschiebung
-  const OLK = { torso: 1, cap: 1, head: 1 }; // Teil-Arten mit Umriss (Haende, Fuesse, Huete und Zubehoer ohne, das spart rund 40 % der Dreiecke des Umrisses)
-  const fm2 = new THREE.Matrix4(); let olT = 0, olA = 1; const olC = new THREE.Color(); // olT Umrissdicke dieses Bildes (0 aus), olC Farbe
-  const fput = (P, par, x, y, z, sx, sy, sz, col, rx, rz) => {
-    _p.set(x, y, z); _e.set(rx || 0, 0, rz || 0, 'ZXY'); _q.setFromEuler(_e); _s.set(sx, sy, sz); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l);
-    const i = P.u++; P.im.setMatrixAt(i, fm); P.im.setColorAt(i, hitNow ? hitC.copy(col).lerp(white, FG.hit) : col); P.a.iA.setX(i, alNow);
-    if (olT > 0 && OLK[P.k]) { // Umriss (Ticket 189): dieselbe Lage, aufgeblasen, nur Rueckseiten (alpha + 2 markiert ihn im Shader)
-      _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm2.multiplyMatrices(par, _l); const k = P.u++; P.o++; P.im.setMatrixAt(k, fm2); P.im.setColorAt(k, olC); P.a.iA.setX(k, alNow * olA + 2);
-    }
-    nP++; if (fm.elements[13] > topY) topY = fm.elements[13]; sigN += (fm.elements[12] * .7 + fm.elements[13] + fm.elements[14] * 1.3) * (1 + nP * .13);
-  };
   const typeOf = (o, e) => (o.k === 'cop' || o.k === 'swat' || o.k === 'shield' || o.k === 'sniper') ? o.k : FG.row[o.row] || 'civA';
-  const lerpN = (a, b, t) => a + (b - a) * t;
-  function rigFig(o, e) {
-    const T0 = typeOf(o, e), OT = FG.out[T0], k = 1 + ((e.r || 9) - 9) * FG.size, lying = !!(e.lie || o.lie), kneel = !lying && o.col === 8, run = !lying && !kneel && o.col < 6, sw = run ? Math.sin(o.w || 0) : 0;
-    const gun = !lying && !kneel && o.ar && T0 !== 'sniper', rifle = !lying && !kneel && o.rf, shield = !lying && !kneel && o.sh >= 0, side = [1, -1];
-    const top = colOf(OT.top), bot = colOf(OT.bot), skin = colOf(FG.skin), glv = colOf(OT.gl || FG.skin), hat = colOf(OT.hat || OT.bot), dark = colOf(FG.dark), eye = colOf(FG.eye), gunC = colOf(FG.gun);
-    hitNow = o.hit; alNow = o.al; nP = 0; topY = 0; sigN = 0;
-    _p.set(o.x, 0, o.y); _q.setFromAxisAngle(yAx, -o.a); _s.set(k, k, k); mRoot.compose(_p, _q, _s);
-    const legH = FD.foot + FD.shin + FD.thigh, tH = FD.torsoH, hd = FD.head;
-    // Koerper auf dem Ruecken: um die Fuesse nach hinten gekippt, Mitte auf den Ursprung, Brustkorb auf dem Boden
-    if (lying) jt(mRoot, mB, (legH + tH + hd) / 2, FD.torsoD / 2 + .2, 0, 0, 0, Math.PI / 2); else mB.copy(mRoot);
-    let hipY = legH, lean = 0, bob = 0;
-    // Beine: Hueftdrehung (vor positiv), Knie (zurueck negativ)
-    const hip = [0, 0], kn = [0, 0], spread = [0, 0];
-    if (run) { hip[0] = FG.run * sw; hip[1] = -FG.run * sw; kn[0] = -(.25 + 1.0 * Math.max(0, -sw)); kn[1] = -(.25 + 1.0 * Math.max(0, sw)); lean = FG.tilt; bob = Math.abs(Math.cos(o.w || 0)) * .9 - .6 }
-    if (kneel) { hipY = FD.shin * .98 + FD.legT * .4; hip[0] = hip[1] = .02; kn[0] = kn[1] = -Math.PI / 2 }
-    if (lying) { hip[0] = -.15; hip[1] = .1; kn[0] = -.3; spread[0] = -.1; spread[1] = .06 }
-    // Arme: Schulter (zur Seite s, nach vorn z) und Ellbogen
-    const sh = [[.12, 0], [.12, 0]], el = [.15, .15];
-    if (run) { sh[0][1] = -FG.swing * sw; sh[1][1] = FG.swing * sw; el[0] = el[1] = .85 }
-    if (gun) { sh[0] = [0, Math.PI / 2 - .05]; el[0] = 0; sh[1] = [-.38, 1.22]; el[1] = .3 }
-    if (rifle) { sh[0] = [-.45, 1.2]; el[0] = .5; sh[1] = [-.15, 1.45]; el[1] = .25 }
-    if (shield) { sh[1] = [-.1, 1.15]; el[1] = .3 }
-    if (kneel) { sh[0] = [2.55, -.35]; sh[1] = [2.55, -.35]; el[0] = el[1] = 2.2 }
-    if (lying) { sh[0] = [.35, 0]; sh[1] = [1.35, 0]; el[0] = .3; el[1] = .2 }
-    jt(mB, mH, 0, hipY + bob, 0);
-    jt(mH, mT, 0, 1, 0, 0, 0, -lean);
-    // Becken, Rumpf, Kopf
-    fput(fP.ball, mH, 0, .4, 0, FD.torsoD * .92, 6.1, FD.torsoW * .92, bot);
-    fput(fP.torso, mT, 0, tH / 2, 0, FD.torsoD, (tH + FD.torsoW * .3) / 1.5, FD.torsoW, top); const tHex = (hitNow ? hitC.copy(top).lerp(white, FG.hit) : top).getHex();
-    if (OT.coat) fput(fP.cyl, mT, 0, -1.6, 0, 7.6, 4.5, 11.4, top);
-    if (OT.badge) fput(fP.ball, mT, FD.torsoD * .45, tH * .68, -2.5, 2.4, 2.4, 2.4, colOf(FG.gold));
-    if (OT.holster) fput(fP.box, mT, .5, .4, 6, 2.6, 3, 1.8, dark);
-    const hy = tH + FD.neck + hd / 2, mask = OT.head === 'mask';
-    fput(fP.head, mT, 0, hy, 0, hd * .94, hd, hd, mask ? dark : skin);
-    if (mask) { fput(fP.box, mT, hd * .44, hy + hd * .1, 0, .6, hd * .2, hd * .74, skin); for (const d of side) fput(fP.ball, mT, hd * .5, hy + hd * .1, d * 1.6, 1.5, 1.5, 1.5, eye) }
-    else for (const d of side) fput(fP.ball, mT, hd * .46, hy + .6, d * 1.8, 1.5, 1.5, 1.5, eye);
-    if (OT.head === 'cap') { const r = hd * .52; fput(fP.cyl, mT, 0, hy + hd * .33, 0, 2 * r, hd * .34, 2 * r, hat); fput(fP.box, mT, 5.8, hy + hd * .22, 0, 4.4, .7, 9, hat) }
-    else if (OT.head === 'helmet') { fput(fP.dome, mT, 0, hy + hd * .05, 0, hd * 1.12, hd * 1.12, hd * 1.12, hat); fput(fP.box, mT, hd * .45, hy, 0, .5, hd * .28, hd * .72, colOf(FG.visor)) }
-    else if (OT.head === 'beanie') { const r = hd * 1.06; fput(fP.dome, mT, 0, hy + hd * .08, 0, r, r * 1.15, r, hat) }
-    else if (OT.head === 'hair') fput(fP.dome, mT, 0, hy + hd * .03, 0, hd * 1.06, hd * 1.06, hd * 1.06, hat, 0, .25);
-    // Arme (0 rechts +z, 1 links -z)
-    for (let i = 0; i < 2; i++) {
-      const d = side[i], aw = FD.armT;
-      jt(mT, mS[i], 0, tH - aw * .45, d * (FD.torsoW / 2 + aw * .35), -d * sh[i][0], 0, sh[i][1]);
-      fput(fP.cap, mS[i], 0, -FD.armU / 2, 0, aw, (FD.armU + aw * .4) / 1.5, aw, top);
-      jt(mS[i], mE[i], 0, -FD.armU, 0, kneel ? -d * el[i] : 0, 0, kneel ? 0 : el[i]);
-      fput(fP.cap, mE[i], 0, -FD.armF / 2, 0, aw * .92, (FD.armF + aw * .37) / 1.5, aw * .92, top);
-      fput(fP.ball, mE[i], 0, -FD.armF, 0, aw * 1.24, aw * 1.24, aw * 1.24, glv);
-    }
-    // Beine
-    for (let i = 0; i < 2; i++) {
-      const d = side[i], lt = FD.legT;
-      jt(mH, mL, 0, 0, d * FD.hipW, spread[i], 0, hip[i]);
-      fput(fP.cap, mL, 0, -FD.thigh / 2, 0, lt, (FD.thigh + .6 + lt * .4) / 1.5, lt, bot);
-      jt(mL, mK, 0, -FD.thigh, 0, 0, 0, kn[i]);
-      fput(fP.cap, mK, 0, -FD.shin / 2, 0, lt * .9, (FD.shin + lt * .36) / 1.5, lt * .9, bot);
-      fput(fP.ball, mK, lt * .3, -FD.shin - FD.foot / 2, 0, 8, 3.4, 5.7, colOf(FG.boot));
-    }
-    // Zusatzteile: Pistole in der rechten Hand, Gewehr vor der Brust, Schild links vor dem Koerper, Beute auf dem Ruecken
-    let extra = 0;
-    if (gun) { jt(mE[0], mD, 0, -FD.armF, 0); fput(fP.box, mD, .2, -3.3, 0, 1.7, 5.5, 1.3, gunC); fput(fP.box, mD, -.6, -.9, 0, 2.6, 1.4, 1.2, gunC) }
-    if (rifle) {
-      const L0 = 18; fput(fP.box, mT, FD.torsoD / 2 + 1 + L0 / 2 - 6, tH * .82, 1.5, L0, 1.8, 1.5, gunC); fput(fP.box, mT, FD.torsoD / 2 + 1 - 6, tH * .82 - .7, 1.5, 5.5, 3.2, 1.7, colOf(FG.stock)); fput(fP.box, mT, FD.torsoD / 2 + 3, tH * .82 + 1.8, 1.5, 6, 1.8, 1.8, gunC); extra++;
-    }
-    if (shield) { const c = xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]; _p.set(FD.torsoD / 2 + 5, 16.5, -1.5); _q.identity(); _s.set(1.6, 27, 17); _l.compose(_p, _q, _s); fm.multiplyMatrices(mB, _l); const i = pShld.u++; pShld.im.setMatrixAt(i, fm); pShld.im.setColorAt(i, hitNow ? hitC.copy(c).lerp(white, FG.hit) : c); pShld.a.iA.setX(i, FG.shieldA); extra++ }
-    if (o.bag) { fput(fP.cap, mT, -FD.torsoD / 2 - 3, tH * .58, 0, 6.6, 10.6 / 1.5, 6.6, colOf(FG.bag), Math.PI / 2, 0); extra++ }
-    figInfo.push([o.k, o.row, nP, Math.round(topY * 10) / 10, tHex, Math.round(sigN * 100) / 100]);
-    return extra;
-  }
-  // Sichtstrahl von der Kamera zu drei Punkten der Figur (Fuss, Mitte, Kopf) durch die Koerper der Kacheln (Hoehentabelle, eigene Kachel ausgenommen, offener Tresor ohne Koerper, v als Fahrzeug bis 26):
-  // verdeckt, wenn mindestens zwei Punkte blockiert sind. Nur das Stueck unter Wandhoehe wird abgeschritten.
+  // Silhouette (Ticket 188): Hoehen, in denen geprueft wird, ob eine Wand die Figur verdeckt (hidden), oberer Rand der Waende
   const hidSamp = [8, 22, 36], hidTop = C.wallH + 4;
   function hidden(o) {
     camSet(); const cp = cam.position, ox = Math.floor(o.x / T), oy = Math.floor(o.y / T); let n = 0;
@@ -569,180 +462,34 @@ void main() { vec4 c = vHAD.x > 0.5 ? texture2D(mapF, vUv) : texture2D(map, vUv)
     }
     return n >= 2;
   }
+  // Figuren und Fahrzeuge zeichnet der Kloetzchen-Stil (js/kl-kern.js, K.dyn, Bauer in js/kl-figuren.js und js/kl-fahrzeuge.js, ohne Bauer ein schlichter Kasten). Hier bleibt die Auswahl und die Silhouette
+  // hinter Waenden (flaches Sprite aus chars.png, Ticket 188).
   function buildDyn() {
     const D = X.figs ? X.figs() : { f: [], c: [] }, F = [], Cs = [], fk = {}, ck = {};
     for (const o of D.f) { if (hide && hide(o)) continue; const e = kinds(fk, o, C.figs); if (e) F.push([o, e]) }
     for (const o of D.c) { const e = kinds(ck, o, C.cars); if (e) Cs.push([o, e]) }
-    // Kloetzchen-Stil (js/kl-kern.js): Figuren und Fahrzeuge der Arten mit Bauer zeichnet K, der Rest laeuft wie sonst
-    const FK = [], CK = []; if (K && K.on) { for (let i = F.length - 1; i >= 0; i--) if (K.hasFig(F[i][0], F[i][1])) FK.unshift(F.splice(i, 1)[0]); for (let i = Cs.length - 1; i >= 0; i--) if (K.hasCar(Cs[i][0])) CK.unshift(Cs.splice(i, 1)[0]) }
-    let nX = 0; const rs = !!UL.uShOn.value, nSh = rs ? F.filter(([o, e]) => e.lie || o.lie).length : F.length + Cs.length; dynL = [];
-    for (const [o, e] of Cs) nX += 1 + (e.bar && o.bl ? 2 : 0);
+    dynL = [];
     // Silhouette (Ticket 188): nur fuer Figuren, die wirklich verdeckt sind. Das Sprite liegt als flaches Quadrat ueber der Figur und ragt in Waende dahinter, dort malte der Tiefentest es faelschlich orange
-    const S = C.sil ? F.concat(FK).filter(([o, e]) => o.sc && !(e.lie || o.lie) && hidden(o)) : [];
-    pSh.size(nSh); pBox.size(nX); pTop.size(Cs.length); pSil.size(S.length);
-    { const th = (X.LAY && X.LAY.theme) || {}, nt = X.night || th.tod === 'nacht' || th.tod === 'daemmerung'; olT = FG.look.out ? (nt ? FG.look.outNightW : FG.look.out) : 0; olA = nt ? FG.look.outNightA : 1; olC.set(nt ? FG.look.outNight : FG.look.outDay) }
-    for (const key in fP) { fP[key].size(F.length * fMax[key] * (olT > 0 && OLK[key] ? 2 : 1)); fP[key].u = 0; fP[key].o = 0 }
-    pShld.size(F.length); pShld.u = 0; figInfo.length = 0;
-    let iS = 0, iX = 0, lie = 0, hit = 0, gear = 0;
-    const shA = pSh.a.iSA, box = (x, y, h, a, sx, sy, sz, lx, lz, col) => { put(pBox, iX, x, y, h, a, sx, sy, sz, lx, lz); pBox.im.setColorAt(iX, col); iX++ };
-    F.forEach(([o, e], i) => {
-      const lying = !!(e.lie || o.lie), cw = o.col === 8;
-      if (lying) { put(pSh, iS, o.x, o.y, .4, o.a, 52, 1, 28, 3, 4); shA.setXY(iS++, 0, .3 * o.al); lie++ }
-      else { if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1], .4, 0, 22, 1, 19); shA.setXY(iS++, 0, C.shA) } if (o.fl) dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }) }
-      gear += rigFig(o, e); if (o.hit) hit++; o._hs = lying ? FG.hsLie : cw ? FG.hsCow : FG.hs; void i;
-    });
-    let figParts = 0, figCalls = 0, figOl = 0; for (const key in fP) { const P = fP[key]; figOl += P.o; figParts += P.u - P.o; figCalls += P.u > 0 ? 1 : 0; P.finish() }
-    pShld.finish(); if (pShld.u > 0) figCalls++;
-    st.figParts = figParts; st.figOl = figOl; st.figCalls = figCalls; st.gear = gear; st.fi = figInfo.slice();
-    Cs.forEach(([o, e], j) => {
-      const i = F.length + j, h = e.h, dimK = o.dim ? C.wreckDim : 0;
-      if (!rs) { put(pSh, iS, o.x + C.shOff[0], o.y + C.shOff[1] + 1, .4, o.a, o.L * .97, 1, o.W * .88); shA.setXY(iS++, 1, .3) }
-      if (e.bar && o.bl) dynL.push({ k: o.bl === 1 ? 'red' : 'blue', x: o.x, y: o.y, car: o.k });
-      tc.copy(carCol[o.row] || carCol[0]).multiplyScalar(1 - dimK); box(o.x, o.y, 0, o.a, o.L * C.carK[0], h, o.W * C.carK[1], 0, 0, tc);
-      if (e.bar && o.bl) { const r = o.bl === 1; box(o.x, o.y, h, o.a, 5, 4, 9, -4, -6, r ? xcol.red[0] : xcol.blue[0]); box(o.x, o.y, h, o.a, 5, 4, 9, -4, 6, r ? xcol.blue[0] : xcol.red[0]) }
-      put(pTop, j, o.x, o.y, h + .5, o.a, o.L * o.fx, 1, o.W * o.fy); pTop.a.iCell.setXYZW(j, 0, o.row, 0, 1); pTop.a.iDim.setX(j, dimK); void i;
-    });
-    if (K && K.on) { const r = K.dyn(FK, CK, dynL); gear += r.gear; lie += r.lie; hit += r.hit; st.kParts = r.parts }
+    const S = C.sil ? F.filter(([o, e]) => o.sc && !(e.lie || o.lie) && hidden(o)) : [];
+    pSil.size(S.length);
+    const r = K.dyn(F, Cs, dynL);
     const sk = {}; S.forEach(([o], j) => { put(pSil, j, o.x, o.y, o._hs, o.a, C.silS, 1, C.silS); pSil.a.iCell.setXYZW(j, o.col, o.row, 0, 1); const c = silOf(o.sc); pSil.a.iCol.setXYZ(j, c.r, c.g, c.b); sk[o.k] = (sk[o.k] || 0) + 1 });
-    st.sil = S.length; st.sk = sk;
-    st.figs = F.length + FK.length; st.cars = Cs.length + CK.length; st.fk = fk; st.ck = ck; st.lie = lie; st.hit = hit; st.xparts = iX + gear; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
-    dynLast = { f: F.concat(FK).map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.concat(CK).map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
+    st.sil = S.length; st.sk = sk; st.figParts = r.parts; st.figCalls = 1; st.gear = r.gear; st.xparts = r.gear;
+    st.figs = F.length; st.cars = Cs.length; st.fk = fk; st.ck = ck; st.lie = r.lie; st.hit = r.hit; st.dynCalls = pools.filter(P => P.im && P.im.visible).length;
+    dynLast = { f: F.map(([o]) => [o.k, o.row, o.col, o.lie, o.hit, Math.round(o.x), Math.round(o.y), Math.round(o.a * 100) / 100, o.sh, o.rf, o.bag]), c: Cs.map(([o]) => [o.k, o.row, Math.round(o.x), Math.round(o.y), o.dim]) };
   }
 
-  // 3D-6 (Ticket 155): Szenario-Besonderheiten. X.scen() (js/draw.js scen3d) liefert je Bild die Teile mit Zustand (dieselbe Auswahl wie lyWorld), SCEN baut daraus Kloetze in vier Gruppen:
-  // s Koerper (beleuchtet, werfen Schatten), l Leuchten (additiv, unbeleuchtet: Laser, Lampen, Markierungen), f Flaechen (durchsichtig: Glas, dunkle Flecken genommener Beute), i Bildkloetze (Deckel zeigt die
-  // 2D-Zeichnung wie die statische Welt: geparkte Autos am Transporter), dazu c die Sichtkegel der Wachen als ein Faecher-Netz. Hoechstens fuenf Draw Calls fuer alles.
-  const glowMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: Object.assign({}, UV),
-    vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; void main() { vC = vec3(1.0);\n#ifdef USE_INSTANCING_COLOR\nvC = instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: 'varying vec3 vC; varying float vA; varying vec2 vM; void main() { gl_FragColor = vec4(vC * vA, 1.0);\n#include <colorspace_fragment>\n}' });
-  const flatMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: Object.assign({}, UV),
-    vertexShader: 'attribute float iA; varying vec3 vC; varying float vA; varying vec2 vM; void main() { vC = vec3(1.0);\n#ifdef USE_INSTANCING_COLOR\nvC = instanceColor;\n#endif\nvA = iA; vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: VISF + 'varying vec3 vC; varying float vA; varying vec2 vM; void main() { gl_FragColor = vec4(vC, vA);\n#include <colorspace_fragment>\ngl_FragColor.rgb = fogC(gl_FragColor.rgb, vM);\n}' });
-  const coneMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    vertexShader: 'attribute vec4 cc; varying vec4 vC; void main() { vC = cc; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: 'varying vec4 vC; void main() { if (vC.a <= 0.002) discard; gl_FragColor = vC;\n#include <colorspace_fragment>\n}' });
-  const pSc = pool('szenario', cubeGeo, colMat, {}, true, 2, 1), pScL = pool('szenario-licht', cubeGeo, glowMat, { iA: 1 }, true, 6), pScF = pool('szenario-flaeche', cubeGeo, flatMat, { iA: 1 }, true, 5),
-    pScI = pool('szenario-bild', box, mats[0], {}, false, -1, 1);
-  const pShld = pool('fig-schild', cubeGeo, flatMat, { iA: 1 }, true, 5);
-  pools.push(pSc, pScL, pScF, pScI, pShld);
-  const CONE_MAX = 16 * 42; // Dreiecke: 16 Wachen zu je 41 Strahlen
-  const coneGeo = new THREE.BufferGeometry(); coneGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CONE_MAX * 9), 3).setUsage(THREE.DynamicDrawUsage)); coneGeo.setAttribute('cc', new THREE.BufferAttribute(new Float32Array(CONE_MAX * 12), 4).setUsage(THREE.DynamicDrawUsage));
-  const coneMesh = new THREE.Mesh(coneGeo, coneMat); coneMesh.frustumCulled = false; coneMesh.renderOrder = 7; coneMesh.name = 'sichtkegel'; coneMesh.visible = false; scene.add(coneMesh);
+  // Szenario-Teile (Ticket 155, seit Ticket 220 nur noch Kloetzchen): X.scen() (js/draw.js scen3d) liefert je Bild die Teile mit Zustand, K.sceneBuilder(o) den Bauer (js/kl-dinge-*.js). Eine Art ohne Bauer zeichnet nichts
+  // und steht in info().scen als ?art (Tests 196 und 220).
   const hexC = {}, colOf = h => hexC[h] || (hexC[h] = new THREE.Color(h)), linC = h => { const c = colOf(h); return [c.r, c.g, c.b] };
   // Deckelhoehe der Kachel unter (x,y): oberstes Ende der am Boden stehenden Scheiben (Tresen 24, Wand 64), fuer Flecken und Dinge, die auf Moebeln liegen
   const topAt = (x, y) => { const e = C.cells[cellAt(Math.floor(x / T), Math.floor(y / T))]; if (!e || (e.open && X.vaultOpen)) return 0; let h = 0; for (const q of e.s) if (q[0] === 0) h = Math.max(h, q[1]); return h };
-  // Sammler je Gruppe: Kasten mit Mitte (x,z), Unterkante y0, Groesse (sx Laenge entlang a, sy Hoehe, sz Breite), Drehung a, Farbe, Staerke oder Deckkraft
-  let SB = null;
-  const sb = (G, x, z, y0, sx, sy, sz, a, col, k) => SB[G].push([x, z, y0, sx, sy, sz, a || 0, col, k == null ? 1 : k]);
-  // Linie als Kasten (Laser, Raender), d Dicke, y0 Unterkante, h Hoehe
-  const line = (G, x0, y0, x1, y1, d, h0, h, col, k) => { const L = Math.hypot(x1 - x0, y1 - y0); if (L < .5) return; sb(G, (x0 + x1) / 2, (y0 + y1) / 2, h0, L, h, d, Math.atan2(y1 - y0, x1 - x0), col, k) };
-  const frame = (G, x0, y0, x1, y1, d, h0, col, k) => { line(G, x0, y0, x1, y0, d, h0, .5, col, k); line(G, x0, y1, x1, y1, d, h0, .5, col, k); line(G, x0, y0, x0, y1, d, h0, .5, col, k); line(G, x1, y0, x1, y1, d, h0, .5, col, k) };
-  // Rechteck rc [x, y, w, h] (Weltpixel) als Kasten, Einzug n
-  const rect = (G, rc, n, y0, h, col, k) => sb(G, rc[0] + rc[2] / 2, rc[1] + rc[3] / 2, y0, Math.max(1, rc[2] - 2 * n), h, Math.max(1, rc[3] - 2 * n), 0, col, k);
-  // Glashaube ueber einer Auslage: durchsichtiger Kasten und hellere Oberkante (Vitrinen, Reliquien)
-  const hood = (r, t, h) => { rect('f', r, 3, t, h, C.glass, .22); frame('f', r[0] + 3, r[1] + 3, r[0] + r[2] - 3, r[1] + r[3] - 3, 1, t + h - .5, 0xe1ebfa, .55) };
-  const NOTE = { bin: [[16, 16, 0, 18, 0x8a929c]], copy: [[24, 16, 0, 24, 0xc9ced4]], coffee: [[26, 12, 0, 24, 0x8c7a66], [10, 10, 24, 12, 0x2d3238]], file: [[24, 22, 0, 38, 0x6f7882]],
-    pin: [[22, 4, 6, 30, 0xb98f5a]], coat: [[2, 2, 0, 46, 0x4a3b2d], [7, 5, 18, 22, 0x5b6d83, -4], [7, 5, 18, 20, 0x8a5a3c, 4]], locker: [[18, 26, 0, 56, 0x4f6a86]] };
-  const SCEN = {
-    // Tresortuer: zu der Block der Hoehentabelle (V) mit Handrad zum Gang, offen das aufgeschwenkte Blatt am Gang und warmes Licht im Tresorraum. Lage im Rahmen der Tuer (u quer, v laengs) wie die 2D-Zeichnung
-    vault(o) {
-      const X0 = o.x, Y0 = o.y, h = o.h, m = u => o.dir < 0 ? 2 * X0 + T - u : u, w = (u, v) => h ? [X0 + (v - Y0), Y0 + (u - X0)] : [u, v];
-      const bx = (G, u0, u1, v0, v1, y0, hh, col, k) => { const a = w(m(u0), v0), b = w(m(u1), v1); sb(G, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, y0, Math.abs(b[0] - a[0]), hh, Math.abs(b[1] - a[1]), 0, col, k) };
-      if (o.open) { bx('s', X0 - 2, X0 + 3, Y0 - 2, Y0 + 2 * T + 2, 0, 60, 0x5a626d); bx('f', X0 + T, X0 + 2 * T, Y0, Y0 + 2 * T, .3, .2, 0xffd264, .14) }
-      else { const c = Y0 + T; bx('s', X0 - 3, X0, c - 3, c + 3, 27, 6, 0x2a2e34); bx('s', X0 - 2, X0, c - 11, c + 11, 39, 2, 0x2a2e34); bx('s', X0 - 2, X0, c - 11, c + 11, 19, 2, 0x2a2e34); bx('s', X0 - 2, X0, c - 11, c - 9, 19, 22, 0x2a2e34); bx('s', X0 - 2, X0, c + 9, c + 11, 19, 22, 0x2a2e34); bx('l', X0 - 1, X0, Y0 + 3, Y0 + 2 * T - 3, 62, 1, 0xffffff, .12) }
-    },
-    pad(o) { sb('s', o.x, o.y, 0, 8, 34, 8, 0, 0x2d3640); sb('l', o.x, o.y, 34, 6, .6, 6, 0, 0x7ee34a, .8) },
-    note(o) {
-      let top = o.n === 'desk' || o.n === 'mon' ? topAt(o.x, o.y) : 0; const P = NOTE[o.n] || (o.n === 'desk' || o.n === 'mon' || o.n === 'mgr' ? [] : NOTE.locker);
-      for (const q of P) { sb('s', o.x + (q[5] || 0), o.y, q[2], q[0], q[3], q[1], 0, q[4]); top = Math.max(top, q[2] + q[3]) }
-      if (o.paper) sb('s', o.x, o.y, top, 9, .6, 9, 0, 0xe8e4d8);
-    },
-    dark(o) { sb('f', o.x, o.y, topAt(o.x, o.y) + .3, 28, .2, 28, 0, 0x000000, .4) },
-    bundle(o) { const t = topAt(o.x, o.y); sb('s', o.x, o.y, t, 13, 7, 8, 0, 0x3d7a46); sb('s', o.x, o.y, t + 7, 3, .5, 8.4, 0, 0xd9d2b0) },
-    bag(o) { sb('s', o.x, o.y, topAt(o.x, o.y), 16, 10, 11, 0, 0x6a5536) },
-    // Beute-Stuecke: Statue auf dem Sockel, Glashaube ueber Reliquien und VIP-Auslagen; genommen ein Fleck in der 2D-Farbe auf dem Deckel darunter
-    good(o) {
-      const r = o.rc, t = topAt(r[0] + r[2] / 2, r[1] + r[3] / 2);
-      if (!o.done) { if (o.n === 'statue') sb('s', r[0] + r[2] / 2, r[1] + r[3] / 2, t, 16, 30, 16, 0, 0x8e8a92); else if (o.n === 'relic' || o.n === 'vip') hood(r, t, 14); return }
-      const G = { art: [0, 0x2f2a24, 1], statue: [2, 0x121014, .85], chips: [0, 0x1c5a3a, 1], slot: [3, 0x080808, .88], relic: [3, 0x10080c, .82], vip: [3, 0x10080c, .82] }[o.n] || [2, 0x16110c, .72];
-      rect('f', r, G[0], t + .3, .2, G[1], G[2]);
-    },
-    vit(o) { const r = o.rc, t = topAt(r[0] + r[2] / 2, r[1] + r[3] / 2); if (o.done) rect('f', r, 3, t + .3, .2, 0x10080c, .82); else hood(r, t, 12) },
-    // Laser: Strahl in laserH (Kern und Schein, pulsierend aus der Spielzeit), Sender an beiden Enden; aus nur ein matter Strich und graue Sender
-    laser(o) {
-      const H = C.scen.laserH;
-      for (const [x, y] of [[o.x0, o.y0], [o.x1, o.y1]]) { sb('s', x, y, 0, 6, H + 4, 6, 0, o.on ? 0xcc3333 : 0x555566); if (o.on) sb('l', x, y, H + 4, 4, .6, 4, 0, 0xff4040, 1) }
-      if (o.on) { line('l', o.x0, o.y0, o.x1, o.y1, 1.6, H - .8, 1.6, 0xff6e78, o.f); line('l', o.x0, o.y0, o.x1, o.y1, 7, H - 3, 6, 0xff2832, o.f * .35) }
-      else line('f', o.x0, o.y0, o.x1, o.y1, 1, H - .5, 1, 0x969aaa, .3);
-    },
-    // Zapfsaeule: heil der Koerper aus der Hoehentabelle (u) mit leuchtender Anzeige zur Strasse hin, ausgebrannt ein verkohlter Stumpf (das Raster wird o)
-    pump(o) { if (o.ok) { sb('l', o.x, o.y + 12.6, 24, 14, 7, 1, 0, 0x7ee34a, .55); sb('s', o.x, o.y, 40, 20, 2, 20, 0, 0xc4402f) } else { sb('s', o.x, o.y, 0, 20, 6, 18, 0, 0x28221e); sb('s', o.x - 5, o.y + 3, 6, 6, 4, 5, .4, 0x1a1512) } },
-    // Bohrer der Notenbank: Gestell aus der Hoehentabelle (N), Motor und Bohrstange (dreht, wird mit dem Fortschritt kuerzer), Lampe nach Zustand, Fortschritt, Krater im Boden
-    nbRig(o) {
-      const col = o.st === 1 ? 0x7ee34a : o.st === 2 ? 0xd4452f : 0xe0b020, p = o.p;
-      sb('s', o.x, o.y, 36, 14, 10, 14, 0, 0x2c3036); sb('s', o.x, o.y, 0, 5, 36 + 8 * (1 - p), 5, o.r, 0x9aa2ac); sb('s', o.x, o.y, 0, 9, 5 * (1 - .45 * p), 9, o.r, 0x6b7280);
-      sb('l', o.lx, o.ly, 36, 4, 1.5, 4, 0, col, o.on ? 1 : .35); if (p > 0) { sb('l', o.x - T + 10 + (2 * T - 20) * p / 2, o.y + T - 40, 36, (2 * T - 20) * p, .6, 3, 0, col, .8); sb('f', o.x, o.y + 3, .4, T * (.6 + 1.1 * p), .2, T * (.44 + .8 * p), 0, 0x0c0a09, .25 + .5 * p) }
-    },
-    // Loch der Notenbank (Ausstieg in den Tunnel): Rand, Schacht und Tiefe als flache Schichten, deckend
-    nbHole(o) { sb('s', o.x, o.y, 0, 62, 1, 56, 0, 0x6b6152); sb('s', o.x, o.y, 0, 58, 1.2, 52, 0, 0x17130f); sb('s', o.x, o.y + 3, 0, 42, 1.4, 36, 0, 0x050403) },
-    zone(o) { frame('l', o.x0, o.y0, o.x1, o.y1, 2, .4, 0x7ee34a, .5 + .4 * o.f) },
-    // Notenpresse: Gehaeuse aus der Hoehentabelle (N), Papiervorrat (schrumpft), Lampe nach Zustand, Fortschritt des Drucks
-    nbPress(o) {
-      const X0 = o.x, Y0 = o.y, col = o.st === 1 ? 0x7ee34a : o.st === 0 ? 0xe0b020 : o.st === 6 ? 0xffb000 : 0xd4452f;
-      if (o.paper > 0) sb('s', X0 + 16, Y0 + 32, 36, 16, 14 * o.paper, 28, 0, 0xf0ead8);
-      sb('l', X0 + 56, Y0 + 52, 36, 5, 1.5, 5, 0, col, o.on ? 1 : .35); if (o.pr > 0) sb('l', X0 + 32 + 9 * o.pr, Y0 + 53, 36, 18 * o.pr, .6, 4, 0, 0x7ee34a, .8);
-    },
-    ring(o) { const n = 24; for (let i = 0; i < n; i++) { if (i % 2) continue; const a = i / n * 6.283, b = (i + 1) / n * 6.283; line('l', o.x + Math.cos(a) * o.r, o.y + Math.sin(a) * o.r, o.x + Math.cos(b) * o.r, o.y + Math.sin(b) * o.r, 2, .4, .5, 0x7ee34a, .5 + .4 * o.f) } },
-    // Tueren mit Schloss (Hintertueren, Zellen, Servicetuer): zu eine rote Lampe beidseits am Block (L), offen das zur Seite geschobene Blatt und eine gruene Lampe
-    lock(o) { if (!o.open) { sb('l', o.x, o.y - 16.4, 30, 6, 6, .8, 0, 0xd4452f, .9); sb('l', o.x, o.y + 16.4, 30, 6, 6, .8, 0, 0xd4452f, .9) } else { sb('s', o.x - 12.5, o.y, 0, 5, 50, T - 4, 0, 0x30343b); sb('l', o.x + 9.5, o.y, 46, 5, 2, 5, 0, 0x7ee34a, .9) } },
-    reader(o) { sb('s', o.x, o.y, 18, 8, 20, 16, 0, 0x1d2026); sb('l', o.x, o.y + 8.4, 30, 4, 3, .8, 0, o.open ? 0x7ee34a : 0xd4452f, 1) },
-    card(o) { sb('s', o.x, o.y, topAt(o.x, o.y), 9, 1, 6, 0, 0x7ee34a) },
-    frame(o) { frame('l', o.x0, o.y0, o.x1, o.y1, 2, .4, o.c ? 0xffd27a : 0xffffff, o.f) },
-    exit(o) { const L = Math.hypot(o.x1 - o.x0, o.y1 - o.y0), ux = (o.x1 - o.x0) / L, uy = (o.y1 - o.y0) / L; for (let s = 0; s < L; s += 14) { const e = Math.min(L, s + 8); line('l', o.x0 + ux * s, o.y0 + uy * s, o.x0 + ux * e, o.y0 + uy * e, 2, .4, .5, 0x7ee34a, .6) } },
-    // Panzerwagen (Kasten und Dach zeichnet figs3d): offene Ladetuer hinten mit Licht, Warnblinker bei Panne, Rauch am platten Reifen
-    tk(o) {
-      const b = o.x - o.fx * o.L / 2, H = C.cars.tk.h;
-      if (o.cargo) { sb('s', b - o.fx * 1, o.y, 0, 6, H - 4, o.W - 12, 0, 0x14171c); sb('f', b - o.fx * 9, o.y, .3, 12, .2, o.W - 16, 0, 0xffd264, .18) }
-      if (o.blink) for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) sb('l', o.x + u * (o.L / 2 - 8), o.y + v * (o.W / 2 - 3), H - 2, 6, 6, 6, 0, 0xffaa28, 1);
-      if (o.smoke) sb('f', o.x - o.fx * (o.L / 2 - 40), o.y + o.W / 2 + 4, 2, 18, 14, 18, 0, 0x464646, .35);
-    },
-    cone() { /* Faecher-Netz in buildScen */ },
-    // Gitter (Gefaengnis, zu): Staebe und Querriegel quer zur Wand, der untere Riegel steht in der statischen Welt
-    grille(o) { const G = C.scen.grille, tx = Math.floor(o.x / T), ty = Math.floor(o.y / T), hz = gridHz(tx, ty), X0 = tx * T, Y0 = ty * T, m = T / 2;
-      for (let i = 0; i < G.n; i++) { const u = 4 + i * 8 + 1.5; sb('s', hz ? X0 + u : X0 + m, hz ? Y0 + m : Y0 + u, 0, G.w, 64, G.w, 0, 0x8f97a2) }
-      for (const r of G.rail.slice(1)) sb('s', X0 + m, Y0 + m, r[0], hz ? T : G.w, r[1] - r[0], hz ? G.w : T, 0, 0x30343b) },
-    cam(o) { void o }, // Ueberwachungskamera: klassisch das 2D-Bild auf dem HUD (cams3d), im Kloetzchen-Stil Wandhalter und Gehaeuse (KL.obj 'cam')
-    sw(o) { void o }, // Hauptschalter: nur der Kloetzchen-Stil baut den Schaltkasten (KL.obj 'sw'), klassisch bleibt die Platte der statischen Welt
-    bar(o) { void o }, // Zustand der Barrikade (Stufe lv, Heile f): nur der Kloetzchen-Stil zeichnet Platten und Schaeden (KL.obj 'bar')
-    parked(o) { sb('i', o.x + 64, o.y + 32, 0, 4 * T - 4, C.cars.civ.h, 2 * T - 6, 0, 0xffffff) },
-  };
   let scenLast = [], scKey = '';
-  const scenPools = { s: pSc, l: pScL, f: pScF, i: pScI };
   function buildScen(S) {
-    const P = S ? S.p : [], kk = {}; SB = { s: [], l: [], f: [], i: [] }; scenLast = []; if (K && K.on) K.scenBegin();
-    const cones = [];
-    for (const o of P) {
-      const e = C.scen.kinds[o.k], b = SCEN[o.k], k = e && b ? o.k : '?' + o.k; kk[k] = (kk[k] || 0) + 1; if (!e || !b) continue;
-      const kb = K && K.on && K.sceneBuilder(o); if (o.k === 'cone') cones.push(o); else if (kb) kb(K.kit, o); else b(o); scenLast.push(o.k);
-    }
-    if (K && K.on) K.scenEnd();
-    for (const g in SB) {
-      const L = SB[g], Pl = scenPools[g]; Pl.size(L.length);
-      L.forEach((q, i) => { if (g === 'i') put(Pl, i, q[0], q[1], q[2] + q[4] / 2, q[6], q[3], q[4], q[5]); else { put(Pl, i, q[0], q[1], q[2], q[6], q[3], q[4], q[5]); Pl.im.setColorAt(i, colOf(q[7])); if (Pl.a.iA) Pl.a.iA.setX(i, q[8]) } });
-    }
-    // Sichtkegel: Faecher aus den Strahlen von coneRays (endet an blickdichten Kacheln wie 2D), Mitte deckend nach aussen durchsichtig (2D-Verlauf), knapp ueber dem Boden
-    const pa = coneGeo.attributes.position.array, ca = coneGeo.attributes.cc.array; let n = 0;
-    for (const o of cones) {
-      const c = C.scen.cone[o.al ? 1 : 0], p = o.pts, r = Math.max(1, ...p.map(q => Math.hypot(q[0] - o.x, q[1] - o.y)));
-      for (let i = 1; i < p.length - 1 && n < CONE_MAX; i++, n++) {
-        const v = [[o.x, o.y], p[i], p[i + 1]];
-        v.forEach((q, j) => { const f = n * 9 + j * 3, a = c[3] * Math.max(0, 1 - Math.hypot(q[0] - o.x, q[1] - o.y) / r); pa[f] = q[0]; pa[f + 1] = .5; pa[f + 2] = q[1]; const h = n * 12 + j * 4; ca[h] = c[0]; ca[h + 1] = c[1]; ca[h + 2] = c[2]; ca[h + 3] = a });
-      }
-    }
-    coneGeo.setDrawRange(0, n * 3); coneGeo.attributes.position.needsUpdate = true; coneGeo.attributes.cc.needsUpdate = true; coneMesh.visible = n > 0;
-    st.scen = kk; st.scenN = [SB.s.length, SB.l.length, SB.f.length, SB.i.length, n];
-    // Pruefsumme fuer Tests: Rauminhalt und Farbsumme je Gruppe (aendert sich mit jedem Zustandswechsel)
-    st.scenSum = ['s', 'l', 'f', 'i'].map(g => Math.round(SB[g].reduce((a, q) => a + q[3] * q[4] * q[5] + q[2] * 7 + (q[7] % 4099) * .01 + q[8] * 13, 0)));
+    const P = S ? S.p : [], kk = {}; scenLast = []; K.scenBegin();
+    for (const o of P) { const kb = K.sceneBuilder(o), k = kb ? o.k : '?' + o.k; kk[k] = (kk[k] || 0) + 1; if (!kb) continue; kb(K.kit, o); scenLast.push(o.k) }
+    K.scenEnd(); const L = K.dingeList();
+    st.scen = kk; st.scenN = [L.length]; st.scenSum = [Math.round(L.reduce((a, q) => a + q[3] * q[4] * q[5] + q[2] * 7, 0))];
   }
 
   // 3D-7 (Ticket 156): Effekte. X.fx() (js/draw.js fx3d) liefert je Bild Teilchen, Kugeln, Muendungsfeuer, Granaten, Wolken, Aufnahmen und Dinge am Boden, hier wird nur gezeichnet (nichts geschrieben).
@@ -936,7 +683,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   // Shader-Schalter aller beleuchteten Materialien (litMats, nach deren Bau gefuellt): nur bei Aenderung neu uebersetzen (st.relink zaehlt)
   let defKey = '';
-  const litMats = mats.concat([glassMat, groundMat, figMat, topMat, colMat]);
+  const litMats = mats.concat([glassMat, groundMat, colMat]);
   function setDefs(shOn, spOn) {
     const k = (shOn ? 'S' : '') + (spOn ? 'P' : ''); if (k === defKey) return; defKey = k; st.relink = (st.relink || 0) + 1;
     for (const m of litMats) { const d = m.defines || (m.defines = {}); if (shOn) d.L_SH = ''; else delete d.L_SH; if (spOn) d.L_SP = ''; else delete d.L_SP; m.needsUpdate = true }
@@ -1021,7 +768,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s += l; if (l < mn) mn = l; if (l > mx) mx = l }
     return { lum: s / (w * h), span: mx - mn };
   }
-  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [...Object.values(figGeo), cubeGeo, flatGeo, figMat, topMat, shMat, silMat, colMat, chTex, carTex, glowMat, flatMat, coneMat, coneGeo, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); if (K) K.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
+  function dispose() { show(false); if (el.parentNode) el.parentNode.removeChild(el); for (const e of [X.cv]) { e.style.gridRow = ''; e.style.gridColumn = '' } if (ground) ground.geometry.dispose(); for (const m of stat) m.dispose(); box.dispose(); for (const P of pools) if (P.im) { P.im.geometry.dispose(); P.im.dispose() } for (const q of [cubeGeo, flatGeo, shMat, silMat, colMat, chTex, fxAddMat, fxNrmMat, pkMat, prTex]) q.dispose(); for (const m of mats.concat([glassMat, groundMat])) m.dispose(); groundTex.dispose(); decTex.dispose(); visTex.dispose(); shRT.dispose(); shDepth.dispose(); K.dispose(); ren.dispose(); try { ren.forceContextLoss() } catch (e) { /* schon weg */ } api.dead = 'entsorgt' }
 
   // Kloetzchen-Stil (Ticket 196 und 198): Werkzeuge der Ansicht fuer js/kl-kern.js (mkKl), erst nach dem Bau von allem, Modul nur mit Schalter geladen (X.klotz)
   if (X.klotz) {
@@ -1030,4 +777,4 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 10;
+mkView3d.api = 11;
