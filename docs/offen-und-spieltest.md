@@ -84,6 +84,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 - **Fahrzeuge als Deckung**: Wirken Streifenwagen, Wracks und Fluchtwagen für beide Seiten als Deckung, bleiben Wege frei? Coop: Sehen alle dieselben Autos und den Abbau-Fortschritt?
 - **Coop, Tab schließen**: Kommt die Browser-Abfrage beim Schließen oder Neuladen als Host mit Mitspielern (ohne Mitspieler und als Client nicht)?
 - **Debug-Karten** (Issue #57): Mit `#debug` (auch in den Vorschauen) gibt es jetzt zufällige Karten wie im normalen Spiel. Die feste Klassikkarte schaltet die Testwerkzeug-Kachel `Karte: fest/zufällig` ein.
+- **Umriss der Figuren in 3D (Ticket 248):** F6 schaltet vier Stile durch (wie bisher, dünn halbtransparent, nur bei ähnlichem Grund, Spielerfarbe), Standard ist dünn. Bitte Tag und Nacht im Gewühl vergleichen und den Stil wählen, die anderen fallen dann weg.
 
 ## Offene Entscheidungen (Till)
 

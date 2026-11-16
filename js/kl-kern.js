@@ -128,10 +128,10 @@ void main() {
   const pB = kpool('k-kloetze', boxGeo), pD = kpool('k-zerfall', boxGeo), pT = kpool('k-dinge', boxGeo), pT2 = kpool('k-dinge-klein', flatBox), pF = kpool('k-kloetze-klein', flatBox);
   // Umriss der Figuren (Ticket 189 auch im Kloetzchen-Stil): dieselbe Lage aufgeblasen, nur Rueckseiten, Tag dunkel, Nacht hell (FG.look)
   const olMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: Object.assign({}, UV),
-    vertexShader: 'varying vec2 vM; void main() {\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
-    fragmentShader: E.GL.VISF + 'uniform vec3 uC; uniform float uA; varying vec2 vM; void main() { if (uA < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > uA) discard; gl_FragColor = vec4(uC, 1.0);\n#include <colorspace_fragment>\n gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM); }' });
-  olMat.uniforms.uC = { value: new THREE.Color() }; olMat.uniforms.uA = { value: 1 };
-  const pO = E.pool('k-umriss', boxGeo, olMat, {}, false, 2); E.pools.push(pO);
+    vertexShader: 'attribute vec4 iO; varying vec4 vO; varying vec2 vM; void main() { vO = iO;\n#ifdef USE_INSTANCING_COLOR\n#endif\n vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0); vM = wp.xz; gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: E.GL.VISF + 'varying vec4 vO; varying vec2 vM; void main() { if (vO.a < 0.99 && fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) > vO.a) discard; gl_FragColor = vec4(vO.rgb, 1.0);\n#include <colorspace_fragment>\n gl_FragColor.rgb = fogC(gl_FragColor.rgb, vM); }' });
+  const olCd = new THREE.Color(), olCn = new THREE.Color(), olTmp = new THREE.Color(); let olCol = olCd, olA = 1;
+  const pO = E.pool('k-umriss', boxGeo, olMat, { iO: 4 }, false, 2); E.pools.push(pO);
   const pAO = E.pool('k-kontakt', E.flatGeo, E.shMat, { iSA: 2 }, false, 1); E.pools.push(pAO);
 
   // ---------- Werkzeug fuer die Bauer ----------
@@ -148,12 +148,21 @@ void main() {
     if (Math.min(sx, sy, sz) < KC.small) { const j = iF++; pF.im.setMatrixAt(j, fm); pF.im.setColorAt(j, c); pF.a.iK.setXY(j, alNow, em || 0) }
     else { const i = iB++; pB.im.setMatrixAt(i, fm); pB.im.setColorAt(i, c); pB.a.iK.setXY(i, alNow, em || 0) }
     nP++;
-    if (olT > 0 && Math.min(sx, sy, sz) >= 3.9) { _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l); pO.im.setMatrixAt(iO++, fm) }
+    if (olT > 0 && Math.min(sx, sy, sz) >= 3.9) { _s.set(sx + 2 * olT, sy + 2 * olT, sz + 2 * olT); _l.compose(_p, _q, _s); fm.multiplyMatrices(par, _l); pO.a.iO.setXYZW(iO, olCol.r, olCol.g, olCol.b, olA); pO.im.setMatrixAt(iO++, fm) }
   }
   const mRoot = new THREE.Matrix4(), rotY = (x, y, a, k) => { _p.set(x, 0, y); _q.setFromAxisAngle(yAx, -a); _s.set(k, k, k); return mRoot.compose(_p, _q, _s) };
   const kit = {
     X, C, E, KC, D, FG, T, THREE, colOf, topAt: E.topAt, rnd, rr, jt, mats, part, rotY, root: mRoot, typeOf: E.typeOf, xcol: E.xcol, carCol: E.carCol, carLook: null,
-    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, outline(on) { olT = on && FG.look.out ? (olNt ? FG.look.outNightW : FG.look.out) : 0 },
+    state(hit, al) { hitNow = hit; alNow = al == null ? 1 : al }, // Umriss je Figur (Ticket 248, Stile X.olv, Taste F6): 0 wie bisher, 1 duenner und halbtransparent, 2 nur bei aehnlichem Grund (Farbabstand Figur zu Boden), 3 in der Spielerfarbe
+    outline(on, o) {
+      if (!on || !FG.look.out) { olT = 0; return }
+      const v = X.olv | 0, w0 = olNt ? FG.look.outNightW : FG.look.out; let w = w0, a = olNt ? FG.look.outNightA : 1, c = olNt ? olCn : olCd;
+      if (v === 1) { w = w0 * .55; a *= .5 }
+      else if (v === 2 && o && E.groundLum) { const T0 = FG.out[E.typeOf(o, {})]; const h = T0 ? T0.top : 0x808080, lf = ((h >> 16 & 255) * .299 + (h >> 8 & 255) * .587 + (h & 255) * .114) / 255; a *= Math.max(0, Math.min(1, 1 - Math.abs(lf - E.groundLum(o.x, o.y)) / .34)); if (a < .05) { olT = 0; return } }
+      else if (v === 3 && o && o.k === 'pl' && o.sc) { c = olTmp.set(o.sc); w = w0 * .8; a = olNt ? .85 : .9 }
+      olT = w; olCol = c; olA = a;
+    },
+    olState: () => ({ t: olT, a: olA, c: olCol.getHex() }),
     // Teile einer Figur oder eines Fahrzeugs einsammeln (ohne zu zeichnen): fn() ruft part, Ergebnis die Teile mit Lage in der Welt
     collect(fn) { const was = out, r = []; out = r; try { fn() } finally { out = was } return r },
     time: 0, dt: 0, FA: null, FN: null, light: null,
@@ -200,7 +209,7 @@ void main() {
   const figMax = 40, carMax = 40;
   K.dyn = (F, Cs, dynL) => {
     iB = 0; iF = 0; nP = 0; iO = 0; olT = 0; kit.light = dynL; pO.size(F.length * 14);
-    { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olMat.uniforms.uC.value.set(olNt ? FG.look.outNight : FG.look.outDay); olMat.uniforms.uA.value = olNt ? FG.look.outNightA : 1 } carsNow = []; figsNow = F;
+    { const th = (X.LAY && X.LAY.theme) || {}; olNt = !!(X.night || th.tod === 'nacht' || th.tod === 'daemmerung'); olCd.set(FG.look.outDay); olCn.set(FG.look.outNight) } carsNow = []; figsNow = F;
     pB.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pB.u = 0; pF.size((F.length * figMax + Cs.length * carMax + 24 * 6 + 40 * 8) | 0); pF.u = 0;
     pAO.size(F.length + Cs.length + 40); let nAO = 0; const aoA = pAO.a.iSA, tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3();
     const ao = (x, y, a, sx, sz, kind, al) => { tmpP.set(x, .4, y); tmpQ.setFromAxisAngle(yAx, -a); tmpS.set(sx, 1, sz); pAO.im.setMatrixAt(nAO, tmpM.compose(tmpP, tmpQ, tmpS)); aoA.setXY(nAO++, kind, al) };
@@ -209,7 +218,7 @@ void main() {
       const art = E.typeOf(o, e), lying = !!(e.lie || o.lie);
       if (o.k === 'tot' && KL.fxs['fig-tot'] && !o.noBurst) { const key = 't' + Math.round(o.x) + ',' + Math.round(o.y) + ',' + o.row; if (!seenKey.has(key)) { seenKey.add(key); if (primed) queue.push({ n: 'fig-tot', a: { o: Object.assign({}, o), e, art } }) } if (K.burstArts.has(art)) continue }
       if (lying) { ao(o.x + 3, o.y + 4, o.a, 54, 30, 0, .3 * o.al); lie++ } else { ao(o.x, o.y, 0, 24, 21, 0, .42); if (o.fl) { dynL.push({ k: 'muz', x: o.x + Math.cos(o.a) * LC.pl.muz.d, y: o.y + Math.sin(o.a) * LC.pl.muz.d }); if (queue.length < 48) queue.push({ n: 'casing', a: { o: Object.assign({}, o) } }) } }
-      kit.outline(!lying || true); gear += KL.figs[art](kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
+      kit.outline(true, o); gear += KL.figs[art](kit, o, e); kit.outline(false); if (o.hit) hit++; o._hs = lying ? FG.hsLie : o.col === 8 ? FG.hsCow : FG.hs;
     }
     const cars = [];
     for (const [o, e] of Cs) {

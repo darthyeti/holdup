@@ -261,6 +261,19 @@ Till hat entschieden (15. November 2026): Klötzchen mit Welt A (Figuren, Fahrze
 - **Fundorte des Tresorcodes (Ticket 228).** `KL.obj('note')` in `kl-dinge-allgemein.js`: Wandarten (`coat`, `pin`, `locker`, Tabelle `WALL`) stehen an der Wand der Kachel (erste angrenzende `#`, `wallDir`) und sind in Wandkoordinaten gebaut (u längs der Wand, v Tiefe, Höhe): die Garderobe als Rückwand mit Regal und zwei hängenden Mänteln (rot, blau) mit helleren Kragen, die Pinnwand als Korkbrett mit drei Zetteln und Ablage, der Spind mit Türen und Griff. Der Zettel (solange der Code fehlt) ist größer (14 mal 11), hell, leicht schräg, mit Textzeilen und rotem Eck, ohne Leuchten, und liegt immer von oben sichtbar (auf Regal, Ablage, Gerät oder Boden, nie senkrecht an der Wand). Teile je Fundort 2 bis 6, mit Zettel höchstens 10 (Test `229-kl-fundorte`). Bilder `fundorte-tag-nacht.jpg` (je vier Arten pro Reihe ohne und mit Zettel, oben Tag, unten Nacht, Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fundorte`).
 - **Grenzen.** Silhouetten hinter Wänden bleiben flache Sprites, Schild opak, Szenario-Teile ohne Bauer klassisch, Möbel nur der Bank.
 
+### 2.26 Umriss der Spielerfiguren weniger dominant (Ticket 248, 16. November 2026)
+
+Till (Coop-Test): Die Außenlinien der Figuren wirken auch nach #222 zu dominant. Der Klötzchen-Stil hat deshalb vier Umrissstile zum Vergleich, umschaltbar mit **F6** in der 3D-Ansicht (Banner mit dem Namen, gemerkt in `localStorage holdup.umriss`, Debug `__dbg.view3d.olv`):
+
+| Stil | Name | Breite, Deckkraft | Wirkung |
+|---|---|---|---|
+| 0 | wie bisher | `FG.look.out` 1,1 (Nacht 0,75), voll (Nacht `outNightA` 0,6) | schwarz am Tag, hell bei Nacht |
+| 1 | dünn, halbtransparent (**Standard**) | 55 Prozent der Breite, halbe Deckkraft (Dither) | wie bisher, nur leiser |
+| 2 | nur bei ähnlichem Grund | Breite wie bisher, Deckkraft nach Farbabstand der Figur (Oberteil) zur Helligkeit des Bodens (`groundLum` aus der Bodentextur): ähnlich voll, ab 0,34 Abstand 0 | Umriss nur dort, wo die Figur mit dem Boden verschmilzt |
+| 3 | in der Spielerfarbe | 80 Prozent der Breite, 90 Prozent Deckkraft, nur Spielerfiguren (`o.sc`), andere wie bisher | Mitspieler sofort am Rand erkennbar |
+
+Umsetzung: `kit.outline(on, o)` in `js/kl-kern.js` bestimmt Breite, Farbe und Deckkraft je Figur, der Umriss-Pool `k-umriss` trägt sie je Instanz (`iO`: Farbe und Deckkraft, vorher zwei Uniforms). Nur Darstellung, kein Netzformat, 2D unverändert, die klassischen Low-Poly-Figuren (nicht mehr im Spiel) hatten ihren Umriss aus 2.23. Test `248-kl-umriss`, Bildbogen `docs/bilder/stil-kloetzchen/umriss-stile.jpg` (Tag oben, Nacht unten, Stile 0 bis 3 von links nach rechts). Till wählt, danach wird der Standard festgelegt und der Rest entfernt.
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
