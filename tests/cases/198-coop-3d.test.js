@@ -117,7 +117,7 @@ module.exports = [
           o.fern = [!!e, e && Math.abs(e.a - Math.atan2(sf[1] - 272, sf[0] - 480)), e && Math.abs(e.a - Math.atan2(fern[1] - cam[1] - 272, fern[0] - cam[0] - 480)), e && d2.tr.some(z => Math.abs(z[0] - e.x) < .01 && Math.abs(z[1] - e.y) < .01), B.view3d.funk().filter(z => z.k === 'ping').length];
           o.scr = [B.view3d.scr(nah[0], nah[1]).map(Math.round), ex.map(Math.round)];
           // Fluchtwagen-Zeiger: Phase 2, Wagen gerufen, der Treffpunkt im Bild: Marke ueber dem Wagen an toScr in Dachhoehe
-          A.startHeist(); G.run(.5); A.callVan(); G.run(.5); const Ln = A.LANE(), vm = Ln.van.mid(Ln.van.stop); for (const d of A.get().players) { d.x = vm[0]; d.y = vm[1] - 150; } G.run(1.5);
+          A.startHeist(); G.run(.5); A.callVan(); G.run(.5); const Ln = A.LANE(), vm = Ln.van.mid(Ln.van.stop); for (const d of A.get().players) { d.x = vm[0]; d.y = vm[1] - 70; } G.run(1.5);
           const d3 = spy(), lab = d3.txt.find(z => z[0] === 'TREFFPUNKT' || z[0] === 'FLUCHTWAGEN'), vs = V.toScr(vm[0], vm[1], V.cfg.cars.van.h);
           o.van = lab && [lab[0], Math.round(lab[1] - vs[0]), Math.round(lab[2] - (vs[1] - 56))];
           await B.view3d.set(false); B.draw(); o.scr2D = [B.view3d.scr(nah[0], nah[1]), [nah[0] - B.cam()[0], nah[1] - B.cam()[1]]];

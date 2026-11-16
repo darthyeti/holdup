@@ -20,7 +20,7 @@ module.exports = [
     },
   },
   {
-    name: 'Kloetzchen-Stil im Spiel: Figuren und Fahrzeuge aus Teilen, Kamera naeher, ohne Bauer zeichnet view3d wie sonst, klassischer Stil waehlbar, keine Fehler',
+    name: 'Kloetzchen-Stil im Spiel: Figuren und Fahrzeuge aus Teilen, Kamera naeher, fehlender Bauer zeichnet einen grauen Klotz (und zaehlt), keine Fehler',
     timeout: 240000,
     async run(t) {
       const P = await glPage(t); if (!P) return;
@@ -28,21 +28,21 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {};
           D.setScenario('bank'); D.setSeedMode('random'); D.buildLay(D.layoutFor(5)); D.startHeist(); D.get().me.hp = 1e9;
           for (let i = 0; i < 600; i++) { D.get().me.hp = 1e9; D.update(1 / 30); }
-          const shot = async st => { D.view3d.kstil = st; await D.view3d.set(true); D.draw(); D.draw(); const V = D.view3d.V, i = V.info(); return { k: i.k && { on: i.k.on, figsK: i.k.figsK, carsK: i.k.carsK, parts: i.k.parts, zoom: i.k.zoom }, figs: i.figs, cars: i.cars, figParts: i.figParts, camY: i.camY, err: i.err, calls: i.calls }; };
-          o.klass = await shot(0); o.kl = await shot(1);
-          const K = D.view3d.V.kl(); o.listed = [Object.keys(K.KL.figs).length, Object.keys(K.KL.cars).length];
-          const bak = Object.assign({}, K.KL.figs); for (const k in bak) delete K.KL.figs[k]; D.draw(); D.draw(); const i2 = D.view3d.V.info(); o.noCop = { figsK: i2.k.figsK, figParts: i2.figParts, err: i2.err }; Object.assign(K.KL.figs, bak);
-          const bak2 = Object.assign({}, K.KL.cars); for (const k in bak2) delete K.KL.cars[k]; D.draw(); D.draw(); const i3 = D.view3d.V.info(); o.noPol = { carsK: i3.k.carsK, err: i3.err }; Object.assign(K.KL.cars, bak2);
-          o.back = await shot(0); await D.view3d.set(false); return o; })()`);
-        t.note('klassisch ' + JSON.stringify(r.klass) + '; Kloetzchen ' + JSON.stringify(r.kl) + '; ohne Bauer cop ' + JSON.stringify(r.noCop));
-        t.ok(r.klass.err === '' && r.kl.err === '' && r.noCop.err === '' && r.noPol.err === '' && r.back.err === '', 'keine Fehler in der Ansicht');
-        t.ok(r.kl.k && r.kl.k.on && r.kl.k.figsK > 0 && r.kl.k.carsK > 0 && r.kl.k.parts > 100, 'Figuren und Fahrzeuge aus Teilen (K): ' + JSON.stringify(r.kl.k));
-        t.ok(r.kl.figParts === 0, 'ohne klassische Figuren, wenn alle Arten einen Bauer haben: ' + r.kl.figParts);
-        t.ok(r.klass.figParts > 0 && r.klass.figs > 0, 'klassisch zeichnet die Low-Poly-Figuren');
-        t.ok(r.noCop.figParts > 0 && r.noCop.figsK === 0, 'Art ohne Bauer faellt auf die klassische Figur zurueck');
-        t.ok(r.noPol.carsK === 0, 'Fahrzeug ohne Bauer faellt zurueck');
-        t.ok(Math.abs(r.kl.camY / r.klass.camY - r.kl.k.zoom) < .02 && r.kl.k.zoom < 1, 'Kamera naeher um den Faktor zoom: ' + (r.kl.camY / r.klass.camY).toFixed(3));
-        t.ok(r.back.figParts > 0, 'klassischer Stil bleibt waehlbar');
+          await D.view3d.set(true); D.draw(); D.draw(); const V = D.view3d.V, i = V.info();
+          o.out = { n: i.k.ol.n, day: i.k.ol.c, want: V.cfg.fig && V.cfg.fig.look ? [V.cfg.fig.look.outDay, V.cfg.fig.look.outNight] : null }; D.setLage && D.setLage(['nacht']); D.buildLay(D.layoutFor(5)); D.startHeist(); for (let j = 0; j < 5; j++) D.update(1 / 30); D.draw(); D.draw(); o.out.night = V.info().k.ol.c; o.kl = { k: i.k && { on: i.k.on, figsK: i.k.figsK, carsK: i.k.carsK, parts: i.k.parts, zoom: i.k.zoom, fb: JSON.parse(JSON.stringify(i.k.fb)) }, err: i.err, calls: i.calls };
+          const K = V.kl(); o.listed = [Object.keys(K.KL.figs).length, Object.keys(K.KL.cars).length];
+          const bak = Object.assign({}, K.KL.figs); for (const k in bak) delete K.KL.figs[k]; D.draw(); D.draw(); const i2 = V.info(); o.noCop = { figsK: i2.k.figsK, fb: JSON.parse(JSON.stringify(i2.k.fb)), err: i2.err }; Object.assign(K.KL.figs, bak);
+          const bak2 = Object.assign({}, K.KL.cars); for (const k in bak2) delete K.KL.cars[k]; D.draw(); D.draw(); const i3 = V.info(); o.noPol = { carsK: i3.k.carsK, fb: JSON.parse(JSON.stringify(i3.k.fb)), err: i3.err }; Object.assign(K.KL.cars, bak2);
+          D.draw(); D.draw(); o.back = { fb: V.info().k.fb, err: V.info().err }; await D.view3d.set(false); return o; })()`);
+        t.note('Kloetzchen ' + JSON.stringify(r.kl) + '; ohne Bauer Figur ' + JSON.stringify(r.noCop) + '; ohne Bauer Auto ' + JSON.stringify(r.noPol));
+        t.ok(r.kl.err === '' && r.noCop.err === '' && r.noPol.err === '' && r.back.err === '', 'keine Fehler in der Ansicht');
+        t.ok(r.out.n > 0 && r.out.want && r.out.day === r.out.want[0] && r.out.night === r.out.want[1], 'Klötzchen-Umriss der Figuren da und bei Tag dunkel, bei Nacht hell (outDay, outNight): ' + JSON.stringify(r.out));
+        t.ok(r.kl.k && r.kl.k.on && r.kl.k.figsK > 0 && r.kl.k.carsK > 0 && r.kl.k.parts > 100, 'Figuren und Fahrzeuge aus Teilen: ' + JSON.stringify(r.kl.k));
+        const n = f => Object.keys(f.fig || {}).length + Object.keys(f.car || {}).length;
+        t.eq(n(r.kl.k.fb), 0, 'kein Rueckfall, solange alle Arten einen Bauer haben');
+        t.ok(n(r.noCop.fb) > 0 && r.noCop.figsK > 0, 'Figur ohne Bauer: grauer Klotz statt Absturz, im Zaehler: ' + JSON.stringify(r.noCop.fb));
+        t.ok(n(r.noPol.fb) > 0 && r.noPol.carsK > 0, 'Fahrzeug ohne Bauer: grauer Klotz, im Zaehler: ' + JSON.stringify(r.noPol.fb));
+        t.ok(r.kl.k.zoom < 1, 'Kamera naeher um den Faktor zoom: ' + r.kl.k.zoom);
         if (P.page.errors.length) t.ok(false, 'JS-Fehler: ' + P.page.errors.slice(0, 2).join(' | '));
       } finally { await P.done(); }
     },
@@ -57,7 +57,7 @@ module.exports = [
         const r = await P.page.evaluate(`(async () => {
           const G = CT.mkGame('bank', 321, 2), A = G.A, B = G.clients[0]; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6;
           const run = n => { for (let i = 0; i < n; i++) step(G.insts, G.net, 1 / 60); };
-          for (const d of [A, B]) { d.view3d.kstil = 1; await d.view3d.set(true); }
+          for (const d of [A, B]) { await d.view3d.set(true); }
           A.startHeist(); run(120); for (const d of [A, B]) { d.draw(); d.draw(); }
           const car = A.get().cars.find(c => c.civ && !c.dead); if (!car) return { nocar: 1 };
           const k0 = [A, B].map(d => d.view3d.V.info().k.deb);

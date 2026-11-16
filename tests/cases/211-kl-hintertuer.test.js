@@ -20,7 +20,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         await lib.loadInpage(P.page, 'bild.js');
-        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
           for (const sc of ['bank', 'jewel']) {
             PX.scene(sc, 5); PX.phase('erkundung'); const L = D.LAY(), W = D.world(), c = (L.lockCells || [])[0]; if (!c) { o[sc] = { none: 1 }; continue; }
             const g = D.get(), me = g.me, tg = [c[0] * 32 + 16, c[1] * 32 + 16]; let best = null;
