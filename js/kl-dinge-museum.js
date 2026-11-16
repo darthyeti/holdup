@@ -1,25 +1,18 @@
 /* Kloetzchen-Stil: Dinge des Museums (Ticket 198, Schritt 4c, Teil Museum): Vitrinen, Bilder, Statue, Reliquien, VIP-Auslagen, Laser. register(KL) traegt Bauer fuer Szenario-Teile ein, fn(k, o) je Bild mit
    k.dbrick(mx, mz, y0, sx, sy, sz, drehung, farbe, leuchten) (Mitte in Weltpixeln, Unterkante y0, sx laenge entlang der Drehung). 'good:art' gilt vor 'good' (o.n ist die Unterart). o.rc ist das Rechteck [x, y, w, h],
    o.done heisst genommen: dann bleibt ein dunkler Sockel oder Rahmen. Dazu laser (o.x0..y1, o.on, o.f Puls). Die Vitrine (vit) teilt sich der Juwelier, hier die Fassung fuer beide. */
-const GEM = [0xe5324a, 0x3ac4d9, 0xf0e8c8, 0x7ee34a, 0xb36af0, 0xffb02e];
 // Glashaube: nur die Rahmenkanten (das Glas ist durchsichtig), Sockel in warmem Holz, damit Sockel und Auslage sich abheben
 const hood = (k, r, t, h, base) => {
   const cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2;
   k.dbrick(cx, cz, t, r[2] - 4, 2.5, r[3] - 4, 0, base || 0x8a5a34);
   for (const [dx, dz, sx, sz] of [[-1, 0, 1.2, r[3] - 5], [1, 0, 1.2, r[3] - 5], [0, -1, r[2] - 5, 1.2], [0, 1, r[2] - 5, 1.2]]) k.dbrick(cx + dx * (r[2] / 2 - 2.6), cz + dz * (r[3] / 2 - 2.6), t + 2.5, sx, h, sz, 0, 0xd6ecf8, .12);
 };
-// Schmuck auf dem Kissen: Raster aus Steinen (bunt, leuchtend), dazwischen Goldringe und Barren
-const jewelry = (k, r, t) => {
-  const cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, nx = Math.max(1, Math.floor((r[2] - 8) / 9)), nz = Math.max(1, Math.floor((r[3] - 8) / 9)), t2 = t + 4.1;
-  k.dbrick(cx, cz, t + 2.5, r[2] - 7, 1.6, r[3] - 7, 0, 0x5a1f5a);
-  for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = cx - (nx - 1) * 4.5 + i * 9, z = cz - (nz - 1) * 4.5 + j * 9, n = i * 7 + j * 3 + Math.round(cx / 7);
-    if (n % 3 === 0) { k.dbrick(x, z, t2, 5, .8, 5, 0, 0xe8b923, .35); k.dbrick(x, z, t2 + .8, 3, 2.6, 3, .4, GEM[n % 6], .7) } else if (n % 3 === 1) k.dbrick(x, z, t2, 6.4, 2.2, 3, .3 * (n % 4), 0xffc83a, .45); else k.dbrick(x, z, t2, 4, 3.4, 4, .4, GEM[(n + 2) % 6], .8) }
-};
 export function register(KL) {
   KL.obj('vit', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, t = k.topAt(cx, cz), jw = k.X.LAY && k.X.LAY.jewel;
+    if (jw) { hood(k, r, t, 8, 0x6a3f24); KL.jewelry(k, r, t, !!o.done); return }   // Auslage des Juweliers: js/kl-dinge-juwelier.js, leer = dieselbe Vitrine ohne Schmuck
     if (o.done) { k.dbrick(cx, cz, t, r[2] - 6, .5, r[3] - 6, 0, 0x10080c); return }
-    hood(k, r, t, jw ? 7 : 9, jw ? 0x6a3f24 : 0x8a5a34);
-    if (jw) jewelry(k, r, t); else { k.dbrick(cx, cz, t + 2.5, r[2] - 8, 2, r[3] - 8, 0, 0x7a2a3a); k.dbrick(cx, cz, t + 4.5, 8, 5, 5, 0, 0xffd23a, .6); k.dbrick(cx, cz, t + 9.5, 4, 3, 4, .4, 0x3ac4d9, .8) } });
+    hood(k, r, t, 9, 0x8a5a34);
+    { k.dbrick(cx, cz, t + 2.5, r[2] - 8, 2, r[3] - 8, 0, 0x7a2a3a); k.dbrick(cx, cz, t + 4.5, 8, 5, 5, 0, 0xffd23a, .6); k.dbrick(cx, cz, t + 9.5, 4, 3, 4, .4, 0x3ac4d9, .8) } });
   // Bilder an der Wand: goldener Rahmen, bunte leuchtende Leinwand; genommen bleibt ein dunkler Rahmen
   KL.obj('good:art', (k, o) => { const r = o.rc, cx = r[0] + r[2] / 2, cz = r[1] + r[3] / 2, a = r[2] >= r[3] ? 0 : Math.PI / 2, L = Math.max(r[2], r[3]) - 4;
     if (o.done) { k.dbrick(cx, cz, 14, L, 14, 2, a, 0x4a3a2a); return }
