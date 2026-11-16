@@ -70,7 +70,8 @@ module.exports = [
           D.setScenario('bank'); D.buildSeed('classic'); for (let i = 0; i < 5; i++) { D.update(1 / 30); D.draw(); }
           const V = D.view3d.V, cfg = V.cfg.cells, w = D.world(), M = w.M, cnt = {};
           for (const row of M) for (const c of row) cnt[c] = (cnt[c] || 0) + 1;
-          const want = {}; for (const c in cnt) if (cfg[c] && cfg[c].s.length) want[c] = cnt[c];
+          const KLs = V.kl().KL, strip = c => KLs.hasObj(c) && !(KLs.objOpts[c] || {}).keep; // Kacheln mit Kloetzchen-Bauer (Moebel) haben in der statischen Welt keinen Koerper
+          const want = {}; for (const c in cnt) if (cfg[c] && cfg[c].s.length && !strip(c)) want[c] = cnt[c];
           const parts = [0, 0, 0, 0, 0, 0]; for (const c in want) { for (const q of cfg[c].s) parts[q[2] || 0] += cnt[c]; if (cfg[c].frame) parts[2] += cfg[c].frame.length * cnt[c]; if (cfg[c].glass) parts[5] += cnt[c]; }
           const a = D.view3d.info();
           // ohne Aenderung: weitere Bilder bauen nichts neu, auch nicht nach setc mit demselben Zeichen
@@ -109,7 +110,7 @@ module.exports = [
         const dp = (i, k) => i.parts[k] - a.parts[k];
         t.ok(r.e.cells.w === 1 && r.e.cells.W === a.cells.W - 1 && dp(r.e, 5) === -1 && dp(r.e, 0) === 0, 'Fenster zerschossen: eine Glasscheibe weniger, Bruestung bleibt: ' + r.e.parts);
         t.ok(r.e2.cells.Y === 1 && dp(r.e2, 5) === -1 && dp(r.e2, 1) === 1, 'Fenster vernagelt: Bretter (Holz) statt Glas: ' + r.e2.parts);
-        t.ok(r.f.cells.X === 1 && dp(r.f, 1) === 1 && r.f.vol === a.vol + 32 * 32 * 30, 'Barrikade gebaut: ein Holzkoerper mehr');
+        const kb = q => q.k.world.bricks + q.k.world.small; t.ok(!r.f.cells.X && kb(r.f) > kb(a) && r.f.statBuilds > a.statBuilds, 'Barrikade gebaut (Kloetzchen-Bauer X): mehr Kloetze in der Welt ' + kb(a) + ' zu ' + kb(r.f) + ', Neubau ' + (r.f.statBuilds - a.statBuilds));
         t.ok(!r.v.cells.V && r.v.statBuilds > r.f.statBuilds, 'Tresortuer offen: Tuerkoerper weg: ' + r.v.cells.V);
         t.eq(r.v2.cells.V, a.cells.V, 'nach reset ist die Tresortuer wieder da');
         t.ok(r.v2.errs === 0, 'keine Fehler beim Zeichnen');
@@ -130,8 +131,8 @@ module.exports = [
           const o = {};
           for (const sc of SCS) {
             D.setScenario(sc); D.buildSeed(3); D.update(1 / 30); D.draw(); D.draw();
-            const i = D.view3d.info(), cfg = D.view3d.V.cfg.cells, M = D.world().M, cnt = {}, parts = [0, 0, 0, 0, 0, 0];
-            for (const row of M) for (const c of row) if (cfg[c] && cfg[c].s.length && !(c === 'V' && D.get().vaultOpen)) { cnt[c] = (cnt[c] || 0) + 1; for (const q of cfg[c].s) parts[q[2] || 0]++; if (cfg[c].frame) parts[2] += cfg[c].frame.length; if (cfg[c].glass) parts[5]++; }
+            const i = D.view3d.info(), cfg = D.view3d.V.cfg.cells, KLs = D.view3d.V.kl().KL, M = D.world().M, cnt = {}, parts = [0, 0, 0, 0, 0, 0];
+            for (const row of M) for (const c of row) if (cfg[c] && cfg[c].s.length && !(c === 'V' && D.get().vaultOpen) && !(KLs.hasObj(c) && !(KLs.objOpts[c] || {}).keep)) { cnt[c] = (cnt[c] || 0) + 1; for (const q of cfg[c].s) parts[q[2] || 0]++; if (cfg[c].frame) parts[2] += cfg[c].frame.length; if (cfg[c].glass) parts[5]++; }
             o[sc] = { errs: i.errs, err: i.err, calls: i.calls, tris: i.tris, parts: i.parts.join(',') === parts.join(','), ok: JSON.stringify(i.cells) === JSON.stringify(Object.fromEntries(Object.keys(i.cells).map(k => [k, cnt[k]]))) && Object.keys(cnt).length === Object.keys(i.cells).length };
           }
           D.setScenario('bank'); D.buildSeed('classic'); D.view3d.reset();

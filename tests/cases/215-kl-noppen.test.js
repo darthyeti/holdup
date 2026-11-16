@@ -10,7 +10,7 @@ module.exports = [
       const P = await glPage(t); if (!P) return;
       try {
         await lib.loadInpage(P.page, 'bild.js');
-        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; D.view3d.kstil = 1; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
+        const r = await P.page.evaluate(`(async () => { const D = __dbg, o = {}; const i0 = await D.view3d.set(true); if (i0.state !== 'an') return { i0 };
           const V = D.view3d.V, K = V.kl(), KC = K.kit.KC; o.std = KC.studs;
           const meshN = () => { const m = V.scene.getObjectByName('k-noppen'); return m ? m.count : 0; };
           for (const sc of ['bank', 'casino', 'truck']) {
