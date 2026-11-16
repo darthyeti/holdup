@@ -272,6 +272,10 @@ Der Fluchtwagen (`van` in `js/kl-fahrzeuge.js`, Funktion `flucht`) war immer der
 
 Farben aus der eigenen Palette `KCFG.car.fpal` (nicht die `pal` der zivilen Autos), Plane `ftarp`. Fluchtwagen-Merkmale: Der Fahrer sitzt im Fahrerhaus (Kopf mit Mütze über der Scheibe). Steht der Wagen still (Position gleich seit 0,35 s Spielzeit aus `figs3d`, auch beim Client gleich), steht die Schiebetür offen (Lieferwagen, Kleinbus), die Hecktür (Kastenwagen) oder die Heckklappe (Pickup). Teile 26 bis 32 je Wagen (Grenze 40, Test `231-kl-fluchtwagen`). Vorhut (`vh`) und Panzerwagen (`tk`) unverändert. Bilder `fluchtwagen-varianten.jpg` (oben Tag, unten Nacht, je Variante fahrend und wartend), Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fluchtwagen`.
 
+#### Spieltische im Casino (Ticket 244)
+
+`KL.obj('good:chips')` in `js/kl-dinge-casino.js` baut je Tisch (Block von 4 mal 2 Kacheln, `o.rc` ist nur seine Chipfläche an der Spielerseite) eine von vier Arten, gewählt über die Tischlage (`KL.casinoTable`, Kachel-Hash): Roulette (Oktagon mit Kessel und Zahlenfeld, grün), Blackjack (Halbkreis mit Spielplätzen und Kartenschlitten, blau), Poker (Oval mit goldener Reling, burgunder), Würfel (Rechteck mit Banden und zwei Würfeln, lindgrün). Voll: farbige Chipstapel mit leichtem Glanz an der Spielerseite. Abgeräumt (`o.done`): Filz dunkelgrau, keine Chips, leere offene Chipablage mit goldener Kante und ein umgeworfener Stuhl. Nur Darstellung. Test `244-kl-casino-tische`, Bildbogen `docs/bilder/stil-kloetzchen/casino-tische-voll-leer.jpg` (Tag und Nacht, voll und leer, zwei Seeds).
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
