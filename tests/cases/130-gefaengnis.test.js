@@ -536,4 +536,30 @@ module.exports = [
       t.eq(l.a, null, 'mit Alarm: kein Ende durch den Abholpunkt (Phase 2)');
     },
   },
+  {
+    name: 'Gefaengnis: der haltende Fluchtwagen laesst die Kacheln vor dem Tor frei, vom Tor fuehrt ein Weg in die Fluchtzone zum Wagen (Issue 280, Seed 871696 und weitere)',
+    timeout: 240000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      for (const seed of [871696, 738264, 5, 6, 7, 11, 12, 13]) {
+        const r = await t.page.evaluate(`(() => {
+          const G = CT.mkGame('prison', ${seed}, 2, 60, 20), A = G.A, o = {};
+          A.get().its.filter(i => i.t === 'vault')[0].act(A.get().players[0]);
+          Object.assign(A.CFG.van, { bt: 0, bu: 0, r: 0 }); A.CFG.vanCall = 1; A.CFG.vanLock = 0; A.callVan();
+          for (let i = 0; i < 60; i++) { A.get().players.forEach(p => { p.hp = 1e9; p.dead = false; }); G.run(1); }
+          const M = A.world().M, ln = A.LANE(), c = (x, y) => (M[y + 6] || '')[x + 6], SOL = '#WCPpbAremkqfLvXwYu';
+          o.van = A.get().vanArr; o.stamped = ln.van.swept.filter(q => c(q[0], q[1]) === 'v').length;
+          const g = ln.exit.goal, gates = []; for (let y = 0; y < 42; y++) for (let x = 0; x < 68; x++) if (c(x, y) === 'V') gates.push([x, y]);
+          o.gates = gates.length; o.front = gates.map(q => c(q[0] + 1, q[1]));
+          // Breitensuche ab den Kacheln vor dem Tor (Tor offen) bis zur Zielkachel am Wagen
+          const seen = new Set(), q = gates.map(q => [q[0] + 1, q[1]]); q.forEach(k => seen.add(k.join()));
+          for (let h = 0; h < q.length; h++) for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = [q[h][0] + d[0], q[h][1] + d[1]], ch = c(n[0], n[1]); if (ch === undefined || seen.has(n.join()) || SOL.includes(ch)) continue; seen.add(n.join()); q.push(n); }
+          o.reach = seen.has(g.join()); o.goal = g; return o; })()`);
+        t.ok(r.van, 'Seed ' + seed + ': der Wagen steht');
+        t.ok(r.gates > 0, 'Seed ' + seed + ': das Tor ist im Raster');
+        t.ok(r.front.every(ch => ch !== 'v'), 'Seed ' + seed + ': Kacheln vor dem Tor frei, ist ' + r.front.join(''));
+        t.ok(r.reach, 'Seed ' + seed + ': vom Tor bis zur Zielkachel ' + r.goal + ' besteht ein Weg');
+      }
+    },
+  },
 ];
