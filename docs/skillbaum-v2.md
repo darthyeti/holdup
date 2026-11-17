@@ -70,3 +70,4 @@ Messung danach: Flugschreiber (`nutz`, `nutzsumme`, seit #285) im nächsten Coop
 ## Stand
 
 - Schritt 2 (#288, Branch `claude/288-spezialwaffen`): gebaut. Rechte Maustaste (`spwHold`), Ein-Treffer-Gewehr (`CFG.spw.rifle.dmg` 1000), Durchschlag durch Fenster, Markierung Stufe 3 (Ereignis `mk`, `CFG.spw.rifle.mkT`/`mkR`), Zoom nur in 3D (`CFG.spw.zoom`). Offen für Schritt 1 (#287): Skilltexte von A3/A4 nennen noch `Shift:` (Test 98 prüft diese Texte).
+- Schritt 3 (Spezialist, Ticket 289) gebaut auf `claude/289-techniker-c4`: Funk abhören (`CFG.funkAb`, HUD-Plakette), C4 an Türen, Gittern, Wänden (`CFG.c4x`), `VER` 86, `DRAW_API` 11. Einzelheiten in docs/spielsystem.md (Absatz C4). Der Vorrat 1/1/2 kommt aus `CFG.skill.U4.cnt` (Ticket 287), dort wird nur gelesen.
