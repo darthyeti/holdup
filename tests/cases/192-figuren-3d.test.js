@@ -62,6 +62,9 @@ module.exports = [
           run(30 * 45);
           // Beamte steigen je nach Lauf zwischen 20 und 30 s aus den Wagen: bis zu 40 s warten, bis einer zu Fuss in der Szene ist (ein CI-Lauf sah um 45 s keinen, lokal 20 von 20 Laeufen schon)
           for (let w = 0; w < 40 && !D.get().en.some(e => e.kind === 'cop'); w++) run(30);
+          // Diagnose fuer die Fehlermeldung (ein CI-Lauf sah um 45 s keinen Beamten zu Fuss): Zeit, Phase, Timer, Streifenwagen mit allen einfachen Feldern, Gegnerliste
+          { const q = D.get(), pr = x => { const r = {}; for (const k of Object.keys(x)) { const v = x[k]; if (v == null || typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') r[k] = typeof v === 'number' ? Math.round(v * 10) / 10 : v; } return r; };
+            o.diag = { time: Math.round(q.time * 10) / 10, tH: Math.round(q.tH * 10) / 10, phase: q.phase, policeAt: q.policeAt, waveN: q.waveN, alarmT: q.alarmT, cars: q.cars.filter(c => !c.civ).map(pr), en: q.en.map(e => ({ kind: e.kind, st: e.st, x: Math.round(e.x), y: Math.round(e.y) })) }; }
           // Spieler vor die Tuer auf die Strasse: Polizei, Autos und Leute in der Halle in Sicht
           const g = D.get(), m = g.me, cop = g.en.find(e => e.kind === 'cop'); if (cop) { m.x = cop.x; m.y = cop.y - 40; }
           run(3); o.a = await C(D); o.en = g.en.length;
@@ -71,7 +74,7 @@ module.exports = [
         t.note('2D: ' + r.a.ch + ' Figuren, ' + r.a.car + ' Fahrzeuge; 3D: ' + i.figs + ' / ' + i.cars + ', Arten ' + JSON.stringify(i.fk) + ' ' + JSON.stringify(i.ck) + ', ' + i.calls + ' Draw Calls (davon ' + i.dynCalls + ' Figuren und Fahrzeuge), ' + i.tris + ' Dreiecke');
         t.ok(i.errs === 0, 'keine Fehler beim Zeichnen: ' + i.err);
         t.eq(Object.keys(i.fk).concat(Object.keys(i.ck)).filter(k => k[0] === '?'), [], 'keine Figur oder kein Fahrzeug ohne Eintrag');
-        t.ok(r.a.ch >= 5 && (i.fk.cop || 0) >= 1 && i.fk.pl === 1 && (i.ck.pol || 0) >= 1, 'Szene mit Polizei, Spieler und Streifenwagen: ' + JSON.stringify([r.a.ch, i.fk, i.ck]));
+        t.note('Diagnose ' + JSON.stringify(r.diag).slice(0, 600)); t.ok(r.a.ch >= 5 && (i.fk.cop || 0) >= 1 && i.fk.pl === 1 && (i.ck.pol || 0) >= 1, 'Szene mit Polizei, Spieler und Streifenwagen: ' + JSON.stringify([r.a.ch, i.fk, i.ck]) + ' Diagnose ' + JSON.stringify(r.diag));
         t.eq(i.figs, r.a.ch, 'Zahl der Aufsteller gleich Zahl der in 2D gezeichneten Figuren');
         t.eq(i.cars, r.a.car, 'Zahl der Fahrzeuge gleich Zahl der in 2D gezeichneten Fahrzeuge');
         // Budget aus den echten Aufrufen: alle Draw Calls minus statische Welt (Boden plus ein InstancedMesh je belegtem Material und Glas, Test 191)
