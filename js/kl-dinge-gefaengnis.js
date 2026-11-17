@@ -11,5 +11,14 @@ export function register(KL) {
   KL.obj('reader', (k, o) => { k.dbrick(o.x, o.y, 18, 8, 20, 16, 0, 0x2a2e36); k.dbrick(o.x, o.y + 8.4, 30, 4, 3, .8, 0, o.open ? 0x7ee34a : 0xd4452f, 1) });
   // Waffenschrank (Ticket 268): grauer Stahlschrank an der Wand des Gangs, Tuerspalt, gelbe Lampen solange eine Pistole drin liegt (o.full), sonst dunkel. o.x, o.y Mitte.
   KL.obj('wcab', (k, o) => { k.dbrick(o.x, o.y, 0, 26, 34, 10, 0, 0x66727f); k.dbrick(o.x, o.y + 5.2, 4, 1.6, 28, .8, 0, 0x2a2e36); k.dbrick(o.x - 6.5, o.y + 5.2, 22, 7, 4, .8, 0, o.full ? 0xe0b020 : 0x2a2e36, o.full ? .6 : 0); k.dbrick(o.x + 6.5, o.y + 5.2, 22, 7, 4, .8, 0, o.full ? 0xe0b020 : 0x2a2e36, o.full ? .6 : 0) });
+  // Waescherwagen (Ticket 297): Drahtkorb auf vier Raedern mit Waescheberg, Schiebebuegel hinten (o.a Fahrtrichtung, die Spitze zeigt nach +x des Wagens), mit Insasse (o.in) hoeherer Berg. o.x, o.y Mitte.
+  KL.obj('cart', (k, o) => { const c = Math.cos(o.a), s = Math.sin(o.a), P = (u, w) => [o.x + c * u - s * w, o.y + s * u + c * w], B = (u, w, z, l, h, d, col, em) => { const q = P(u, w); k.dbrick(q[0], q[1], z, l, h, d, o.a, col, em) };
+    for (const u of [-9, 9]) for (const w of [-8, 8]) B(u, w, 0, 4, 5, 4, 0x1a1c20);
+    B(0, 0, 5, 26, 2, 22, 0x6c7580);
+    for (const w of [-10, 10]) B(0, w, 7, 26, 15, 2, 0x9aa3ad);
+    for (const u of [-12, 12]) B(u, 0, 7, 2, 15, 22, 0x9aa3ad);
+    B(0, 0, 7, 22, o.in ? 17 : 11, 18, 0xeef1f4);
+    B(-4, 0, 7 + (o.in ? 17 : 11), 12, 2, 12, 0xd2d9df);
+    B(-14, 0, 14, 3, 14, 20, 0x3b4148); });
   KL.obj('card', (k, o) => { k.dbrick(o.x, o.y, k.topAt(o.x, o.y), 9, 1.4, 6, 0, 0x7ee34a, .4) });
 }

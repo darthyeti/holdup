@@ -889,7 +889,7 @@ const camc0=[{x:38.5*T,y:1.4*T,a0:.75,amp:.55,sp:.55,rng:330,fov:.55},{x:48.5*T,
 const camc=mountCams(camc0);
 const rooms={trA:[1,1,12,8],trB:[1,15,12,22],gang:[14,1,15,22],kran:[1,10,12,13],hof2:[17,1,23,8],wach:[25,1,30,8],kon:[32,1,36,8],flur:[17,10,36,13],kan:[17,15,29,22],wasch:[31,15,36,22],kue:[38,16,48,22],hof1:[38,1,48,14]};
 const inR=(r,x,y)=>x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3],pan=[swW.at,swK.at,[36,3]];
-return{seed:sn,decor:decorOf([]),prison:{cell:[(pcell.t[0]+1)*T,(pcell.t[1]+1)*T],slots,cells:allCells,cl:pcell,tb,pc,sx,wk:[11,y0+3],locks,open0:[[13,yo+3],[13,yo+4]],sws:{wach:swW,kon:swK},card:{g:tb},rally:[[43,7],[22,18],[14,10],[6,tb?18:4]],rooms,
+return{seed:sn,decor:decorOf([]),prison:{cell:[(pcell.t[0]+1)*T,(pcell.t[1]+1)*T],slots,cells:allCells,cl:pcell,tb,pc,sx,wk:[11,y0+3],cart:[35,17],locks,open0:[[13,yo+3],[13,yo+4]],sws:{wach:swW,kon:swK},card:{g:tb},rally:[[43,7],[22,18],[14,10],[6,tb?18:4]],rooms,
 dl:{cells:[[43,bot]],at:P.delivery[0]+Math.floor(mr()*(P.delivery[1]-P.delivery[0]+1))},inm:[1,3,5,7].map(k=>{const c=cl8[(pc+k)%8].t;return[c[0],c[1]+1]}),gate:[GX,er],pick:[41,bot+2],panels:pan},hall:'Gefängnis',theme:mkTheme(ti,di,0),bld:{x0:0,y0:0,x1:GX,y1:bot},winN:[],winS:[],
 mat:(x,y)=>{if(x>=0&&x<=GX&&y>=0&&y<=bot)return inR(rooms.hof1,x,y)||inR(rooms.hof2,x,y)?'s':'m';if(y>=bot+11)return'l';if(y>=bot+9)return's';if(y>=bot+5)return'a';if(y>=bot+3)return's';if(x>GX)return'a';return'y'},
 paintFloor(s){s.strokeStyle='rgba(255,255,255,.18)';s.lineWidth=2;s.strokeRect(39*T,2*T,9*T,11*T);s.strokeRect(18*T,2*T,5*T,6*T);s.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<5;i++)s.fillRect((GX+2.5)*T,2*T+i*T*1.6,3*T,2);
