@@ -302,6 +302,10 @@ Till (Coop-Test): Fadenkreuz plus Kreis darunter verwirrt. Geprüft, ob der Krei
 
 `KL.obj('bundle')` (`js/kl-dinge-allgemein.js`): Statt der flächigen leuchtend grünen Deckplatte trägt der oberste der drei Stapel einen erkennbaren Geldschein aus Klötzchen: heller Schein (24 mal 14), dunkelgrüner Rand, Medaillon links (Raute aus zwei gedrehten Klötzen mit hellem Kern), Wertzahlen in den vier Ecken, zweites Feld rechts, darüber quer die helle Banderole mit rotem Stempel. Alles in der leichten Schräge des Stapels, nur Darstellung. Test `255-kl-geldbuendel` (Bauer ohne Browser), Bild `docs/bilder/stil-kloetzchen/geldbuendel-vorher-nachher.jpg` (Bank, Tag und Nacht, zwei Seeds).
 
+#### Casino-Tische je Block (Ticket 262)
+
+`good:chips` baut jeden Tisch in einem lokalen Rahmen von 4x2 Kacheln (`KL.casinoBlock`): Mitte, Drehung (`th`) und Spielerseite (+v) kommen aus der Lage der Chipflaeche `rc` und der Mehrheit der Tische derselben Achse (die Spielerseite zeigt von der Wand weg). Zahlenfeld, Reling, Chips und Stuhl liegen in diesem Rahmen, es gibt keinen gemeinsamen Unterbau mehr, auch bei aneinandergrenzenden und gedrehten Tischen (Karte N, E, W). Test `262-kl-casino-block` (Rahmen ohne Ueberlappung, Achse stimmt, sechs Karten und Drehungen), reine Darstellung.
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
