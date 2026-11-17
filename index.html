@@ -1124,7 +1124,7 @@ function carCells(x,y){const R=CFG.pol.car,a=rq(LANE.A==='x'?x:y),k=rq(LANE.C===
 function stampCar(c,x,y){if(c.cells)return;c.cells=stampOn(carCells(x,y));if(NET.role!=='client')eject(c.cells)}
 const carOfCell=(tx,ty,x,y)=>carAt(x,y)||pcs.find(c=>c.cells&&c.cells.some(q=>q[0]===tx&&q[1]===ty))||null;
 /* Der Fluchtwagen haelt vor der Fluchttuer: die Kacheln unmittelbar vor jeder Tuer bleiben frei, sonst waere die Tuer zu und niemand kaeme zum Wagen. */
-function vanCells(){const ex=new Set();for(const sp of LAY.spots||[])for(const c of sp.cells)ex.add((c[0]-sp.iv[0])+','+(c[1]-sp.iv[1]));return LANE.box(LANE.van.stop,LANE.van.stop+128,LANE.van.pos,32).filter(c=>!ex.has(c[0]+','+c[1]))}
+function vanCells(){const ex=new Set();for(const sp of LAY.spots||[])for(const c of sp.cells)ex.add((c[0]-sp.iv[0])+','+(c[1]-sp.iv[1]));/* Tor (Tresortuer V, Gefaengnis, Issue 280): auch die Kacheln davor bleiben frei */return LANE.box(LANE.van.stop,LANE.van.stop+128,LANE.van.pos,32).filter(c=>!ex.has(c[0]+','+c[1])&&![[1,0],[-1,0],[0,1],[0,-1]].some(d=>cell(c[0]+d[0],c[1]+d[1])==='V'))}
 function vanSync(){const want=vanMode===0&&vanAtStop();if(want&&!vanSt){vanSt=stampOn(vanCells());if(NET.role!=='client')eject(vanSt)}else if(!want&&vanSt){stampOff(vanSt);vanSt=null}}
 function carStep(c,dt){if(c.dead)return;if(c.st==='in'){const A=LANE.A,C=LANE.C,dx=c.tg-c[A],dd=Math.abs(dx),dir=dx<0?-1:1;
 if(pcs.some(o=>o!==c&&!o.dead&&o.st==='in'&&o.id<c.id&&o.side===c.side&&Math.abs(o[C]-c[C])<60&&(o[A]-c[A])*dir>0&&(o[A]-c[A])*dir<CFG.pol.carGap))return;
