@@ -18,17 +18,17 @@ module.exports = [
         o.ids = D.SKID.length;
         for (const id of D.SKID) {
           const n = S[id]; if (!n || !n.n || !n.d) { o.bad.push(id + ' fehlt'); continue; }
-          if (n.soon) { o.soon.push(id); continue; }
+          if (n.soon) { o.soon.push(id); if (!n.x || !Array.isArray(n.cnt)) o.bad.push(id + ' soon ohne Text oder Stueckzahl'); continue; }
           const rising = (k, zero) => Array.isArray(n[k]) && n[k].length === 3 && n[k].every((v, i) => (zero && i < 2 ? v === 0 : v > 0) && (!i || v >= n[k][i - 1]));
           const keys = [...n.d.matchAll(/\{(\w+)%?\}/g)].map(m => m[1]); if (!keys.length) o.bad.push(id + ' ohne Wert');
           for (const k of keys) if (!rising(k)) o.bad.push(id + '.' + k + ' keine steigende Liste');
           for (const k of [...(n.b || '').matchAll(/\{(\w+)%?\}/g)].map(m => m[1])) if (!rising(k, true)) o.bad.push(id + '.' + k + ' kein Wert erst in Stufe 3');
-          if (n.b && (!n.bn || ![...n.b.matchAll(/\{(\w+)%?\}/g)].length)) o.bad.push(id + ' Zusatz ohne Namen oder ohne Wert');
+          if (n.b && (!n.bn || (![...n.b.matchAll(/\{(\w+)%?\}/g)].length && !['A3', 'V2'].includes(id)))) o.bad.push(id + ' Zusatz ohne Namen oder ohne Wert');   // Markierung (A3) und Barrikaden-Claymore (V2) sind Schalter ohne Zahl
           o.bonus = (o.bonus || []).concat(n.b ? [id] : []);
         }
         D.sessReset(); D.SESSION.pts = 20; const ok = id => D.skOk(D.SESSION.sk, id), buy = id => D.skillBuy(id);
         o.lock0 = ['A0', 'A1', 'A2', 'A3', 'A4'].map(ok); o.denied = [buy('A1'), buy('A3')];
-        buy('A0'); buy('A0'); o.root2 = ok('A1'); buy('A0'); o.open1 = [ok('A1'), ok('A2'), ok('A3'), ok('A4')];
+        buy('A0'); o.root1 = [ok('A1'), ok('A2'), ok('A3')]; buy('A0'); buy('A0'); o.open1 = [ok('A1'), ok('A2'), ok('A3'), ok('A4')];
         buy('A2'); buy('A2'); buy('A2'); o.beyond = buy('A2'); o.sk = Object.assign({}, D.SESSION.sk); o.pts = D.SESSION.pts;
         D.SESSION.pts = 0; o.nopts = buy('A1');
         o.other = [ok('V1'), ok('U2')];   // andere Baeume bleiben gesperrt
@@ -36,12 +36,12 @@ module.exports = [
       });
       t.eq(r.ids, 15, 'fuenfzehn Knoten');
       t.eq(r.bad, [], 'Daten und Texte: ' + JSON.stringify(r.bad));
-      t.eq(r.soon, [], 'kein Gegenstand ist mehr als soon markiert (Mine und Claymore seit MRU 1 B2, C4 seit B3, Gewehr, Werfer und Koffer seit B4 und B5 gebaut)');
-      t.eq(r.bonus, ['A1', 'A2', 'V1', 'V2', 'U1', 'U2'], 'jeder der sechs Pfade hat einen Zusatz mit Stufe 3');
+      t.eq(r.soon, ['V3', 'V4'], 'nur Feldbarrikade und Selbstschuss-MG sind soon (Skillbaum v2, Schritt 4 und 5), alle anderen Knoten gebaut');
+      t.eq(r.bonus, ['A1', 'A2', 'A3', 'V1', 'V2', 'U1', 'U2'], 'jeder Pfad hat einen Zusatz mit Stufe 3, dazu Praezisionsgewehr (Markierung) und Sprengmeister (Barrikaden-Claymore)');
       t.eq(r.lock0, [true, false, false, false, false], 'am Anfang nur die Wurzel offen');
       t.eq(r.denied, [false, false], 'gesperrte Knoten lassen sich nicht kaufen');
-      t.eq(r.root2, false, 'Wurzel 2 von 3 schaltet die Pfade noch nicht frei');
-      t.eq(r.open1, [true, true, false, false], 'Wurzel 3 von 3 schaltet beide Pfade frei, die Gegenstaende nicht');
+      t.eq(r.root1, [true, true, false], 'Wurzel auf Stufe 1 schaltet beide Pfade frei (Skillbaum v2), der Gegenstand noch nicht');
+      t.eq(r.open1, [true, true, false, false], 'Wurzel 3 von 3 aendert daran nichts, die Gegenstaende brauchen ihren Pfad auf 3');
       t.eq([r.sk.A0, r.sk.A2, r.beyond], [3, 3, false], 'Wurzel und Pfad auf 3, mehr als Stufe 3 geht nicht');
       t.eq(r.pts, 14, 'Wurzel und ein Pfad haben 6 der 20 Punkte gekostet');
       t.eq(r.nopts, false, 'ohne Punkte kein Kauf');
@@ -101,16 +101,16 @@ module.exports = [
         o.cap = [d.holdCap(), d.CFG.hostage.cap];
         const n = d.get().npcs.find(q => q.st === 'cower' && q.k !== 'grd'); d.grabHost(n, d.get().me); o.heat = d.heatCalc(true).items.filter(q => /^Geiseln genommen/.test(q[0])).map(q => q[1]);
         return o; })()`);
-      t.eq(r.sk.res, Math.round(r.base.res * 1.75), 'Munition 3: Reserve +75 %');
-      t.ok(Math.abs(r.rl[0] - r.rl[1] * .7) < .05, 'Ruhige Hand 3: Nachladen 30 % schneller: ' + JSON.stringify(r.rl));
+      t.eq(r.sk.res, Math.round(r.base.res * 1.75), 'Waffenkunde 3: Reserve +75 %');
+      t.ok(Math.abs(r.rl[0] - r.rl[1] * .85) < .05, 'Waffenkunde 3: Nachladen 15 % schneller: ' + JSON.stringify(r.rl));
       t.ok(Math.abs(r.shield3 / r.shield0 - 1.6) < .02, 'Durchschlag 3: Schaden gegen Schilde +60 %: ' + JSON.stringify([r.shield0, r.shield3]));
       t.ok(Math.abs(r.swat3 / r.swat0 - 1) < .02, 'Jaeger ist entfallen (steckt kuenftig im Praezisionsgewehr): Schaden gegen SWAT unveraendert: ' + JSON.stringify([r.swat0, r.swat3]));
       t.ok(Math.abs(r.blast3 / r.blast0 - 1) < .02, 'Sprengmeister ist entfallen (steckt kuenftig im Granatwerfer): Explosion unveraendert: ' + JSON.stringify([r.blast0, r.blast3]));
       t.ok(Math.abs(r.ar3 / r.ar0 - .25) < .02, 'Panzerung 3: die Weste verliert 75 % weniger: ' + JSON.stringify([r.ar0, r.ar3]));
-      t.ok(Math.abs(r.lean3 / r.lean0 - .55) < .02, 'Deckung 3: beim Lehnen 45 % weniger Schaden: ' + JSON.stringify([r.lean0, r.lean3]));
-      t.ok(r.bar && Math.abs(r.bar[0] / r.bar[1] - .5) < .02, 'Baumeister 3: Barrikaden 50 % schneller: ' + JSON.stringify(r.bar));
-      t.ok(r.barhp && Math.abs(r.barhp[0] / r.barhp[1] - 1) < .01, 'Bollwerk ist entfallen: gebaute Barrikaden halten wie ohne Skill: ' + JSON.stringify(r.barhp));
-      t.eq([r.zhi, r.zedge, r.zlo, r.zbase], [20, 20, 14, 20], 'Deckung 3 bringt Zaeh: ab 35 % Leben (34) 30 % weniger Schaden (14 statt 20), bei 36 und 100 Leben und ohne Skill voller Schaden');
+      t.ok(Math.abs(r.lean3 / r.lean0 - .55) < .02, 'Bollwerk 3: beim Lehnen 45 % weniger Schaden: ' + JSON.stringify([r.lean0, r.lean3]));
+      t.ok(r.bar && Math.abs(r.bar[0] / r.bar[1] - .5) < .02, 'Bollwerk 3: Barrikaden 50 % schneller: ' + JSON.stringify(r.bar));
+      t.ok(r.barhp && Math.abs(r.barhp[0] / r.barhp[1] - 1) < .01, 'gebaute Barrikaden halten wie ohne Skill: ' + JSON.stringify(r.barhp));
+      t.eq([r.zhi, r.zedge, r.zlo, r.zbase], [20, 20, 14, 20], 'Bollwerk 3 bringt Zaeh: ab 35 % Leben (34) 30 % weniger Schaden (14 statt 20), bei 36 und 100 Leben und ohne Skill voller Schaden');
       t.eq(r.zdead, [true, false], 'Zaeh ist kein zweites Leben mehr: der toedliche Treffer toetet, kein Aufstehen, keine Schutzzeit');
       t.eq([r.sk.jam - r.base.jam, r.sk.dc - r.base.dc], [2, 3], 'Werkzeug 3: zwei Stoersender und drei Ablenker mehr');
       t.ok(Math.abs(r.pick[0] / r.pick[1] - .7) < .01, 'Techniker 3: Dietrich (Aufbrechen) 30 % schneller (Faktor auf die Dauer .7, vorher falsch herum 1.3): ' + JSON.stringify(r.pick));
