@@ -603,7 +603,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   function angle() { const a = +X.angle; return a >= 20 && a <= 30 ? a : 25 }
   function camSet() {
     tgt.set(X.camX + VW / 2, 0, X.camY + VH / 2 - C.camLead);
-    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1), a = angle() * Math.PI / 180;
+    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1) * (X.zoomK > 1 ? X.zoomK : 1), a = angle() * Math.PI / 180;
     cam.position.set(tgt.x, D * Math.cos(a), tgt.z + D * Math.sin(a)); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
   }
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), v3 = new THREE.Vector3();
@@ -775,4 +775,4 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 11;
+mkView3d.api = 12;

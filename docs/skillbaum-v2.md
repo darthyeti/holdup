@@ -66,3 +66,7 @@ Alles auf der Sammel-Branch `claude/skillbaum-v2`, ein PR nach `main` mit `spiel
 5. Selbstschuss-MG (nach 4, gleiche Taste).
 
 Messung danach: Flugschreiber (`nutz`, `nutzsumme`, seit #285) im nächsten Coop-Log.
+
+## Stand
+
+- Schritt 2 (#288, Branch `claude/288-spezialwaffen`): gebaut. Rechte Maustaste (`spwHold`), Ein-Treffer-Gewehr (`CFG.spw.rifle.dmg` 1000), Durchschlag durch Fenster, Markierung Stufe 3 (Ereignis `mk`, `CFG.spw.rifle.mkT`/`mkR`), Zoom nur in 3D (`CFG.spw.zoom`). Offen für Schritt 1 (#287): Skilltexte von A3/A4 nennen noch `Shift:` (Test 98 prüft diese Texte).
