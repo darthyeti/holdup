@@ -294,6 +294,10 @@ Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänd
 
 Till (Coop-Test): Fadenkreuz plus Kreis darunter verwirrt. Geprüft, ob der Kreis eine Funktion hat: Der Ring aus `ring3d` (`js/draw.js`) war nur der Weltpunkt der Maus in Waffenhöhe, senkrecht auf den Boden gelegt (Ticket 152), ohne Funktion für Zielen, Treffer oder Reichweite, er stand bei jeder bewaffneten Figur unter dem Fadenkreuz. Er entfällt: `ring3d` rechnet nur noch den Zielpunkt (`ring3d()` für Tests), zeichnet nichts. **Bleiben** die Ringe mit Funktion, die `aim3d` zeichnet: Wurfgeräte (Rauch, Ablenker: Wurfweite, Wirkradius, blockiert, max. Weite), Fallen (Ort, Auslöse- und Wirkradius), Granatwerfer (Zielpunkt, Radius) und die Linie des Präzisionsgewehrs. 2D unverändert. Test `193-zielen-3d` prüft, dass um den Zielpunkt nur noch die Bildpunkte des Fadenkreuzes liegen. Bild vorher und nachher: `docs/bilder/stil-kloetzchen/zielcursor-vorher-nachher.jpg`, Werkzeug `tools/bilder-cursor.js`.
 
+#### Geldbündel mit Schein oben (Ticket 255)
+
+`KL.obj('bundle')` (`js/kl-dinge-allgemein.js`): Statt der flächigen leuchtend grünen Deckplatte trägt der oberste der drei Stapel einen erkennbaren Geldschein aus Klötzchen: heller Schein (24 mal 14), dunkelgrüner Rand, Medaillon links (Raute aus zwei gedrehten Klötzen mit hellem Kern), Wertzahlen in den vier Ecken, zweites Feld rechts, darüber quer die helle Banderole mit rotem Stempel. Alles in der leichten Schräge des Stapels, nur Darstellung. Test `255-kl-geldbuendel` (Bauer ohne Browser), Bild `docs/bilder/stil-kloetzchen/geldbuendel-vorher-nachher.jpg` (Bank, Tag und Nacht, zwei Seeds).
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:

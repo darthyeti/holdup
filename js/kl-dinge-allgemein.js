@@ -68,7 +68,17 @@ export function register(KL) {
   // ---------- Beute: Geldbuendel (offener Tresor, Notenbank), Beutesack, leere Kassen und Automaten ----------
   // Geldbuendel (Ticket 198 Tresor): gross und auffaellig (rund doppelte Groesse): Stapel aus drei satt gruenen Buendeln mit heller Banderole und goldenem Siegel, oben ein leuchtender Streifen
   const stack = (k, x, z, y0, n) => { for (let i = 0; i < n; i++) { const a = (i % 2 ? .1 : -.08), yy = y0 + i * 6.2; B(k, x, z, yy, 26, 6, 16, a, 0x2fb457, .1); B(k, x, z, yy - .1, 5.4, 6.2, 16.4, a, 0xf6f0d6); B(k, x + 1.6, z, yy + 6, 2.2, .5, 16.6, a, 0xe8b923, .3) } }
-  KL.obj('bundle', (k, o) => { const t = top(k, o.x, o.y); stack(k, o.x, o.y, t, 3); B(k, o.x, o.y, t + 18.8, 25, .8, 15, 0, 0x7ee34a, .8) });
+  // Geldbuendel (Ticket 255): drei Stapel mit Banderole, oben ein erkennbarer Schein aus Kloetzen: heller Schein mit dunkelgruenem Rand, Medaillon links, Wertzahlen in den Ecken, die Banderole quer darueber mit rotem Stempel
+  KL.obj('bundle', (k, o) => {
+    const t = top(k, o.x, o.y); stack(k, o.x, o.y, t, 3);
+    const y = t + 18.6, a = -.08, c = Math.cos(a), s_ = Math.sin(a), P = (dx, dz, y0, sx, sy, sz, col, em, da) => B(k, o.x + dx * c - dz * s_, o.y + dx * s_ + dz * c, y0, sx, sy, sz, a + (da || 0), col, em);
+    P(0, 0, y, 24.4, .6, 14.4, 0xcfe9b6);                                                                                                       // Schein
+    P(0, -6.7, y + .6, 24.4, .5, 1.1, 0x2d7a44); P(0, 6.7, y + .6, 24.4, .5, 1.1, 0x2d7a44); P(-11.7, 0, y + .6, 1.1, .5, 14.4, 0x2d7a44); P(11.7, 0, y + .6, 1.1, .5, 14.4, 0x2d7a44);      // Rand
+    P(-7, 0, y + .6, 6, .5, 6, 0x3a8f55); P(-7, 0, y + .6, 6, .5, 6, 0x3a8f55, 0, .785); P(-7, 0, y + 1.1, 2.6, .4, 2.6, 0xcfe9b6);              // Medaillon
+    for (const [dx, dz] of [[-8.6, -4], [-8.6, 4], [8.6, -4], [8.6, 4]]) P(dx, dz, y + .6, 2.6, .4, 1.6, 0x2d7a44);                              // Wertzahlen in den Ecken
+    P(8, 0, y + .6, 4, .4, 4, 0x3a8f55);                                                                                                         // zweites Feld rechts
+    P(1.6, 0, y + .6, 5.4, .8, 15.4, 0xf6f0d6); P(1.6, 0, y + 1.4, 2.4, .4, 2.4, 0xd8321f);                                                     // Banderole quer mit Stempel
+  });
   KL.obj('bag', (k, o) => {
     const t = top(k, o.x, o.y);
     B(k, o.x, o.y, t, 15, 6, 12, 0, 0x8a6a3a); B(k, o.x, o.y, t + 6, 12, 5, 10, .25, 0xa8824a); B(k, o.x, o.y, t + 11, 6, 3, 6, .5, 0x8a6a3a);   // Sack in drei Stufen
