@@ -261,6 +261,10 @@ Till hat entschieden (15. November 2026): Klötzchen mit Welt A (Figuren, Fahrze
 - **Fundorte des Tresorcodes (Ticket 228).** `KL.obj('note')` in `kl-dinge-allgemein.js`: Wandarten (`coat`, `pin`, `locker`, Tabelle `WALL`) stehen an der Wand der Kachel (erste angrenzende `#`, `wallDir`) und sind in Wandkoordinaten gebaut (u längs der Wand, v Tiefe, Höhe): die Garderobe als Rückwand mit Regal und zwei hängenden Mänteln (rot, blau) mit helleren Kragen, die Pinnwand als Korkbrett mit drei Zetteln und Ablage, der Spind mit Türen und Griff. Der Zettel (solange der Code fehlt) ist größer (14 mal 11), hell, leicht schräg, mit Textzeilen und rotem Eck, ohne Leuchten, und liegt immer von oben sichtbar (auf Regal, Ablage, Gerät oder Boden, nie senkrecht an der Wand). Teile je Fundort 2 bis 6, mit Zettel höchstens 10 (Test `229-kl-fundorte`). Bilder `fundorte-tag-nacht.jpg` (je vier Arten pro Reihe ohne und mit Zettel, oben Tag, unten Nacht, Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fundorte`).
 - **Grenzen.** Silhouetten hinter Wänden bleiben flache Sprites, Schild opak.
 
+#### Juwelier-Auslage (Ticket 256)
+
+Die Vitrinen des Juweliers zeigen vier Schmuckarten statt bunter Steine im Raster: Ringe auf Kissen (Goldreif mit klarem Stein), Ketten auf Büsten (Goldkragen mit Anhänger), Uhren (Lederarmband, goldenes Gehäuse, Zifferblatt) und Edelsteine auf Samt (Fassung, gestufter Schliff mit weißem Glanzpunkt). Die Art wählt ein Hash der Vitrinenlage, sie bleibt je Vitrine fest. Gold und Silber glänzen metallisch (kleine Leuchtwerte), Steine sind klare Farben (Diamant, Saphir, Rubin, Smaragd). Leer (genommen) steht dieselbe Vitrine mit flachem dunklem Polster ohne Ring, Uhr und Stein, nur die Büsten stehen nackt da. Der Bauer `KL.jewelry` liegt in `js/kl-dinge-juwelier.js`, die Vitrine in `js/kl-dinge-museum.js` ruft ihn auf. Bild voll und leer: `docs/bilder/stil-kloetzchen/juwelier-auslage-voll-leer.jpg` (Zeilen: vier Arten, links voll, rechts leer), erzeugt mit `tools/bilder-kloetzchen.js ... jewel 1 auslage`.
+
 ### 2.26 Fluchtwagen mit Abwechslung (Ticket 245, 16. November 2026)
 
 Der Fluchtwagen (`van` in `js/kl-fahrzeuge.js`, Funktion `flucht`) war immer derselbe Lieferwagen. Jetzt eine von vier Varianten je Auftrag, gewählt aus `LAY.seed` (die Karte, bei Host und Client gleich, ohne Zufall), mit gleicher Grundfläche, Höhe und Kollision (nur Optik, keine Änderung an Spiellogik, Größe oder Netzformat):
@@ -293,6 +297,10 @@ Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänd
 ### 2.27 Zielcursor nur als Fadenkreuz (Ticket 246, 16. November 2026)
 
 Till (Coop-Test): Fadenkreuz plus Kreis darunter verwirrt. Geprüft, ob der Kreis eine Funktion hat: Der Ring aus `ring3d` (`js/draw.js`) war nur der Weltpunkt der Maus in Waffenhöhe, senkrecht auf den Boden gelegt (Ticket 152), ohne Funktion für Zielen, Treffer oder Reichweite, er stand bei jeder bewaffneten Figur unter dem Fadenkreuz. Er entfällt: `ring3d` rechnet nur noch den Zielpunkt (`ring3d()` für Tests), zeichnet nichts. **Bleiben** die Ringe mit Funktion, die `aim3d` zeichnet: Wurfgeräte (Rauch, Ablenker: Wurfweite, Wirkradius, blockiert, max. Weite), Fallen (Ort, Auslöse- und Wirkradius), Granatwerfer (Zielpunkt, Radius) und die Linie des Präzisionsgewehrs. 2D unverändert. Test `193-zielen-3d` prüft, dass um den Zielpunkt nur noch die Bildpunkte des Fadenkreuzes liegen. Bild vorher und nachher: `docs/bilder/stil-kloetzchen/zielcursor-vorher-nachher.jpg`, Werkzeug `tools/bilder-cursor.js`.
+
+#### Geldbündel mit Schein oben (Ticket 255)
+
+`KL.obj('bundle')` (`js/kl-dinge-allgemein.js`): Statt der flächigen leuchtend grünen Deckplatte trägt der oberste der drei Stapel einen erkennbaren Geldschein aus Klötzchen: heller Schein (24 mal 14), dunkelgrüner Rand, Medaillon links (Raute aus zwei gedrehten Klötzen mit hellem Kern), Wertzahlen in den vier Ecken, zweites Feld rechts, darüber quer die helle Banderole mit rotem Stempel. Alles in der leichten Schräge des Stapels, nur Darstellung. Test `255-kl-geldbuendel` (Bauer ohne Browser), Bild `docs/bilder/stil-kloetzchen/geldbuendel-vorher-nachher.jpg` (Bank, Tag und Nacht, zwei Seeds).
 
 ### 2.28 Runde Reifen an den Autos (Ticket 257, 16. November 2026)
 
