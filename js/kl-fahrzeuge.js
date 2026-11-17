@@ -5,7 +5,7 @@ export function register(KL) {
   // wahre Fahrtrichtung (bei fx -1 ist der gemeldete Winkel um 180 Grad gedreht)
   KL.carHead = o => o.fx < 0 ? o.a + Math.PI : o.a;
   const car = (k, o, e, look) => {
-    const { part, colOf, KC, C } = k, Lc = o.L * C.carK[0], Wc = o.W * C.carK[1], H = e.h, kind = o.k, KCar = KC.car, tt = k.time || 0;
+    const { part, colOf, KC, C } = k, wheelP = k.wheel || ((par, x, y, z, d, w, c, em) => part(par, x, y, z, d, d, w, c, em)), Lc = o.L * C.carK[0], Wc = o.W * C.carK[1], H = e.h, kind = o.k, KCar = KC.car, tt = k.time || 0;
     k.rotY(o.x, o.y, KL.carHead(o), 1); const R = k.root; k.state(0, 1);
     // Farben (Ticket 223): satter Lack ohne Abdunklung (die Dunkelung aus #200 gegen Ueberstrahlen entfaellt, dafuer daempft der Kern das Blaulicht auf dem eigenen Lack), zivile Autos aus der Palette KCar.pal
     const wheel = colOf(KCar.wheel), glass = colOf(KCar.glass), rim = colOf(0xc9ced6), dark = colOf(0x2a2e35), wr = 5.6;
@@ -15,14 +15,14 @@ export function register(KL) {
     const lamps = (x0, x1, y, w) => { for (const s of [1, -1]) { part(R, x0, y, s * w, 1.4, 3.2, 7, colOf(KCar.lamp), 1.1); part(R, x1, y, s * w, 1.4, 3.2, 7, colOf(KCar.tail), .9) } };
     const bar = (x, y, on) => { const a = o.bl === 1; for (const s of [-1, 1]) part(R, x, y, s * Wc * .22, 4.6, 3.8, Wc * .34, colOf((s < 0) === a ? KCar.bar[0] : KCar.bar[1]), on ? 1.2 : .06) };
     const studs = (x, y, sx, sz, kk) => { if (!KC.studs) return; for (const a of [-1, 1]) for (const b of [-1, 1]) part(R, x + a * sx, y, b * sz, kk, 1.3, kk, roof) };
-    const wheels = ax => { for (const a of ax) for (const sz of [1, -1]) { part(R, Lc * a, wr, sz * (wz + 1), wr * 2, wr * 2, 5.6, wheel); part(R, Lc * a, wr, sz * (wz + 4), wr * 1.1, wr * 1.1, 1, rim, .08) } };
+    const wheels = ax => { for (const a of ax) for (const sz of [1, -1]) { wheelP(R, Lc * a, wr, sz * (wz + 1), wr * 2, 5.6, wheel); wheelP(R, Lc * a, wr, sz * (wz + 3.6), wr * 1.1, 1.4, rim, .08) } };   // runder Reifen und Felge (Ticket 257)
     if (kind === 'wreck') {
       // ausgebrannt: dunkle Klotze, Dach eingedrueckt, Glut, Rauchfahne (Zeit aus der Spielzeit, je Wagen versetzt)
       const sc = colOf(KCar.scorch), cl = colOf(KCar.ember), fl = .3 + .25 * Math.sin(tt * 7 + o.x), dk2 = colOf(0x3a3330);
       part(R, 0, 7, 0, Lc, 8, Wc * .96, sc); part(R, Lc * .3, 12.5, 0, Lc * .3, 4, Wc * .9, sc); part(R, -Lc * .1, 13, 1, Lc * .3, 5, Wc * .7, dk2, 0, 0, .12);
       part(R, -Lc * .36, 11.5, 0, Lc * .2, 3, Wc * .8, dk2, 0, 0, -.1); part(R, -Lc * .1, 16.5, -2, Lc * .26, 2.4, Wc * .5, sc, 0, .1, .2);
       part(R, -Lc * .32, 11, -Wc * .2, 9, 3, 9, cl, fl, 0, .2); part(R, Lc * .1, 15, Wc * .16, 7, 3, 7, cl, fl * .7, 0, -.15); part(R, Lc * .38, 11, -Wc * .12, 5, 2, 5, cl, fl * .6);
-      for (const [sx, sz, d] of [[.32, 1, 0], [.32, -1, 1.2], [-.32, 1, 0], [-.32, -1, 0]]) part(R, Lc * sx, wr - d, sz * (Wc / 2 - 1.6), wr * 2, wr * 2, 6, wheel);
+      for (const [sx, sz, d] of [[.32, 1, 0], [.32, -1, 1.2], [-.32, 1, 0], [-.32, -1, 0]]) wheelP(R, Lc * sx, wr - d, sz * (Wc / 2 - 1.6), wr * 2, 6, wheel);
       part(R, -Lc * .46, 4.2, Wc * .2, 9, 2.4, 3, dk2, 0, 0, .3); // abgerissenes Teil
       const key = Math.round(o.x / 6) + ',' + Math.round(o.y / 6), nx = smoke.get(key) || 0;
       if (tt > nx && k.smokeAt) { smoke.set(key, tt + .55 + Math.abs(Math.sin(o.x)) * .5); k.smokeAt(o.x, o.y, 14, 1, .8); if (smoke.size > 40) smoke.clear() }
