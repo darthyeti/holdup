@@ -1,6 +1,6 @@
 # Automatische Tests auf GitHubs Rechnern (öffentliches Repo: kostenlos).
-# - Bei jedem Pull Request und jedem Push auf main: schneller Lauf (ohne slow: true). Der Job "schnell" ist der Pflicht-Check der Branch Protection.
-# - Nachts und von Hand (Actions > Tests > Run workflow) oder mit dem Label "voller-lauf" am PR: voller Lauf.
+# - Bei jedem Pull Request und jedem Push auf main: schneller Lauf (ohne slow: true) in drei Teilen (schnell-teil), dazu der Sammel-Job "schnell" (gruen nur, wenn alle Teile gruen sind): er ist der Pflicht-Check der Branch Protection.
+# - Nachts und von Hand (Actions > Tests > Run workflow) oder mit dem Label "voller-lauf" am PR: voller Lauf, in drei Teil-Jobs (run.js --shard=i/3, Dateien nach Gewicht verteilt), damit er unter dem 60-Minuten-Limit bleibt.
 name: Tests
 
 on:
@@ -17,7 +17,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  schnell:
+  schnell-teil:
+    name: schnell (Teil ${{ matrix.teil }} von 3)
+    strategy:
+      fail-fast: false
+      matrix:
+        teil: [1, 2, 3]
     if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -36,9 +41,25 @@ jobs:
           echo "HOLDUP_CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
       - name: Schneller Lauf
         working-directory: tests
-        run: node run.js --fast --jobs=auto
+        run: node run.js --fast --jobs=auto --shard=${{ matrix.teil }}/3
+
+  # Sammel-Job: heisst wie der alte Einzel-Job und bleibt der Pflicht-Check der Branch Protection. Gruen nur, wenn alle drei Teile gruen sind (auch ein uebersprungener oder abgebrochener Teil macht ihn rot).
+  schnell:
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'push')
+    needs: schnell-teil
+    runs-on: ubuntu-latest
+    steps:
+      - name: Alle Teile gruen?
+        run: |
+          echo "Ergebnis der Teile: ${{ needs.schnell-teil.result }}"
+          [ "${{ needs.schnell-teil.result }}" = "success" ]
 
   voll:
+    name: voll (Teil ${{ matrix.teil }} von 3)
+    strategy:
+      fail-fast: false
+      matrix:
+        teil: [1, 2, 3]
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'voller-lauf'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -57,4 +78,4 @@ jobs:
           echo "HOLDUP_CHROME=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
       - name: Voller Lauf
         working-directory: tests
-        run: node run.js --jobs=auto
+        run: node run.js --jobs=auto --shard=${{ matrix.teil }}/3
