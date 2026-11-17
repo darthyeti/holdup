@@ -94,4 +94,31 @@ module.exports = [
       t.ok(r.ereignis >= 1, 'Abweichung steht als Ereignis im Log des Hosts');
     },
   },
+  {
+    name: 'Flugschreiber Nutzung (Ticket 281): Der Host schreibt für Host- und Client-Spieler Ereignisse nutz [Spieler, Art, Kachel x, Kachel y, Zusatz], zählt je Art mit, nutzsumme zeigt benutzt, Start und Rest, der Halt des Fluchtwagens steht mit Kacheln und Richtung im Log, der Client schreibt keine nutz-Ereignisse',
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => { const { G, A, B } = ${SETUP}, o = {}; A.CFG.policeAt = 1e6; A.CFG.policeForced = 1e6; G.run(2);
+        const P = A.get().players, ev = d => d.flog().dump().ereignisse, nz = d => ev(d).filter(e => e[2] === 'nutz').map(e => e[3]);
+        o.phase = A.get().phase; P[0].med = 2; P[0].hp = 40; P[1].med = 1; P[1].hp = 40; P[1].sm = 1; P[0].sm = 1;
+        ${KEY('A.cv', '2')}; B.NET.conn.send({ t: 'u', n: 2, x: 0, y: 0 }); B.NET.conn.send({ t: 'u', n: 4, x: P[1].x + 40, y: P[1].y }); G.run(1);
+        o.nz = nz(A).map(e => [e[0], e[1], typeof e[2], typeof e[3]]); o.nzB = nz(B).length;
+        // Sicherung ueber die Erkennung: nur Spieler mit Bestand schreiben; ohne Bestand kein Ereignis
+        const n0 = nz(A).length; B.NET.conn.send({ t: 'u', n: 2, x: 0, y: 0 }); G.run(.5); o.ohneBestand = nz(A).length - n0;
+        A.nutzSumme(); const s = ev(A).filter(e => e[2] === 'nutzsumme').pop(); o.summe = s && s[3].map(x => [x.id, x.benutzt, x.start && x.start.med, x.rest.med]);
+        A.callVan(); for (let i = 0; i < 30 && !A.get().vanArr; i++) { for (const q of A.get().players) { q.hp = 100; q.inv = 1e9; } G.run(5); } G.run(2); o.arr = !!A.get().vanArr; o.wagen = ev(A).filter(e => e[2] === 'wagen').map(e => e[3]); return o; })()`);
+      const h = r.wagen.find(w => Array.isArray(w) && w[0] === 'halt');
+      t.ok(h, 'Fluchtwagen: Halt steht im Log: ' + JSON.stringify(r.wagen));
+      t.ok(h && h[1].length === 4 && h[2] > 0 && typeof h[3] === 'string' && ['normal', 'ausweich'].includes(h[5]), 'Halt mit Kachelrahmen, Zahl der Stempel, Straßenseite, Richtung und Ausweichpunkt: ' + JSON.stringify(h));
+      t.eq(r.phase, 2, 'der Überfall läuft');
+      t.ok(r.nz.some(e => e[0] === 0 && e[1] === 'medpack'), 'Host-Spieler: medpack steht im Log: ' + JSON.stringify(r.nz));
+      t.ok(r.nz.some(e => e[0] === 1 && e[1] === 'medpack'), 'Client-Spieler: medpack steht im Log des Hosts');
+      t.ok(r.nz.some(e => e[0] === 1 && e[1] === 'rauch'), 'Client-Spieler: Rauchgranate steht im Log des Hosts');
+      t.eq(r.nzB, 0, 'der Client schreibt keine nutz-Ereignisse (nur der Host aus der Simulation)');
+      t.eq(r.ohneBestand, 0, 'ohne Bestand und ohne Wirkung kein Ereignis');
+      t.eq(r.summe && r.summe.map(x => x[0]), [0, 1], 'Zusammenfassung je Spieler');
+      t.eq(r.summe && r.summe[1].slice(1), [{ medpack: 1, rauch: 1 }, 0, 0], 'Client-Spieler: benutzt, Start (vor dem Test ohne Bestand) 0, Rest 0');
+      t.eq(r.summe && r.summe[0].slice(1), [{ medpack: 1 }, 0, 1], 'Host-Spieler: ein Medpack benutzt (Taste 2), eines übrig');
+    },
+  },
 ];
