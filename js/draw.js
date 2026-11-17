@@ -234,7 +234,7 @@ function wedge(x,y,a,fov,rng,col,al){const q=g.createRadialGradient(x,y,0,x,y,rn
 function W1(){g.setTransform(2,0,0,2,-2*DX.camX,-2*DX.camY)}
 function S0(){g.setTransform(2,0,0,2,0,0)}
 /* Hüpfer der Autoexplosion (Ticket 277): hop aus dbr gibt Hoehe und Vergroesserung, der Schatten bleibt am Boden. */
-function carHop(c){for(const q of DX.dbr)if(q.t==='h'&&Math.abs(q.x-c.x)<24&&Math.abs(q.y-c.y)<24){const s=Math.sin(Math.PI*Math.min(1,q.a/q.m));return[CFG.fx.car.lift*s,1+CFG.fx.car.grow*s,s]}return[0,1,0]}
+function carHop(c){for(const q of DX.dbr)if(q.t==='h'&&Math.abs(q.x-c.x)<24&&Math.abs(q.y-c.y)<24){const s=Math.sin(Math.PI*Math.max(0,Math.min(1,q.a/q.m)))*(q.amp||1);return[CFG.fx.car.lift*s,1+CFG.fx.car.grow*s,s]}return[0,1,0]}
 function drawCar(c){const w=DX.LANE.axis==='x'?Math.cos(c.a)<0:Math.sin(c.a)<0,a=w?c.a-Math.PI:c.a,[hl,hs,hh]=carHop(c);g.save();g.translate(c.x+5,c.y+7);g.rotate(a);g.fillStyle='rgba(0,0,0,'+(.3-.1*hh)+')';g.fillRect(-62,-28,124,56);g.restore();g.save();g.translate(c.x,c.y-hl);g.scale(hs,hs);g.rotate(a);if(w)g.scale(-1,1);g.drawImage(cars,0,(c.cv||1)*128,256,128,-64,-32,128,64);g.restore();
 if(c.dead){g.save();g.translate(c.x,c.y-hl);g.scale(hs,hs);g.rotate(a);g.fillStyle='rgba(8,8,10,.66)';g.fillRect(-60,-30,120,60);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=3;g.strokeRect(-56,-26,112,52);g.restore()}
 else if(c.hp<(c.civ?CFG.dec.hp:CFG.pol.car.hp)){const f=Math.max(0,c.hp/(c.civ?CFG.dec.hp:CFG.pol.car.hp));g.fillStyle='rgba(0,0,0,.6)';g.fillRect(c.x-30,c.y-46,60,6);g.fillStyle=f>.5?'#7ee34a':f>.25?'#ffb000':'#ff5040';g.fillRect(c.x-29,c.y-45,58*f,4)}}
@@ -354,6 +354,7 @@ for(const e of DX.en)if(e.fl>0&&los(DX.p.x,DX.p.y,e.x,e.y))glow(e.x+Math.cos(e.a
 for(const q of DX.pt)if(q.t==='s'){g.fillStyle='rgba('+q.c+','+q.l/q.m+')';g.fillRect(q.x-1,q.y-1,2,2)}else if(q.t==='g')glow(q.x,q.y,q.r,q.c,q.l/q.m*.9);
 else if(q.t==='f'){const a=q.l/q.m;glow(q.x,q.y,q.r*(1+(1-a)*1.1),a>.62?'255,214,125':a>.3?'255,140,45':'190,60,20',Math.min(1,a*1.1))}
 else if(q.t==='w'){const a=q.l/q.m;g.strokeStyle='rgba(255,232,190,'+a*.75+')';g.lineWidth=1.5+a*4;g.beginPath();g.arc(q.x,q.y,q.r*(1-a),0,6.283);g.stroke()}
+for(const q of DX.dbr)if(q.t==='e'){const a=1-q.a/q.m;glow(q.x,q.y,q.r*(1+(1-a)*(q.core?.4:1.1)),a>.62?'255,214,125':a>.3?'255,140,45':'190,60,20',Math.min(1,a*1.1)*(q.core?.55:1))}
 for(const c of DX.pcs){if(c.dead){glow(c.x,c.y,64,'255,120,40',.22+.1*Math.sin(DX.time*9+c.id));continue}if(c.civ)continue;const ph=Math.floor(DX.time*5+c.id)%2,ux=Math.cos(c.a)*6,uy=Math.sin(c.a)*6;glow(c.x-ux,c.y-uy,70,ph?'255,50,50':'60,100,255',.38);glow(c.x+ux*1.6,c.y+uy*1.6,70,ph?'60,100,255':'255,50,50',.38)}
 g.globalCompositeOperation='source-over';
 for(const q of DX.pt)if(q.t==='d'){const a=q.l/q.m;g.fillStyle='rgba('+q.c+','+a*.45+')';g.beginPath();g.arc(q.x,q.y,2+(1-a)*5,0,6.283);g.fill()}
