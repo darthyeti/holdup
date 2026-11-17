@@ -1,6 +1,6 @@
-// MRU 1 B4 (docs/major-release-update-1.md, docs/ideen-und-planung.md, Skillbaum-Umbau, Gegenstaende): Besondere Waffen. Das Praezisionsgewehr (A3, hinter Ruhige Hand) und der Granatwerfer (A4, hinter Durchschlag) teilen sich die Umschaltung auf Shift
-// (Shift schaltet im Ueberfall ein und aus, eingeschaltet zeigt die Zielhilfe, Linksklick oder Leertaste schiesst, die normale Waffe schweigt, nur mit Vorrat, Stueck je Auftrag aus dem Knoten, Abklingzeit CFG.spw.*.cool). Das Gewehr schiesst eine schnelle Kugel mit pr: 100 Schaden, geht durch alle Gegner in der Linie
-// und an Schilden vorbei (dort nur schield mal Schaden), 50 % mehr gegen SWAT und Scharfschuetzen (elite). Der Werfer verschiesst eine Granate (gr, k shell), die am Zielpunkt oder im Flug am ersten Gegner platzt (blastAt: dmg gegen Beamte,
+// MRU 1 B4 (docs/major-release-update-1.md, docs/ideen-und-planung.md, Skillbaum-Umbau, Gegenstaende): Besondere Waffen. Das Praezisionsgewehr (A3, hinter Ruhige Hand) und der Granatwerfer (A4, hinter Durchschlag) teilen sich die Bedienung mit der rechten Maustaste (Skillbaum v2 Schritt 2, #288)
+// (rechte Maustaste halten legt im Ueberfall an, Loslassen beendet, angelegt zeigt die Zielhilfe, Linksklick oder Leertaste schiesst, die normale Waffe schweigt, nur mit Vorrat, Stueck je Auftrag aus dem Knoten, Abklingzeit CFG.spw.*.cool). Das Gewehr schiesst eine schnelle Kugel mit pr: ein Treffer toetet jeden Gegner (auch SWAT und Schild), sie geht durch alle Gegner in der Linie,
+// an Schilden und durch Fenster; mit Stufe 3 markiert sie den naechsten Gegner fuers Team. Der Werfer verschiesst eine Granate (gr, k shell), die am Zielpunkt oder im Flug am ersten Gegner platzt (blastAt: dmg gegen Beamte,
 // pdmg gegen Spieler, die Explosion trifft alle). VER 39. Aufbau wie 99-sprengfalle: Bank Seed 5017 (nach S gedreht, keine Polizei von allein), ein freier waagrechter Streifen, Beamte und Spieler werden festgehalten.
 const HELP = `(() => {
   const D = __dbg, T = 32;
@@ -26,7 +26,7 @@ module.exports = [
         D.sessReset(); D.SESSION.pts = 30; const buy = id => D.skillBuy(id); for (let i = 0; i < 3; i++) buy('A0'); for (let i = 0; i < 3; i++) buy('A1'); o.a3 = buy('A3'); o.a4 = buy('A4'); o.sk = Object.assign({}, D.SESSION.sk);
         return o; })()`);
       t.eq(r.nodes, [['Präzisionsgewehr', false, [3, 5, 7]], ['Granatwerfer', false, [2, 3, 4]]], 'beide Knoten kaufbar, Stueck je Stufe');
-      t.eq(r.cfg, ['launch', 'rifle'], 'CFG.spw hat rifle und launch');
+      t.eq(r.cfg, ['launch', 'rifle', 'zoom'], 'CFG.spw hat rifle, launch und zoom');
       t.eq(r.k0, [0, null], 'ohne Knoten kein Vorrat und keine Art');
       t.eq(r.rifle, [[3, 'rifle'], [5, 'rifle'], [7, 'rifle']], 'A3: Gewehr, 3, 5, 7 Schuss');
       t.eq(r.launch, [[2, 'launch'], [3, 'launch'], [4, 'launch']], 'A4: Werfer, 2, 3, 4 Granaten');
@@ -45,7 +45,7 @@ module.exports = [
         sc = H.scene({}); const bn = D.msgs().banner || ''; D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.none = [sc.g.bl.length, (D.msgs().banner || '') === bn];
         o.normal = 720 * .8; return o; })()`);
       t.eq(r.p1, [3, 0, true], 'Erkunden: nichts geschossen, Vorrat bleibt, Hinweis im Bild');
-      t.eq(r.b, [true, 1, 100, 1200, .9, 0, 3.14], 'die Kugel: pr, vom Spieler, 100 Schaden, Tempo 1200, 0,9 s, Besitzer 0, nach Westen');
+      t.eq(r.b, [true, 1, 1000, 1200, .9, 0, 3.14], 'die Kugel: pr, vom Spieler, Schaden 1000 (ein Treffer), Tempo 1200, 0,9 s, Besitzer 0, nach Westen');
       t.ok(r.range >= 1000 && r.range > r.normal * 1.5, 'Reichweite ' + r.range + ' Pixel, weit ueber den normalen ' + r.normal);
       t.eq(r.s1, [2, true], 'ein Schuss: Vorrat 3 auf 2, Abklingzeit laeuft');
       t.eq(r.s2, [2, 1], 'sofort noch einmal: abgelehnt, keine zweite Kugel');
@@ -55,29 +55,40 @@ module.exports = [
     },
   },
   {
-    name: 'Gewehr-Wirkung: ein Schuss toetet Beamte und geht durch alle in der Linie, 50 % mehr gegen SWAT und Scharfschuetzen, ein Schild faengt nicht ab (nur 60 % Schaden, der Schild bleibt heil), normale Kugeln bleiben am Schild haengen',
+    name: 'Gewehr-Wirkung: ein Schuss toetet jeden Gegner (Beamte, SWAT, Scharfschuetzen, Schild-Beamte von vorn) und geht durch alle in der Linie, durch Fenster',
     async run(t) {
-      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, Q = D.CFG.spw.rifle, o = {}; const shot = (sc, n) => { for (let i = 0; i < n; i++) { D.useGadget(sc.me, 6, sc.sp.x - 300, sc.sp.y); H.run(sc, Q.cool + .1); } };
-        // zwei Beamte in einer Linie: beide tot
-        let sc = H.scene({ A3: 1 }); let x = sc.sp.x; const c1 = H.cop(sc, x - 90, sc.sp.y), c2 = H.cop(sc, x - 170, sc.sp.y), pin = [[c1, x - 90, sc.sp.y], [c2, x - 170, sc.sp.y]];
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, Q = D.CFG.spw.rifle, o = {}; const x = H.scene({ A3: 1 }).sp.x;
+        let sc = H.scene({ A3: 1 }); const c1 = H.cop(sc, x - 90, sc.sp.y), c2 = H.cop(sc, x - 170, sc.sp.y), pin = [[c1, x - 90, sc.sp.y], [c2, x - 170, sc.sp.y]];
         D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, pin); o.line = [c1.hp <= 0, c2.hp <= 0];
-        // SWAT: 200 HP, ein Schuss 150, der zweite toetet
-        sc = H.scene({ A3: 1 }); const sw = H.cop(sc, x - 100, sc.sp.y, 'swat'); const hp0 = sw.hp; D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, [[sw, x - 100, sc.sp.y]]); o.swat1 = [hp0, sw.hp]; H.run(sc, Q.cool, [[sw, x - 100, sc.sp.y]]); D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, [[sw, x - 100, sc.sp.y]]); o.swat2 = sw.hp <= 0;
-        // Scharfschuetze: 60 HP, ein Schuss
-        sc = H.scene({ A3: 1 }); const sn = H.cop(sc, x - 100, sc.sp.y, 'sniper'); const hs = sn.hp; D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, [[sn, x - 100, sc.sp.y]]); o.sniper = [hs, sn.hp <= 0];
-        // Schild-Beamter von vorn: der Schild haelt, die Kugel geht durch (60 % Schaden), ein Beamter dahinter faellt
-        sc = H.scene({ A3: 1 }); const sh = H.cop(sc, x - 90, sc.sp.y, 'shield'), bk = H.cop(sc, x - 170, sc.sp.y); sh.a = 0; const sh0 = [sh.hp, sh.sh]; const pn = [[sh, x - 90, sc.sp.y], [bk, x - 170, sc.sp.y]];
-        D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, pn); o.shield = [sh0[0], sh.hp, sh0[1], sh.sh, bk.hp <= 0];
-        // normale Kugel (Pistole) am Schild: der Schild nimmt sie, die Leben bleiben
+        sc = H.scene({ A3: 1 }); const sw = H.cop(sc, x - 100, sc.sp.y, 'swat'); o.swatHp = sw.hp; D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, [[sw, x - 100, sc.sp.y]]); o.swat = sw.hp <= 0;
+        sc = H.scene({ A3: 1 }); const sn = H.cop(sc, x - 100, sc.sp.y, 'sniper'); D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, [[sn, x - 100, sc.sp.y]]); o.sniper = sn.hp <= 0;
+        sc = H.scene({ A3: 1 }); const sh = H.cop(sc, x - 90, sc.sp.y, 'shield'), bk = H.cop(sc, x - 170, sc.sp.y); sh.a = 0; const pn = [[sh, x - 90, sc.sp.y], [bk, x - 170, sc.sp.y]];
+        D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, pn); o.shield = [sh.hp <= 0, bk.hp <= 0];
         sc = H.scene({}); const s2 = H.cop(sc, x - 90, sc.sp.y, 'shield'); s2.a = 0; const hh = s2.hp, ss = s2.sh; sc.me.a = Math.PI; sc.me.armed = true; sc.me.mag = 12; sc.me.cool = 0; sc.me.rl = 0; sc.me.inp = Object.assign({}, sc.me.inp, { fire: 1 });
         for (let i = 0; i < 20; i++) { s2.x = x - 90; s2.y = sc.sp.y; sc.me.a = Math.PI; D.update(1 / 30); } o.normal = [hh, s2.hp, ss, s2.sh < ss];
+        // Fenster: das Gewehr geht durch (Fenster wird zerschossen), eine normale Kugel nicht
+        sc = H.scene({ A3: 1 }); const w = D.world(); let win = null; for (let ty = w.WY0; ty < w.WY0 + w.H && !win; ty++) for (let tx = w.WX0; tx < w.WX0 + w.W && !win; tx++) if (w.cell(tx, ty) === 'W' && !D.isSol(tx, ty + 1) && !D.isSol(tx, ty + 2) && !D.isSol(tx, ty + 3) && !D.isSol(tx, ty - 1) && !D.isSol(tx, ty - 2)) win = { tx, ty };
+        if (win) { sc.me.x = win.tx * 32 + 16; sc.me.y = (win.ty + 2) * 32 + 16; const dy = D.isSol(win.tx, win.ty - 1) ? 1 : -1; D.useGadget(sc.me, 6, sc.me.x, sc.me.y - 200); H.run(sc, .3); o.win = [w.cell(win.tx, win.ty)]; }
         return o; })()`);
       t.eq(r.line, [true, true], 'ein Schuss, zwei Beamte in der Linie: beide tot (Durchschlag)');
-      t.eq(r.swat1, [200, 50], 'SWAT: 100 mal 1,5 = 150 Schaden, 50 HP uebrig');
-      t.eq(r.swat2, true, 'der zweite Schuss toetet den SWAT');
-      t.eq(r.sniper, [60, true], 'Scharfschuetze (60 HP): ein Schuss');
-      t.eq(r.shield.slice(0, 4), [110, 50, 120, 120], 'Schild-Beamter von vorn: 60 Schaden an den Leben (60 % von 100), der Schild bleibt bei 120');
-      t.eq(r.shield[4], true, 'die Kugel geht am Schild vorbei und toetet den Beamten dahinter');
+      t.ok(r.swat, 'SWAT (' + r.swatHp + ' HP): ein Schuss');
+      t.ok(r.sniper, 'Scharfschuetze: ein Schuss');
+      t.eq(r.shield, [true, true], 'Schild-Beamter von vorn: ein Schuss, die Kugel geht weiter und toetet den Beamten dahinter');
+      if (r.win) t.eq(r.win, ['w'], 'das Fenster ist nach dem Gewehrschuss zerschossen');
+    },
+  },
+  {
+    name: 'Gewehr Stufe 3: der Schuss markiert den naechsten Gegner in der Naehe fuers Team (Ereignis mk, Marke bleibt mkT Sekunden, folgt dem Gegner, verschwindet mit ihm), Stufe 1 und 2 markieren nichts',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, Q = D.CFG.spw.rifle, o = {}; const x = H.scene({ A3: 1 }).sp.x;
+        const go = lv => { const sc = H.scene({ A3: lv }); const a = H.cop(sc, x - 100, sc.sp.y), b = H.cop(sc, x - 140, sc.sp.y + 60), far = H.cop(sc, x - 100, sc.sp.y - 400); D.useGadget(sc.me, 6, x - 300, sc.sp.y); H.run(sc, .3, [[a, x - 100, sc.sp.y], [b, x - 140, sc.sp.y + 60], [far, x - 100, sc.sp.y - 400]]); return { sc, a, b, far }; };
+        let r1 = go(1); o.l1 = D.marks().length; let r3 = go(3); const m = D.marks(); o.l3 = [m.length, m[0] && m[0].id === r3.b.id, m[0] && m[0].o, r3.a.hp <= 0, r3.b.hp > 0];
+        o.t0 = m[0] && m[0].t > Q.mkT - 1;
+        H.run(r3.sc, Q.mkT + .5, [[r3.b, x - 140, r3.sc.sp.y + 60]]); o.gone = D.marks().length; return o; })()`);
+      t.eq(r.l1, 0, 'Stufe 1 markiert nichts');
+      t.eq(r.l3, [1, true, 0, true, true], 'Stufe 3: der erste Beamte faellt, der naechste in der Naehe (nicht der ferne) ist markiert, Besitzer 0');
+      t.ok(r.t0, 'die Marke laeuft mkT Sekunden');
+      t.eq(r.gone, 0, 'nach mkT Sekunden ist die Marke weg');
     },
   },
   {
@@ -129,7 +140,7 @@ module.exports = [
     },
   },
   {
-    name: 'Besondere Waffen im Coop: der Client schaltet mit Shift um und schiesst mit der Leertaste (Host rechnet), Vorrat als Index 32 der Spielerzeile, die Kugel (pr) und die Granate (shell) sind beim Client sichtbar, die Schluessel tr (Transporter) und tp (Fallen) im Schnappschuss sind getrennt',
+    name: 'Besondere Waffen im Coop: der Client legt mit der rechten Maustaste an und schiesst mit der Leertaste (Host rechnet), Vorrat als Index 32 der Spielerzeile, die Kugel (pr) und die Granate (shell) sind beim Client sichtbar, die Schluessel tr (Transporter) und tp (Fallen) im Schnappschuss sind getrennt',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
       const r = await t.page.evaluate(() => {
@@ -138,13 +149,13 @@ module.exports = [
         const p1 = A.get().players[1]; p1.kit = Object.assign({}, p1.kit, { sk: { A3: 1 } }); p1.sx = 3; B.get().me.kit = Object.assign({}, B.get().me.kit, { sk: { A3: 1 } }); G.run(.5);
         o.clientStock = B.get().me.sx | 0; o.phase = B.get().phase;
         const m = B.get().me; const aim = () => { B.draw(); const q = B.mouse, cx = q.x - q.sx, cy = q.y - q.sy; q.sx = m.x - cx - 200; q.sy = m.y - cy; q.t = B.get().time; B.draw(); }; aim();
-        B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', bubbles: true })); o.on = B.spw(); aim(); G.run(.1); B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })); B.cv.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true })); let bh = 0, bc = 0; for (let i = 0; i < 40; i++) { G.run(1 / 60); if (A.get().bl.some(b => b.pr)) bh = 1; if (B.get().bl.some(b => b.pr)) bc = 1; } o.bul = [bh, bc]; o.stock = [A.get().players[1].sx | 0, B.get().me.sx | 0];
+        { const rc = B.cv.getBoundingClientRect(); B.cv.dispatchEvent(new MouseEvent('mousedown', { button: 2, bubbles: true, clientX: rc.left + B.mouse.sx * rc.width / 960, clientY: rc.top + B.mouse.sy * rc.height / 544 })); } o.on = B.spw(); aim(); G.run(.1); B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })); B.cv.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true })); let bh = 0, bc = 0; for (let i = 0; i < 40; i++) { G.run(1 / 60); if (A.get().bl.some(b => b.pr)) bh = 1; if (B.get().bl.some(b => b.pr)) bc = 1; } o.bul = [bh, bc]; o.stock = [A.get().players[1].sx | 0, B.get().me.sx | 0];
         // Granate vom Host
         const me = A.get().me; me.kit = Object.assign({}, me.kit, { sk: { A4: 1 } }); me.sx = 1; A.useGadget(me, 6, me.x + 220, me.y); let sa = 0, sb = 0; for (let i = 0; i < 40; i++) { G.run(1 / 60); if (A.gren().gr.some(q => q.k === 'shell')) sa = 1; if (B.gren().gr.some(q => q.k === 'shell')) sb = 1; } o.sh = [sa, sb];
         const s = A.buildSnap(); o.keys = [Array.isArray(s.tr) && s.tr.length, Array.isArray(s.tp), Array.isArray(s.kf)];
         return o;
       });
-      t.eq([r.phase, r.clientStock, r.on], [2, 3, true], 'Ueberfall laeuft, der Client kennt seinen Vorrat aus dem Schnappschuss, Shift schaltet die Spezialwaffe ein');
+      t.eq([r.phase, r.clientStock, r.on], [2, 3, true], 'Ueberfall laeuft, der Client kennt seinen Vorrat aus dem Schnappschuss, rechte Maustaste legt die Spezialwaffe an');
       t.eq(r.bul, [1, 1], 'die Kugel (pr) gibt es beim Host und beim Client');
       t.eq(r.stock, [2, 2], 'der Vorrat ist bei beiden um eins gesunken');
       t.eq(r.sh, [1, 1], 'die Granate (shell) fliegt beim Host und beim Client');
@@ -152,46 +163,52 @@ module.exports = [
     },
   },
   {
-    name: 'Besondere Waffen bedienen (solo): Shift schaltet im Ueberfall ein und aus (mit Vorrat, sonst bleibt Shift das Schleichen), Linksklick oder Leertaste schiesst einen Schuss je Druck, die normale Waffe schweigt, Zielhilfe, Fadenkreuz und HUD zeigen den Zustand, leerer Vorrat schaltet aus',
+    name: 'Besondere Waffen bedienen (solo): rechte Maustaste halten legt im Ueberfall an (nur mit Vorrat), Loslassen beendet, das Kontextmenue ist unterdrueckt, Linksklick oder Leertaste schiesst einen Schuss je Druck, die normale Waffe schweigt, Zielhilfe, Fadenkreuz und HUD zeigen den Zustand, die Sicht zoomt heraus (3D-Faktor), Shift ist nur Schleichen, leerer Vorrat schaltet aus',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}; const cv = document.getElementById('c'), ctx = cv.getContext('2d'), VWL = 960, VHL = 544;
         const key = (k, up) => cv.dispatchEvent(new KeyboardEvent(up ? 'keyup' : 'keydown', { key: k, bubbles: true }));
+        const rmb = up => up ? window.dispatchEvent(new MouseEvent('mouseup', { button: 2, bubbles: true })) : cv.dispatchEvent(new MouseEvent('mousedown', { button: 2, bubbles: true, clientX: cv.getBoundingClientRect().left + D.mouse.sx * cv.getBoundingClientRect().width / VWL, clientY: cv.getBoundingClientRect().top + D.mouse.sy * cv.getBoundingClientRect().height / VHL }));
         const click = () => { const m = D.mouse, r = cv.getBoundingClientRect(); cv.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: r.left + m.sx * r.width / VWL, clientY: r.top + m.sy * r.height / VHL })); window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true })); };
         const rec = () => { const txt = [], ot = ctx.fillText; let lines = 0; const ol = ctx.lineTo; ctx.fillText = function (s) { txt.push(String(s)); return ot.apply(this, arguments); }; ctx.lineTo = function () { lines++; return ol.apply(this, arguments); };
           try { D.draw(); } finally { ctx.fillText = ot; ctx.lineTo = ol; } return { txt, lines }; };
-        // Gewehr: einschalten, Zielhilfe, HUD, schiessen mit Klick und mit Leertaste, ausschalten
-        let sc = H.scene({ A3: 1 }); H.aimAt(D, sc.sp.x - 150, sc.sp.y); sc.me.mag = 12; const base = rec(); o.off0 = D.spw();
-        key('Shift'); key('Shift', 1); o.on1 = D.spw(); const held = rec(); o.line = held.lines > base.lines; o.hud = held.txt.filter(s => /Shift/.test(s)); o.plate = held.txt.filter(s => /Gewehr .Shift/.test(s)).length;
-        click(); o.click = [sc.me.sx, D.get().bl.filter(b => b.pr).length]; H.run(sc, 1.5); key(' '); key(' ', 1); o.space = sc.me.sx; H.run(sc, 1.5);
-        // die normale Waffe schweigt, solange die Spezialwaffe an ist (Maustaste gehalten), danach schiesst sie wieder
-        D.mouse.down = 1; H.run(sc, .5); o.pistolQuiet = sc.me.mag; key('Shift'); key('Shift', 1); o.off2 = D.spw(); H.run(sc, .5); o.pistolBack = sc.me.mag < 12; D.mouse.down = 0;
-        // Shift ist Schleichen ohne Spezialwaffe, mit Vorrat im Ueberfall nicht
+        const ce = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); cv.dispatchEvent(ce); o.ctx = ce.defaultPrevented;
+        // Gewehr: anlegen (halten), Zielhilfe, HUD, Zoom, schiessen mit Klick und mit Leertaste, loslassen
+        let sc = H.scene({ A3: 1 }); H.aimAt(D, sc.sp.x - 150, sc.sp.y); sc.me.mag = 12; const base = rec(); o.off0 = [D.spw(), D.spwZ()];
+        rmb(); o.on1 = D.spw(); H.run(sc, 1); const held = rec(); o.zoom = D.spwZ(); o.line = held.lines > base.lines; o.hud = held.txt.filter(s => /RMT/.test(s)); o.plate = held.txt.filter(s => /Gewehr .rechte Maus/.test(s)).length;
+        click(); o.click = [sc.me.sx, D.get().bl.filter(b => b.pr).length]; o.stillOn = D.spw(); H.run(sc, 1.5); key(' '); key(' ', 1); o.space = sc.me.sx; H.run(sc, 1.5);
+        // die normale Waffe schweigt, solange angelegt ist, nach dem Loslassen schiesst sie wieder, der Zoom geht zurueck
+        D.mouse.down = 1; H.run(sc, .5); o.pistolQuiet = sc.me.mag; rmb(1); o.off2 = D.spw(); H.run(sc, 1); o.pistolBack = sc.me.mag < 12; o.zoomBack = D.spwZ(); D.mouse.down = 0;
+        // Shift ist immer Schleichen (auch mit Vorrat), er legt nichts an
         sc = H.scene({}); key('Shift'); H.run(sc, .1); o.sneakNone = sc.me.inp.sn; key('Shift', 1);
-        sc = H.scene({ A3: 1 }); key('Shift'); H.run(sc, .1); o.sneakStock = sc.me.inp.sn; key('Shift', 1); key('Shift'); key('Shift', 1);
-        sc = H.scene({ A3: 1 }, true); key('Shift'); o.phase1 = [D.spw(), (H.run(sc, .1), sc.me.inp.sn)]; key('Shift', 1);
-        // letzter Schuss: Vorrat leer, Spezialwaffe geht aus, Shift schleicht wieder
-        sc = H.scene({ A3: 1 }); sc.me.sx = 1; H.aimAt(D, sc.sp.x - 150, sc.sp.y); key('Shift'); key('Shift', 1); click(); H.run(sc, .2); D.tick(1 / 30); o.empty = [sc.me.sx, D.spw()]; key('Shift'); H.run(sc, .1); o.sneakAfter = sc.me.inp.sn; key('Shift', 1);
-        // Werfer: Zielring, Klick feuert, Klick auf blockierte Strecke nicht
-        sc = H.scene({ A4: 1 }); H.aimAt(D, sc.sp.x - 120, sc.sp.y); const b2 = rec(); key('Shift'); key('Shift', 1); const h2 = rec(); o.ring = h2.lines > b2.lines; o.hud2 = h2.txt.filter(s => /Shift/.test(s)); click(); o.shot = [sc.me.sx, D.gren().gr.filter(q => q.k === 'shell').length];
-        // Auftragswechsel: eine Falle (3 halten) schaltet die Spezialwaffe aus
-        sc = H.scene({ A3: 1 }); D.tick(1 / 30); o.fresh = D.spw(); key('Shift'); key('Shift', 1); o.x1 = D.spw(); key('4'); key('4', 1); sc.me.sm = 1; key('4'); o.x2 = D.spw(); key('4', 1);
+        sc = H.scene({ A3: 1 }); key('Shift'); H.run(sc, .1); o.sneakStock = [sc.me.inp.sn, D.spw()]; key('Shift', 1);
+        // ohne Vorrat und im Erkunden legt die rechte Maustaste nichts an
+        sc = H.scene({}); rmb(); o.noneRmb = D.spw(); rmb(1); sc = H.scene({ A3: 1 }, true); rmb(); o.phase1 = D.spw(); rmb(1);
+        // letzter Schuss: Vorrat leer, die Spezialwaffe geht aus
+        sc = H.scene({ A3: 1 }); sc.me.sx = 1; H.aimAt(D, sc.sp.x - 150, sc.sp.y); rmb(); click(); H.run(sc, .2); D.tick(1 / 30); o.empty = [sc.me.sx, D.spw()]; rmb(1);
+        // Werfer: Zielring, Klick feuert
+        sc = H.scene({ A4: 1 }); H.aimAt(D, sc.sp.x - 120, sc.sp.y); const b2 = rec(); rmb(); const h2 = rec(); o.ring = h2.lines > b2.lines; o.hud2 = h2.txt.filter(s => /RMT/.test(s)); click(); o.shot = [sc.me.sx, D.gren().gr.filter(q => q.k === 'shell').length]; rmb(1);
+        // Auftragswechsel und Wurfgeraet (4 halten) schalten die Spezialwaffe aus
+        sc = H.scene({ A3: 1 }); D.tick(1 / 30); o.fresh = D.spw(); rmb(); o.x1 = D.spw(); sc.me.sm = 1; key('4'); o.x2 = D.spw(); key('4', 1); rmb(1);
         return o; })()`);
-      t.eq([r.off0, r.on1], [false, true], 'Shift schaltet die Spezialwaffe im Ueberfall ein');
-      t.ok(r.line, 'eingeschaltet zeichnet das Gewehr die Zielhilfe (Linie)');
-      t.ok(r.hud.some(s => /\[Shift\] Gewehr 3/.test(s)) && r.plate >= 1, 'das HUD nennt Shift, Gewehr und die Stueckzahl und zeigt die Spezialwaffe im Waffenkasten: ' + JSON.stringify(r.hud));
+      t.ok(r.ctx, 'das Kontextmenue des Browsers ist auf dem Spielfeld unterdrueckt');
+      t.eq([r.off0[0], r.off0[1], r.on1], [false, 1, true], 'rechte Maustaste legt die Spezialwaffe im Ueberfall an, Zoom vorher 1');
+      t.ok(r.zoom > 1.1 && r.zoom <= 1.19, 'angelegt zoomt die Sicht heraus: ' + r.zoom);
+      t.ok(r.line, 'angelegt zeichnet das Gewehr die Zielhilfe (Linie)');
+      t.ok(r.hud.some(s => /\[RMT\] Gewehr 3/.test(s)) && r.plate >= 1, 'das HUD nennt RMT, Gewehr und die Stueckzahl und zeigt die Spezialwaffe im Waffenkasten: ' + JSON.stringify(r.hud));
       t.eq(r.click, [2, 1], 'Linksklick schiesst einen Schuss (Vorrat 3 auf 2, eine Kugel pr)');
+      t.eq(r.stillOn, true, 'nach dem Schuss bleibt angelegt, solange die Taste gehalten wird');
       t.eq(r.space, 1, 'die Leertaste schiesst auch (nach der Abklingzeit, Vorrat 2 auf 1)');
-      t.eq(r.pistolQuiet, 12, 'die normale Waffe schweigt, solange die Spezialwaffe an ist (Maustaste gehalten, Magazin bleibt voll)');
-      t.eq([r.off2, r.pistolBack], [false, true], 'Shift schaltet aus, dann schiesst die Pistole wieder');
-      t.eq(r.sneakNone, 1, 'ohne Spezialwaffe bleibt Shift das Schleichen');
-      t.eq(r.sneakStock, 0, 'mit Spezialwaffe im Ueberfall ist Shift der Umschalter, kein Schleichen');
-      t.eq(r.phase1, [false, 1], 'im Erkunden schaltet Shift nichts um und schleicht weiter');
-      t.eq(r.empty, [0, false], 'der letzte Schuss leert den Vorrat und schaltet die Spezialwaffe aus');
-      t.eq(r.sneakAfter, 1, 'ohne Vorrat ist Shift wieder das Schleichen');
-      t.ok(r.ring, 'der Werfer zeigt beim Einschalten den Explosionsradius');
-      t.ok(r.hud2.some(s => /\[Shift\] Werfer 2/.test(s)), 'das HUD nennt Shift, Werfer und die Stueckzahl: ' + JSON.stringify(r.hud2));
+      t.eq(r.pistolQuiet, 12, 'die normale Waffe schweigt, solange angelegt ist (Maustaste gehalten, Magazin bleibt voll)');
+      t.eq([r.off2, r.pistolBack], [false, true], 'Loslassen beendet, dann schiesst die Pistole wieder');
+      t.ok(Math.abs(r.zoomBack - 1) < .05, 'der Zoom geht zurueck: ' + r.zoomBack);
+      t.eq(r.sneakNone, 1, 'Shift ist das Schleichen');
+      t.eq(r.sneakStock, [1, false], 'auch mit Vorrat im Ueberfall ist Shift nur Schleichen und legt nichts an');
+      t.eq([r.noneRmb, r.phase1], [false, false], 'ohne Vorrat und im Erkunden legt die rechte Maustaste nichts an');
+      t.eq(r.empty, [0, false], 'der letzte Schuss leert den Vorrat und beendet das Anlegen');
+      t.ok(r.ring, 'der Werfer zeigt beim Anlegen den Explosionsradius');
+      t.ok(r.hud2.some(s => /\[RMT\] Werfer 2/.test(s)), 'das HUD nennt RMT, Werfer und die Stueckzahl: ' + JSON.stringify(r.hud2));
       t.eq(r.shot, [1, 1], 'Klick feuert die Granate (Vorrat 2 auf 1, eine unterwegs)');
-      t.eq([r.fresh, r.x1, r.x2], [false, true, false], 'ein neuer Auftrag beginnt ausgeschaltet (tick), ein Wurfgeraet (4 halten) schaltet die Spezialwaffe aus');
+      t.eq([r.fresh, r.x1, r.x2], [false, true, false], 'ein neuer Auftrag beginnt ausgeschaltet, ein Wurfgeraet (4 halten) beendet das Anlegen');
     },
   },
 ];
