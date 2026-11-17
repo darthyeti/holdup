@@ -60,6 +60,8 @@ module.exports = [
           D.setScenario('bank'); D.buildSeed('classic'); D.setFocus(true); D.CFG.policeAt = 6; D.reset(); D.startHeist(false, D.get().me);
           const run = n => { for (let i = 0; i < n; i++) { D.get().me.hp = 1e9; D.update(1 / 30); } };
           run(30 * 45);
+          // Beamte steigen je nach Lauf zwischen 20 und 30 s aus den Wagen: bis zu 40 s warten, bis einer zu Fuss in der Szene ist (ein CI-Lauf sah um 45 s keinen, lokal 20 von 20 Laeufen schon)
+          for (let w = 0; w < 40 && !D.get().en.some(e => e.kind === 'cop'); w++) run(30);
           // Spieler vor die Tuer auf die Strasse: Polizei, Autos und Leute in der Halle in Sicht
           const g = D.get(), m = g.me, cop = g.en.find(e => e.kind === 'cop'); if (cop) { m.x = cop.x; m.y = cop.y - 40; }
           run(3); o.a = await C(D); o.en = g.en.length;
