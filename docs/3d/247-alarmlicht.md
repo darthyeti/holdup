@@ -1,0 +1,5 @@
+# Alarmlicht (Ticket 247)
+
+(Ausgelagert aus docs/plan-3d.md, Abschnitt Klötzchen-Stil, Inhalt unverändert.)
+
+Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänden statt an den Deckenlampen, die dem Spieler am nächsten sind (die wanderten mit). `pickBeacons` in `js/kl-kern.js` wählt beim Bau der Welt (`K.world`) aus dem Raster: Bodenkacheln im Gebäude mit `#` im Rücken, nach einem festen Kachel-Hash sortiert, Mindestabstand `KCFG.alarm.gap` 8 Kacheln, höchstens `max` 16, also bei Host und Clients gleich. Modell aus Klötzchen (Platte, Sockel, roter Glaskörper, Kappe). Im Überfall leuchten die `n` 3 nächsten zum Spieler, die anderen blenden mit `rate` weich aus und ein (`fade`, kein Springen); jede dreht mit eigener Phase, Punktlicht in Höhe `h` 40, Schein vor dem Glas und Strahl über den Boden nur zur Raumseite (`js/kl-effekte.js`). Test `247-kl-alarmlicht` (feste Plätze, Mauer im Rücken, Abstand, höchstens vier leuchten, kein Sprung), Bildfolge `docs/bilder/stil-kloetzchen/alarmlicht-bildfolge.jpg` (Gang durch die Bank im Überfall).

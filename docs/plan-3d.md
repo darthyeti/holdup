@@ -261,56 +261,19 @@ Till hat entschieden (15. November 2026): Klötzchen mit Welt A (Figuren, Fahrze
 - **Fundorte des Tresorcodes (Ticket 228).** `KL.obj('note')` in `kl-dinge-allgemein.js`: Wandarten (`coat`, `pin`, `locker`, Tabelle `WALL`) stehen an der Wand der Kachel (erste angrenzende `#`, `wallDir`) und sind in Wandkoordinaten gebaut (u längs der Wand, v Tiefe, Höhe): die Garderobe als Rückwand mit Regal und zwei hängenden Mänteln (rot, blau) mit helleren Kragen, die Pinnwand als Korkbrett mit drei Zetteln und Ablage, der Spind mit Türen und Griff. Der Zettel (solange der Code fehlt) ist größer (14 mal 11), hell, leicht schräg, mit Textzeilen und rotem Eck, ohne Leuchten, und liegt immer von oben sichtbar (auf Regal, Ablage, Gerät oder Boden, nie senkrecht an der Wand). Teile je Fundort 2 bis 6, mit Zettel höchstens 10 (Test `229-kl-fundorte`). Bilder `fundorte-tag-nacht.jpg` (je vier Arten pro Reihe ohne und mit Zettel, oben Tag, unten Nacht, Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fundorte`).
 - **Grenzen.** Silhouetten hinter Wänden bleiben flache Sprites, Schild opak.
 
-#### Juwelier-Auslage (Ticket 256)
+### 2.29 Ticket-Abschnitte des Klötzchen-Stils (eigene Dateien)
 
-Die Vitrinen des Juweliers zeigen vier Schmuckarten statt bunter Steine im Raster: Ringe auf Kissen (Goldreif mit klarem Stein), Ketten auf Büsten (Goldkragen mit Anhänger), Uhren (Lederarmband, goldenes Gehäuse, Zifferblatt) und Edelsteine auf Samt (Fassung, gestufter Schliff mit weißem Glanzpunkt). Die Art wählt ein Hash der Vitrinenlage, sie bleibt je Vitrine fest. Gold und Silber glänzen metallisch (kleine Leuchtwerte), Steine sind klare Farben (Diamant, Saphir, Rubin, Smaragd). Leer (genommen) steht dieselbe Vitrine mit flachem dunklem Polster ohne Ring, Uhr und Stein, nur die Büsten stehen nackt da. Der Bauer `KL.jewelry` liegt in `js/kl-dinge-juwelier.js`, die Vitrine in `js/kl-dinge-museum.js` ruft ihn auf. Bild voll und leer: `docs/bilder/stil-kloetzchen/juwelier-auslage-voll-leer.jpg` (Zeilen: vier Arten, links voll, rechts leer), erzeugt mit `tools/bilder-kloetzchen.js ... jewel 1 auslage`.
+Jedes neue Ticket der 3D-Ansicht schreibt seinen Abschnitt als **eigene Datei** `docs/3d/<ticket>-<kurzname>.md` (Überschrift mit Ticketnummer und Datum) und fügt hier nur eine Zeile mit Link ein, nach Ticketnummer sortiert. So fassen parallele PRs nicht mehr denselben Ort in `plan-3d.md` an. Frühere Abschnitte (2.8 bis 2.25) bleiben in dieser Datei.
 
-### 2.26 Fluchtwagen mit Abwechslung (Ticket 245, 16. November 2026)
-
-Der Fluchtwagen (`van` in `js/kl-fahrzeuge.js`, Funktion `flucht`) war immer derselbe Lieferwagen. Jetzt eine von vier Varianten je Auftrag, gewählt aus `LAY.seed` (die Karte, bei Host und Client gleich, ohne Zufall), mit gleicher Grundfläche, Höhe und Kollision (nur Optik, keine Änderung an Spiellogik, Größe oder Netzformat):
-
-- **0 Lieferwagen** cremeweiß mit Firmenstreifen (Firmenfarbe aus `KCFG.car.facc`) und Logo auf dem Dach.
-- **1 Dunkler Kleinbus** mit getönter Fensterfläche, dunklem Dach und Dachträgern.
-- **2 Pickup mit Plane**: olivfarbenes Fahrerhaus, offene Ladefläche mit Bordwänden, blaue Plane in drei Stufen mit Spannseilen.
-- **3 Alter Kastenwagen** in Beige mit vier Rostflecken, blauem Fahrerhaus und Dachträgern.
-
-Farben aus der eigenen Palette `KCFG.car.fpal` (nicht die `pal` der zivilen Autos), Plane `ftarp`. Fluchtwagen-Merkmale: Der Fahrer sitzt im Fahrerhaus (Kopf mit Mütze über der Scheibe). Steht der Wagen still (Position gleich seit 0,35 s Spielzeit aus `figs3d`, auch beim Client gleich), steht die Schiebetür offen (Lieferwagen, Kleinbus), die Hecktür (Kastenwagen) oder die Heckklappe (Pickup). Teile 26 bis 32 je Wagen (Grenze 40, Test `231-kl-fluchtwagen`). Vorhut (`vh`) und Panzerwagen (`tk`) unverändert. Bilder `fluchtwagen-varianten.jpg` (oben Tag, unten Nacht, je Variante fahrend und wartend), Werkzeug `tools/bilder-kloetzchen.js` Ablauf `fluchtwagen`.
-
-#### Spieltische im Casino (Ticket 244)
-
-`KL.obj('good:chips')` in `js/kl-dinge-casino.js` baut je Tisch (Block von 4 mal 2 Kacheln, `o.rc` ist nur seine Chipfläche an der Spielerseite) eine von vier Arten, gewählt über die Tischlage (`KL.casinoTable`, Kachel-Hash): Roulette (Oktagon mit Kessel und Zahlenfeld, grün), Blackjack (Halbkreis mit Spielplätzen und Kartenschlitten, blau), Poker (Oval mit goldener Reling, burgunder), Würfel (Rechteck mit Banden und zwei Würfeln, lindgrün). Voll: farbige Chipstapel mit leichtem Glanz an der Spielerseite. Abgeräumt (`o.done`): Filz dunkelgrau, keine Chips, leere offene Chipablage mit goldener Kante und ein umgeworfener Stuhl. Nur Darstellung. Test `244-kl-casino-tische`, Bildbogen `docs/bilder/stil-kloetzchen/casino-tische-voll-leer.jpg` (Tag und Nacht, voll und leer, zwei Seeds).
-
-### 2.26 Umriss der Spielerfiguren weniger dominant (Ticket 248, 16. November 2026)
-
-Till (Coop-Test): Die Außenlinien der Figuren wirken auch nach #222 zu dominant. Vier Stile standen in der Vorschau zur Wahl (wie bisher, dünn halbtransparent, nur bei ähnlichem Grund, Spielerfarbe, umschaltbar mit F6). **Entschieden (Till, 16. November 2026): "dünne Farblinie in Spielerfarbe".** Fest gebaut, Umschalter und übrige Stile entfernt:
-
-- **Spielerfiguren:** dünne Linie in der Teamfarbe (`o.sc`), 55 Prozent der bisherigen Breite (`FG.look.plW`), Deckkraft 0,95 (`plA`), Tag und Nacht gleich.
-- **Alle anderen Figuren** (Polizei, Zivilisten, Wachen): leise, 55 Prozent der Breite (`npcW`), halbe Deckkraft (`npcA`, Dither), dunkel am Tag (`outDay`), hell bei Nacht (`outNight`, Deckkraft dazu `outNightA`).
-- **Hinter Wänden** bleibt die Silhouette (2.21) unverändert, sie ist ein eigener Pool in der Spielerfarbe.
-
-Umsetzung: `kit.outline(on, o)` in `js/kl-kern.js`, der Umriss-Pool `k-umriss` trägt Farbe und Deckkraft je Instanz (`iO`), Werte in `V3CFG.fig.look` (`js/view3d.js`). Nur Darstellung, kein Netzformat, 2D unverändert. Test `248-kl-umriss`, Bild Tag und Nacht (Spieler links in Orange): `docs/bilder/stil-kloetzchen/umriss-fest.jpg`.
-
-#### Alarmlicht (Ticket 247)
-
-Das kreisende Rotlicht im Überfall hängt an festen Rundumleuchten an den Wänden statt an den Deckenlampen, die dem Spieler am nächsten sind (die wanderten mit). `pickBeacons` in `js/kl-kern.js` wählt beim Bau der Welt (`K.world`) aus dem Raster: Bodenkacheln im Gebäude mit `#` im Rücken, nach einem festen Kachel-Hash sortiert, Mindestabstand `KCFG.alarm.gap` 8 Kacheln, höchstens `max` 16, also bei Host und Clients gleich. Modell aus Klötzchen (Platte, Sockel, roter Glaskörper, Kappe). Im Überfall leuchten die `n` 3 nächsten zum Spieler, die anderen blenden mit `rate` weich aus und ein (`fade`, kein Springen); jede dreht mit eigener Phase, Punktlicht in Höhe `h` 40, Schein vor dem Glas und Strahl über den Boden nur zur Raumseite (`js/kl-effekte.js`). Test `247-kl-alarmlicht` (feste Plätze, Mauer im Rücken, Abstand, höchstens vier leuchten, kein Sprung), Bildfolge `docs/bilder/stil-kloetzchen/alarmlicht-bildfolge.jpg` (Gang durch die Bank im Überfall).
-
-### 2.27 Zielcursor nur als Fadenkreuz (Ticket 246, 16. November 2026)
-
-Till (Coop-Test): Fadenkreuz plus Kreis darunter verwirrt. Geprüft, ob der Kreis eine Funktion hat: Der Ring aus `ring3d` (`js/draw.js`) war nur der Weltpunkt der Maus in Waffenhöhe, senkrecht auf den Boden gelegt (Ticket 152), ohne Funktion für Zielen, Treffer oder Reichweite, er stand bei jeder bewaffneten Figur unter dem Fadenkreuz. Er entfällt: `ring3d` rechnet nur noch den Zielpunkt (`ring3d()` für Tests), zeichnet nichts. **Bleiben** die Ringe mit Funktion, die `aim3d` zeichnet: Wurfgeräte (Rauch, Ablenker: Wurfweite, Wirkradius, blockiert, max. Weite), Fallen (Ort, Auslöse- und Wirkradius), Granatwerfer (Zielpunkt, Radius) und die Linie des Präzisionsgewehrs. 2D unverändert. Test `193-zielen-3d` prüft, dass um den Zielpunkt nur noch die Bildpunkte des Fadenkreuzes liegen. Bild vorher und nachher: `docs/bilder/stil-kloetzchen/zielcursor-vorher-nachher.jpg`, Werkzeug `tools/bilder-cursor.js`.
-
-#### Geldbündel mit Schein oben (Ticket 255)
-
-`KL.obj('bundle')` (`js/kl-dinge-allgemein.js`): Statt der flächigen leuchtend grünen Deckplatte trägt der oberste der drei Stapel einen erkennbaren Geldschein aus Klötzchen: heller Schein (24 mal 14), dunkelgrüner Rand, Medaillon links (Raute aus zwei gedrehten Klötzen mit hellem Kern), Wertzahlen in den vier Ecken, zweites Feld rechts, darüber quer die helle Banderole mit rotem Stempel. Alles in der leichten Schräge des Stapels, nur Darstellung. Test `255-kl-geldbuendel` (Bauer ohne Browser), Bild `docs/bilder/stil-kloetzchen/geldbuendel-vorher-nachher.jpg` (Bank, Tag und Nacht, zwei Seeds).
-
-### 2.28 Runde Reifen an den Autos (Ticket 257, 16. November 2026)
-
-Die Räder der Fahrzeuge waren Quader und wirkten eckig. Jetzt sind Reifen und Felge Zylinder (`wheel(...)` im Kern `js/kl-kern.js`, eigener Pool `k-raeder`, 16 Segmente, Achse quer zur Fahrzeugachse). Alle Fahrzeugarten (`pol`, `civ`, `van`, `vh`, `tk`, Fluchtwagen-Varianten) nutzen es über `wheelP` in `js/kl-fahrzeuge.js`, das Wrack zeigt ein einzelnes Rad. Beim Zerfall (Wrack, Explosion) liefert `wheel` im Sammelmodus einen Quader, die Teile fliegen wie bisher. Das Teilelimit je Fahrzeug (40) bleibt. Rein Darstellung, kein Netzformat betroffen.
-
-Kosten (`messung-bildzeit --3d --kl --n=12`, Erkundung, Überfall, Polizei): vorher 461 / 523 / 515 ms, nachher 444 / 491 / 493 ms je `draw()` im Messrahmen, also nicht langsamer. Dreiecke rund +128 je Szene (Bank 37.529 auf 37.653, Transporter 34.947 auf 35.011, Casino 90.245 auf 90.373), Draw Calls +1. Aus der Spielkamera sind die Räder klein, die Rundung zeigt sich vor allem an den Rändern. Bild vorher und nachher: `docs/bilder/stil-kloetzchen/reifen-vorher-nachher.jpg`.
-
-#### Tresortür schwenkt ganz auf (Ticket 254)
-
-Die offene Tresortür (`KL.obj('vault')`, `js/kl-dinge-allgemein.js`) stand mit rund 100 Grad im Gang. Jetzt liegt das Blatt (6 dick, 56 hoch) ganz aufgeschwenkt flach an der Mauer neben der Öffnung, 1,5 vor der Mauerfläche auf der Gangseite, mit Angelbändern am Pfosten, Handrad auf der Außenseite und eingefahrenen Bolzen an der freien Kante. Gewählt wird die Seite mit mehr Mauerkacheln neben der Öffnung (zuerst Norden bzw. kleineres v), die Länge ist durch die Mauerlänge begrenzt (höchstens 2 Kacheln minus 6). Nur Darstellung, Kollision und geschlossene Tür unverändert. Test `254-kl-tresortuer` (alle vier Lagen und beide Seiten, ohne Browser), Bild `docs/bilder/stil-kloetzchen/tresortuer-vorher-nachher.jpg` (Bank, Notenbank, links vorher, rechts nachher).
+- Ticket 244: [Spieltische im Casino (Ticket 244)](3d/244-casino-tische.md)
+- Ticket 245: [Fluchtwagen mit Abwechslung (Ticket 245, 16. November 2026)](3d/245-fluchtwagen-abwechslung.md)
+- Ticket 246: [Zielcursor nur als Fadenkreuz (Ticket 246, 16. November 2026)](3d/246-zielcursor-fadenkreuz.md)
+- Ticket 247: [Alarmlicht (Ticket 247)](3d/247-alarmlicht.md)
+- Ticket 248: [Umriss der Spielerfiguren weniger dominant (Ticket 248, 16. November 2026)](3d/248-umriss-spielerfiguren.md)
+- Ticket 254: [Tresortür schwenkt ganz auf (Ticket 254)](3d/254-tresortuer-aufschwenken.md)
+- Ticket 255: [Geldbündel mit Schein oben (Ticket 255)](3d/255-geldbuendel-schein.md)
+- Ticket 256: [Juwelier-Auslage (Ticket 256)](3d/256-juwelier-auslage.md)
+- Ticket 257: [Runde Reifen an den Autos (Ticket 257, 16. November 2026)](3d/257-runde-reifen.md)
 
 ## 3. Figuren
 

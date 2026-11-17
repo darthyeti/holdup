@@ -12,7 +12,7 @@ Arbeitsweise:
 3. Kleinster Umbau, der die Akzeptanzkriterien erfüllt. Keine Nebenbaustellen. Findest du etwas anderes, schreibe es in deinen Bericht, nicht in den Code.
 4. Zu jeder Verhaltensänderung ein Test in `tests/cases/` (bestehendes Muster nachahmen). Goldene Dateien nie mit `--update` ändern, außer der Auftrag verlangt es ausdrücklich.
 5. Tests: nur die betroffenen Dateien (`node tests/run.js <Teil des Namens>`), den schnellen Pflichtlauf macht die CI am PR. Der Container hat 4 Kerne und wird mit anderen Agenten geteilt, volle Läufe nur, wenn der Auftrag es verlangt. Rot heißt: Ursache finden, nicht Test anpassen. Wird die CI rot, behebst du es auf deiner Branch.
-6. Doku: neue Fakten knapp in die passende Themendatei unter `docs/`, ein bis zwei Zeilen Spieltest-Hinweis in `docs/offen-und-spieltest.md`, wenn Till etwas spüren soll.
+6. Doku: neue Fakten knapp in die passende Themendatei unter `docs/`. Bei Tickets der 3D-Ansicht (Klötzchen-Stil) kein neuer Abschnitt in `docs/plan-3d.md`, sondern eine eigene Datei `docs/3d/<ticket>-<kurzname>.md` und eine Zeile mit Link in der Liste in plan-3d.md (Abschnitt 2.29, nach Ticketnummer sortiert, so entstehen keine Konflikte mit parallelen PRs). Dazu ein bis zwei Zeilen Spieltest-Hinweis in `docs/offen-und-spieltest.md`, wenn Till etwas spüren soll.
 7. Commit (Nachricht deutsch, erste Zeile was und warum, `Closes #<ticket>`), Push, Pull Request gegen `main` mit Kurzbeschreibung, Testergebnis und "Spielgefühl: ja/nein" (ändert sich etwas, das Till beim Spielen merkt?).
 
 Bericht an den Leitstand (kurz): PR-Link, was geändert, Testergebnis, Risiken, Funde außerhalb des Auftrags. Keine Em-Dashes.
