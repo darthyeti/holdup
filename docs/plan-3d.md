@@ -312,6 +312,10 @@ Kosten (`messung-bildzeit --3d --kl --n=12`, Erkundung, Überfall, Polizei): vor
 
 Die offene Tresortür (`KL.obj('vault')`, `js/kl-dinge-allgemein.js`) stand mit rund 100 Grad im Gang. Jetzt liegt das Blatt (6 dick, 56 hoch) ganz aufgeschwenkt flach an der Mauer neben der Öffnung, 1,5 vor der Mauerfläche auf der Gangseite, mit Angelbändern am Pfosten, Handrad auf der Außenseite und eingefahrenen Bolzen an der freien Kante. Gewählt wird die Seite mit mehr Mauerkacheln neben der Öffnung (zuerst Norden bzw. kleineres v), die Länge ist durch die Mauerlänge begrenzt (höchstens 2 Kacheln minus 6). Nur Darstellung, Kollision und geschlossene Tür unverändert. Test `254-kl-tresortuer` (alle vier Lagen und beide Seiten, ohne Browser), Bild `docs/bilder/stil-kloetzchen/tresortuer-vorher-nachher.jpg` (Bank, Notenbank, links vorher, rechts nachher).
 
+#### Casino-Tische je Block (Ticket 262)
+
+`good:chips` baut jeden Tisch in einem lokalen Rahmen von 4x2 Kacheln (`KL.casinoBlock`): Mitte, Drehung (`th`) und Spielerseite (+v) kommen aus der Lage der Chipflaeche `rc` und der Mehrheit der Tische derselben Achse (die Spielerseite zeigt von der Wand weg). Zahlenfeld, Reling, Chips und Stuhl liegen in diesem Rahmen, es gibt keinen gemeinsamen Unterbau mehr, auch bei aneinandergrenzenden und gedrehten Tischen (Karte N, E, W). Test `262-kl-casino-block` (Rahmen ohne Ueberlappung, Achse stimmt, sechs Karten und Drehungen), reine Darstellung.
+
 ## 3. Figuren
 
 Figuren sind der sichtbarste Punkt des Stils. Optionen:
