@@ -1,0 +1,5 @@
+# Juwelier-Auslage (Ticket 256)
+
+(Ausgelagert aus docs/plan-3d.md, Abschnitt Klötzchen-Stil, Inhalt unverändert.)
+
+Die Vitrinen des Juweliers zeigen vier Schmuckarten statt bunter Steine im Raster: Ringe auf Kissen (Goldreif mit klarem Stein), Ketten auf Büsten (Goldkragen mit Anhänger), Uhren (Lederarmband, goldenes Gehäuse, Zifferblatt) und Edelsteine auf Samt (Fassung, gestufter Schliff mit weißem Glanzpunkt). Die Art wählt ein Hash der Vitrinenlage, sie bleibt je Vitrine fest. Gold und Silber glänzen metallisch (kleine Leuchtwerte), Steine sind klare Farben (Diamant, Saphir, Rubin, Smaragd). Leer (genommen) steht dieselbe Vitrine mit flachem dunklem Polster ohne Ring, Uhr und Stein, nur die Büsten stehen nackt da. Der Bauer `KL.jewelry` liegt in `js/kl-dinge-juwelier.js`, die Vitrine in `js/kl-dinge-museum.js` ruft ihn auf. Bild voll und leer: `docs/bilder/stil-kloetzchen/juwelier-auslage-voll-leer.jpg` (Zeilen: vier Arten, links voll, rechts leer), erzeugt mit `tools/bilder-kloetzchen.js ... jewel 1 auslage`.

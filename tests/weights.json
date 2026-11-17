@@ -1,158 +1,766 @@
 {
  "00-start.test.js": {
+  "all": 31,
+  "fast": 31
+ },
+ "10-karten.test.js": {
+  "all": 125,
+  "fast": 25
+ },
+ "100-flugschreiber.test.js": {
+  "all": 10,
+  "fast": 10
+ },
+ "101-flugschreiber-coop.test.js": {
+  "all": 11,
+  "fast": 11
+ },
+ "102-menue-ablauf.test.js": {
   "all": 7,
   "fast": 7
  },
- "10-karten.test.js": {
-  "all": 103,
+ "103-leises-aufschneiden.test.js": {
+  "all": 2,
+  "fast": 2
+ },
+ "104-meldungen-umbruch.test.js": {
+  "all": 3,
   "fast": 3
  },
- "20-lage.test.js": {
-  "all": 86,
+ "105-geiselschild.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "106-wagen-besatzung.test.js": {
+  "all": 33,
+  "fast": 33
+ },
+ "107-nacht.test.js": {
+  "all": 85,
+  "fast": 85
+ },
+ "108-treffpunkt-messung.test.js": {
+  "all": 18,
+  "fast": 18
+ },
+ "109-treffpunkt-abseits.test.js": {
+  "all": 105,
+  "fast": 105
+ },
+ "110-balancing-patch1.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "111-geiselschild-abstand.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "112-mitspieler-entfernen.test.js": {
+  "all": 8,
+  "fast": 8
+ },
+ "113-neuer-raum-neue-serie.test.js": {
+  "all": 12,
   "fast": 12
  },
- "25-juwelier.test.js": {
-  "all": 37,
-  "fast": 10
+ "114-funkspruch.test.js": {
+  "all": 33,
+  "fast": 33
  },
- "26-grundrisse.test.js": {
-  "all": 279,
-  "fast": 27
+ "115-markierung.test.js": {
+  "all": 14,
+  "fast": 14
  },
- "27-kartenvertrag.test.js": {
-  "all": 130,
+ "116-chat.test.js": {
+  "all": 29,
+  "fast": 29
+ },
+ "117-npc-seed.test.js": {
+  "all": 30,
+  "fast": 30
+ },
+ "118-zuschauer.test.js": {
+  "all": 53,
+  "fast": 53
+ },
+ "119-zuschauer-kamera.test.js": {
+  "all": 13,
+  "fast": 13
+ },
+ "120-zuschauer-last.test.js": {
+  "all": 19,
+  "fast": 19
+ },
+ "121-zuschauer-menues.test.js": {
+  "all": 18,
+  "fast": 18
+ },
+ "122-wettkampf-leitung.test.js": {
+  "all": 28,
+  "fast": 28
+ },
+ "123-wettkampf-vergleich.test.js": {
+  "all": 45,
+  "fast": 45
+ },
+ "124-wettkampf-zuschauer.test.js": {
+  "all": 35,
   "fast": 35
  },
- "28-freie-strasse.test.js": {
+ "125-ausweichpunkt.test.js": {
+  "all": 108,
+  "fast": 108
+ },
+ "126-raum-zuerst.test.js": {
+  "all": 20,
+  "fast": 20
+ },
+ "127-wettkampf-raum.test.js": {
+  "all": 42,
+  "fast": 42
+ },
+ "128-raum-fehlt.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "128-transporter-anfahrt.test.js": {
+  "all": 53,
+  "fast": 53
+ },
+ "129-explosion-optik.test.js": {
+  "all": 11,
+  "fast": 11
+ },
+ "130-gefaengnis.test.js": {
+  "all": 95,
+  "fast": 95
+ },
+ "130-geisel-flucht.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "131-transporter-varianten.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "132-transporter-strasse.test.js": {
+  "all": 19,
+  "fast": 19
+ },
+ "133-bewusstlos.test.js": {
+  "all": 29,
+  "fast": 29
+ },
+ "134-museum-schleichen.test.js": {
+  "all": 12,
+  "fast": 12
+ },
+ "135-transporter-bot.test.js": {
+  "all": 35,
+  "fast": 35
+ },
+ "136-transporter-panne.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "137-transporter-vorhut.test.js": {
+  "all": 23,
+  "fast": 23
+ },
+ "138-transporter-gegenrichtung.test.js": {
+  "all": 41,
+  "fast": 41
+ },
+ "139-kammern.test.js": {
+  "all": 170,
+  "fast": 170
+ },
+ "140-geisel-wege.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "141-verdacht-herumstehen.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "142-ton-ereignisse.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "143-ausgaenge-spiegel.test.js": {
+  "all": 18,
+  "fast": 18
+ },
+ "144-autos-gespiegelt.test.js": {
+  "all": 38,
+  "fast": 38
+ },
+ "144-zivilfahnder.test.js": {
+  "all": 30,
+  "fast": 30
+ },
+ "145-museum-v2.test.js": {
+  "all": 28,
+  "fast": 28
+ },
+ "146-wiederverbinden.test.js": {
+  "all": 44,
+  "fast": 44
+ },
+ "147-casino-chips.test.js": {
+  "all": 12,
+  "fast": 12
+ },
+ "148-fundort-zettel.test.js": {
+  "all": 115,
+  "fast": 115
+ },
+ "149-debug-zufall.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "150-notenbank.test.js": {
+  "all": 28,
+  "fast": 28
+ },
+ "151-notenbank-bohrer.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "152-notenbank-presse.test.js": {
+  "all": 23,
+  "fast": 23
+ },
+ "153-notenbank-bedienung.test.js": {
+  "all": 11,
+  "fast": 11
+ },
+ "154-notenbank-halten.test.js": {
+  "all": 15,
+  "fast": 15
+ },
+ "155-notenbank-tresor.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "156-gefaengnis-lieferant.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "157-gefaengnis-nebel.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "158-notenbank-bot.test.js": {
+  "all": 34,
+  "fast": 34
+ },
+ "159-notenbank-sturm.test.js": {
+  "all": 17,
+  "fast": 17
+ },
+ "160-notenbank-varianten.test.js": {
+  "all": 46,
+  "fast": 46
+ },
+ "161-kunden-ausrauben.test.js": {
+  "all": 11,
+  "fast": 11
+ },
+ "162-transporter-deckung.test.js": {
+  "all": 14,
+  "fast": 14
+ },
+ "163-gefaengnis-pistole.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "164-panne-flucht-coop.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "165-barrikade-reparieren.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "166-rueckkehr-spiel.test.js": {
+  "all": 69,
+  "fast": 69
+ },
+ "167-kammer-bank.test.js": {
   "all": 50,
   "fast": 50
+ },
+ "168-kammer-tankstelle.test.js": {
+  "all": 43,
+  "fast": 43
+ },
+ "170-gefaengnis-karte-sync.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "171-transporter-polizei.test.js": {
+  "all": 22,
+  "fast": 22
+ },
+ "172-transporter-karte-platz.test.js": {
+  "all": 12,
+  "fast": 12
+ },
+ "173-transporter-polizei-coop.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "174-transporter-ausrollen.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "175-wachwechsel-tuer.test.js": {
+  "all": 20,
+  "fast": 20
+ },
+ "176-gefaengnis-nach-notenbank.test.js": {
+  "all": 10,
+  "fast": 10
+ },
+ "177-tankstelle-kammer-eingang.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "178-gefaengnis-pistole-sync.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "179-grafikregler.test.js": {
+  "all": 31,
+  "fast": 31
+ },
+ "180-ton-wucht.test.js": {
+  "all": 15,
+  "fast": 15
+ },
+ "181-ergebnis-liste.test.js": {
+  "all": 2,
+  "fast": 2
+ },
+ "182-spuren-wucht.test.js": {
+  "all": 30,
+  "fast": 30
+ },
+ "183-ko-beschriftung.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "184-fluchtwagen-hupe.test.js": {
+  "all": 10,
+  "fast": 10
+ },
+ "185-fundort-abstand.test.js": {
+  "all": 41,
+  "fast": 41
+ },
+ "186-kasse-lautlos.test.js": {
+  "all": 10,
+  "fast": 10
+ },
+ "186-posten-frei.test.js": {
+  "all": 108,
+  "fast": 108
+ },
+ "187-fahrer-deal.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "188-gefaengnis-mehrere.test.js": {
+  "all": 23,
+  "fast": 23
+ },
+ "189-pixelhash.test.js": {
+  "all": 18,
+  "fast": 18
+ },
+ "190-ansicht-3d.test.js": {
+  "all": 58,
+  "fast": 58
+ },
+ "191-welt-3d.test.js": {
+  "all": 111,
+  "fast": 111
+ },
+ "192-figuren-3d.test.js": {
+  "all": 29,
+  "fast": 29
+ },
+ "193-zielen-3d.test.js": {
+  "all": 67,
+  "fast": 67
+ },
+ "194-sicht-3d.test.js": {
+  "all": 48,
+  "fast": 48
+ },
+ "195-licht-3d.test.js": {
+  "all": 146,
+  "fast": 146
+ },
+ "196-szenarien-3d.test.js": {
+  "all": 88,
+  "fast": 88
+ },
+ "197-effekte-3d.test.js": {
+  "all": 207,
+  "fast": 207
+ },
+ "198-coop-3d.test.js": {
+  "all": 210,
+  "fast": 210
+ },
+ "199-leistung-3d.test.js": {
+  "all": 115,
+  "fast": 115
+ },
+ "20-lage.test.js": {
+  "all": 88,
+  "fast": 14
+ },
+ "200-kloetzchen.test.js": {
+  "all": 24,
+  "fast": 24
+ },
+ "201-kl-figuren.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "202-kl-fahrzeuge.test.js": {
+  "all": 23,
+  "fast": 23
+ },
+ "203-kl-dinge-a.test.js": {
+  "all": 21,
+  "fast": 21
+ },
+ "204-kl-dinge-b.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "205-kl-gesamt.test.js": {
+  "all": 37,
+  "fast": 37
+ },
+ "206-kl-szenenwechsel.test.js": {
+  "all": 15,
+  "fast": 15
+ },
+ "207-fenster-zerschiessen.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "211-kl-hintertuer.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "213-kl-tresor.test.js": {
+  "all": 2,
+  "fast": 2
+ },
+ "215-kl-noppen.test.js": {
+  "all": 8,
+  "fast": 8
+ },
+ "217-kl-waffen.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "218-kl-hauptschalter.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "221-kamera-wand.test.js": {
+  "all": 26,
+  "fast": 26
+ },
+ "225-kl-parked.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "229-kl-fundorte.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "230-kl-strassenmoebel.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "231-kl-fluchtwagen.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "234-kl-pickups.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "239-kl-lichtschranke.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "244-kl-casino-tische.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "247-kl-alarmlicht.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "248-kl-umriss.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "25-juwelier.test.js": {
+  "all": 44,
+  "fast": 17
+ },
+ "255-kl-geldbuendel.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "26-grundrisse.test.js": {
+  "all": 444,
+  "fast": 192
+ },
+ "263-niederlage-auftragswahl.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "264-vorhut-wachen.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "268-gefaengnis-schrank.test.js": {
+  "all": 47,
+  "fast": 47
+ },
+ "27-kartenvertrag.test.js": {
+  "all": 230,
+  "fast": 135
+ },
+ "28-freie-strasse.test.js": {
+  "all": 67,
+  "fast": 67
  },
  "29-vielfalt.test.js": {
   "all": 40,
   "fast": 0
  },
  "30-polizei.test.js": {
-  "all": 15,
-  "fast": 15
+  "all": 10,
+  "fast": 10
  },
  "31-polizei-abstand.test.js": {
   "all": 1,
   "fast": 1
  },
  "32-fluchtwagen.test.js": {
-  "all": 6,
-  "fast": 6
+  "all": 20,
+  "fast": 20
  },
  "33-posten-ableiten.test.js": {
-  "all": 88,
-  "fast": 18
+  "all": 149,
+  "fast": 79
  },
  "34-gedrehte-karten.test.js": {
-  "all": 258,
-  "fast": 20
+  "all": 521,
+  "fast": 283
  },
  "35-lage-aus-seed.test.js": {
   "all": 79,
   "fast": 19
  },
  "36-treffpunkt-bank.test.js": {
-  "all": 64,
-  "fast": 32
+  "all": 84,
+  "fast": 52
  },
  "37-tankstelle-generator.test.js": {
-  "all": 45,
-  "fast": 45
+  "all": 90,
+  "fast": 90
+ },
+ "38-tankstelle-enge.test.js": {
+  "all": 10,
+  "fast": 10
+ },
+ "39-juwelier-basis.test.js": {
+  "all": 2,
+  "fast": 2
+ },
+ "39-juwelier-generator.test.js": {
+  "all": 126,
+  "fast": 126
  },
  "40-coop.test.js": {
-  "all": 23,
-  "fast": 23
+  "all": 15,
+  "fast": 15
  },
  "41-coop-alarm.test.js": {
   "all": 8,
   "fast": 8
  },
- "50-bot.test.js": {
-  "all": 54,
-  "fast": 31
- },
- "60-nebenziele.test.js": {
-  "all": 163,
-  "fast": 7
- },
- "70-menues.test.js": {
-  "all": 23,
-  "fast": 23
- },
- "75-bildgroesse.test.js": {
-  "all": 8,
-  "fast": 8
- },
- "76-maus-fangen.test.js": {
+ "42-museum-basis.test.js": {
   "all": 6,
   "fast": 6
  },
- "77-shop-stufen.test.js": {
-  "all": 5,
-  "fast": 5
+ "42-museum-generator.test.js": {
+  "all": 96,
+  "fast": 96
  },
- "78-wurfgeraete.test.js": {
-  "all": 9,
-  "fast": 9
- },
- "79-auszeichnungen.test.js": {
-  "all": 16,
-  "fast": 16
- },
- "80-menue-ueberlappung.test.js": {
-  "all": 17,
-  "fast": 17
- },
- "81-verdacht-team.test.js": {
-  "all": 18,
-  "fast": 18
- },
- "82-polizei-anfahrt.test.js": {
-  "all": 46,
-  "fast": 18
- },
- "83-beobachter-gnadenfrist.test.js": {
+ "43-casino-basis.test.js": {
   "all": 12,
   "fast": 12
  },
- "84-team-leiste.test.js": {
-  "all": 10,
-  "fast": 10
+ "43-casino-generator.test.js": {
+  "all": 156,
+  "fast": 156
  },
- "85-raum-schliessen-rueckfrage.test.js": {
+ "50-bot.test.js": {
+  "all": 78,
+  "fast": 55
+ },
+ "60-nebenziele.test.js": {
+  "all": 160,
+  "fast": 4
+ },
+ "70-menues.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "75-bildgroesse.test.js": {
+  "all": 13,
+  "fast": 13
+ },
+ "76-maus-fangen.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "77-shop-stufen.test.js": {
   "all": 8,
   "fast": 8
  },
+ "78-wurfgeraete.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "79-auszeichnungen.test.js": {
+  "all": 22,
+  "fast": 22
+ },
+ "80-menue-ueberlappung.test.js": {
+  "all": 14,
+  "fast": 14
+ },
+ "81-verdacht-team.test.js": {
+  "all": 16,
+  "fast": 16
+ },
+ "82-polizei-anfahrt.test.js": {
+  "all": 43,
+  "fast": 15
+ },
+ "83-beobachter-gnadenfrist.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "84-team-leiste.test.js": {
+  "all": 8,
+  "fast": 8
+ },
+ "85-raum-schliessen-rueckfrage.test.js": {
+  "all": 5,
+  "fast": 5
+ },
  "86-shop-text.test.js": {
-  "all": 2,
-  "fast": 2
+  "all": 1,
+  "fast": 1
  },
  "87-tab-schliessen.test.js": {
-  "all": 4,
-  "fast": 4
+  "all": 3,
+  "fast": 3
  },
  "88-auswahl.test.js": {
-  "all": 57,
-  "fast": 21
+  "all": 61,
+  "fast": 25
  },
  "89-beute-hinweis.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "90-fahndung.test.js": {
+  "all": 15,
+  "fast": 15
+ },
+ "90-fahrzeuge-solide.test.js": {
+  "all": 56,
+  "fast": 4
+ },
+ "91-autos-parkend.test.js": {
+  "all": 14,
+  "fast": 14
+ },
+ "91-brettersatz-start.test.js": {
+  "all": 3,
+  "fast": 3
+ },
+ "92-geiseln.test.js": {
+  "all": 14,
+  "fast": 14
+ },
+ "93-skillbaum.test.js": {
   "all": 6,
   "fast": 6
  },
- "90-fahndung.test.js": {
-  "all": 31,
-  "fast": 31
+ "94-lage-tags.test.js": {
+  "all": 105,
+  "fast": 105
  },
- "90-fahrzeuge-solide.test.js": {
-  "all": 60,
+ "95-blend-gestrichen.test.js": {
+  "all": 2,
+  "fast": 2
+ },
+ "96-ablenker-blind.test.js": {
+  "all": 5,
+  "fast": 5
+ },
+ "97-geisel-kugelfang.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "98-skillbaum-umbau.test.js": {
+  "all": 9,
+  "fast": 9
+ },
+ "99-c4.test.js": {
+  "all": 14,
+  "fast": 14
+ },
+ "99-notfallkoffer.test.js": {
+  "all": 8,
   "fast": 8
  },
- "91-autos-parkend.test.js": {
-  "all": 28,
-  "fast": 28
+ "99-punkte-bonus.test.js": {
+  "all": 4,
+  "fast": 4
+ },
+ "99-spezialwaffen.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "99-sprengfalle.test.js": {
+  "all": 6,
+  "fast": 6
+ },
+ "99-testwerkzeuge.test.js": {
+  "all": 7,
+  "fast": 7
+ },
+ "99-wachsamkeit.test.js": {
+  "all": 15,
+  "fast": 15
  }
 }
