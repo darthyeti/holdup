@@ -274,10 +274,7 @@ Jedes neue Ticket der 3D-Ansicht schreibt seinen Abschnitt als **eigene Datei** 
 - Ticket 255: [Geldbündel mit Schein oben (Ticket 255)](3d/255-geldbuendel-schein.md)
 - Ticket 256: [Juwelier-Auslage (Ticket 256)](3d/256-juwelier-auslage.md)
 - Ticket 257: [Runde Reifen an den Autos (Ticket 257, 16. November 2026)](3d/257-runde-reifen.md)
-
-#### Casino-Tische je Block (Ticket 262)
-
-`good:chips` baut jeden Tisch in einem lokalen Rahmen von 4x2 Kacheln (`KL.casinoBlock`): Mitte, Drehung (`th`) und Spielerseite (+v) kommen aus der Lage der Chipflaeche `rc` und der Mehrheit der Tische derselben Achse (die Spielerseite zeigt von der Wand weg). Zahlenfeld, Reling, Chips und Stuhl liegen in diesem Rahmen, es gibt keinen gemeinsamen Unterbau mehr, auch bei aneinandergrenzenden und gedrehten Tischen (Karte N, E, W). Test `262-kl-casino-block` (Rahmen ohne Ueberlappung, Achse stimmt, sechs Karten und Drehungen), reine Darstellung.
+- Ticket 262: [Casino-Tische je Block (Ticket 262)](3d/262-casino-tische-block.md)
 
 ## 3. Figuren
 
