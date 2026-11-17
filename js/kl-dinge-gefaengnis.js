@@ -9,5 +9,7 @@ export function register(KL) {
   });
   // 'lock' (Tueren mit Schloss) baut js/kl-dinge-bank.js (Ticket 211), auch fuer die Zellen.
   KL.obj('reader', (k, o) => { k.dbrick(o.x, o.y, 18, 8, 20, 16, 0, 0x2a2e36); k.dbrick(o.x, o.y + 8.4, 30, 4, 3, .8, 0, o.open ? 0x7ee34a : 0xd4452f, 1) });
+  // Waffenschrank (Ticket 268): grauer Stahlschrank an der Wand des Gangs, Tuerspalt, gelbe Lampen solange eine Pistole drin liegt (o.full), sonst dunkel. o.x, o.y Mitte.
+  KL.obj('wcab', (k, o) => { k.dbrick(o.x, o.y, 0, 26, 34, 10, 0, 0x66727f); k.dbrick(o.x, o.y + 5.2, 4, 1.6, 28, .8, 0, 0x2a2e36); k.dbrick(o.x - 6.5, o.y + 5.2, 22, 7, 4, .8, 0, o.full ? 0xe0b020 : 0x2a2e36, o.full ? .6 : 0); k.dbrick(o.x + 6.5, o.y + 5.2, 22, 7, 4, .8, 0, o.full ? 0xe0b020 : 0x2a2e36, o.full ? .6 : 0) });
   KL.obj('card', (k, o) => { k.dbrick(o.x, o.y, k.topAt(o.x, o.y), 9, 1.4, 6, 0, 0x7ee34a, .4) });
 }

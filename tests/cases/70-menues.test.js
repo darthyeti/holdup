@@ -134,7 +134,7 @@ module.exports = [
         return o;
       });
       t.eq(r.ended, true); t.eq(r.tiles, 'endNext*,endBack*', 'zwei Kacheln, nur mit der Maus');
-      t.eq(r.next, [false, 'play'], 'Neue Serie startet sofort'); t.eq(r.back, 'title', 'Titel');
+      t.eq(r.next, [false, 'mission'], 'nach verlorener Serie steht die Auftragswahl offen (Ticket 263), kein sofortiger Neustart'); t.eq(r.back, 'title', 'Titel');
     },
   },
   {

@@ -201,7 +201,7 @@ module.exports = [
         return o;
       });
       t.eq(r.ended, true); t.eq(r.aw, 0, 'Solo: keine Liste'); t.eq(r.tiles, 'endNext,endBack', 'Kacheln wie bisher');
-      t.eq(r.pg, 0, 'Pfeil blaettert nicht'); t.eq(r.next, [false, 'play'], 'Enter startet sofort die neue Serie');
+      t.eq(r.pg, 0, 'Pfeil blaettert nicht'); t.eq(r.next, [false, 'mission'], 'Enter fuehrt nach der verlorenen Serie in die Auftragswahl (Ticket 263), kein Sofort-Neustart');
       t.ok(r.stat > 10, 'Zaehler liegen am Spieler');
     },
   },
