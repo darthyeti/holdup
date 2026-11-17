@@ -1,4 +1,4 @@
-// Testlauf fuer Holdup: node run.js [--update] [--long] [--fast] [--jobs=N|auto] [--write-weights] [Teil des Testnamens ...]   (--fast laesst Tests mit slow: true aus, das sind die langen Karten-Durchlaeufe, npm run test:fast)   (--jobs=N verteilt die Dateien auf N Kindprozesse mit eigenem Browser, Gewichte in weights.json, npm run test:par)   (--long fuehrt statt cases/ die grossen Laeufe in long/ aus: npm run test:long, viele Seeds, mehrere Minuten)   (HOLDUP_ROOT=<Ordner> spielt gegen einen anderen Stand, zum Beispiel git archive HEAD~1)
+// Testlauf fuer Holdup: node run.js [--update] [--long] [--fast] [--jobs=N|auto] [--write-weights] [--shard=i/n] [Teil des Testnamens ...]   (--fast laesst Tests mit slow: true aus, das sind die langen Karten-Durchlaeufe, npm run test:fast)   (--jobs=N verteilt die Dateien auf N Kindprozesse mit eigenem Browser, Gewichte in weights.json, npm run test:par)   (--long fuehrt statt cases/ die grossen Laeufe in long/ aus: npm run test:long, viele Seeds, mehrere Minuten)   (HOLDUP_ROOT=<Ordner> spielt gegen einen anderen Stand, zum Beispiel git archive HEAD~1)
 // Jeder Test liegt in cases/*.test.js und exportiert { name, run(t) }. Jeder Test bekommt eine frische Seite mit #debug,
 // JS-Fehler im Spiel lassen ihn scheitern. t.snapshot(schluessel, wert) vergleicht mit golden/<datei>.json (mit --update neu schreiben).
 const fs = require('fs');
@@ -16,6 +16,7 @@ const CHILD = !!process.env.HOLDUP_CHILD;       // Kindprozess eines parallelen 
 const jobsArg = (args.find(a => a.startsWith('--jobs')) || '').split('=')[1] || process.env.HOLDUP_JOBS || '1';
 const JOBS = CHILD ? 1 : jobsArg === 'auto' ? Math.max(1, Math.min(4, os.cpus().length - 1)) : Math.max(1, +jobsArg || 1);
 const SLOWHINT = +process.env.HOLDUP_SLOWHINT || 20;   // Sekunden, ab denen ein Test ohne slow einen Hinweis bekommt
+const SHARD = (() => { const m = (args.find(a => a.startsWith('--shard=')) || '').match(/=(\d+)\/(\d+)$/); return m && +m[2] > 1 && +m[1] >= 1 && +m[1] <= +m[2] ? [+m[1], +m[2]] : null; })();
 const filters = args.filter(a => !a.startsWith('--'));
 const WFILE = path.join(__dirname, 'weights.json');
 const GOLD = path.join(__dirname, 'golden');
@@ -116,6 +117,13 @@ async function runParallel(files) {
   const dir = path.join(__dirname, LONG ? 'long' : 'cases');
   let files = fs.readdirSync(dir).filter(f => f.endsWith('.test.js')).sort().map(f => path.join(dir, f));
   if (process.env.HOLDUP_FILES) { const want = new Set(process.env.HOLDUP_FILES.split(',')); files = files.filter(f => want.has(path.basename(f))); }
+  if (SHARD && !process.env.HOLDUP_FILES) {   // --shard=i/n: nur der i-te von n Teilen (Dateien nach Gewicht in weights.json verteilt, gleiche Aufteilung auf jedem Rechner)
+    const wj = fs.existsSync(WFILE) ? JSON.parse(fs.readFileSync(WFILE, 'utf8')) : {}, bins = Array.from({ length: SHARD[1] }, () => ({ f: [], w: 0 }));
+    const wt = f => { const e = wj[path.basename(f)]; return e ? (FAST ? e.fast : e.all) : 30; };
+    for (const f of files.slice().sort((a, b) => wt(b) - wt(a) || a.localeCompare(b))) { const b = bins.reduce((m, x) => x.w < m.w ? x : m); b.f.push(f); b.w += wt(f); }
+    files = files.filter(f => bins[SHARD[0] - 1].f.includes(f));
+    console.log('Teil ' + SHARD[0] + ' von ' + SHARD[1] + ': ' + files.length + ' Dateien, geschaetzt ' + Math.round(bins[SHARD[0] - 1].w) + ' s');
+  }
   if (JOBS > 1) { const code = await runParallel(files); if (code !== null) process.exit(code); }
   const LOPT = process.env.HOLDUP_ROOT ? { root: process.env.HOLDUP_ROOT } : undefined;   // HOLDUP_ROOT: Tests gegen einen anderen Stand des Spiels laufen lassen (Gegenprobe, ob ein Test den alten Fehler findet)
   let env = await launch(LOPT);
