@@ -21,17 +21,17 @@ const HELP = `(() => {
 
 module.exports = [
   {
-    name: 'Sprengfalle: Sprengmeister (V2, Claymore) ist gebaut, Stueck je Stufe 1, 2, 3 beim Start, Feldbarrikade (V3) und Selbstschuss-MG (V4) sind soon, ohne Knoten kein Vorrat',
+    name: 'Sprengfalle: Sprengmeister (V2, Claymore) ist gebaut, Stueck je Stufe 1, 2, 3 beim Start, Feldbarrikade (V3) ist gebaut, Selbstschuss-MG (V4) ist soon, ohne Knoten kein Vorrat',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, S = D.CFG.skill, o = {}; o.nodes = ['V2', 'V3', 'V4'].map(id => [S[id].n, !!S[id].soon, S[id].cnt]); o.still = ['A3', 'A4', 'U3'].map(id => !!S[id].soon); o.cfg = Object.keys(D.CFG.trap || {}).sort();
         const kit = sk => { const sc = H.scene(sk, true); return [sc.me.trap | 0, D.trapKind(sc.me)]; };
         o.k0 = kit({}); o.claw = [1, 2, 3].map(l => kit({ V2: l })); o.mod = D.CFG.shop.items.every(i => i.k !== 'trap');
         return o; })()`);
-      t.eq(r.nodes, [['Sprengmeister', false, [1, 2, 3]], ['Feldbarrikade', true, [2, 3, 4]], ['Selbstschuss-MG', true, [1, 1, 2]]], 'Sprengmeister kaufbar, Stueck je Stufe 1, 2, 3, die zwei neuen Gegenstaende sind soon');
+      t.eq(r.nodes, [['Sprengmeister', false, [1, 2, 3]], ['Feldbarrikade', false, [2, 3, 4]], ['Selbstschuss-MG', true, [1, 1, 2]]], 'Sprengmeister kaufbar, Stueck je Stufe 1, 2, 3, Feldbarrikade kaufbar, das MG ist soon');
       t.eq(r.still, [false, false, false], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer sind seit B4 und B5 keine Platzhalter mehr');
       t.eq(r.cfg, ['claw', 'mine', 'reach'], 'CFG.trap hat mine, claw und reach');
       t.eq(r.k0, [0, null], 'ohne Knoten kein Vorrat und keine Art');
-      t.eq(r.claw, [[1, 'claw'], [2, 'claw'], [3, 'claw']], 'V2: Claymore, 1 bis 3 Stueck (die Barrikaden-Mine ist als Gegenstand entfallen, ihr Code laeuft bis #290 ungenutzt mit)');
+      t.eq(r.claw, [[1, 'claw'], [2, 'claw'], [3, 'claw']], 'V2: Claymore, 1 bis 3 Stueck (die Barrikaden-Mine ist als Gegenstand entfallen, Stufe 3 legt sie an Barrikaden, siehe unten)');
     },
   },
   {
@@ -86,6 +86,35 @@ module.exports = [
       t.eq(r.me, [1, 100], 'ein Spieler in der Zone loest nichts aus und bleibt heil');
       t.eq(r.hurt0, [1, 100], 'vor dem Scharfwerden passiert nichts');
       t.ok(r.hurt[0] === 0 && Math.abs(r.hurt[1] - r.hurt[2]) <= .6, 'der Mitspieler im Radius verliert pdmg * (1 - d / r * 0,6): ' + r.hurt[1] + ' statt ' + r.hurt[2]);
+    },
+  },
+  {
+    name: 'Sprengmeister Stufe 3 (#290): Taste 3 an einer eigenen Barrikade legt die Claymore als Barrikaden-Falle (auf der Gegenseite, an die Barrikade gebunden, loest bei Beamten und bei der Polizei-Ladung aus), Stufe 2 und freier Boden bleiben Claymore, faellt die Barrikade, ist sie weg',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, o = {}, T = 32;
+        const setup = lv => { const sc = H.scene({ V2: lv }); const bi = sc.g.its.find(i => i.t === 'bar'); sc.me.mat = 5; bi.act(sc.me); const bar = bi.b; let free = null; const c = bar.cells[0];
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!free && !D.isSol(c[0] + dx, c[1] + dy)) free = { x: (c[0] + dx) * T + 16, y: (c[1] + dy) * T + 16 };
+          sc.me.x = free.x; sc.me.y = free.y; sc.bar = bar; sc.free = free; sc.c = c; return sc; };
+        let sc = setup(3); D.useGadget(sc.me, 3, sc.free.x, sc.free.y); let m = D.traps()[0]; o.m = m ? [m.k, m.bi === sc.bar.i] : null; o.left = sc.me.trap;
+        const cc = { x: sc.c[0] * T + 16, y: sc.c[1] * T + 16 }, opp = { x: 2 * cc.x - sc.free.x, y: 2 * cc.y - sc.free.y };
+        o.opp = m ? Math.round(Math.hypot(m.x - opp.x, m.y - opp.y)) : null;
+        sc.me.x = sc.free.x + 200; sc.me.y = sc.free.y; const spot = { x: m.x, y: m.y }, far = [[sc.me, sc.me.x, sc.me.y]];
+        const hp0 = sc.bar.hp, c1 = H.cop(sc, spot.x + 30, spot.y), h = c1.hp; H.run(sc, 1.2, far.concat([[c1, c1.x, c1.y]]), true); o.arming = [D.traps().length, c1.hp === h];
+        H.run(sc, .6, far.concat([[c1, c1.x, c1.y]]), true); o.boom = [D.traps().length, c1.hp < h, Math.round(sc.bar.hp - hp0), D.msgs().feed.join(' | ')];
+        sc = setup(3); D.useGadget(sc.me, 3, sc.free.x, sc.free.y); sc.me.x = sc.free.x + 200; H.run(sc, 2, [[sc.me, sc.me.x, sc.me.y]], true); sc.bar.st = 'fuse'; sc.bar.fz = 5; H.run(sc, .3, [[sc.me, sc.me.x, sc.me.y]], true); o.fuse = D.traps().length;
+        sc = setup(3); D.useGadget(sc.me, 3, sc.free.x, sc.free.y); sc.bar.lv = 0; H.run(sc, .1, [[sc.me, sc.me.x, sc.me.y]], true); o.gone = D.traps().length;
+        sc = setup(2); D.useGadget(sc.me, 3, sc.free.x, sc.free.y); m = D.traps()[0]; o.s2 = m ? [m.k, m.bi] : null;
+        sc = H.scene({ V2: 3 }); D.useGadget(sc.me, 3, sc.sp.x - 60, sc.sp.y); o.open = D.traps()[0] && D.traps()[0].k;
+        return o; })()`);
+      t.eq(r.m, ['mine', true], 'Stufe 3 an der Barrikade: Barrikaden-Falle, an sie gebunden');
+      t.eq([r.left, r.opp], [2, 0], 'ein Stueck verbraucht, sie liegt auf der Kachel gegenueber dem Spieler');
+      t.eq(r.arming, [1, true], 'noch nicht scharf');
+      t.eq([r.boom[0], r.boom[1], r.boom[2]], [0, true, 0], 'scharf: loest beim Beamten aus, die eigene Barrikade bleibt heil');
+      t.ok(/Mine/.test(r.boom[3]), 'die Meldung nennt die Mine: ' + r.boom[3]);
+      t.eq(r.fuse, 0, 'legt die Polizei an der Barrikade ihre Ladung, geht sie hoch');
+      t.eq(r.gone, 0, 'faellt die Barrikade, ist sie still weg');
+      t.eq(r.s2, ['claw', -1], 'Stufe 2 an der Barrikade: normale Claymore');
+      t.eq(r.open, 'claw', 'Stufe 3 auf freiem Boden: Claymore');
     },
   },
   {
