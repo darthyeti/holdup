@@ -14,13 +14,16 @@ export function register(KL) {
     const X0 = o.x, Y0 = o.y, h = o.h, m = u => o.dir < 0 ? 2 * X0 + T - u : u, w = (u, v) => h ? [X0 + (v - Y0), Y0 + (u - X0)] : [u, v];
     const bx = (u0, u1, v0, v1, y0, hh, col, em) => { const a = w(m(u0), v0), b = w(m(u1), v1); B(k, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, y0, Math.abs(b[0] - a[0]), hh, Math.abs(b[1] - a[1]), 0, col, em) };
     const steel = 0x8d97a6, dark = 0x2f343c, gold = 0xe8b923;
-    if (o.open) { // offen (Ticket 198 Tresor): Tuerblatt etwa 100 Grad aufgeschwenkt, liegt am Gang an der Wand (Angel am oberen Ende der Oeffnung), Bolzen eingefahren, Durchgang frei, nur zwei Pfosten als Rahmen
-      const L = 2 * T - 6;
+    if (o.open) { // offen (Ticket 254): das Blatt ist ganz aufgeschwenkt (rund 180 Grad) und liegt flach an der Mauer neben der Oeffnung, auf der Gangseite, nichts mehr mitten im Gang; Angel am Pfosten, Bolzen an der freien Kante
+      const pt = (u, v) => w(m(u), v), wallAt = (u, v) => { const q = pt(u, v); return cell(Math.floor(q[0] / T), Math.floor(q[1] / T)) === '#' }, cell = k.E.cellAt;
+      const run = sd => { let n = 0; while (n < 3 && wallAt(X0 + T / 2, sd < 0 ? Y0 - 4 - n * T : Y0 + 2 * T + 4 + n * T)) n++; return n };   // Mauerkacheln neben der Oeffnung
+      const nN = run(-1), nS = run(1), sd = nN >= nS ? -1 : 1, L = Math.max(14, Math.min(2 * T - 6, Math.max(nN, nS) * T - 4)), v0 = sd < 0 ? Y0 - 3 - L : Y0 + 2 * T + 3, v1 = v0 + L, vm = (v0 + v1) / 2, hv = sd < 0 ? v1 : v0, fe = sd < 0 ? v0 : v1;
+      const U0 = X0 - 7.5, U1 = X0 - 1.5;                                                                                              // Blatt: 6 dick, 1,5 vor der Mauerflaeche
       bx(X0 - 3, X0 + 3, Y0 - 3, Y0, 0, 62, dark); bx(X0 - 3, X0 + 3, Y0 + 2 * T, Y0 + 2 * T + 3, 0, 62, dark);                       // Pfosten der Oeffnung
-      bx(X0 - 2 - L, X0 - 2, Y0 - 5, Y0 + 1, 2, 56, steel); bx(X0 - 2 - L, X0 - 2, Y0 - 5.6, Y0 - 5, 6, 48, 0xb7c0cd);              // Blatt an der Wand, helle Aussenseite
-      bx(X0 - 2 - L - 1.4, X0 - 2 - L, Y0 - 5, Y0 + 1, 8, 8, gold); bx(X0 - 2 - L - 1.4, X0 - 2 - L, Y0 - 5, Y0 + 1, 46, 8, gold);      // eingefahrene Bolzen an der freien Kante
-      bx(X0 - 2 - L / 2 - 4, X0 - 2 - L / 2 + 4, Y0 + 1, Y0 + 3, 24, 8, gold); bx(X0 - 2 - L / 2 - 1.5, X0 - 2 - L / 2 + 1.5, Y0 + 1, Y0 + 3, 20, 16, gold); // Handrad am Blatt (Innenseite)
-      bx(X0 - 2, X0 + 3, Y0 - 5, Y0 + 1, 14, 6, 0x5a626d);                                                                               // Angel
+      bx(U0, U1, v0, v1, 2, 56, steel); bx(U0 - .7, U0, v0 + 2, v1 - 2, 6, 46, 0xb7c0cd);                                              // Blatt, helle Aussenseite zum Gang
+      bx(U0 - 2.2, U0 - .7, vm - 4, vm + 4, 25, 8, gold); bx(U0 - 2.2, U0 - .7, vm - 1.5, vm + 1.5, 20, 18, gold);                     // Handrad auf der Aussenseite
+      bx(U0, U1, fe - (sd < 0 ? 1.4 : -1.4), fe, 8, 8, gold); bx(U0, U1, fe - (sd < 0 ? 1.4 : -1.4), fe, 46, 8, gold);                 // eingefahrene Bolzen an der freien Kante
+      bx(X0 - 8.5, X0 - .5, hv - 1.5, hv + 1.5, 14, 6, 0x5a626d); bx(X0 - 8.5, X0 - .5, hv - 1.5, hv + 1.5, 40, 6, 0x5a626d);          // Angelbaender am Pfosten
     } else {
       const c = Y0 + T;
       bx(X0 - 4, X0, c - 13, c + 13, 18, 26, 0xa7b0be); bx(X0 - 5, X0 - 4, c - 11, c + 11, 20, 22, 0x6e7886);               // runde Platte als Stufenblock
