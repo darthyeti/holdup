@@ -23,6 +23,28 @@ if(DX.chatOpen){const w=520,x=Math.round(VW/2-w/2),y=VH-72;plate(x,y,w,26);g.fil
 g.restore()}
 /* Zustandsanzeige von Gittern, Tueren und Kartenleser (Issue 73): nur was der Spieler sieht, zeigt den echten Zustand, sonst den zuletzt gesehenen (am Anfang der Zustand beim Start: zu, ausser den offenen Gittern). Nur Zeichnen, kein Netz. */
 function prSeen(k,real,x,y){const R=DX.LAY.prison;if(!R)return real;const m=R.vs||(R.vs={});if(los(DX.p.x,DX.p.y,x,y)){m[k]=real;return real}if(!(k in m))m[k]=(k==='rd'||R.open0.some(c=>c[0]+','+c[1]===k))?(k==='rd'?'L':'l'):'L';return m[k]}
+/* Ticket 298: Bedienteile im Gefaengnis als eigene Terminals mit Farbcode (Zellen orange, Gitter blau, Kameras violett, Leser silber). prTerms liefert die zwei Pulte (Wachstube und Kontrollraum, je nach Seed Zellen oder Gitter) mit Zustand fuer 2D und 3D:
+   Zellen-Pult 8 Lampen (je Zellentuer des Trakts, die Zelle des Gefangenen hervorgehoben), Gitter-Pult Hebel (open). Der Zustand folgt prSeen (ausser Sicht der zuletzt gesehene Stand, Schluessel tz0..tz7 und tg, Sicht vom Pult aus). Nur lesen. */
+const PRT={z:'#e8892b',g:'#3a8bff',k:'#b07cff',r:'#c4ccd6'};
+function prTerms(){const R=DX.LAY.prison;if(!R)return[];const out=[],y0=R.tb?15:1,cx=[1,4,7,10],np=Math.max(1,DX.its.filter(i=>i.t==='pry').length);
+for(const k of['wach','kon']){const S=R.sws[k],x=(S.at[0]+.5)*T,y=(S.at[1]+.4)*T;
+if(S.opens.includes('zi')){const lamps=[],hi=[];for(let i=0;i<8;i++){const dd=i<4?[cx[i],y0+2]:[cx[i-4],y0+5];lamps.push(prSeen('tz'+i,cell(dd[0],dd[1]),x,y)!=='L'?1:0);hi.push(R.slots.slice(0,np).some(s=>s.cl.d[0]===dd[0]&&s.cl.d[1]===dd[1])?1:0)}out.push({v:'z',x,y,lamps,hi,lab:'ZELLEN '+(R.tb?'B':'A')})}
+else{const c=R.locks.find(l=>l.id==='gii').cells[0];out.push({v:'g',x,y,open:prSeen('tg',cell(c[0],c[1]),x,y)!=='L'?1:0,lab:'GITTER GANG'})}}
+return out}
+function prPlate(s,x,y,c){g.font='bold 6px monospace';g.textAlign='center';const w=Math.ceil(g.measureText(s).width)+5;g.fillStyle='rgba(10,12,16,.72)';g.fillRect(Math.round(x-w/2),y-6,w,8);g.fillStyle=c;g.fillText(s,x,y);g.textAlign='left'}
+/* 2D: die vier Bedienteile (Pulte, Kamera-Hauptschalter an LAY.sw, Kartenleser bei RX,RY mit Zustand rdOpen) */
+function prTermDraw(rdOpen,RX,RY){const L=DX.LAY,B='#23262d',D='#12141a';
+for(const o of prTerms()){const x=Math.round(o.x),y=Math.round(o.y);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x-14,y-5,32,16);
+if(o.v==='z'){g.fillStyle=B;g.fillRect(x-15,y-8,30,15);g.fillStyle=PRT.z;g.fillRect(x-15,y-8,30,3);g.fillStyle=D;g.fillRect(x-14,y-4,28,6);
+for(let i=0;i<8;i++){const lx=x-13+i*3.4;g.fillStyle=o.lamps[i]?'#7ee34a':'#d4452f';g.fillRect(lx,y-3,2.6,2.6);if(o.hi[i]){g.fillStyle='#fff';g.fillRect(lx,y,2.6,1.4)}}
+g.fillStyle=PRT.z;for(let i=0;i<3;i++){g.beginPath();g.arc(x-6+i*6,y+4.2,1.5,0,6.283);g.fill()}}
+else{g.fillStyle=B;g.fillRect(x-13,y-8,26,15);g.fillStyle=PRT.g;g.fillRect(x-13,y-8,26,3);g.fillStyle=D;g.fillRect(x-11,y-4,10,9);g.fillStyle='#aeb6c2';for(let i=0;i<4;i++)g.fillRect(x-10+i*2.3,y-3,1.2,7);
+g.fillStyle=D;g.fillRect(x+2,y-4,10,9);g.strokeStyle='#e5392e';g.lineWidth=2;g.beginPath();g.moveTo(x+7,y+3);g.lineTo(o.open?x+10.5:x+3.5,y-2);g.stroke();g.fillStyle='#ff6a5a';g.beginPath();g.arc(o.open?x+10.5:x+3.5,y-2.5,2,0,6.283);g.fill();g.fillStyle=o.open?'#7ee34a':'#d4452f';g.fillRect(x+9,y+4.2,3,2)}
+prPlate(o.lab,x,y+16,PRT[o.v])}
+if(L.sw){const x=Math.round(L.sw.x),y=Math.round(L.sw.y),on=DX.camDown<=0;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x-12,y-5,28,16);g.fillStyle='#2a2336';g.fillRect(x-13,y-8,26,17);g.fillStyle=PRT.k;g.fillRect(x-13,y-8,26,2);g.fillStyle=D;g.fillRect(x-10,y-5,20,10);
+g.fillStyle=on?'#3d8fa3':'#0b0c10';g.fillRect(x-9,y-4,18,8);if(on){g.fillStyle='#d8f3fa';g.fillRect(x-4,y-2,6,3.5);g.fillRect(x+2,y-1,3,1.6);g.fillStyle='#ff5a4a';g.fillRect(x-3,y-1,1.4,1.4)}else{g.strokeStyle='#2c3038';g.lineWidth=1;g.beginPath();g.moveTo(x-4,y-3);g.lineTo(x+4,y+3);g.moveTo(x+4,y-3);g.lineTo(x-4,y+3);g.stroke()}
+g.fillStyle=on?'#7ee34a':'#d4452f';g.fillRect(x+9,y+5,3,2);prPlate('KAMERAS',x,y+17,PRT.k)}
+g.fillStyle='#1d2026';g.fillRect(RX-1,RY-1,10,18);g.fillStyle=PRT.r;g.fillRect(RX+1,RY+1,6,8);g.fillStyle='#0a0a0c';g.fillRect(RX+1.5,RY+4,5,1.6);g.fillStyle=rdOpen?'#7ee34a':'#d4452f';g.fillRect(RX+2,RY+12,4,3);prPlate('LESER',RX+4,RY-3,PRT.r)}
 /* Zeichnen des Bohrers (N2b): Gestell mit Motor, senkrechte Bohrstange mit Krone (dreht sich beim Laufen, wird mit dem Fortschritt kuerzer, weil sie in den Boden geht), Staub, wachsende Risse und ein dunkler Ring im Boden. Bei 100 % ist die Maschine weg, zurueck bleibt das Loch. Zustand: Lampe gruen laeuft, rot steht, gelb aus. */
 /* Zeichnen der Notenpresse (N3): Gehaeuse, Papiervorrat links (Stapel schrumpft), zwei Walzen und eine Papierbahn, die sich beim Laufen bewegen, Ausgabe rechts mit den gedruckten Buendeln, Lampe und Zustand. */
 function nbDrawPress(g){const L=DX.LAY.nb,z=L.press,X=z[0]*T,Y=z[1]*T,st=DX.nbp.st,run=st===1,t=DX.time,C=CFG.nb,bt=L.belt[0]*T,by=Y+16,tx=L.tab[0]*T,ty=L.tab[1]*T,col=run?'#7ee34a':st===0?'#e0b020':st===6?'#ffb000':'#d4452f';
@@ -322,7 +344,7 @@ if(DX.LAY.nb)nbDraw(g);
 if(DX.LAY.nb&&DX.nbOpen&&!DX.ended){const z=DX.LAY.nb.zone,pu=.5+.5*Math.sin(DX.time*3);g.save();g.strokeStyle='rgba(126,227,74,'+(.5+pu*.4)+')';g.lineWidth=2;g.setLineDash([6,5]);g.strokeRect(z[0]*T+2,z[1]*T+2,(z[2]-z[0]+1)*T-4,(z[3]-z[1]+1)*T-4);g.setLineDash([]);g.fillStyle='#bfffa0';g.font='bold 9px monospace';g.textAlign='center';g.fillText('AUSSTIEG',(z[0]+z[2]+1)/2*T,(z[1]+z[3]+1)/2*T+3);g.restore()}
 if(DX.LAY.prison&&DX.phase===1&&!DX.ended){const pk=DX.LAY.prison.pick,X=pk[0]*T+16,Y=pk[1]*T+16,pu=.5+.5*Math.sin(DX.time*3);g.save();g.strokeStyle='rgba(126,227,74,'+(.5+pu*.4)+')';g.lineWidth=2;g.setLineDash([6,5]);g.beginPath();g.arc(X,Y,CFG.prison.pickR,0,6.283);g.stroke();g.setLineDash([]);g.fillStyle='rgba(126,227,74,.18)';g.fill();g.fillStyle='#bfffa0';g.font='bold 9px monospace';g.textAlign='center';g.fillText('ABHOLPUNKT',X,Y+3);g.restore()}
 for(const q of (DX.LAY.prison?DX.LAY.prison.locks.reduce((a,l)=>a.concat(l.cells.map(c=>[c[0],c[1],0,l.kind])),[]).concat(DX.LAY.prison.open0.map(c=>[c[0],c[1],0,'grille']),DX.LAY.prison.dl.cells):[]).concat(DX.LAY.lockCells)){const X=q[0]*T,Y=q[1]*T,c=prSeen(q[0]+','+q[1],cell(q[0],q[1]),X+16,Y+16);if(c==='L'&&q[3]==='grille'){g.fillStyle='rgba(18,22,28,.5)';g.fillRect(X,Y,T,T);g.fillStyle='#8f97a2';for(let i=0;i<4;i++)g.fillRect(X+4+i*8,Y,3,T);g.fillStyle='#30343b';g.fillRect(X,Y,T,3);g.fillRect(X,Y+T-3,T,3)}else if(c==='L'){g.fillStyle='#30343b';g.fillRect(X,Y+2,T,T-4);g.fillStyle='#8f97a2';g.fillRect(X+2,Y+4,T-4,3);g.fillStyle='#d4452f';g.fillRect(X+T/2-3,Y+T/2-3,6,6)}else if(!q[2]){g.fillStyle='#30343b';g.fillRect(X+1,Y+2,5,T-4);g.fillStyle='#7ee34a';g.fillRect(X+T-9,Y+T/2-3,5,5)}}
-if(DX.LAY.prison){const R=DX.LAY.prison,gl=R.locks.find(l=>l.id==='gi'),rd=gl.ops[0].at,op=prSeen('rd',cell(gl.cells[0][0],gl.cells[0][1]),(rd[0]+1)*T-6,(rd[1]+1)*T)!=='L',RX=(rd[0]+1)*T-10,RY=(rd[1]+1)*T-8;g.fillStyle='#1d2026';g.fillRect(RX-1,RY-1,10,18);g.fillStyle='#5d6b7a';g.fillRect(RX+1,RY+1,6,8);g.fillStyle=op?'#7ee34a':'#d4452f';g.fillRect(RX+2,RY+12,4,3);
+if(DX.LAY.prison){const R=DX.LAY.prison,gl=R.locks.find(l=>l.id==='gi'),rd=gl.ops[0].at,op=prSeen('rd',cell(gl.cells[0][0],gl.cells[0][1]),(rd[0]+1)*T-6,(rd[1]+1)*T)!=='L',RX=(rd[0]+1)*T-10,RY=(rd[1]+1)*T-8;prTermDraw(op,RX,RY);
 {const wk=DX.its.find(i=>i.t==='wkb');if(wk){const X=wk.x-13,Y=wk.y-8;g.fillStyle='#1d2026';g.fillRect(X-1,Y-1,28,12);g.fillStyle='#66727f';g.fillRect(X,Y,26,10);g.fillStyle='#3d4650';g.fillRect(X+12,Y,2,10);g.fillStyle=wk.done?'#2a2e36':'#e0b020';g.fillRect(X+3,Y+3,7,4);g.fillRect(X+16,Y+3,7,4)}}
 const cc=DX.its.find(i=>i.t==='crd');if(cc&&!cc.done&&los(DX.p.x,DX.p.y,cc.x,cc.y)){g.fillStyle='#1d2026';g.fillRect(cc.x+5,cc.y-11,11,8);g.fillStyle='#7ee34a';g.fillRect(cc.x+6,cc.y-10,9,6);g.fillStyle='#fff';g.fillRect(cc.x+7,cc.y-8,5,1)}}
 drawGone();
@@ -429,7 +451,8 @@ if(L.lasers){const on=DX.camDown<=0;for(const l of L.lasers){const x0=l[0]*T,y0=
 // Ueberwachungskameras (Klotz-Stil baut sie als Wandhalter mit Gehaeuse, klassisch zeichnet cams3d das 2D-Bild): sichtbar wie dort (bekannt, alles sichtbar oder in Sicht), Blickwinkel mit Schwung
 DX.cams.forEach((c,i)=>{if(c.k||DX.losAll||los(P.x,P.y,c.x,c.y))q('cam',{x:c.x,y:c.y,a:camAng(c,i),a0:c.a0,off:c.off||DX.camDown>0?1:0,al:c.alert>0?1:0})});
 // Hauptschalter (E-Ziel Strom aus): Lage und Zustand (Kameras und Laser aus solange camDown laeuft)
-if(L.sw)q('sw',{x:L.sw.x,y:L.sw.y,on:DX.camDown>0?0:1});
+if(L.sw)q('sw',{x:L.sw.x,y:L.sw.y,on:DX.camDown>0?0:1,pr:L.prison?1:0});
+if(L.prison)for(const o of prTerms())q('tpult',{x:o.x,y:o.y,v:o.v,lamps:o.lamps||null,hi:o.hi||null,open:o.open?1:0});
 // Zapfsaeulen: heil (Anzeige) oder ausgebrannt (Raster u wird o)
 for(const p of L.pumps||[])q('pump',{x:p.x*T+16,y:p.y*T+16,ok:cell(p.x,p.y)==='u'?1:0});
 // Notenbank: Bohrer (laeuft, steht, Fortschritt), Loch und Ausstieg, Notenpresse mit Papier, gedruckte Buendel, Abgabe
@@ -483,6 +506,7 @@ let txt3dN=[];
 function txt3d(V,gnd,up){txt3dN=[];const L=DX.LAY,t=DX.time,tx=(s,x,y,h,col,sz)=>{gnd(x,y,h||0);g.fillStyle=col;g.font='bold '+sz+'px monospace';g.textAlign='center';g.fillText(s,x,y);g.textAlign='left';txt3dN.push(s)};
 if(L.nb&&DX.nbOpen&&!DX.ended){const z=L.nb.zone;tx('AUSSTIEG',(z[0]+z[2]+1)/2*T,(z[1]+z[3]+1)/2*T+3,0,'#bfffa0',9)}
 if(L.prison&&DX.phase===1&&!DX.ended){const pk=L.prison.pick,X=pk[0]*T+16,Y=pk[1]*T+16;gnd(X,Y,0);g.fillStyle='rgba(126,227,74,.18)';g.beginPath();g.arc(X,Y,CFG.prison.pickR,0,6.283);g.fill();tx('ABHOLPUNKT',X,Y+3,0,'#bfffa0',9)}
+if(L.prison){for(const o of prTerms())tx(o.lab,o.x,o.y+17,0,PRT[o.v],6);if(L.sw)tx('KAMERAS',L.sw.x,L.sw.y+17,0,PRT.k,6);const gl=L.prison.locks.find(l=>l.id==='gi'),rd=gl.ops[0].at;tx('LESER',(rd[0]+1)*T-6,(rd[1]+1)*T+17,0,PRT.r,6)}
 if(L.nb){const D=L.nb.dep,dx=D[0]*T,dy=D[1]*T;tx('ABGABE',dx+T,dy+T-3,V.topAt(dx+T,dy+T/2),'rgba(255,240,200,.85)',6)}
 for(const b of DX.bars){if(b.lv<=0)continue;const f=b.st==='fuse';if(!f&&!b.tk)continue;if(!f&&Math.hypot(DX.p.x-b.x,DX.p.y-b.y)>520)continue;
 if(f){const a=Math.floor(t*6)%2;gnd(b.x,b.y,0);g.strokeStyle='rgba(255,60,40,'+(a?.8:.35)+')';g.lineWidth=2;g.setLineDash([6,5]);g.beginPath();g.arc(b.x,b.y,CFG.bar.rad,0,6.283);g.stroke();g.setLineDash([]);up(b.x,b.y,30);g.textAlign='center';g.font='bold 12px monospace';g.fillStyle=a?'#ff5a40':'#ffb0a0';g.fillText('SPRENGUNG '+Math.max(0,Math.ceil(b.fz)),b.x,b.y-30);txt3dN.push('SPRENGUNG')}
