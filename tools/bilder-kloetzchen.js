@@ -58,6 +58,16 @@ const strip = (files, out, w) => execFileSync('python3', ['-I', '-c', 'import sy
       return out.slice(0, 8) });
     console.log(JSON.stringify(targets));
     for (const t of targets) { await page.evaluate(([x, y]) => { const D = __dbg, m = D.get().me; m.x = x - 60; m.y = y + 40; m.vx = m.vy = 0; D.update(1 / 30); D.update(1 / 30); D.draw() }, t.slice(1, 3)); process.env.HALF = '190'; info = await shot('d' + FR.length, t.slice(1, 4)) }
+  } else if (FLOW === 'auslage') {
+    // Juwelier-Auslage (Ticket 256): je Vitrine voll und leer, Ausschnitt dicht an der Vitrine (HALF 70)
+    const vits = await page.evaluate(() => __dbg.get().its.filter(i => i.t === 'vit').map(i => [Math.round(i.x), Math.round(i.y)]).slice(0, 6));
+    console.log(JSON.stringify(vits));
+    for (let n = 0; n < vits.length; n++) {
+      const v = vits[n]; for (const st of ['voll', 'leer']) {
+        await page.evaluate(([x, y, done]) => { const D = __dbg, g = D.get(), m = g.me; m.x = x - 50; m.y = y + 50; m.vx = m.vy = 0; for (const i of g.its) if (i.t === 'vit' && Math.round(i.x) === x && Math.round(i.y) === y) i.done = done; D.update(1 / 30); D.update(1 / 30); D.draw(); D.draw() }, [v[0], v[1], st === 'leer' ? 1 : 0]);
+        process.env.HALF = process.env.HALF || '70'; info = await shot('v' + n + st, [v[0], v[1], 6]);
+      }
+    }
   } else if (FLOW === 'tresor') {
     // Tresor zu, offen, Spieler im Tresor (Ticket 198 Tresor): Spieler vor der Tuer, dann Tresor oeffnen (Beute-Objekt act), dann in den Raum dahinter
     const V0 = await page.evaluate(() => { const D = __dbg, L = D.LAY(), T = 32, v = L.vault; if (!v) return null; const m = D.get(); return { door: [v.door[0] * T, v.door[1] * T], o: v.o, dir: v.dir, mid: [v.door[0] * T + 32, v.door[1] * T + 32] } });
