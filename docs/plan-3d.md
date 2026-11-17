@@ -302,6 +302,12 @@ Till (Coop-Test): Fadenkreuz plus Kreis darunter verwirrt. Geprüft, ob der Krei
 
 `KL.obj('bundle')` (`js/kl-dinge-allgemein.js`): Statt der flächigen leuchtend grünen Deckplatte trägt der oberste der drei Stapel einen erkennbaren Geldschein aus Klötzchen: heller Schein (24 mal 14), dunkelgrüner Rand, Medaillon links (Raute aus zwei gedrehten Klötzen mit hellem Kern), Wertzahlen in den vier Ecken, zweites Feld rechts, darüber quer die helle Banderole mit rotem Stempel. Alles in der leichten Schräge des Stapels, nur Darstellung. Test `255-kl-geldbuendel` (Bauer ohne Browser), Bild `docs/bilder/stil-kloetzchen/geldbuendel-vorher-nachher.jpg` (Bank, Tag und Nacht, zwei Seeds).
 
+### 2.28 Runde Reifen an den Autos (Ticket 257, 16. November 2026)
+
+Die Räder der Fahrzeuge waren Quader und wirkten eckig. Jetzt sind Reifen und Felge Zylinder (`wheel(...)` im Kern `js/kl-kern.js`, eigener Pool `k-raeder`, 16 Segmente, Achse quer zur Fahrzeugachse). Alle Fahrzeugarten (`pol`, `civ`, `van`, `vh`, `tk`, Fluchtwagen-Varianten) nutzen es über `wheelP` in `js/kl-fahrzeuge.js`, das Wrack zeigt ein einzelnes Rad. Beim Zerfall (Wrack, Explosion) liefert `wheel` im Sammelmodus einen Quader, die Teile fliegen wie bisher. Das Teilelimit je Fahrzeug (40) bleibt. Rein Darstellung, kein Netzformat betroffen.
+
+Kosten (`messung-bildzeit --3d --kl --n=12`, Erkundung, Überfall, Polizei): vorher 461 / 523 / 515 ms, nachher 444 / 491 / 493 ms je `draw()` im Messrahmen, also nicht langsamer. Dreiecke rund +128 je Szene (Bank 37.529 auf 37.653, Transporter 34.947 auf 35.011, Casino 90.245 auf 90.373), Draw Calls +1. Aus der Spielkamera sind die Räder klein, die Rundung zeigt sich vor allem an den Rändern. Bild vorher und nachher: `docs/bilder/stil-kloetzchen/reifen-vorher-nachher.jpg`.
+
 #### Casino-Tische je Block (Ticket 262)
 
 `good:chips` baut jeden Tisch in einem lokalen Rahmen von 4x2 Kacheln (`KL.casinoBlock`): Mitte, Drehung (`th`) und Spielerseite (+v) kommen aus der Lage der Chipflaeche `rc` und der Mehrheit der Tische derselben Achse (die Spielerseite zeigt von der Wand weg). Zahlenfeld, Reling, Chips und Stuhl liegen in diesem Rahmen, es gibt keinen gemeinsamen Unterbau mehr, auch bei aneinandergrenzenden und gedrehten Tischen (Karte N, E, W). Test `262-kl-casino-block` (Rahmen ohne Ueberlappung, Achse stimmt, sechs Karten und Drehungen), reine Darstellung.
