@@ -149,7 +149,7 @@ module.exports = [
         const glow = () => d.ui().tiles().filter(q => q.glow).map(q => q.id.slice(3)).sort();
         const texts = () => { const ctx = d.cv.getContext('2d'), orig = ctx.fillText, log = []; ctx.fillText = function (s) { log.push(String(s)); return orig.apply(this, arguments); }; try { d.draw(); } finally { ctx.fillText = orig; } return log; };
         MT.hover(d, 'sk:A3'); o.itemKette = glow(); MT.hover(d, 'sk:A2'); o.pfadKette = glow(); MT.hover(d, 'sk:V0'); o.wurzel = glow(); MT.hover(d, 'sk:U4'); o.uKette = glow();
-        o.itemText = [/4 Schuss/, /3 Granaten/, /C: 1 Stück/].map(re => texts().some(s => re.test(s)));
+        o.itemText = [/Rechte Maus: 4 Schuss/, /Rechte Maus: 3 Granaten/, /C: 1 Stück/].map(re => texts().some(s => re.test(s)));
         for (let i = 0; i < 3; i++) MT.click(d, 'sk:A0'); MT.click(d, 'sk:A1'); o.gekauft = [Object.assign({}, d.SESSION.sk), d.SESSION.pts];
         MT.hover(d, 'sk:A2'); const tx = texts(); o.grund = tx.filter(s => /verbaut/i.test(s)); o.grundName = tx.some(s => /Ruhige Hand/.test(s));
         o.kette2 = glow(); o.lock = d.ui().tiles().find(q => q.id === 'sk:A2').lock;
