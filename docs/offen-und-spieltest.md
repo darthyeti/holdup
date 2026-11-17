@@ -12,6 +12,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 ## Spieltest (ungespielt, kurz)
 
 - Gewehr und Granatwerfer (Skillbaum v2): rechte Maustaste halten legt an (Sicht zoomt in 3D etwas heraus), Linksklick feuert, Shift ist nur Schleichen. Gewehr: ein Treffer tötet alles, geht durch Schilde und Fenster; Stufe 3 markiert den nächsten Gegner fürs Team.
+- Selbstschuss-MG (Skillbaum v2, Stellung hinter Sprengmeister): Taste V halten zeigt Platz und Kegel, Loslassen stellt es mit Blick nach vorn. Beobachten: ob es die Polizei im Kegel wirklich aufhält, ob die Polizei es zu schnell abräumt, ob 40/60/80 Schuss reichen. Claymore bleibt auf 3.
 - **Fenster zerschießen (Ticket 207):** Eigene Kugeln brechen Scheiben (ein Treffer, `CFG.win.hits`), in 3D fliegen kurz Glas-Klötzchen. Beobachten: lässt das Loch zu viele Polizeikugeln durch, und wird es mit Brettern (`wbar`) rechtzeitig wieder dicht?
 - **3D-Gerüst** (Ticket #149, Vorschau im PR, dort Optionen, Ansicht 3D, oder `#debug&3d`): Nur der gekippte Boden mit HUD darüber, noch ohne Figuren und Wände (auch du bist unsichtbar). Lädt es bei dir ohne Meldung, wie wirkt der Winkel zwischen 20 und 30 Grad?
 - **3D-Welt** (Ticket #150, Vorschau im PR mit `#debug&3d`): Wände, Fenster mit Glas, Türen, Tresen und Möbel stehen jetzt als Körper (Figuren und Autos fehlen noch). Lesen sich Räume und Türen, und stört die Wandhöhe beim Blick nach Norden?

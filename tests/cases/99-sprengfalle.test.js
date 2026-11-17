@@ -21,13 +21,13 @@ const HELP = `(() => {
 
 module.exports = [
   {
-    name: 'Sprengfalle: Sprengmeister (V2, Claymore) ist gebaut, Stueck je Stufe 1, 2, 3 beim Start, Feldbarrikade (V3) ist gebaut, Selbstschuss-MG (V4) ist soon, ohne Knoten kein Vorrat',
+    name: 'Sprengfalle: Sprengmeister (V2, Claymore) ist gebaut, Stueck je Stufe 1, 2, 3 beim Start, Feldbarrikade (V3) ist gebaut, Selbstschuss-MG (V4) ist gebaut, ohne Knoten kein Vorrat',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, S = D.CFG.skill, o = {}; o.nodes = ['V2', 'V3', 'V4'].map(id => [S[id].n, !!S[id].soon, S[id].cnt]); o.still = ['A3', 'A4', 'U3'].map(id => !!S[id].soon); o.cfg = Object.keys(D.CFG.trap || {}).sort();
         const kit = sk => { const sc = H.scene(sk, true); return [sc.me.trap | 0, D.trapKind(sc.me)]; };
         o.k0 = kit({}); o.claw = [1, 2, 3].map(l => kit({ V2: l })); o.mod = D.CFG.shop.items.every(i => i.k !== 'trap');
         return o; })()`);
-      t.eq(r.nodes, [['Sprengmeister', false, [1, 2, 3]], ['Feldbarrikade', false, [2, 3, 4]], ['Selbstschuss-MG', true, [1, 1, 2]]], 'Sprengmeister kaufbar, Stueck je Stufe 1, 2, 3, Feldbarrikade kaufbar, das MG ist soon');
+      t.eq(r.nodes, [['Sprengmeister', false, [1, 2, 3]], ['Feldbarrikade', false, [2, 3, 4]], ['Selbstschuss-MG', false, [1, 1, 2]]], 'Sprengmeister, Feldbarrikade und MG kaufbar, Stueck je Stufe');
       t.eq(r.still, [false, false, false], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer sind seit B4 und B5 keine Platzhalter mehr');
       t.eq(r.cfg, ['claw', 'mine', 'reach'], 'CFG.trap hat mine, claw und reach');
       t.eq(r.k0, [0, null], 'ohne Knoten kein Vorrat und keine Art');

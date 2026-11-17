@@ -576,6 +576,11 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
       if (kt('trap', q)) { /* Kloetze */ } else if (q.k === 'mine') thing(q.x, q.y, 0, 14, 3, 14, 0, 0x2a2d33); else { thing(q.x, q.y, 0, 18, 8, 8, 0, 0x3a4034); thing(q.x, q.y - 3, 8, 14, 2, 2, 0, 0x2a2d33) }
       if (q.bl) fp(FA, q.x, q.y, q.k === 'mine' ? 4 : 10, 3, 0, hc(q.armed ? 0xff4a3a : 0xffc446), 1); cnt('tr');
     }
+    for (const q of (D.mg || [])) {
+      if (q.own) { ring(FA, q.x, q.y, .6, 260, 1.5, lc('110,235,130'), .2) }
+      if (!kt('mg', q)) { thing(q.x, q.y, 0, 12, 6, 12, q.ta, 0x3a4034); thing(q.x + Math.cos(q.ta) * 12, q.y + Math.sin(q.ta) * 12, 5, 16, 3, 3, q.ta, 0x2a2d33) }
+      if (q.fl) fp(FA, q.x + Math.cos(q.ta) * 26, q.y + Math.sin(q.ta) * 26, 8, 8, 0, hc(0xffdc78), 1); cnt('mg');
+    }
     for (const q of D.aid) {
       ring(FA, q.x, q.y, .6, q.r, 1.5, lc('110,235,130'), .3 * q.al); ring(FA, q.x, q.y, .7, 10 + q.ph * (q.r - 10), 2, lc('110,235,130'), .45 * (1 - q.ph) * q.al);
       if (!kt('aid', q)) { thing(q.x, q.y, 0, 16, 8, 12, 0, 0xe9efe9); thing(q.x, q.y, 8, 3, .6, 9, 0, 0x2fbf52); thing(q.x, q.y, 8, 9, .6, 3, 0, 0x2fbf52) } cnt('aid');
