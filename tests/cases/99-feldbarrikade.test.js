@@ -86,6 +86,21 @@ module.exports = [
     },
   },
   {
+    name: 'Feldbarrikade und Polizei: ein Beamter an der Barrikade ohne Spieler in Sicht schiesst sie ab (unter 20 s, CFG.field.dps), mit Spieler in Sicht nicht (er schiesst auf den Spieler), ohne Beamten haelt sie',
+    async run(t) {
+      const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, T = 32, o = {};
+        const mk = () => { const sc = H.scene({ V3: 2 }); D.useGadget(sc.me, 3, sc.sp.x - 60, sc.sp.y); const f = D.fbs()[0]; sc.f = f; sc.fx = f.x * T + 16; sc.fy = f.y * T + 16; return sc; };
+        let sc = mk(); const c = H.cop(sc, sc.fx + 30, sc.fy); sc.me.x = sc.fx + 600; let t0 = 0; while (D.fbs().length && t0 < 25) { H.run(sc, .5, [[c, c.x, c.y], [sc.me, sc.me.x, sc.me.y]], true); t0 += .5; } o.away = [D.fbs().length, t0, D.world().cell(sc.f.x, sc.f.y) === sc.f.pv];
+        sc = mk(); H.run(sc, 8, [[sc.me, sc.fx + 600, sc.fy]], true); o.empty = [D.fbs().length, D.fbs()[0] && D.fbs()[0].hp];
+        sc = mk(); const c2 = H.cop(sc, sc.fx + 30, sc.fy); H.run(sc, 8, [[c2, c2.x, c2.y], [sc.me, sc.fx - 100, sc.fy]], true); o.seen = [D.fbs().length, D.fbs()[0] && D.fbs()[0].hp];
+        return o; })()`);
+      t.eq(r.away[0], 0, 'ohne Spieler in Sicht faellt sie: ' + JSON.stringify(r.away));
+      t.ok(r.away[1] < 20 && r.away[2], 'nach ' + r.away[1] + ' s weg, Kachel wieder Boden');
+      t.eq(r.empty, [1, 120], 'ohne Beamten bleibt sie heil');
+      t.eq(r.seen, [1, 120], 'mit Spieler in Sicht schiesst der Beamte auf den Spieler, nicht auf die Barrikade');
+    },
+  },
+  {
     name: 'Feldbarrikade im Coop: der Client stellt sie (Host prueft), beide sehen Kachel X, Zerschiessen erscheint beim Client, Vorrat im Schnappschuss',
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
