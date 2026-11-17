@@ -1378,7 +1378,7 @@ const e=mk('grd',2,tx,ty,{spd:G.spd,fov:G.fov,rng:G.rng,still:!o[3],base:ang,a:a
 function crewSur(e){if(!e.crew||e.sur||e.cap||e.hp>CFG.truck.surHp)return false;const others=en.filter(q=>q!==e&&q.crew&&!q.sur&&!q.cap&&q.hp>0).length;return others===0||others+1<actv().length}
 /* Deckungs-KI der Besatzung (Ticket 14, CFG.truck.cov, docs/szenarien.md): Modus cover. Die Besatzung sucht einen Platz an einer kugelsperrenden Kachel (Wagen, Sperre, Auto, Kiste, Fass, Wand), der gegen die Spieler deckt, schaut abwechselnd heraus (Nachbarkachel mit freier Linie, schiesst) und versteckt sich, wechselt bei Wegfall der Deckung, Flanke, zu nahen Spielern oder Treffern und bleibt dort, bis die Polizei da ist (dann push wie die Polizei). Nur der Host rechnet, das Netz kennt weder Modus noch Platz. */
 const covPick=r=>r[0]+Math.random()*(r[1]-r[0]);
-const covCenter=e=>e.pv?e.ac:tk&&tk.st!=='gone'?{x:tk.x,y:tk.y}:{x:e.x,y:e.y};
+const covCenter=e=>e.pv?e.ac:e.vg&&vh&&vh.st==='stopped'?{x:vh.x,y:vh.y}:tk&&tk.st!=='gone'?{x:tk.x,y:tk.y}:{x:e.x,y:e.y};
 const covAdj=(x,y)=>D4.some(v=>isBul(x+v[0],y+v[1]));
 /* Polizei im Transporter: Deckung an Fahrzeugen, Kisten, Faessern und Barrikaden (nicht an Hauswaenden, an denen sonst alle in einer Reihe stuenden), Waende nur als Rueckfall */
 const covObj=(x,y)=>D4.some(v=>isBul(x+v[0],y+v[1])&&!'#Ww'.includes(cell(x+v[0],y+v[1])));
