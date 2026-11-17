@@ -2324,7 +2324,9 @@ const altIt=()=>{if(!live(me)||ended||revTarget(me)||(LAY.truck&&capTarget(me)))
 /* Ergebnis: Seite 1 = Beute, Seite 2 = Auszeichnungen (nur Coop, nur wenn es welche gibt). Weiter blaettert erst, danach geht es in den Shop oder die neue Serie. */
 const endPages=()=>1+(ended&&ended.aw.length?1:0)+(NET.du&&NET.du.run?1:0);
 function endPage(p){if(ended&&p>=0&&p<endPages()&&ended.pg!==p){ended.pg=p;SND.ev('paper')}}
-function endNext(){if(!ended)return;if(ended.pg<endPages()-1)return endPage(ended.pg+1);if(NET.spec)return;const du=NET.du&&NET.du.run?NET.du:null;if(du){if(!du.mo&&du.mn<du.len&&(ended.win||ended.soft))openShop();else if(NET.role==='host')duelEndNext();return}if(ended.win||ended.soft)openShop();else if(NET.role==='host')startNext();else if(NET.role==='solo'){mapSeed=newSeed();reset()}}
+function endNext(){if(!ended)return;if(ended.pg<endPages()-1)return endPage(ended.pg+1);if(NET.spec)return;const du=NET.du&&NET.du.run?NET.du:null;if(du){if(!du.mo&&du.mn<du.len&&(ended.win||ended.soft))openShop();else if(NET.role==='host')duelEndNext();return}if(ended.win||ended.soft)openShop();else afterLoss()}
+/* Serie verloren (weder Sieg noch soft): zurueck zur Auftragswahl statt direkt in den naechsten Auftrag. Host: Clients in die Lobby (wie ein Serien-Neustart), er selbst in die Auftragswahl der Lobby. Solo: Auftragswahl vom Titel. Clients warten auf den Host. */
+function afterLoss(){if(NET.role==='client')return;ended=null;paused=false;clearKeys();mouse.down=0;if(NET.role==='host'){NET.roster.forEach(r=>r.rdy=0);bcast({t:'lb'});bcastRoster();openMission('lobby')}else if(NET.role==='solo')openMission('title')}
 function startGame(){netReset();mapSeed=newSeed();beginPlay()}
 function toTitle(){LOG.ev('menue','Titel');sayLeave();netReset();scr='title';paused=false;clearKeys();mouse.down=0;SND.work(null,0);reset()}
 /* Spielername (nur Coop): wird in localStorage 'holdup.name' gemerkt, mit 'hi' an den Host geschickt, der prueft auf Duplikate und verteilt ihn ueber die Spielerliste (NET.roster[].name). pn(id) liefert den Anzeigenamen, ohne Namen die Farbe. */
