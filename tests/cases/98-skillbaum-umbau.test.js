@@ -32,7 +32,7 @@ module.exports = [
         t.eq(o.frei, [null, null], k + ': vor der Wahl ist kein Pfad verbaut');
         t.eq(o.nach1, [null, k + '1', false], k + ': der erste Punkt in Pfad 1 sperrt Pfad 2 (verbaut durch ' + k + '1)');
         t.eq([o.kaufB, o.ptsB], [false, 0], k + ': der gesperrte Pfad laesst sich nicht kaufen und kostet nichts');
-        const soon = k === 'V';   // Feldbarrikade (V3) und Selbstschuss-MG (V4) sind soon, bis Schritt 4 und 5 sie bauen
+        const soon = false;   // Feldbarrikade (V3) ist seit #290 gebaut, nur das MG (V4, Pfad 2, durch Entweder-oder zu) ist noch soon
         t.eq(o.item, soon ? [false, false, false, false] : [true, true, false, false], k + ': der Gegenstand hinter Pfad 1 ist kaufbar (ausser soon), der hinter Pfad 2 bleibt durch das Entweder-oder zu');
         t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, soon ? undefined : 1, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3, der Gegenstand auf 1 (ausser soon)');
         t.eq(o.umgekehrt, [k + '2', null, false, false], k + ': mit Pfad 2 zuerst ist Pfad 1 verbaut');

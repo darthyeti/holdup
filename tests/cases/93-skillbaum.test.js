@@ -36,7 +36,7 @@ module.exports = [
       });
       t.eq(r.ids, 15, 'fuenfzehn Knoten');
       t.eq(r.bad, [], 'Daten und Texte: ' + JSON.stringify(r.bad));
-      t.eq(r.soon, ['V3', 'V4'], 'nur Feldbarrikade und Selbstschuss-MG sind soon (Skillbaum v2, Schritt 4 und 5), alle anderen Knoten gebaut');
+      t.eq(r.soon, ['V4'], 'nur das Selbstschuss-MG ist soon (Skillbaum v2, Schritt 5), alle anderen Knoten gebaut');
       t.eq(r.bonus, ['A1', 'A2', 'A3', 'V1', 'V2', 'U1', 'U2'], 'jeder Pfad hat einen Zusatz mit Stufe 3, dazu Praezisionsgewehr (Markierung) und Sprengmeister (Barrikaden-Claymore)');
       t.eq(r.lock0, [true, false, false, false, false], 'am Anfang nur die Wurzel offen');
       t.eq(r.denied, [false, false], 'gesperrte Knoten lassen sich nicht kaufen');
