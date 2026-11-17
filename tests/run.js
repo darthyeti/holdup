@@ -49,6 +49,7 @@ function report(results, pass, fail, t0, skipped) {
   console.log('\n' + pass + ' bestanden, ' + fail + ' fehlgeschlagen (' + ((Date.now() - t0) / 1000).toFixed(0) + ' s)');
   if (CHILD) return;   // Hinweise, Gewichte und die Liste der Fehler schreibt der Elternprozess
   if (skipped) console.log('Schneller Lauf: ' + skipped + ' langsame Tests ausgelassen (slow: true), voller Lauf mit npm test.');
+  if (!CHILD && !LONG && results.length) { const d = {}; for (const x of results) { const e = d[x.file] || (d[x.file] = { all: 0, fast: 0 }); e.all += x.sec; if (!x.slow) e.fast += x.sec; } for (const k of Object.keys(d)) { d[k].all = Math.round(d[k].all); d[k].fast = Math.round(d[k].fast); } console.log('Dauer je Datei (s): ' + JSON.stringify(d)); }   // Futter fuer weights.json (--shard verteilt danach)
   const bad = results.filter(r => !r.ok);
   if (bad.length > 1) { console.log('Fehlgeschlagen:'); for (const r of bad) console.log('  ' + r.file + ': ' + r.name); }
   const hint = JOBS > 1 ? [] : results.filter(r => !r.slow && r.sec >= SLOWHINT);   // im parallelen Lauf sind die Zeiten durch die Konkurrenz um die Kerne verzerrt
