@@ -17,7 +17,7 @@ const HELP = `(() => {
 
 module.exports = [
   {
-    name: 'Besondere Waffen: Praezisionsgewehr (A3) und Granatwerfer (A4) sind keine Platzhalter mehr, Stueck je Stufe 3, 5, 7 und 2, 3, 4, die Art folgt dem Knoten, ohne Knoten kein Vorrat, Entweder-oder verhindert beide',
+    name: 'Besondere Waffen: Praezisionsgewehr (A3) und Granatwerfer (A4) sind keine Platzhalter mehr, Stueck je Stufe 4, 6, 8 und 3, 5, 7, die Art folgt dem Knoten, ohne Knoten kein Vorrat, Entweder-oder verhindert beide',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, S = D.CFG.skill, o = {};
         o.nodes = ['A3', 'A4'].map(id => [S[id].n, !!S[id].soon, S[id].cnt]); o.cfg = Object.keys(D.CFG.spw || {}).sort();
@@ -25,11 +25,11 @@ module.exports = [
         o.k0 = kit({}); o.rifle = [1, 2, 3].map(l => kit({ A3: l })); o.launch = [1, 2, 3].map(l => kit({ A4: l }));
         D.sessReset(); D.SESSION.pts = 30; const buy = id => D.skillBuy(id); for (let i = 0; i < 3; i++) buy('A0'); for (let i = 0; i < 3; i++) buy('A1'); o.a3 = buy('A3'); o.a4 = buy('A4'); o.sk = Object.assign({}, D.SESSION.sk);
         return o; })()`);
-      t.eq(r.nodes, [['Präzisionsgewehr', false, [3, 5, 7]], ['Granatwerfer', false, [2, 3, 4]]], 'beide Knoten kaufbar, Stueck je Stufe');
+      t.eq(r.nodes, [['Präzisionsgewehr', false, [4, 6, 8]], ['Granatwerfer', false, [3, 5, 7]]], 'beide Knoten kaufbar, Stueck je Stufe');
       t.eq(r.cfg, ['launch', 'rifle', 'zoom'], 'CFG.spw hat rifle, launch und zoom');
       t.eq(r.k0, [0, null], 'ohne Knoten kein Vorrat und keine Art');
-      t.eq(r.rifle, [[3, 'rifle'], [5, 'rifle'], [7, 'rifle']], 'A3: Gewehr, 3, 5, 7 Schuss');
-      t.eq(r.launch, [[2, 'launch'], [3, 'launch'], [4, 'launch']], 'A4: Werfer, 2, 3, 4 Granaten');
+      t.eq(r.rifle, [[4, 'rifle'], [6, 'rifle'], [8, 'rifle']], 'A3: Gewehr, 4, 6, 8 Schuss');
+      t.eq(r.launch, [[3, 'launch'], [5, 'launch'], [7, 'launch']], 'A4: Werfer, 3, 5, 7 Granaten');
       t.eq([r.a3, r.a4, r.sk.A3, r.sk.A4], [true, false, 1, undefined], 'Entweder-oder: hinter Ruhige Hand gibt es das Gewehr, der Werfer hinter Durchschlag ist verbaut');
     },
   },
@@ -38,16 +38,16 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, Q = D.CFG.spw.rifle, o = {};
         let sc = H.scene({ A3: 1 }, true); D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.p1 = [sc.me.sx, sc.g.bl.length, (D.msgs().banner || '').length > 0];
-        sc = H.scene({ A3: 1 }); D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); const b = sc.g.bl[0]; o.b = b ? [!!b.pr, b.o, b.d, Math.round(Math.hypot(b.vx, b.vy)), Math.round(b.l * 100) / 100, b.own, Math.round(Math.atan2(b.vy, b.vx) * 100) / 100] : null; o.range = b ? Math.round(Math.hypot(b.vx, b.vy) * b.l) : 0;
+        sc = H.scene({ A3: 1 }); sc.me.sx = 3; D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); const b = sc.g.bl[0]; o.b = b ? [!!b.pr, b.o, b.d, Math.round(Math.hypot(b.vx, b.vy)), Math.round(b.l * 100) / 100, b.own, Math.round(Math.atan2(b.vy, b.vx) * 100) / 100] : null; o.range = b ? Math.round(Math.hypot(b.vx, b.vy) * b.l) : 0;
         o.s1 = [sc.me.sx, sc.me.scool > 0]; D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.s2 = [sc.me.sx, sc.g.bl.filter(q => q.pr).length];     // sofort noch einmal: abgelehnt (Abklingzeit)
         H.run(sc, Q.cool + .2); D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.s3 = sc.me.sx;
         H.run(sc, Q.cool + .2); D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.s4 = sc.me.sx; H.run(sc, Q.cool + .2); const n0 = sc.g.bl.length; D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.dry = [sc.me.sx, sc.g.bl.length - n0];
         sc = H.scene({}); const bn = D.msgs().banner || ''; D.useGadget(sc.me, 6, sc.sp.x - 100, sc.sp.y); o.none = [sc.g.bl.length, (D.msgs().banner || '') === bn];
         o.normal = 720 * .8; return o; })()`);
-      t.eq(r.p1, [3, 0, true], 'Erkunden: nichts geschossen, Vorrat bleibt, Hinweis im Bild');
+      t.eq(r.p1, [4, 0, true], 'Erkunden: nichts geschossen, Vorrat bleibt, Hinweis im Bild');
       t.eq(r.b, [true, 1, 1000, 1200, .9, 0, 3.14], 'die Kugel: pr, vom Spieler, Schaden 1000 (ein Treffer), Tempo 1200, 0,9 s, Besitzer 0, nach Westen');
       t.ok(r.range >= 1000 && r.range > r.normal * 1.5, 'Reichweite ' + r.range + ' Pixel, weit ueber den normalen ' + r.normal);
-      t.eq(r.s1, [2, true], 'ein Schuss: Vorrat 3 auf 2, Abklingzeit laeuft');
+      t.eq(r.s1, [2, true], 'ein Schuss: Vorrat 3 auf 2, Abklingzeit laeuft (Test setzt 3 Schuss)');
       t.eq(r.s2, [2, 1], 'sofort noch einmal: abgelehnt, keine zweite Kugel');
       t.eq([r.s3, r.s4], [1, 0], 'nach der Abklingzeit geht der naechste Schuss, bis der Vorrat leer ist');
       t.eq(r.dry, [0, 0], 'ohne Vorrat schiesst die Spezialwaffe nichts');
@@ -113,19 +113,19 @@ module.exports = [
         sc = H.scene({ A4: 2 }); const w = D.world(); let spot = null; for (let ty = w.WY0; ty < w.WY0 + w.H && !spot; ty++) for (let tx2 = w.WX0; tx2 < w.WX0 + w.W && !spot; tx2++) if (!D.isSol(tx2, ty) && D.isSol(tx2 + 1, ty) && !D.isSol(tx2 - 1, ty)) spot = { x: tx2 * 32 + 16, y: ty * 32 + 16, wx: (tx2 + 1) * 32 + 16 };
         if (spot) { sc.me.x = spot.x; sc.me.y = spot.y; D.useGadget(sc.me, 6, spot.wx + 40, spot.y); o.wall = [sc.me.sx, D.gren().gr.length]; }
         return o; })()`);
-      t.eq(r.p1, [2, 0], 'Erkunden: abgelehnt, Vorrat bleibt');
+      t.eq(r.p1, [3, 0], 'Erkunden: abgelehnt, Vorrat bleibt');
       t.eq(r.fly, ['shell', 0, 520], 'die Granate fliegt als shell mit Tempo 520, Besitzer 0');
-      t.eq(r.s1, 1, 'ein Schuss verbraucht eine der zwei Granaten');
+      t.eq(r.s1, 2, 'ein Schuss verbraucht eine der drei Granaten (Stufe 1)');
       t.eq(r.hit.slice(0, 2), r.want, 'Schaden nach Abstand zur Mitte: ' + JSON.stringify(r.hit) + ' erwartet ' + JSON.stringify(r.want));
       t.eq(r.hit[2], 0, 'ausserhalb des Radius passiert nichts');
       t.eq(r.gone, 0, 'die Granate ist nach dem Platzen weg');
-      t.eq(r.cool, [2, 1], 'sofort noch eine: abgelehnt (Abklingzeit), nur eine Granate unterwegs');
-      t.eq(r.cool2, 1, 'nach der Abklingzeit die zweite');
+      t.eq(r.cool, [4, 1], 'sofort noch eine: abgelehnt (Abklingzeit), nur eine Granate unterwegs');
+      t.eq(r.cool2, 3, 'nach der Abklingzeit die zweite');
       t.ok(Math.abs(r.far - r.maxD) <= 1, 'ein weites Ziel wird auf maxD gekuerzt: ' + r.far + ' statt ' + r.maxD);
-      t.eq(r.farShot, [2, 0], 'die Wand auf der gekuerzten Strecke (hier nach 240 Pixeln) blockiert den Schuss');
+      t.eq(r.farShot, [3, 0], 'die Wand auf der gekuerzten Strecke (hier nach 240 Pixeln) blockiert den Schuss');
       t.eq(r.air, [true, 0], 'im Flug platzt sie am ersten Gegner, der Beamte hinter dem Ziel bleibt heil');
       t.ok(Math.abs(r.self[0] - r.self[1]) <= 1.5, 'der Besitzer im Radius bekommt pdmg: ' + r.self[0] + ' erwartet ' + r.self[1]);
-      t.eq(r.wall, [3, 0], 'durch die Wand: abgelehnt, Vorrat bleibt');
+      t.eq(r.wall, [5, 0], 'durch die Wand: abgelehnt, Vorrat bleibt');
     },
   },
   {
@@ -194,10 +194,10 @@ module.exports = [
       t.eq([r.off0[0], r.off0[1], r.on1], [false, 1, true], 'rechte Maustaste legt die Spezialwaffe im Ueberfall an, Zoom vorher 1');
       t.ok(r.zoom > 1.1 && r.zoom <= 1.19, 'angelegt zoomt die Sicht heraus: ' + r.zoom);
       t.ok(r.line, 'angelegt zeichnet das Gewehr die Zielhilfe (Linie)');
-      t.ok(r.hud.some(s => /\[RMT\] Gewehr 3/.test(s)) && r.plate >= 1, 'das HUD nennt RMT, Gewehr und die Stueckzahl und zeigt die Spezialwaffe im Waffenkasten: ' + JSON.stringify(r.hud));
-      t.eq(r.click, [2, 1], 'Linksklick schiesst einen Schuss (Vorrat 3 auf 2, eine Kugel pr)');
+      t.ok(r.hud.some(s => /\[RMT\] Gewehr 4/.test(s)) && r.plate >= 1, 'das HUD nennt RMT, Gewehr und die Stueckzahl und zeigt die Spezialwaffe im Waffenkasten: ' + JSON.stringify(r.hud));
+      t.eq(r.click, [3, 1], 'Linksklick schiesst einen Schuss (Vorrat 4 auf 3, eine Kugel pr)');
       t.eq(r.stillOn, true, 'nach dem Schuss bleibt angelegt, solange die Taste gehalten wird');
-      t.eq(r.space, 1, 'die Leertaste schiesst auch (nach der Abklingzeit, Vorrat 2 auf 1)');
+      t.eq(r.space, 2, 'die Leertaste schiesst auch (nach der Abklingzeit, Vorrat 3 auf 2)');
       t.eq(r.pistolQuiet, 12, 'die normale Waffe schweigt, solange angelegt ist (Maustaste gehalten, Magazin bleibt voll)');
       t.eq([r.off2, r.pistolBack], [false, true], 'Loslassen beendet, dann schiesst die Pistole wieder');
       t.ok(Math.abs(r.zoomBack - 1) < .05, 'der Zoom geht zurueck: ' + r.zoomBack);
@@ -206,8 +206,8 @@ module.exports = [
       t.eq([r.noneRmb, r.phase1], [false, false], 'ohne Vorrat und im Erkunden legt die rechte Maustaste nichts an');
       t.eq(r.empty, [0, false], 'der letzte Schuss leert den Vorrat und beendet das Anlegen');
       t.ok(r.ring, 'der Werfer zeigt beim Anlegen den Explosionsradius');
-      t.ok(r.hud2.some(s => /\[RMT\] Werfer 2/.test(s)), 'das HUD nennt RMT, Werfer und die Stueckzahl: ' + JSON.stringify(r.hud2));
-      t.eq(r.shot, [1, 1], 'Klick feuert die Granate (Vorrat 2 auf 1, eine unterwegs)');
+      t.ok(r.hud2.some(s => /\[RMT\] Werfer 3/.test(s)), 'das HUD nennt RMT, Werfer und die Stueckzahl: ' + JSON.stringify(r.hud2));
+      t.eq(r.shot, [2, 1], 'Klick feuert die Granate (Vorrat 3 auf 2, eine unterwegs)');
       t.eq([r.fresh, r.x1, r.x2], [false, true, false], 'ein neuer Auftrag beginnt ausgeschaltet, ein Wurfgeraet (4 halten) beendet das Anlegen');
     },
   },

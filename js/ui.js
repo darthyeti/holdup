@@ -347,7 +347,7 @@ deco(){const{g,drawLegend}=X;panelFrame(px,py,pw,ph,'SO WIRD GESPIELT');g.font='
 CTRL.forEach((r,i)=>{const y=py+92+i*19;g.font='bold 12px monospace';g.fillStyle=Y;g.fillText(r[0],px+24,y);g.font='12px monospace';g.fillStyle=TX;g.fillText(r[1],px+190,y)});
 FLOW.concat(X.CFG.fahndung.on?FLOW_FH_ON:FLOW_FH_OFF).forEach((l,i)=>{g.font='12px monospace';g.fillStyle=TX;g.fillText(l,px+430,py+92+i*24)});
 g.font='bold 11px monospace';g.fillStyle=MU;g.fillText('SYMBOLE',px+24,py+376);drawLegend(py+398);g.textAlign='left'}}}
-/* Skillbaum (Modal ueber dem Shop, Layout B, MRU 1 B1, Tills Wunsch vom 25. Oktober 2026): drei Zeilen (Angriff, Verteidigung, Unterstuetzung), links die Wurzel, in der Mitte die zwei Pfade untereinander (dazwischen ENTWEDER-ODER), rechts je Pfad
+/* Skillbaum (Modal ueber dem Shop, Layout B, MRU 1 B1, Tills Wunsch vom 25. Oktober 2026): drei Zeilen (Schuetze, Stellung, Spezialist, seit #287), links die Wurzel, in der Mitte die zwei Pfade untereinander (dazwischen ENTWEDER-ODER), rechts je Pfad
    der Gegenstand, keine Kreuzlinien. Wer einen Knoten anwaehlt (Fokus oder Maus), sieht die Kette von der Wurzel bis dorthin leuchten (glow), der gesperrte Nachbarpfad nennt den Grund (verbaut). Freischaltung X.skOk, Entweder-oder X.skBlock, Ruecknahme
    X.skCanSell (Kachel skundo oder Rueckschritt, act 'skillsell' auf den zuletzt angewaehlten Knoten skLast), Daten CFG.skill. Kauf mit Enter oder Klick (act 'skill', ein Punkt je Stufe). */
 const skTxt=(d,n,r)=>String(d).replace(/\{(\w+)(%?)\}/g,(m,k,pc)=>{const v=((n[k]||[])[Math.max(0,Math.min(2,r-1))])||0;return pc?Math.round(v*100):v});
@@ -387,7 +387,7 @@ else{g.fillStyle=TX;g.fillText(fit('Jetzt: '+(r?skTxt(n.d,n,r):'noch nichts'),W,
  if(n.b){g.fillStyle=r>=S.max?G:'#d9a5ff';g.fillText(fit('Mit Stufe '+S.max+' ('+n.bn+'): '+skTxt(n.b,n,S.max),W,g.font),rx,ly+48)}
  else if(n.w){g.fillStyle=MU;g.fillText(fit(n.w,W,g.font),rx,ly+48)}}
 const nd=X.skNeed(f),can=X.skCanSell(SESSION.sk,f);g.font='11px monospace';
-const hint=n.soon?['Dieser Gegenstand folgt in einem späteren Schritt und ist noch nicht kaufbar.',MU]:bl?['Verbaut: Du hast '+S[bl].n+' gewählt (ENTWEDER-ODER). Nimm dort die Punkte zurück.',RD]:!X.skOk(SESSION.sk,f)?['Gesperrt: '+S[nd].n+' muss auf Stufe '+S.max+' stehen.',RD]:r>=S.max?[can?'Rückschritt oder Zurücknehmen: eine Stufe zurück.':'',MU]:SESSION.pts>0?['Enter oder Klick: eine Stufe für einen Punkt.'+(can?' Rückschritt: eine Stufe zurück.':''),MU]:['Kein Skillpunkt offen: Punkte gibt es für gewonnene Aufträge.'+(can?' Rückschritt: eine Stufe zurück.':''),MU];
+const hint=n.soon?['Dieser Gegenstand folgt in einem späteren Schritt und ist noch nicht kaufbar.',MU]:bl?['Verbaut: Du hast '+S[bl].n+' gewählt (ENTWEDER-ODER). Nimm dort die Punkte zurück.',RD]:!X.skOk(SESSION.sk,f)?['Gesperrt: '+S[nd].n+' muss auf Stufe '+(+f[1]<3?1:S.max)+' stehen.',RD]:r>=S.max?[can?'Rückschritt oder Zurücknehmen: eine Stufe zurück.':'',MU]:SESSION.pts>0?['Enter oder Klick: eine Stufe für einen Punkt.'+(can?' Rückschritt: eine Stufe zurück.':''),MU]:['Kein Skillpunkt offen: Punkte gibt es für gewonnene Aufträge.'+(can?' Rückschritt: eine Stufe zurück.':''),MU];
 g.fillStyle=hint[1];g.fillText(fit(hint[0],W,g.font),rx,ly+64)}}}
 function mConfirm(m){const px=270,pw=420,ph=176,py=Math.round((544-ph)/2);
 return{def:'no',back:m.no||'ui:close',t:[{id:'yes',x:px+20,y:py+ph-62,w:180,h:44,kind:'x',act:'ui:yes',title:m.yesLabel||'Ja'},{id:'no',x:px+pw-200,y:py+ph-62,w:180,h:44,kind:'p',act:m.no||'ui:close',title:'Zurück',chip:'Esc'}],
