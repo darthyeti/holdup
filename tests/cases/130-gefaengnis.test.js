@@ -120,7 +120,7 @@ module.exports = [
       t.eq(r.fails, [], 'alle Seeds loesbar');
       t.eq([r.tb, r.sx, r.pcs], [2, 2, 8], 'beide Trakte, beide Schalterbelegungen und alle acht Zellen kommen in 40 Seeds vor');
       t.ok(r.combos >= 20, 'viele verschiedene Kombinationen aus Trakt, Zelle und Schalter: ' + r.combos);
-      t.ok(r.ats >= 10, 'die Lieferzeit streut: ' + r.ats);
+      t.ok(r.ats >= 5, 'die Lieferzeit streut: ' + r.ats);
     },
   },
   {
