@@ -1264,19 +1264,20 @@ function koMi(n){return n.kmi||(n.kmi={t:'ko',pr:0,sn:'grab',get r(){return n.km
 ok(o){return phase===1&&!ended&&(!LAY.truck||LAY.mission.panne)&&koKind(n)&&n.st==='idle'&&n.alert<=0&&!(n.look&&n.look.t>0)&&live(o)&&!(o.dn>0)&&angd(n.a,Math.atan2(o.y-n.y,o.x-n.x))>CFG.ko.back},
 lab:()=>'Ausschalten',dur:()=>CFG.ko.t,act(o){koDown(n,o)}})}
 function bodyMi(n){return n.bmi||(n.bmi={t:'body',pr:0,sn:'grab',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>CFG.ko.pen,
-ok(o){return phase===1&&!ended&&n.st==='ko'&&!(n.dr>=0)&&live(o)&&!(o.dn>0)&&!o.dg},lab:()=>'Körper ziehen',dur:()=>CFG.ko.grabT,act(o){n.dr=o.id;o.dg=1;o.tr=[{x:o.x,y:o.y}];say((players.length>1?pn(o.id)+' zieht':'Du ziehst')+' einen Bewusstlosen. H lässt ihn los.',o.id)}})}
+ok(o){return phase===1&&!ended&&n.st==='ko'&&!(n.dr>=0)&&live(o)&&!(o.dn>0)&&!o.dg},lab:()=>'Körper ziehen',dur:()=>CFG.ko.grabT,act(o){n.dr=o.id;n.hid=0;o.dg=1;o.tr=[{x:o.x,y:o.y}];say((players.length>1?pn(o.id)+' zieht':'Du ziehst')+' einen Bewusstlosen. H lässt ihn los.',o.id)}})}
 /* Schluessel vom bewusstlosen Fahrer (Panne, Phase 1): leise, dann geht der Laderaum mit dem Schluessel auf (Objekt ckey). */
 function keyMi(n){return n.ymi||(n.ymi={t:'key',pr:0,sn:'tick',r:CFG.ko.reach,get x(){return n.x},get y(){return n.y},rk:()=>CFG.ko.pen/2,
 ok(o){return phase===1&&!ended&&!!LAY.truck&&!!LAY.mission.panne&&!!n.drv&&n.st==='ko'&&!keyTaken&&live(o)&&!(o.dn>0)},
 lab:()=>'Schlüssel nehmen',dur:()=>CFG.truck.keyTakeT,act(o){keyTaken=true;snd('ev','latch');say((players.length>1?pn(o.id)+' nimmt':'Du nimmst')+' dem Fahrer den Schlüssel ab: Der Laderaum lässt sich leise öffnen.');ban('Schlüssel genommen',1.8,o.id)}})}
 function koDown(n,o){n.st='ko';n.kt=CFG.ko.wake;n.who=o.id;n.dr=-1;n.kf=0;n.path=[];n.mvg=false;n.look=null;n.alert=0;o.st.ko++;nutz(o,'ko',n.x,n.y,n.k);snd('thud',n.x,n.y);evt('sp',[n.x,n.y,10]);say((players.length>1?pn(o.id)+' schaltet':'Du schaltest')+' '+(n.uc?'einen Zivilfahnder':n.k==='grd'?'eine Wache':n.dlv?'den Lieferanten':'einen Angestellten')+' aus: bewusstlos für '+Math.round(CFG.ko.wake)+' s.')}
-/* Verstauen (Kammer): Wer einen Bewusstlosen loslaesst, waehrend er oder der Koerper im Innenraum der Kammer steht (der Koerper hinkt beim Betreten in der Tuer hinterher), dessen Koerper liegt danach in der naechsten Versteck-Kachel (LAY.stash.deep), also dort, wo keine Sichtlinie durch die Tuer fuehrt. Der Versatz je Koerper (aus der Nummer) laesst mehrere nebeneinander liegen. */
-function stow(n,o){const S=LAY.stash;if(!S||!S.deep||!S.deep.length)return;const inK=q=>S.cells.some(c=>c[0]===Math.floor(q.x/T)&&c[1]===Math.floor(q.y/T));if(!inK(n)&&!(o&&inK(o)&&Math.hypot(o.x-n.x,o.y-n.y)<64))return;
+/* Verstauen (Kammer, im Gefaengnis LAY.prison.stashes, Ticket 295: dort hide, der Koerper gilt als versteckt und wird von keiner Wache und keiner Kamera gefunden, bis ihn jemand wieder zieht oder er aufwacht): Wer einen Bewusstlosen loslaesst, waehrend er oder der Koerper im Innenraum der Kammer steht (der Koerper hinkt beim Betreten in der Tuer hinterher), dessen Koerper liegt danach in der naechsten Versteck-Kachel (LAY.stash.deep), also dort, wo keine Sichtlinie durch die Tuer fuehrt. Der Versatz je Koerper (aus der Nummer) laesst mehrere nebeneinander liegen. */
+function stow(n,o){const L=LAY.stash?[LAY.stash]:LAY.prison&&LAY.prison.stashes||[];
+for(const S of L){if(!S.deep||!S.deep.length)continue;const inK=q=>S.cells.some(c=>c[0]===Math.floor(q.x/T)&&c[1]===Math.floor(q.y/T));if(!inK(n)&&!(o&&inK(o)&&Math.hypot(o.x-n.x,o.y-n.y)<64))continue;
 let b=S.deep[0],bd=1e9;for(const c of S.deep){const d=Math.hypot((c[0]+.5)*T-n.x,(c[1]+.5)*T-n.y);if(d<bd){bd=d;b=c}}
-n.x=(b[0]+.5)*T+(((n.id|0)*7)%9-4);n.y=(b[1]+.5)*T+(((n.id|0)*5)%9-4);if(o)say('Du verstaust den Bewusstlosen '+(S.kind==='wc'?'im WC':'im Abstellraum')+'.',o.id)}
+n.x=(b[0]+.5)*T+(((n.id|0)*7)%9-4);n.y=(b[1]+.5)*T+(((n.id|0)*5)%9-4);if(S.hide)n.hid=1;if(o)say('Du verstaust den Bewusstlosen '+(S.lab||(S.kind==='wc'?'im WC':'im Abstellraum'))+'.',o.id);return}}
 function koDrop(n){const o=players[n.dr];n.dr=-1;if(o)o.dg=0;stow(n,o)}
 function relBody(o){const n=npcs.find(q=>q.st==='ko'&&q.dr===o.id);if(!n)return false;n.dr=-1;o.dg=0;stow(n,o);return true}
-function koWake(n){const o=n.dr>=0?players[n.dr]:null;n.dr=-1;n.kt=0;if(o)o.dg=0;n.path=[];n.mvg=false;
+function koWake(n){const o=n.dr>=0?players[n.dr]:null;n.dr=-1;n.kt=0;n.hid=0;if(o)o.dg=0;n.path=[];n.mvg=false;
 if(phase===1){n.st='idle';n.alert=.5;n.wait=.5;say((n.uc?'Der Zivilfahnder':n.k==='grd'?'Die Wache':n.dlv?'Der Lieferant':'Der Angestellte')+' wacht auf: Alarm!');startHeist(true,players[n.who]||null,false)}else n.st='cower'}
 /* Manager als Fundort: Sobald er ausgeschaltet oder tot ist, faellt der Zettel an seinen Platz (nDrop, im Schnappschuss als nd) und bleibt dort, auch wenn er aufwacht. Der Zettel geht nie verloren. */
 function noteStep(){if(nDrop||code||LAY.truck||!LAY.noteAt||LAY.noteAt.k!=='mgr')return;const mg=npcs.find(n=>n.k==='mgr');if(mg&&mg.st!=='ko'&&mg.st!=='dead')return;const A=LAY.noteAt;nDrop={x:mg?mg.x:A.x*T+16,y:mg?mg.y:A.y*T+16};evt('sp',[nDrop.x,nDrop.y,8]);snd('ev','paper');say('Dem Manager ist ein Zettel aus der Tasche gefallen.')}
@@ -1285,7 +1286,7 @@ for(const n of npcs){if(n.st!=='ko')continue;const o=n.dr>=0?players[n.dr]:null;
 n.kt-=dt;if(n.kt<=0){koWake(n);continue}
 if(n.dr>=0){const t=o.tr||(o.tr=[]);let acc=0,k=t.length-1,px=o.x,py=o.y;for(;k>=0;k--){acc+=Math.hypot(t[k].x-px,t[k].y-py);px=t[k].x;py=t[k].y;if(acc>K.gap)break}
 if(k>=0){const tg=t[k],dx=tg.x-n.x,dy=tg.y-n.y,dd=Math.hypot(dx,dy);if(Math.hypot(o.x-n.x,o.y-n.y)>300){n.x=tg.x;n.y=tg.y}else followStep(n,tg,K.spd,dt,3,false);if(k>3)t.splice(0,k-3)}}
-if(phase!==1)continue;let by=null;
+if(phase!==1)continue;if(n.hid){n.kf=0;continue}let by=null;
 for(const q of npcs){if(q===n||(q.k==='civ'&&!q.uc&&!q.dlv)||q.st!=='idle'||staffBlind(q))continue;if(canSee(q.x,q.y,q.a,q.fov,q.rng*(blk>0?CFG.ev.sight:1)*lgM('sight'),n.x,n.y)){by=q.uc?'Ein Zivilfahnder':q.k==='grd'?'Eine Wache':q.dlv?'Der Lieferant':'Ein Angestellter';break}}
 if(!by)cams.forEach((c,i)=>{if(!by&&!c.off&&camDown<=0&&canSee(c.x,c.y,camAng(c,i),c.fov,c.rng*lgM('sight'),n.x,n.y))by='Eine Kamera'});
 if(by){n.kf+=dt;if(n.kf>=K.find){say(by+' findet einen Bewusstlosen: Alarm!');startHeist(true,players[n.who]||null,false);return}}else n.kf=Math.max(0,n.kf-dt*2)}
