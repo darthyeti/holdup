@@ -168,7 +168,7 @@ module.exports = [
       t.eq(r.stock, [0, 0], 'Vorrat 1 -> 0 bei beiden');
       t.eq(r.shots, [true, true, true], 'es schiesst, Client sieht den Stand mit, Beamter getroffen');
       t.eq(r.gone, [0, 0], 'zerstoert: bei beiden weg');
-      t.eq(r.ver, 89, 'VER 89');
+      t.eq(r.ver, 90, 'VER 90');
     },
   },
 ];
