@@ -36,5 +36,7 @@ export function register(KL) {
     B(0, 0, 7, 22, o.in ? 17 : 11, 18, 0xeef1f4);
     B(-4, 0, 7 + (o.in ? 17 : 11), 12, 2, 12, 0xd2d9df);
     B(-14, 0, 14, 3, 14, 20, 0x3b4148); });
+  // Kittelstapel (Ticket 310): drei gefaltete helle Kittel auf einem Brett, o.n Zahl der uebrigen (weniger Lagen). o.x, o.y Mitte.
+  KL.obj('kit', (k, o) => { const n = Math.max(1, Math.min(3, o.n || 1)); k.dbrick(o.x, o.y, 0, 20, 3, 15, 0, 0x6b5a46); for (let i = 0; i < n; i++) k.dbrick(o.x, o.y, 3 + i * 4, 18, 4, 13, 0, i % 2 ? 0xd7dee6 : 0xeef2f6); });
   KL.obj('card', (k, o) => { k.dbrick(o.x, o.y, k.topAt(o.x, o.y), 9, 1.4, 6, 0, 0x7ee34a, .4) });
 }
