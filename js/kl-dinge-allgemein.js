@@ -128,6 +128,14 @@ export function register(KL) {
     else if (q.k === 'claw') { B(k, q.x, q.y, 3, 18, 8, 4, 0, 0x5b7a35); B(k, q.x, q.y + 2.4, 4, 14, 6, 1, 0, 0x2f4a1c); for (const a of [-1, 1]) B(k, q.x + a * 6, q.y - 2, 0, 1.4, 4, 1.4, 0, 0x2a2e36); B(k, q.x, q.y, 11, 3, 2, 3, 0, lamp, 1.3) }
     else { B(k, q.x, q.y, 0, 12, 5, 8, 0, 0xd9c28a); B(k, q.x, q.y, 5, 12, .8, 8, 0, 0xb09a62); B(k, q.x - 3, q.y, 5.8, 2.6, 1.6, 2.6, 0, lamp, 1.3); B(k, q.x + 2.5, q.y, 5.8, 4, 1, 4, 0, 0x2a2e36) }
   });
+  // Selbstschuss-MG (Skillbaum V4): Dreibein, Kasten, drehender Lauf mit Muendungsfeuer, Magazinkasten, roter Balken wenn leer
+  KL.obj('d:mg', (k, q) => {
+    const c = Math.cos(q.ta), s = Math.sin(q.ta), a = q.ta;
+    for (const d of [-.5, 0, .5]) B(k, q.x - Math.cos(q.a + d) * 6, q.y - Math.sin(q.a + d) * 6, 0, 2, 7, 2, 0, 0x2a2e36);
+    B(k, q.x, q.y, 6, 12, 6, 8, a, 0x4a5236); B(k, q.x - c * 5, q.y - s * 5, 12, 6, 3, 5, a, 0x2f3626);
+    B(k, q.x + c * 12, q.y + s * 12, 8, 16, 2.6, 2.6, a, 0x2a2e36); B(k, q.x - s * 4, q.y + c * 4, 5, 6, 4, 4, a, q.am > 0 ? 0x6a6f78 : 0xb03a2e);
+    if (q.fl) B(k, q.x + c * 24, q.y + s * 24, 8, 8, 3, 3, a, 0xffdc78, 1.4);
+  });
   KL.obj('d:aid', (k, q) => { B(k, q.x, q.y, 0, 16, 8, 12, 0, 0xf5f8f5); B(k, q.x, q.y, 8, 17, 1.4, 13, 0, 0xd8dde4); B(k, q.x, q.y + 6.1, 2, 6, 5, .8, 0, 0xe5392e); B(k, q.x, q.y + 6.1, 3.8, 2, 1.6, .9, 0, 0xffffff, .3); B(k, q.x, q.y + 6.1, 2.5, 2, 4, .9, 0, 0xffffff); B(k, q.x, q.y + 6.2, 3.6, 5, 1.6, .9, 0, 0xffffff); B(k, q.x, q.y, 9.4, 6, 1.8, 1.6, 0, 0x6a6a72) });
   KL.obj('d:dcy', (k, q) => { B(k, q.x, q.y, 0, 10, 5, 8, 0, 0x3a4a60); B(k, q.x, q.y, 5, 6, 2, 5, 0, 0xffc23a, .4); B(k, q.x, q.y, 7, 3, 3, 3, 0, 0xff9a2e, q.bl ? 1.4 : .2) });
   const GR = { flash: 0xf4f0d8, smoke: 0xb4bcc8, dec: 0xffc23a, shell: 0xff8a3a, gas: 0x9fbf3c };

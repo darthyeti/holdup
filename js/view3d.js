@@ -117,7 +117,7 @@ export const V3CFG = {
       hall: 'logik', jewel: 'logik', gas: 'logik', nb: 'nbRig', prison: 'lock', museum: 'logik', casino: 'logik', road: 'exit', stash: 'raster', meet: 'logik', turned: 'logik', q: 'logik', tries: 'logik',
       truck: 'tk', parked: 'parked', decor: 'fahrzeug', decorReal: 'fahrzeug', spots: 'raster', lockCells: 'lock', wins: 'raster', snp: 'figur',
       'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'cam', 'it:lock': 'lock', 'it:sw': 'sw',
-      'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:tbag': 'bag',
+      'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:c4d': 'lock', 'it:c4g': 'lock', 'it:tbag': 'bag',
       'it:vit': 'vit', 'it:good:cig': 'good', 'it:good:shelf': 'good', 'it:good:art': 'good', 'it:good:statue': 'good', 'it:good:relic': 'good', 'it:good:chips': 'good', 'it:good:slot': 'good', 'it:good:vip': 'good',
       'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
       'it:dlx': 'lock', 'it:lsw:wach': 'boden', 'it:lsw:kon': 'boden', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur', 'it:wkb': 'wcab',
@@ -130,7 +130,7 @@ export const V3CFG = {
   // als 2D-Bild (props.png) liegend in pkH, Licht der Explosionen ueber die Punktlichter (light.pl.boom). Budget Plan 5: Effekte unter 20 Draw Calls (heute 4: zwei Teilchenpuffer, Dinge, Aufnahmen).
   fx: {
     chan: ['pt', 'muz', 'dcv', 'cam', 'licht', 'hud', 'ton'],
-    evt: { say: 'hud', ban: 'hud', rad: 'hud', fx: 'hud', s: 'ton', sh: 'muz pt dcv cam', es: 'muz', hw: 'pt dcv', hf: 'pt dcv cam', sp: 'pt', gl: 'pt dcv', gb: 'pt licht', sk: 'pt', bx: 'pt licht dcv cam' },
+    evt: { say: 'hud', ban: 'hud', rad: 'hud', fx: 'hud', mk: 'hud', mg: 'ton', s: 'ton', sh: 'muz pt dcv cam', es: 'muz', hw: 'pt dcv', hf: 'pt dcv cam', sp: 'pt', gl: 'pt dcv', gb: 'pt licht', sk: 'pt', bx: 'pt licht dcv cam' },
     pt: { s: { b: 'a', sh: 1, h: [4, 20], k: .6 }, g: { b: 'a', sh: 0, h: [18, 0], k: 1 }, f: { b: 'a', sh: 0, h: [8, 30], k: 1 }, w: { b: 'a', sh: 2, h: [.8, 0], k: 1 },
       d: { b: 'n', sh: 0, h: [4, 12], k: 1.3 }, c: { b: 'n', sh: 1, h: [2, 0], k: 1, arc: 36 }, k: { b: 'n', sh: 0, h: [20, 50], k: 1 } },
     bul: { glow: 2.6, glowA: .35 }, muzH: 24, grArc: 40, shellArc: 16, pkH: 3, pkS: 34, cloudH: [8, 14],
@@ -576,6 +576,11 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
       if (kt('trap', q)) { /* Kloetze */ } else if (q.k === 'mine') thing(q.x, q.y, 0, 14, 3, 14, 0, 0x2a2d33); else { thing(q.x, q.y, 0, 18, 8, 8, 0, 0x3a4034); thing(q.x, q.y - 3, 8, 14, 2, 2, 0, 0x2a2d33) }
       if (q.bl) fp(FA, q.x, q.y, q.k === 'mine' ? 4 : 10, 3, 0, hc(q.armed ? 0xff4a3a : 0xffc446), 1); cnt('tr');
     }
+    for (const q of (D.mg || [])) {
+      if (q.own) { ring(FA, q.x, q.y, .6, 260, 1.5, lc('110,235,130'), .2) }
+      if (!kt('mg', q)) { thing(q.x, q.y, 0, 12, 6, 12, q.ta, 0x3a4034); thing(q.x + Math.cos(q.ta) * 12, q.y + Math.sin(q.ta) * 12, 5, 16, 3, 3, q.ta, 0x2a2d33) }
+      if (q.fl) fp(FA, q.x + Math.cos(q.ta) * 26, q.y + Math.sin(q.ta) * 26, 8, 8, 0, hc(0xffdc78), 1); cnt('mg');
+    }
     for (const q of D.aid) {
       ring(FA, q.x, q.y, .6, q.r, 1.5, lc('110,235,130'), .3 * q.al); ring(FA, q.x, q.y, .7, 10 + q.ph * (q.r - 10), 2, lc('110,235,130'), .45 * (1 - q.ph) * q.al);
       if (!kt('aid', q)) { thing(q.x, q.y, 0, 16, 8, 12, 0, 0xe9efe9); thing(q.x, q.y, 8, 3, .6, 9, 0, 0x2fbf52); thing(q.x, q.y, 8, 9, .6, 3, 0, 0x2fbf52) } cnt('aid');
@@ -603,7 +608,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   function angle() { const a = +X.angle; return a >= 20 && a <= 30 ? a : 25 }
   function camSet() {
     tgt.set(X.camX + VW / 2, 0, X.camY + VH / 2 - C.camLead);
-    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1), a = angle() * Math.PI / 180;
+    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1) * (X.zoomK > 1 ? X.zoomK : 1), a = angle() * Math.PI / 180;
     cam.position.set(tgt.x, D * Math.cos(a), tgt.z + D * Math.sin(a)); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
   }
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), v3 = new THREE.Vector3();
@@ -775,4 +780,4 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 11;
+mkView3d.api = 12;

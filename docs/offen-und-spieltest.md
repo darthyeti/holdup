@@ -11,6 +11,8 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Spieltest (ungespielt, kurz)
 
+- Gewehr und Granatwerfer (Skillbaum v2): rechte Maustaste halten legt an (Sicht zoomt in 3D etwas heraus), Linksklick feuert, Shift ist nur Schleichen. Gewehr: ein Treffer tötet alles, geht durch Schilde und Fenster; Stufe 3 markiert den nächsten Gegner fürs Team.
+- Selbstschuss-MG (Skillbaum v2, Stellung hinter Sprengmeister): Taste V halten zeigt Platz und Kegel, Loslassen stellt es mit Blick nach vorn. Beobachten: ob es die Polizei im Kegel wirklich aufhält, ob die Polizei es zu schnell abräumt, ob 40/60/80 Schuss reichen. Claymore bleibt auf 3.
 - **Autoexplosion mit Gewicht (Ticket #277, Vorschau unter /pr/<n>/):** Streifenwagen oder parkendes Auto beschießen bis es explodiert. Hebt es sichtbar ab, fliegen Tür, Motorhaube, Reifen weg und bleiben liegen, brennt das Wrack lange mit abziehender Rauchsäule? Auf Grafik niedrig nur Hüpfer und zwei Teile. Zu viel oder zu wenig Wucht?
 - **Figuren fallen mit Wucht (Ticket #278, Vorschau unter /pr/<n>/, nur 2D):** Beamte erschießen (Präzisionsgewehr stärker), eine Zapfsäule oder ein Auto neben ihnen sprengen, einen Zivilisten betäuben. Rutschen sie sichtbar zurück, fliegen sie bei Explosionen im Bogen weg (zeichnet sich die Leiche zu weit vom Ort ab, an dem man sie anfasst oder zieht?), fliegen Mütze und Waffe weg, kippt das Schild? Zu viel oder zu wenig Wucht? Spieler am Boden nur mit Rückstoß.
 - **Fenster zerschießen (Ticket 207):** Eigene Kugeln brechen Scheiben (ein Treffer, `CFG.win.hits`), in 3D fliegen kurz Glas-Klötzchen. Beobachten: lässt das Loch zu viele Polizeikugeln durch, und wird es mit Brettern (`wbar`) rechtzeitig wieder dicht?

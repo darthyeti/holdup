@@ -136,7 +136,7 @@ module.exports = [
     },
   },
   {
-    name: 'Netz: Der Schnappschuss fuehrt vanAlt (g hat 30 Felder), Host und Clients bauen dasselbe B, ein Ausweichen des Hosts schaltet bei allen Clients LANE.van und LANE.exit um (auch bei einem Zuschauer, der danach einsteigt), ein Wechsel zurueck ebenso; der Wagen steht auf Host und Client am selben Ort fest',
+    name: 'Netz: Der Schnappschuss fuehrt vanAlt (g hat 31 Felder, g[30] Funk-Abklingzeit seit Skillbaum v2), Host und Clients bauen dasselbe B, ein Ausweichen des Hosts schaltet bei allen Clients LANE.van und LANE.exit um (auch bei einem Zuschauer, der danach einsteigt), ein Wechsel zurueck ebenso; der Wagen steht auf Host und Client am selben Ort fest',
     timeout: 200000,
     async run(t) {
       await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
@@ -152,7 +152,7 @@ module.exports = [
         A.altSwap(false); G.run(2); o.zurueck = [A, ...clients, S].map(d => [d.alt().cur, d.LANE().van.stop === stopA]);
         return o;
       }, { PRE });
-      t.eq(r.gLen, 30, 'der Schnappschuss fuehrt vanAlt (g hat 30 Felder)'); t.ok(r.same[0] && r.same.every(s => s === r.same[0]), 'Host und Clients bauen dasselbe B: ' + JSON.stringify(r.same));
+      t.eq(r.gLen, 31, 'der Schnappschuss fuehrt vanAlt (g hat 31 Felder, g[30] Funk-Abklingzeit seit Skillbaum v2)'); t.ok(r.same[0] && r.same.every(s => s === r.same[0]), 'Host und Clients bauen dasselbe B: ' + JSON.stringify(r.same));
       t.eq(r.vor, [[0, true, 0], [0, true, 0], [0, true, 0]], 'der Wagen steht an A (Host und beide Clients)'); t.eq(r.nach, [[1, true, true, true], [1, true, true, true], [1, true, true, true]], 'nach dem Ausweichen gilt B bei allen');
       t.eq(r.steht, [[0, true], [0, true], [0, true]], 'der Wagen steht an B fest'); t.eq(r.spec, [1, true], 'ein Zuschauer, der spaeter einsteigt, sieht B'); t.eq(r.zurueck, [[0, true], [0, true], [0, true], [0, true]], 'und zurueck an A bei allen');
     },
