@@ -79,6 +79,9 @@ LIGHT = (255, 255, 255, 70)
 DARK = (0, 0, 0, 60)
 
 
+GUN_IN_SPRITE = False  # Waffen sind eigene Bilder (props2.png ab (0,320), siehe weapon_cell), nicht im Koerper
+
+
 def soldier(pal, phase=0.0, idle=False):
     c = Canvas(128, 4)
     sw = 0 if idle else math.sin(phase) * 12
@@ -103,15 +106,16 @@ def soldier(pal, phase=0.0, idle=False):
     c.E(62, 45, 7, 5, shade(uni, 1.05))
     c.E(62, 83, 7, 5, shade(uni, 1.05))
     rx = bob
-    wood = hexc(pal.get('wood', '#6b4a2b'))
-    c.P([(66 + rx, 62), (82 + rx, 60.5), (82 + rx, 67.5), (66 + rx, 68)], wood)
-    c.Rr(78 + rx, 59.5, 106 + rx, 68.5, hexc('#2a2d33'), r=2)
-    c.Rr(80 + rx, 60.5, 104 + rx, 63, hexc('#4a4e57'), ol=None, r=1)
-    c.Rr(100 + rx, 60, 116 + rx, 68, hexc(pal.get('guard', '#3a3d44')), r=2)
-    c.Rr(114 + rx, 62.4, 127 + rx, 65.6, hexc('#7b8088'), r=1, ow=1.2)
-    c.Rr(124 + rx, 61.2, 128 + rx, 66.8, hexc('#202226'), r=1, ow=1)
-    c.Rr(87 + rx, 57.5, 97 + rx, 60.3, hexc('#15171a'), r=1, ow=1.2)
-    c.P([(88 + rx, 68), (96 + rx, 68), (99 + rx, 80), (91 + rx, 80.5)], hexc('#1a1c20'))
+    if GUN_IN_SPRITE:
+        wood = hexc(pal.get('wood', '#6b4a2b'))
+        c.P([(66 + rx, 62), (82 + rx, 60.5), (82 + rx, 67.5), (66 + rx, 68)], wood)
+        c.Rr(78 + rx, 59.5, 106 + rx, 68.5, hexc('#2a2d33'), r=2)
+        c.Rr(80 + rx, 60.5, 104 + rx, 63, hexc('#4a4e57'), ol=None, r=1)
+        c.Rr(100 + rx, 60, 116 + rx, 68, hexc(pal.get('guard', '#3a3d44')), r=2)
+        c.Rr(114 + rx, 62.4, 127 + rx, 65.6, hexc('#7b8088'), r=1, ow=1.2)
+        c.Rr(124 + rx, 61.2, 128 + rx, 66.8, hexc('#202226'), r=1, ow=1)
+        c.Rr(87 + rx, 57.5, 97 + rx, 60.3, hexc('#15171a'), r=1, ow=1.2)
+        c.P([(88 + rx, 68), (96 + rx, 68), (99 + rx, 80), (91 + rx, 80.5)], hexc('#1a1c20'))
     skin = hexc('#2a2a2d') if pal.get('gloves') else hexc('#d2a37c')
     c.L((62, 46), (74, 50), 8, uni)
     c.L((74, 50), (101 + rx, 60.5), 7.5, uni)
@@ -192,7 +196,12 @@ def person(pal, phase=0.0, idle=False, mode='walk'):
     c.E(64 - sw, 75, 12, 6.5, pants)
     c.E(64 - sw + 9, 75, 6.5, 5.5, boots)
     pistol = pal.get('pistol')
-    if pistol:
+    if pistol and not GUN_IN_SPRITE:
+        c.L((62, 46), (74, 50), 8, uni)
+        c.L((74, 50), (101, 60.5), 7.5, uni)
+        c.L((62, 82), (76, 77), 8, uni)
+        c.L((76, 77), (85, 68.5), 7.5, uni)
+    elif pistol:
         c.L((62, 46), (82, 54), 8, uni)
         c.L((62, 82), (84, 74), 8, uni)
     else:
@@ -211,7 +220,10 @@ def person(pal, phase=0.0, idle=False, mode='walk'):
     if pal.get('belt'):
         c.Rr(54, 56, 60, 72, hexc('#1b1c20'), r=1, ow=1)
         c.Rr(50, 74, 58, 82, hexc('#22242a'), r=2, ow=1)
-    if pistol:
+    if pistol and not GUN_IN_SPRITE:
+        c.E(102, 61, 4.6, 4.2, hexc('#2a2a2d'))
+        c.E(85, 68, 4.4, 4.0, hexc('#2a2a2d'))
+    elif pistol:
         c.Rr(86, 62.2, 100, 66.4, hexc('#1c1e22'), r=1, ow=1.3)
         c.Rr(94, 60.6, 99, 62.4, hexc('#4a4e56'), r=0.5, ow=0.8)
         c.E(84, 55, 4.2, 4, hexc('#2a2a2d'))
@@ -287,6 +299,59 @@ fl[..., 0] = 255
 fl[..., 1] = 236
 fl[..., 2] = 236
 Image.fromarray(fl, 'RGBA').save(os.path.join(OUT, 'chars_flash.png'))
+
+
+def weapon_cell(kind):
+    """Waffe als eigenes Bild (64x64, 2 Pixel je Welt-Pixel, Lauf nach +x, Mitte der Figur bei Pixel (0,32)). Gezeichnet in Koerper-Koordinaten der Figuren (Haende bei (102,61) und (85,68)), dann ausgeschnitten."""
+    c = Canvas(128, 4)
+    dark, mid, steel, wood = hexc('#2a2d33'), hexc('#4a4e57'), hexc('#7b8088'), hexc('#6b4a2b')
+    if kind == 'pistol':
+        c.P([(86, 65), (93, 65), (91, 74), (84.5, 74)], hexc('#1a1c20'))
+        c.Rr(83, 59.6, 104, 65.8, hexc('#1c1e22'), r=1.5, ow=1.3)
+        c.Rr(88, 60.4, 102, 62, mid, ol=None, r=0.8)
+        c.Rr(101, 61.5, 105, 64, steel, r=0.8, ow=0.9)
+    elif kind == 'smg':
+        c.Rr(70, 60.3, 80, 66.5, hexc('#3a3d44'), r=1.5, ow=1.2)
+        c.P([(88, 67.5), (95, 67.5), (96, 80), (89, 80)], hexc('#1a1c20'))
+        c.Rr(78, 59.2, 108, 67.5, dark, r=2)
+        c.Rr(80, 60, 106, 62.4, mid, ol=None, r=1)
+        c.Rr(84, 57.2, 94, 59.4, hexc('#15171a'), r=1, ow=1.1)
+        c.Rr(106, 61.2, 119, 65.6, steel, r=1, ow=1.2)
+        c.Rr(116, 60.8, 120, 66, hexc('#202226'), r=1, ow=1)
+    elif kind == 'rifle':
+        c.P([(66, 62), (82, 60.5), (82, 67.5), (66, 68)], wood)
+        c.Rr(78, 59.5, 106, 68.5, dark, r=2)
+        c.Rr(80, 60.5, 104, 63, mid, ol=None, r=1)
+        c.Rr(100, 60, 116, 68, hexc('#3a3d44'), r=2)
+        c.Rr(114, 62.4, 127, 65.6, steel, r=1, ow=1.2)
+        c.Rr(124, 61.2, 128, 66.8, hexc('#202226'), r=1, ow=1)
+        c.Rr(87, 57.5, 97, 60.3, hexc('#15171a'), r=1, ow=1.2)
+        c.P([(88, 68), (96, 68), (99, 80), (91, 80.5)], hexc('#1a1c20'))
+    elif kind == 'spr':
+        c.P([(64, 62.5), (82, 60.5), (82, 67.5), (64, 69)], hexc('#4a3a2c'))
+        c.Rr(80, 60, 112, 67.5, dark, r=2)
+        c.Rr(82, 60.8, 110, 63, mid, ol=None, r=1)
+        c.Rr(110, 62.2, 128, 65.4, steel, r=1, ow=1.2)
+        c.Rr(86, 55, 106, 60.2, hexc('#14171b'), r=2, ow=1.2)
+        c.Rr(84.5, 55.8, 88, 59.4, hexc('#6cb4ff'), r=1, ow=0.9)
+        c.Rr(104, 55.8, 107.5, 59.4, hexc('#6cb4ff'), r=1, ow=0.9)
+        c.P([(92, 67.5), (98, 67.5), (97, 76), (92, 76)], hexc('#1a1c20'))
+    elif kind == 'spl':
+        c.P([(88, 70), (95, 70), (93, 79), (86, 79)], hexc('#1a1c20'))
+        c.Rr(68, 58.5, 74, 68.5, dark, r=1.5, ow=1.2)
+        c.Rr(72, 57, 112, 70, hexc('#5a6048'), r=3)
+        c.Rr(74, 58.2, 110, 61.5, (255, 255, 255, 50), ol=None, r=2, ov=True)
+        c.Rr(108, 55, 123, 72, hexc('#3c4132'), r=3, ow=1.6)
+        c.Rr(95, 53.5, 102, 57, hexc('#15171a'), r=1, ow=1.1)
+    return c.finish(noise=0.02, seed=17).crop((64, 32, 128, 96))
+
+
+WEAPONS = ['pistol', 'smg', 'rifle', 'spr', 'spl']
+wsheet = Image.new('RGBA', (64 * len(WEAPONS), 64), (0, 0, 0, 0))
+for i, k in enumerate(WEAPONS):
+    wsheet.paste(weapon_cell(k), (i * 64, 0))
+wsheet.save(os.path.join(OUT, '_waffen.png'))
+
 
 
 def bag():
