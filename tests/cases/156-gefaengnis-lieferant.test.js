@@ -82,13 +82,13 @@ module.exports = [
         p0.y = n.y - 28; it.act(p0); o.ko = n.st; o.bodyMi = A.bodyMi(n).ok(p0);
         // Wache sieht den Koerper: Alarm nach CFG.ko.find s
         const gd = g.npcs.find(q => q.k === 'grd' && q.st !== 'away'); gd.st = 'idle'; gd.still = true; gd.route = null; gd.path = []; gd.x = n.x; gd.y = n.y - 90; gd.base = Math.PI / 2; gd.a = gd.base; gd.alert = 0;
-        p0.x = 3 * H.T; p0.y = 3 * H.T; o.ph0 = A.get().phase; for (let i = 0; i < Math.round((K.find + 1.5) * 30); i++) { gd.base = Math.PI / 2; gd.x = n.x; gd.y = n.y - 90; H.both(1 / 30); } o.ph1 = A.get().phase;
+        p0.x = 3 * H.T; p0.y = 3 * H.T; o.ph0 = A.get().phase; for (let i = 0; i < Math.round((K.find + 1.5) * 30); i++) { gd.base = Math.PI / 2; gd.x = n.x; gd.y = n.y - 90; H.both(1 / 30); } o.ph1 = A.get().phase; o.ld = A.LAY().prison.ld.t > 0;
         return o; })()`);
       t.ok(r.sus[1] > r.sus[0], 'der Lieferant sieht die Bewaffneten und der Verdacht steigt: ' + r.sus);
       t.eq([r.okBehind, r.okFront], [true, false], 'Ausschalten nur von hinten');
       t.eq(r.ko, 'ko', 'er ist bewusstlos');
       t.ok(r.bodyMi, 'der Koerper laesst sich greifen und ziehen');
-      t.eq([r.ph0, r.ph1], [1, 2], 'eine Wache, die den Koerper sieht, schlaegt Alarm');
+      t.eq([r.ph0, r.ph1, r.ld], [1, 1, true], 'eine Wache, die den Koerper sieht, loest den Lockdown aus (Ticket 296, vorher Alarm)');
     },
   },
 ];

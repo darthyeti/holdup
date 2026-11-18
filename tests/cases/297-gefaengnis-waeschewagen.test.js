@@ -155,4 +155,18 @@ module.exports = [
       t.ok(r.dist < 6, 'Wagen auf Host und Client gleich: ' + r.dist); t.ok(r.ins < 8, 'der Insasse sitzt auch auf dem Client im Wagen: ' + r.ins); t.eq(r.aus, [0, -1], 'Aussteigen kommt beim Client an');
     },
   },
+  {
+    name: 'Waeschewagen und Lockdown: loest der Lockdown aus, steigt der Gefangene aus dem Wagen (kein Alarm, Insasse draussen, Wagen leer)',
+    timeout: 120000,
+    async run(t) {
+      await t.loadTool('loopnet.js'); await t.loadInpage('coop.js');
+      const r = await t.page.evaluate(`(() => { const o = {}, S = (${SETUP})(5), { D, g, me, pz, R, it, tile, put } = S, cart = () => D.cart();
+        const c = tile(R.cart[0], R.cart[1]); put(pz, c[0] + 10, c[1]); put(me, c[0] - 20, c[1]);
+        const cin = it('cin'); cin.act(pz); o.vor = [pz.cv, cart().in];
+        D.detect(null, false, me.x, me.y, 'Test');
+        const G = D.get(); o.nach = [pz.cv, cart().in]; o.phase = G.phase; o.ld = R.ld.t > 0 ? 1 : 0;
+        return o; })()`);
+      t.eq(r.vor, [1, 1], 'Gefangener sitzt im Wagen'); t.eq(r.nach, [0, -1], 'Lockdown wirft den Insassen aus dem Wagen'); t.eq(r.phase, 1, 'noch kein Alarm (Phase 1)'); t.eq(r.ld, 1, 'Lockdown laeuft');
+    },
+  },
 ];
