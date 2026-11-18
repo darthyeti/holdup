@@ -105,7 +105,7 @@ module.exports = [
         t.ok(a.tris > 1000 && a.tris < 150000, 'Dreiecke im Budget: ' + a.tris);
         t.eq([r.b.statBuilds, r.b.builds, r.b.groundUp], [a.statBuilds, a.builds, a.groundUp], 'ohne Rasteraenderung kein Neubau (auch nicht bei setc mit demselben Zeichen)');
         t.eq([r.bv.statBuilds, r.bv.groundUp], [a.statBuilds, a.groundUp], 'haltendes Fahrzeug (o zu v) baut die Welt nicht neu (Abgleich nach dem Zaehler)');
-        t.ok(r.c.statBuilds === a.statBuilds + 1 && r.c.cells.L === a.cells.L - 1 && !r.c.cells.l && r.c.vol < a.vol && r.c.groundUp === a.groundUp + 1, 'Tuer auf aendert die Geometrie (kein Sturz ueber der offenen Tuer): ' + JSON.stringify([r.c.cells.L, r.c.cells.l, a.vol - r.c.vol]));
+        t.ok(r.c.statBuilds === a.statBuilds + 1 && r.c.cells.L === a.cells.L - 1 && !r.c.cells.l && r.c.vol < a.vol && r.c.groundUp === a.groundUp, 'Tuer auf aendert die Geometrie (kein Sturz ueber der offenen Tuer), die Bodentextur bleibt (die 2D-Ebenen st und so aendern sich dabei nicht, Ticket 265): ' + JSON.stringify([r.c.cells.L, r.c.cells.l, a.vol - r.c.vol]));
         t.ok(r.c2.cells.L === a.cells.L && r.c2.vol === a.vol && r.c2.tris === a.tris, 'Tuer zu: wie vorher');
         const dp = (i, k) => i.parts[k] - a.parts[k];
         t.ok(r.e.cells.w === 1 && r.e.cells.W === a.cells.W - 1 && dp(r.e, 5) === -1 && dp(r.e, 0) === 0, 'Fenster zerschossen: eine Glasscheibe weniger, Bruestung bleibt: ' + r.e.parts);

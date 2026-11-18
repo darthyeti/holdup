@@ -297,6 +297,24 @@ export function mkView3d(X) {
     if (!K || !K.on) return; const k = groundCv.width / (X.W * T), w = T * k;
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = X.cell(x, y); if (c !== 'k' && c !== 'q') continue; const sx = (x - X.WX0) * w, sy = (y - X.WY0) * w; groundG.clearRect(sx, sy, w, w); groundG.drawImage(X.st, sx, sy, w, w, sx, sy, w, w) }
   }
+  // Ticket 265: Aendert sich nur das Raster (Sperrteil, Fenster, Tuer), bleibt die Bodentextur meist gleich (die 2D-Zeichnung der Ebenen st und so aendert sich dabei nicht, Sperren und
+  // zerschossene Fenster zeichnet 2D dynamisch). Dann entfaellt der Ersatz der ganzen Textur (3072 x 1728, rund 21 MB, je Sperrteil ein Ruckler auf schwaecheren Grafikkarten). Verglichen wird je
+  // geaenderter Kachel der Ausschnitt der Textur mit st und so; anderer Praefix des Schluessels (Tresor, Szenario-Zustand) oder ein Unterschied ersetzt die Textur wie bisher.
+  const cmpCv = document.createElement('canvas'), cmpG = cmpCv.getContext('2d', { willReadFrequently: true });
+  function groundSame(k0, k1) {
+    const a = k1.length - X.W * X.H - 1; if (a < 0 || k0.length !== k1.length || k0.slice(0, a + 1) !== k1.slice(0, a + 1)) return false;   // Zellen stehen hinter dem letzten Trenner, der Praefix (Tresor, Szenario) kann selbst einen enthalten
+    const k = groundCv.width / (X.W * T), w = Math.ceil(T * k); cmpCv.width = w; cmpCv.height = w;
+    for (let i = a + 1; i < k1.length; i++) {
+      if (k0[i] === k1[i]) continue;
+      const j = i - a - 1, px = Math.round((X.WX0 + j % X.W - X.WX0) * T * k), py = Math.round(((j / X.W | 0)) * T * k);
+      try {
+        cmpG.clearRect(0, 0, w, w); cmpG.drawImage(X.st, px, py, w, w, 0, 0, w, w); cmpG.drawImage(X.so, px, py, w, w, 0, 0, w, w);
+        const A = cmpG.getImageData(0, 0, w, w).data, B = groundG.getImageData(px, py, w, w).data;
+        for (let q = 0; q < A.length; q++) if (A[q] !== B[q]) return false;
+      } catch (e) { return false }
+    }
+    return true;
+  }
   function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); hideStreetProps(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
     const WP = X.W * T, HP = X.H * T, ox = X.WX0 * T, oz = X.WY0 * T;
@@ -691,6 +709,18 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     const k = (shOn ? 'S' : '') + (spOn ? 'P' : ''); if (k === defKey) return; defKey = k; st.relink = (st.relink || 0) + 1;
     for (const m of litMats) { const d = m.defines || (m.defines = {}); if (shOn) d.L_SH = ''; else delete d.L_SH; if (spOn) d.L_SP = ''; else delete d.L_SP; m.needsUpdate = true }
   }
+  // Ticket 265: Programme im Voraus uebersetzen. Jede Schalterkombination (Schattenkarte, Taschenlampe) ist ein eigenes Programm je Material, jeder Pool zeichnet erst bei der ersten Aufnahme (Alarm, Blaulicht,
+  // Explosion, Schild, Silhouette): das erste Zeichnen kostete auf schwaecheren Grafikkarten 300 bis 900 ms mitten im Spiel. Einmal je Ansicht nach dem ersten Aufbau, ueber compileAsync und nur, wo die Grafikkarte parallel uebersetzen kann (KHR_parallel_shader_compile, sonst blockierte die Vorarbeit selbst); window.__holdupWarm erzwingt es (Test), __holdupNoWarm schaltet es aus.
+  let warmed = false;
+  function warmShaders() {
+    warmed = true; const t0 = performance.now(), vis = [], pS = defKey.indexOf('S') >= 0, pP = defKey.indexOf('P') >= 0;
+    try {
+      for (const P of pools) { if (!P.im) { P.size(1); P.u = 0; P.finish() } if (P.im) { vis.push([P.im, P.im.visible]); P.im.visible = true } }
+      for (const [sh, sp] of [[1, 0], [1, 1], [0, 0], [0, 1]]) { if (!!sh === pS && !!sp === pP) continue; setDefs(!!sh, !!sp); const pr = ren.compileAsync ? ren.compileAsync(scene, cam) : (ren.compile(scene, cam), null); if (pr && pr.catch) pr.catch(() => {}) }
+      setDefs(pS, pP);
+      const ov0 = scene.overrideMaterial; scene.overrideMaterial = shDepth; try { ren.compile(scene, shCam) } catch (e) {} scene.overrideMaterial = ov0;
+    } catch (e) { st.warmErr = String(e && e.message || e) } finally { for (const [m, v] of vis) m.visible = v; st.warmMs = Math.round(performance.now() - t0) }
+  }
   const shV = new THREE.Vector3(), shB = new THREE.Matrix4().set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1);
   function shadowPass() {
     const S = LC.shadow, size = S.size[X.gfx | 0] || S.size[1], a = S.area / 2;
@@ -747,10 +777,10 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
       { ov = X.seen ? X.seen() : null; const ok = ov ? JSON.stringify(ov) : ''; if (ok !== ovKey) { ovKey = ok; rev = -1 } }
       const SC = X.scen ? X.scen() : null; { const k = SC ? SC.key : ''; if (k !== scKey) { scKey = k; grl = new Set(SC ? SC.grl : []); rev = -1 } }
       if (X.LAY !== curLay || X.st !== curSt) buildLay();
-      else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
+      else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { const same = groundSame(gridKey, k); gridKey = k; const t0 = performance.now(); if (same) st.rbSkip = (st.rbSkip || 0) + 1; else refreshGround(); const t1 = performance.now(); buildStatic(); st.rbG = t1 - t0; st.rbS = performance.now() - t1; st.rb = (st.rb || 0) + 1 } }
       updVis();
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); if (K && K.on) K.render(scene, cam); else ren.render(scene, cam); show(true);
+      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); if (!warmed && (window.__holdupWarm || (ren.extensions.has('KHR_parallel_shader_compile') && !window.__holdupNoWarm))) warmShaders(); if (K && K.on) K.render(scene, cam); else ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -760,7 +790,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figOl: st.figOl, k: K ? K.info() : null, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figOl: st.figOl, k: K ? K.info() : null, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, warm: [st.warmMs | 0, st.warmErr || ''], rb: [st.rb | 0, Math.round(st.rbG || 0), Math.round(st.rbS || 0), st.rbSkip | 0], prog: ren.info.programs ? ren.info.programs.length : 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
