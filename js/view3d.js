@@ -710,13 +710,13 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     for (const m of litMats) { const d = m.defines || (m.defines = {}); if (shOn) d.L_SH = ''; else delete d.L_SH; if (spOn) d.L_SP = ''; else delete d.L_SP; m.needsUpdate = true }
   }
   // Ticket 265: Programme im Voraus uebersetzen. Jede Schalterkombination (Schattenkarte, Taschenlampe) ist ein eigenes Programm je Material, jeder Pool zeichnet erst bei der ersten Aufnahme (Alarm, Blaulicht,
-  // Explosion, Schild, Silhouette): das erste Zeichnen kostete auf schwaecheren Grafikkarten 300 bis 900 ms mitten im Spiel. Einmal je Ansicht nach dem ersten Aufbau, ueber compileAsync und nur, wo die Grafikkarte parallel uebersetzen kann (KHR_parallel_shader_compile, sonst blockierte die Vorarbeit selbst); window.__holdupWarm erzwingt es (Test), __holdupNoWarm schaltet es aus.
+  // Explosion, Schild, Silhouette): das erste Zeichnen kostete auf schwaecheren Grafikkarten 300 bis 900 ms mitten im Spiel. Einmal je Ansicht nach dem ersten Aufbau, ueber compileAsync und nur, wo die Grafikkarte parallel uebersetzen kann (KHR_parallel_shader_compile, sonst blockierte die Vorarbeit selbst); window.__holdupWarm erzwingt es (Test, dann mit ren.compile statt compileAsync: dessen Abfrage griff nach dem Abbau der Ansicht auf freigegebene Materialien und warf unter Last "isReady" undefined), __holdupNoWarm schaltet es aus.
   let warmed = false;
   function warmShaders() {
     warmed = true; const t0 = performance.now(), vis = [], pS = defKey.indexOf('S') >= 0, pP = defKey.indexOf('P') >= 0;
     try {
       for (const P of pools) { if (!P.im) { P.size(1); P.u = 0; P.finish() } if (P.im) { vis.push([P.im, P.im.visible]); P.im.visible = true } }
-      for (const [sh, sp] of [[1, 0], [1, 1], [0, 0], [0, 1]]) { if (!!sh === pS && !!sp === pP) continue; setDefs(!!sh, !!sp); const pr = ren.compileAsync ? ren.compileAsync(scene, cam) : (ren.compile(scene, cam), null); if (pr && pr.catch) pr.catch(() => {}) }
+      for (const [sh, sp] of [[1, 0], [1, 1], [0, 0], [0, 1]]) { if (!!sh === pS && !!sp === pP) continue; setDefs(!!sh, !!sp); const pr = ren.compileAsync && !window.__holdupWarm ? ren.compileAsync(scene, cam) : (ren.compile(scene, cam), null); if (pr && pr.catch) pr.catch(() => {}) }
       setDefs(pS, pP);
       const ov0 = scene.overrideMaterial; scene.overrideMaterial = shDepth; try { ren.compile(scene, shCam) } catch (e) {} scene.overrideMaterial = ov0;
     } catch (e) { st.warmErr = String(e && e.message || e) } finally { for (const [m, v] of vis) m.visible = v; st.warmMs = Math.round(performance.now() - t0) }
