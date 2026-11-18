@@ -9,7 +9,7 @@ async function setup(t) {
 const CAR = `(A, dx, dy) => { const m = A.get().me, c = { id: 9000 + A.get().cars.length, civ: 1, cv: 2, side: null, slot: -1, row: 0, a: 0, tilt: 0, tg: 0, st: 'park', ex: 0, sk: 0, crew: [], lead: 0, hp: 140, dead: false, x: m.x + dx, y: m.y + dy };
   A.get().cars.push(c); return c; }`;
 const BOOM = `(A, c) => { c.dead = true; c.hp = 0; A.blastAt(c.x, c.y, { dmg: 0, pdmg: 0, r: 110, scorch: 20 }, 0, 1); }`;
-const KINDS = `(d) => { const o = { parts: 0 }; for (const q of d.dbrL()) { const k = q.t === 'p' ? q.kd : q.t; o[k] = (o[k] || 0) + 1; if (q.t === 'p') o.parts++; } return o; }`;
+const KINDS = `(d) => { const o = { parts: 0 }; for (const q of d.dbrL()) { const k = q.t === 'p' ? (q.fx ? 'fx' : q.kd) : q.t; o[k] = (o[k] || 0) + 1; if (q.t === 'p' && !q.fx) o.parts++; } return o; }`;
 
 module.exports = [
   {
