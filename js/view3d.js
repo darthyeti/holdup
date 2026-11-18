@@ -109,7 +109,7 @@ export const V3CFG = {
   scen: {
     laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
     kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
-      pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, tpult: { g: 's l' }, card: { g: 's' }, wcab: { g: 's' }, cart: { g: 's' },
+      pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, tpult: { g: 's l' }, card: { g: 's' }, wcab: { g: 's' }, cart: { g: 's' }, kit: { g: 's' },
       frame: { g: 'l' }, cam: { g: 's' }, sw: { g: 's' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
     src: {
       rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'sw', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
@@ -120,7 +120,7 @@ export const V3CFG = {
       'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:c4d': 'lock', 'it:c4g': 'lock', 'it:tbag': 'bag',
       'it:vit': 'vit', 'it:good:cig': 'good', 'it:good:shelf': 'good', 'it:good:art': 'good', 'it:good:statue': 'good', 'it:good:relic': 'good', 'it:good:chips': 'good', 'it:good:slot': 'good', 'it:good:vip': 'good',
       'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
-      'it:dlx': 'lock', 'it:lsw:wach': 'tpult', 'it:lsw:kon': 'tpult', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur', 'it:wkb': 'wcab', 'it:fnk': 'reader', 'it:cgr': 'cart', 'it:cin': 'cart', 'it:cout': 'cart',
+      'it:dlx': 'lock', 'it:lsw:wach': 'tpult', 'it:lsw:kon': 'tpult', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur', 'it:wkb': 'wcab', 'it:fnk': 'reader', 'it:kit': 'kit', 'it:cgr': 'cart', 'it:cin': 'cart', 'it:cout': 'cart',
     },
   },
   // 3D-7 (Ticket 156) Effekte: fx3d in js/draw.js liefert je Bild Teilchen, Kugeln, Muendungsfeuer, Granaten, Wolken, Aufnahmen und Dinge am Boden (dieselbe Auswahl wie lyWorld), hier stehen Zuordnung und Masse.

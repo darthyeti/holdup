@@ -78,6 +78,8 @@ export function register(KL) {
     else if (o.rf && rifle) { const L0 = 18; part(mT, D.torsoD / 2 + L0 / 2 - 4, tH * .82, 1.5, L0, 1.8, 1.5, gunC); part(mT, D.torsoD / 2 - 5, tH * .82 - .7, 1.5, 5.5, 3.2, 1.7, colOf(FG.stock)); part(mT, D.torsoD / 2 + 4, tH * .82 + 1.8, 1.5, 6, 1.8, 1.8, gunC); extra++ }
     if (shield) { const c = k.xcol.sh[o.sh > .5 ? 0 : o.sh > .25 ? 1 : 2]; part(mB, D.torsoD / 2 + 5, 16.5, -1.5, 1.8, 27, 17, c, .12); part(mB, D.torsoD / 2 + 6, 22, -1.5, .8, 5, 11, dark); extra++ }
     if (o.bag) { part(mT, -D.torsoD / 2 - 4.4, tH * .52, 0, 7.4, 12.6, 10, colOf(0xc79a3c)); part(mT, -D.torsoD / 2 - 1.2, tH * .84, 0, 1.6, 2.2, 6, colOf(FG.dark)); extra++ }
+    // Waescherei-Kittel (Ticket 310): heller Ueberwurf ueber Rumpf, Guertelband
+    if (o.kc) { part(mT, 0, tH * .46, 0, D.torsoD + 1.8, tH * .9, D.torsoW + 1.8, colOf(0xe9eef3)); part(mT, 0, tH * .4, 0, D.torsoD + 2, 1.3, D.torsoW + 2, colOf(0x7f9bb6)); extra++ }
     return extra;
   };
   // Arten: Spieler und Team (rob0 bis rob3), Polizei und Gegner, Wachen, Zivilisten, Angestellte (Namen wie V3CFG.fig.out)
