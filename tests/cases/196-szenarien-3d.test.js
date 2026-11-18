@@ -11,7 +11,7 @@ const BASE = ['raster', 'boden', 'figur', 'fahrzeug', 'hud', 'logik'];
 // Besonderheiten, die jedes Szenario in 3D zeigen muss (Ansicht von einer Stelle mit Sicht auf die Besonderheit, Phase wie angegeben)
 const NEED = {
   bank: ['vault', 'pad', 'note', 'lock'], truck: ['tk', 'parked'], jewel: ['vit', 'cone', 'vault'], gas: ['pump', 'good'], museum: ['laser', 'good'],
-  casino: ['good', 'vault'], nb: ['nbRig', 'nbPress'], prison: ['lock', 'reader', 'ring'],
+  casino: ['good', 'vault'], nb: ['nbRig', 'nbPress'], prison: ['lock', 'reader', 'ring', 'tpult', 'sw'],
 };
 
 const { glPage } = require('../glshare');   // gemeinsamer WebGL-Browser (tests/glshare.js)
