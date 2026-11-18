@@ -136,6 +136,8 @@ def extra_parts(sheet):
 def build(root):
     src = Image.open(os.path.join(root, 'assets', 'props2.png')).convert('RGBA').crop((0, 0, 704, 64))
     sheet = Image.new('RGBA', (736, 384), (0, 0, 0, 0)); sheet.paste(src, (0, 0))
+    old = Image.open(os.path.join(root, 'assets', 'props2.png')).convert('RGBA')
+    sheet.paste(old.crop((0, 320, 320, 384)), (0, 320))  # Waffenbilder (Ticket 292) bleiben erhalten
     sheet.alpha_composite(rig(), (0, 64))
     for i in range(4): sheet.alpha_composite(bit(i), (128 + i * 32, 64))
     extra_parts(sheet)

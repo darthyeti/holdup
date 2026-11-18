@@ -11,6 +11,7 @@ Stand (27. Oktober 2026): `VER` 53, `UI_API` 11, die Build-Nummer steht in `inde
 
 ## Spieltest (ungespielt, kurz)
 
+- **Waffen in der Hand (2D, Ticket #292):** Pistole, MP und Sturmgewehr sehen verschieden aus, angelegtes Präzisionsgewehr und Granatwerfer (rechte Maus) auch, die Waffe zuckt beim Schuss zurück, das Mündungsfeuer sitzt an der Laufspitze. Beamte und Wachmann Pistole, SWAT Gewehr, Scharfschütze Präzisionsgewehr. Im Coop sieht man die Spezialwaffe nur bei sich selbst.
 - Gewehr und Granatwerfer (Skillbaum v2): rechte Maustaste halten legt an (Sicht zoomt in 3D etwas heraus), Linksklick feuert, Shift ist nur Schleichen. Gewehr: ein Treffer tötet alles, geht durch Schilde und Fenster; Stufe 3 markiert den nächsten Gegner fürs Team.
 - Selbstschuss-MG (Skillbaum v2, Stellung hinter Sprengmeister): Taste V halten zeigt Platz und Kegel, Loslassen stellt es mit Blick nach vorn. Beobachten: ob es die Polizei im Kegel wirklich aufhält, ob die Polizei es zu schnell abräumt, ob 40/60/80 Schuss reichen. Claymore bleibt auf 3.
 - **Autoexplosion mit Gewicht (Ticket #277, Vorschau unter /pr/<n>/):** Streifenwagen oder parkendes Auto beschießen bis es explodiert. Hebt es sichtbar ab, fliegen Tür, Motorhaube, Reifen weg und bleiben liegen, brennt das Wrack lange mit abziehender Rauchsäule? Auf Grafik niedrig nur Hüpfer und zwei Teile. Zu viel oder zu wenig Wucht?
