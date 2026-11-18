@@ -18,6 +18,7 @@ const tests = SC.map(sc => ({
       // Ueberfall-Start durch den Client (Taste F)
       B.cv.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }));
       run(3);
+      if (sc === 'truck' && A.get().phase === 1) { A.startHeist(false, A.get().players[1], undefined, 'F'); run(3); }   // Transporter (#313): F vor dem Halt zieht nur die Waffe, der Ueberfall beginnt dann wie sonst (hier vom Host ausgeloest)
       out.phase = [A.get().phase, B.get().phase];
       // Beute durch den Client: ein passendes Item suchen, den Spieler 1 auf dem Host davor setzen, E halten
       const want = ['good', 'vit', 'till', 'mat'];
