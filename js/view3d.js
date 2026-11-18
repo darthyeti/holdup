@@ -109,7 +109,7 @@ export const V3CFG = {
   scen: {
     laserH: 20, cone: [[1, .925, .667, .2], [1, .43, .35, .3]], grille: { n: 4, w: 3, rail: [[0, 3], [30, 33], [61, 64]] },
     kinds: { vault: { g: 's l' }, pad: { g: 's l' }, note: { g: 's' }, dark: { g: 'f' }, bundle: { g: 's' }, bag: { g: 's' }, good: { g: 's f' }, vit: { g: 'f' }, cone: { g: 'c' }, laser: { g: 's l f' },
-      pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, card: { g: 's' }, wcab: { g: 's' },
+      pump: { g: 's l' }, nbRig: { g: 's l f' }, nbHole: { g: 's' }, zone: { g: 'l' }, nbPress: { g: 's l' }, ring: { g: 'l' }, lock: { g: 's l' }, reader: { g: 's l' }, tpult: { g: 's l' }, card: { g: 's' }, wcab: { g: 's' },
       frame: { g: 'l' }, cam: { g: 's' }, sw: { g: 's' }, bar: { g: 's' }, exit: { g: 'l' }, grille: { g: 's' }, tk: { g: 's l f' }, parked: { g: 'i' } },
     src: {
       rob: 'logik', slots: 'logik', posts: 'logik', backDoors: 'raster', vault: 'vault', note: 'note', noteAt: 'note', mon: 'raster', sw: 'sw', tellers: 'figur', mgr: 'figur', tills: 'dark', atms: 'dark',
@@ -117,10 +117,10 @@ export const V3CFG = {
       hall: 'logik', jewel: 'logik', gas: 'logik', nb: 'nbRig', prison: 'lock', museum: 'logik', casino: 'logik', road: 'exit', stash: 'raster', meet: 'logik', turned: 'logik', q: 'logik', tries: 'logik',
       truck: 'tk', parked: 'parked', decor: 'fahrzeug', decorReal: 'fahrzeug', spots: 'raster', lockCells: 'lock', wins: 'raster', snp: 'figur',
       'it:note': 'note', 'it:mon': 'raster', 'it:vault': 'vault', 'it:c4': 'vault', 'it:till': 'dark', 'it:atm': 'dark', 'it:bundle': 'bundle', 'it:cam': 'cam', 'it:lock': 'lock', 'it:sw': 'sw',
-      'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:tbag': 'bag',
+      'it:bar': 'raster', 'it:bard': 'raster', 'it:barr': 'raster', 'it:mat': 'raster', 'it:wbar': 'raster', 'it:deal': 'fahrzeug', 'it:ckey': 'figur', 'it:cargo': 'tk', 'it:c4t': 'tk', 'it:c4d': 'lock', 'it:c4g': 'lock', 'it:tbag': 'bag',
       'it:vit': 'vit', 'it:good:cig': 'good', 'it:good:shelf': 'good', 'it:good:art': 'good', 'it:good:statue': 'good', 'it:good:relic': 'good', 'it:good:chips': 'good', 'it:good:slot': 'good', 'it:good:vip': 'good',
       'it:cage': 'raster', 'it:nbd0': 'nbRig', 'it:nbd1': 'nbRig', 'it:nbp0': 'nbPress', 'it:nbp1': 'nbPress', 'it:nbp2': 'nbPress', 'it:nbb': 'bundle', 'it:nbdep': 'nbPress',
-      'it:dlx': 'lock', 'it:lsw:wach': 'boden', 'it:lsw:kon': 'boden', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur', 'it:wkb': 'wcab', 'it:fnk': 'reader',
+      'it:dlx': 'lock', 'it:lsw:wach': 'tpult', 'it:lsw:kon': 'tpult', 'it:pry': 'lock', 'it:crd': 'card', 'it:rdr': 'reader', 'it:prg': 'lock', 'it:pist': 'figur', 'it:wkb': 'wcab', 'it:fnk': 'reader',
     },
   },
   // 3D-7 (Ticket 156) Effekte: fx3d in js/draw.js liefert je Bild Teilchen, Kugeln, Muendungsfeuer, Granaten, Wolken, Aufnahmen und Dinge am Boden (dieselbe Auswahl wie lyWorld), hier stehen Zuordnung und Masse.
@@ -130,7 +130,7 @@ export const V3CFG = {
   // als 2D-Bild (props.png) liegend in pkH, Licht der Explosionen ueber die Punktlichter (light.pl.boom). Budget Plan 5: Effekte unter 20 Draw Calls (heute 4: zwei Teilchenpuffer, Dinge, Aufnahmen).
   fx: {
     chan: ['pt', 'muz', 'dcv', 'cam', 'licht', 'hud', 'ton'],
-    evt: { say: 'hud', ban: 'hud', rad: 'hud', fx: 'hud', s: 'ton', sh: 'muz pt dcv cam', es: 'muz', hw: 'pt dcv', hf: 'pt dcv cam', sp: 'pt', gl: 'pt dcv', gb: 'pt licht', sk: 'pt', bx: 'pt licht dcv cam' },
+    evt: { say: 'hud', ban: 'hud', rad: 'hud', fx: 'hud', mk: 'hud', mg: 'ton', s: 'ton', sh: 'muz pt dcv cam', es: 'muz', hw: 'pt dcv', hf: 'pt dcv cam', sp: 'pt', gl: 'pt dcv', gb: 'pt licht', sk: 'pt', bx: 'pt licht dcv cam' },
     pt: { s: { b: 'a', sh: 1, h: [4, 20], k: .6 }, g: { b: 'a', sh: 0, h: [18, 0], k: 1 }, f: { b: 'a', sh: 0, h: [8, 30], k: 1 }, w: { b: 'a', sh: 2, h: [.8, 0], k: 1 },
       d: { b: 'n', sh: 0, h: [4, 12], k: 1.3 }, c: { b: 'n', sh: 1, h: [2, 0], k: 1, arc: 36 }, k: { b: 'n', sh: 0, h: [20, 50], k: 1 } },
     bul: { glow: 2.6, glowA: .35 }, muzH: 24, grArc: 40, shellArc: 16, pkH: 3, pkS: 34, cloudH: [8, 14],
@@ -296,6 +296,24 @@ export function mkView3d(X) {
   function hideStreetProps() {
     if (!K || !K.on) return; const k = groundCv.width / (X.W * T), w = T * k;
     for (let y = X.WY0; y < X.WY0 + X.H; y++) for (let x = X.WX0; x < X.WX0 + X.W; x++) { const c = X.cell(x, y); if (c !== 'k' && c !== 'q') continue; const sx = (x - X.WX0) * w, sy = (y - X.WY0) * w; groundG.clearRect(sx, sy, w, w); groundG.drawImage(X.st, sx, sy, w, w, sx, sy, w, w) }
+  }
+  // Ticket 265: Aendert sich nur das Raster (Sperrteil, Fenster, Tuer), bleibt die Bodentextur meist gleich (die 2D-Zeichnung der Ebenen st und so aendert sich dabei nicht, Sperren und
+  // zerschossene Fenster zeichnet 2D dynamisch). Dann entfaellt der Ersatz der ganzen Textur (3072 x 1728, rund 21 MB, je Sperrteil ein Ruckler auf schwaecheren Grafikkarten). Verglichen wird je
+  // geaenderter Kachel der Ausschnitt der Textur mit st und so; anderer Praefix des Schluessels (Tresor, Szenario-Zustand) oder ein Unterschied ersetzt die Textur wie bisher.
+  const cmpCv = document.createElement('canvas'), cmpG = cmpCv.getContext('2d', { willReadFrequently: true });
+  function groundSame(k0, k1) {
+    const a = k1.length - X.W * X.H - 1; if (a < 0 || k0.length !== k1.length || k0.slice(0, a + 1) !== k1.slice(0, a + 1)) return false;   // Zellen stehen hinter dem letzten Trenner, der Praefix (Tresor, Szenario) kann selbst einen enthalten
+    const k = groundCv.width / (X.W * T), w = Math.ceil(T * k); cmpCv.width = w; cmpCv.height = w;
+    for (let i = a + 1; i < k1.length; i++) {
+      if (k0[i] === k1[i]) continue;
+      const j = i - a - 1, px = Math.round((X.WX0 + j % X.W - X.WX0) * T * k), py = Math.round(((j / X.W | 0)) * T * k);
+      try {
+        cmpG.clearRect(0, 0, w, w); cmpG.drawImage(X.st, px, py, w, w, 0, 0, w, w); cmpG.drawImage(X.so, px, py, w, w, 0, 0, w, w);
+        const A = cmpG.getImageData(0, 0, w, w).data, B = groundG.getImageData(px, py, w, w).data;
+        for (let q = 0; q < A.length; q++) if (A[q] !== B[q]) return false;
+      } catch (e) { return false }
+    }
+    return true;
   }
   function refreshGround() { groundG.clearRect(0, 0, groundCv.width, groundCv.height); groundG.drawImage(X.st, 0, 0); groundG.drawImage(X.so, 0, 0); hideSwitchPlate(); hideStreetProps(); groundTex.needsUpdate = true; st.groundUp++ }
   function buildLay() {
@@ -576,6 +594,11 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
       if (kt('trap', q)) { /* Kloetze */ } else if (q.k === 'mine') thing(q.x, q.y, 0, 14, 3, 14, 0, 0x2a2d33); else { thing(q.x, q.y, 0, 18, 8, 8, 0, 0x3a4034); thing(q.x, q.y - 3, 8, 14, 2, 2, 0, 0x2a2d33) }
       if (q.bl) fp(FA, q.x, q.y, q.k === 'mine' ? 4 : 10, 3, 0, hc(q.armed ? 0xff4a3a : 0xffc446), 1); cnt('tr');
     }
+    for (const q of (D.mg || [])) {
+      if (q.own) { ring(FA, q.x, q.y, .6, 260, 1.5, lc('110,235,130'), .2) }
+      if (!kt('mg', q)) { thing(q.x, q.y, 0, 12, 6, 12, q.ta, 0x3a4034); thing(q.x + Math.cos(q.ta) * 12, q.y + Math.sin(q.ta) * 12, 5, 16, 3, 3, q.ta, 0x2a2d33) }
+      if (q.fl) fp(FA, q.x + Math.cos(q.ta) * 26, q.y + Math.sin(q.ta) * 26, 8, 8, 0, hc(0xffdc78), 1); cnt('mg');
+    }
     for (const q of D.aid) {
       ring(FA, q.x, q.y, .6, q.r, 1.5, lc('110,235,130'), .3 * q.al); ring(FA, q.x, q.y, .7, 10 + q.ph * (q.r - 10), 2, lc('110,235,130'), .45 * (1 - q.ph) * q.al);
       if (!kt('aid', q)) { thing(q.x, q.y, 0, 16, 8, 12, 0, 0xe9efe9); thing(q.x, q.y, 8, 3, .6, 9, 0, 0x2fbf52); thing(q.x, q.y, 8, 9, .6, 3, 0, 0x2fbf52) } cnt('aid');
@@ -603,7 +626,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   function angle() { const a = +X.angle; return a >= 20 && a <= 30 ? a : 25 }
   function camSet() {
     tgt.set(X.camX + VW / 2, 0, X.camY + VH / 2 - C.camLead);
-    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1), a = angle() * Math.PI / 180;
+    const D = (VH / 2) / Math.tan(C.fov / 2 * Math.PI / 180) * (K && K.on ? K.zoom() : 1) * (X.zoomK > 1 ? X.zoomK : 1), a = angle() * Math.PI / 180;
     cam.position.set(tgt.x, D * Math.cos(a), tgt.z + D * Math.sin(a)); cam.lookAt(tgt); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
   }
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3(), v3 = new THREE.Vector3();
@@ -686,6 +709,18 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
     const k = (shOn ? 'S' : '') + (spOn ? 'P' : ''); if (k === defKey) return; defKey = k; st.relink = (st.relink || 0) + 1;
     for (const m of litMats) { const d = m.defines || (m.defines = {}); if (shOn) d.L_SH = ''; else delete d.L_SH; if (spOn) d.L_SP = ''; else delete d.L_SP; m.needsUpdate = true }
   }
+  // Ticket 265: Programme im Voraus uebersetzen. Jede Schalterkombination (Schattenkarte, Taschenlampe) ist ein eigenes Programm je Material, jeder Pool zeichnet erst bei der ersten Aufnahme (Alarm, Blaulicht,
+  // Explosion, Schild, Silhouette): das erste Zeichnen kostete auf schwaecheren Grafikkarten 300 bis 900 ms mitten im Spiel. Einmal je Ansicht nach dem ersten Aufbau, ueber compileAsync und nur, wo die Grafikkarte parallel uebersetzen kann (KHR_parallel_shader_compile, sonst blockierte die Vorarbeit selbst); window.__holdupWarm erzwingt es (Test), __holdupNoWarm schaltet es aus.
+  let warmed = false;
+  function warmShaders() {
+    warmed = true; const t0 = performance.now(), vis = [], pS = defKey.indexOf('S') >= 0, pP = defKey.indexOf('P') >= 0;
+    try {
+      for (const P of pools) { if (!P.im) { P.size(1); P.u = 0; P.finish() } if (P.im) { vis.push([P.im, P.im.visible]); P.im.visible = true } }
+      for (const [sh, sp] of [[1, 0], [1, 1], [0, 0], [0, 1]]) { if (!!sh === pS && !!sp === pP) continue; setDefs(!!sh, !!sp); const pr = ren.compileAsync ? ren.compileAsync(scene, cam) : (ren.compile(scene, cam), null); if (pr && pr.catch) pr.catch(() => {}) }
+      setDefs(pS, pP);
+      const ov0 = scene.overrideMaterial; scene.overrideMaterial = shDepth; try { ren.compile(scene, shCam) } catch (e) {} scene.overrideMaterial = ov0;
+    } catch (e) { st.warmErr = String(e && e.message || e) } finally { for (const [m, v] of vis) m.visible = v; st.warmMs = Math.round(performance.now() - t0) }
+  }
   const shV = new THREE.Vector3(), shB = new THREE.Matrix4().set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1);
   function shadowPass() {
     const S = LC.shadow, size = S.size[X.gfx | 0] || S.size[1], a = S.area / 2;
@@ -742,10 +777,10 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
       { ov = X.seen ? X.seen() : null; const ok = ov ? JSON.stringify(ov) : ''; if (ok !== ovKey) { ovKey = ok; rev = -1 } }
       const SC = X.scen ? X.scen() : null; { const k = SC ? SC.key : ''; if (k !== scKey) { scKey = k; grl = new Set(SC ? SC.grl : []); rev = -1 } }
       if (X.LAY !== curLay || X.st !== curSt) buildLay();
-      else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { gridKey = k; refreshGround(); buildStatic() } }
+      else if (X.gRev !== rev || (X.vaultOpen ? '1' : '0') !== gridKey[0]) { rev = X.gRev; const k = keyOfGrid(); if (k !== gridKey) { const same = groundSame(gridKey, k); gridKey = k; const t0 = performance.now(); if (same) st.rbSkip = (st.rbSkip || 0) + 1; else refreshGround(); const t1 = performance.now(); buildStatic(); st.rbG = t1 - t0; st.rbS = performance.now() - t1; st.rb = (st.rb || 0) + 1 } }
       updVis();
       if (performance.now() - decT >= C.decalT * 1000) refreshDecal();
-      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); if (K && K.on) K.render(scene, cam); else ren.render(scene, cam); show(true);
+      lightA(); buildDyn(); buildScen(SC); buildFx(); camSet(); setCut(); st.rcam = [tgt.x, tgt.z]; lightB(); if (!warmed && (window.__holdupWarm || (ren.extensions.has('KHR_parallel_shader_compile') && !window.__holdupNoWarm))) warmShaders(); if (K && K.on) K.render(scene, cam); else ren.render(scene, cam); show(true);
     } catch (e) {
       st.errs++; st.err = String(e && e.message || e).slice(0, 120); if (st.errs >= 3) api.dead = 'Fehler beim Zeichnen (' + st.err + ')'; show(false); return false;
     }
@@ -755,7 +790,7 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   function info() {
     return { on: !api.dead, shown, angle: angle(), camY: cam.position.y, camZ: cam.position.z - tgt.z, q: st.q, frames: st.frames, ms: st.ms, msAvg: st.msAvg, calls: st.calls, tris: st.tris, errs: st.errs, err: st.err || api.dead,
-      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figOl: st.figOl, k: K ? K.info() : null, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
+      builds: st.builds, groundUp: st.groundUp, statBuilds: st.statBuilds, inst: st.inst, parts: st.parts.slice(), vol: st.vol, decUp: st.decUp, figs: st.figs, cars: st.cars, fk: Object.assign({}, st.fk), ck: Object.assign({}, st.ck), lie: st.lie, hit: st.hit, xparts: st.xparts, figParts: st.figParts, figOl: st.figOl, k: K ? K.info() : null, figCalls: st.figCalls, gear: st.gear, fi: st.fi.slice(), sil: st.sil || 0, sk: Object.assign({}, st.sk), lead: C.camLead, tgt: (st.rcam || [0, 0]).slice(), cut: U0.uCut.value.toArray(), vis: { on: !!st.visOn, up: st.visUp, dark: UV.uDark.value.w, size: [visCv.width, visCv.height], key: visKey, n: visPoly ? visPoly.length : 0 }, ov: ovKey, dynCalls: st.dynCalls, dynGrow: st.dynGrow, cells: Object.assign({}, cells), light: lt ? JSON.parse(JSON.stringify(lt)) : null, relink: st.relink || 0, warm: [st.warmMs | 0, st.warmErr || ''], rb: [st.rb | 0, Math.round(st.rbG || 0), Math.round(st.rbS || 0), st.rbSkip | 0], prog: ren.info.programs ? ren.info.programs.length : 0, defs: defKey, lampList: lamps.map(o => [o.k, o.x, o.y]), decal: !!ground && groundMat.uniforms.dmap.value === decTex, scen: Object.assign({}, st.scen), scenN: (st.scenN || []).slice(), scenSum: (st.scenSum || []).slice(), grl: grl.size, fx: JSON.parse(JSON.stringify(fxSt)), lod: X.lod | 0, lost: st.lost || 0, objs: scene.children.length, ground: !!ground, size: [el.width, el.height],
       gl: glc.getParameter(glc.VERSION), gpu: dbgInfo ? glc.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL) : '' };
   }
   // Fuer Tests und Bilder: Helligkeit des letzten Bildes (Stichprobe), direkt nach einem render() im selben Takt (ohne preserveDrawingBuffer)
@@ -775,4 +810,4 @@ float visV(vec2 w) { if (uDark.w <= 0.0) return 1.0; return texture2D(uVis, vec2
   }
   return Object.assign(api, { hasK: !!K, kl: () => K, render, show, pick, toScr, info, probe, seen, visAt, fogA: () => UV.uDark.value.w, dispose, dyn: () => dynLast, scen: () => scenLast.slice(), fx: () => fxLast, topAt, el, cam, scene, cfg: C });
 }
-mkView3d.api = 11;
+mkView3d.api = 12;

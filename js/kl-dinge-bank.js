@@ -165,6 +165,13 @@ export function register(KL) {
     // u entlang der Wand, w Abstand von der Wandflaeche nach innen (Wand bei w = 0), Kloetze am Rand der Kachel
     const br = (u, w, y0, su, sh, sw_, col, em) => { const px = cx + D[0] * (T_ / 2 - w) + pu[0] * u, pz = cz + D[1] * (T_ / 2 - w) + pu[1] * u, ax = D[0] !== 0; k.dbrick(px, pz, y0, ax ? sw_ : su, sh, ax ? su : sw_, 0, col, em) };
     const on = o.on, metal = 0x8f98a6, dark = 0x2a2f37;
+    if (o.pr) { // Gefaengnis (Ticket 298): Kamera-Hauptschalter als violetter Kasten mit Monitor (dunkel, wenn die Kameras aus sind), Lampe gruen oder rot
+      br(0, 3, 14, 24, 34, 6, 0x4a3a78); br(0, 6.4, 15, 22, 32, .8, 0x6d57a8); br(0, 7, 44, 22, 3, .8, 0xb07cff, .5);   // Kasten, Blatt, violettes Band
+      br(0, 7, 24, 18, 14, .9, dark); br(0, 7.6, 25, 16, 12, .6, on ? 0x4fb7cf : 0x0c0e12, on ? 1 : 0);                 // Monitor
+      if (on) { br(-2, 8, 29, 7, 4, .5, 0xe8fbff, .8); br(3.4, 8, 30, 3, 2, .5, 0xe8fbff, .8); br(-3, 8.4, 30.4, 1.6, 1.6, .5, 0xff5a4a, 1) }
+      else { br(0, 7.8, 30, 10, 1.2, .4, 0x2c3038); br(0, 7.8, 29, 1.2, 4, .4, 0x2c3038) }
+      br(6, 4.5, 16, 8, 2, 4, dark); br(6, 7.4, 16.2, 5, 1.4, 1.2, on ? 0x4cf06a : 0xff3a2e, 1.8); return;
+    }
     br(0, 3, 14, 20, 34, 6, metal); br(0, 6.4, 15, 17, 32, .8, 0xaab3c0);                       // Kasten und Tuerblatt
     for (const sx of [-1, 1]) for (const sy of [16, 45]) br(sx * 8, 6.9, sy, 1.6, 1.6, .6, 0xd8dde4);  // Nieten
     br(-5, 7, 36, 8, 8, .8, 0xffc83a); br(-5, 7.5, 37, 2, 6, .5, 0x1a1d22); br(-6.6, 7.5, 39.6, 3, 1.6, .5, 0x1a1d22); br(-3.4, 7.5, 36.8, 3, 1.6, .5, 0x1a1d22); // Warnschild mit Blitz

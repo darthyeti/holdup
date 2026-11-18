@@ -275,6 +275,7 @@ Jedes neue Ticket der 3D-Ansicht schreibt seinen Abschnitt als **eigene Datei** 
 - Ticket 256: [Juwelier-Auslage (Ticket 256)](3d/256-juwelier-auslage.md)
 - Ticket 257: [Runde Reifen an den Autos (Ticket 257, 16. November 2026)](3d/257-runde-reifen.md)
 - Ticket 262: [Casino-Tische je Block (Ticket 262)](3d/262-casino-tische-block.md)
+- Ticket 265: [Ruckler im 3D auf schwächeren Rechnern (Ticket 265, 17. November 2026)](3d/265-ruckler-schwache-rechner.md)
 
 ## 3. Figuren
 

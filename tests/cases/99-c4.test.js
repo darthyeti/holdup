@@ -14,16 +14,16 @@ const HELP = `(() => {
 
 module.exports = [
   {
-    name: 'C4: Knoten U4 ist kein Platzhalter mehr (cnt 1, 1, 1, save 25, 50, 75 %), ein Stueck am Start mit dem Knoten, ohne ihn keins, das Item sitzt am Tresor',
+    name: 'C4: Knoten U4 ist kein Platzhalter mehr (cnt 1, 1, 2, save 25, 50, 75 %), ein Stueck am Start (zwei mit Stufe 3, Skillbaum v2) mit dem Knoten, ohne ihn keins, das Item sitzt am Tresor',
     async run(t) {
       const r = await t.page.evaluate(`(() => { const H = ${HELP}, D = H.D, S = D.CFG.skill, o = {}; o.node = [S.U4.n, !!S.U4.soon, S.U4.cnt, S.U4.save]; o.still = ['A3', 'A4', 'U3'].map(id => !!S[id].soon); o.cfg = Object.keys(D.CFG.c4 || {}).sort();
         o.stock = [{}, { U4: 1 }, { U4: 2 }, { U4: 3 }].map(sk => H.stock(sk)); const b = H.bank({ U4: 1 }); o.item = [!!b.c4, b.c4 && Math.round(b.c4.x - b.vi.x), b.c4 && Math.round(b.c4.y - b.vi.y), b.c4 && b.c4.r];
         o.ok = [b.c4.ok(b.me), (b.me.c4 = 0, b.c4.ok(b.me)), (b.me.c4 = 1, b.g.vaultOpen)];
         o.info = D.pinfo(b.c4, b.me); return o; })()`);
-      t.eq(r.node, ['C4', false, [1, 1, 1], [.25, .5, .75]], 'U4: kein soon, ein Stueck, spart 25, 50, 75 % des Verlusts');
+      t.eq(r.node, ['C4', false, [1, 1, 2], [.25, .5, .75]], 'U4: kein soon, 1 / 1 / 2 Stueck, spart 25, 50, 75 % des Verlusts');
       t.eq(r.still, [false, false, false], 'Praezisionsgewehr, Granatwerfer und Notfallkoffer sind seit B4 und B5 keine Platzhalter mehr');
       t.eq(r.cfg, ['loss', 'pol', 'rk', 't'], 'CFG.c4: loss, pol, rk, t');
-      t.eq(r.stock, [0, 1, 1, 1], 'ein Stueck je Auftrag mit dem Knoten, sonst keins');
+      t.eq(r.stock, [0, 1, 1, 2], 'ein Stueck je Auftrag mit dem Knoten (zwei mit Stufe 3), sonst keins');
       t.eq(r.item, [true, 0, 0, 58], 'das C4-Objekt sitzt am Tresor');
       t.eq(r.ok, [true, false, false], 'bei geschlossenem Tresor und mit Vorrat nutzbar, ohne Vorrat nicht');
       t.eq([r.info.i, r.info.c, r.info.v, r.info.loud], ['bomb', 'r', 'Sprengen', true], 'der Hinweis: Symbol, rot, Sprengen, laut');
@@ -40,7 +40,7 @@ module.exports = [
         o.feed = D.msgs().feed.join(' | ');
         return o; })()`);
       for (const s of r.stages) {
-        t.eq([s.open, s.c4, s.lost, s.left, s.done, s.gd], [true, 0, s.want, s.n - s.want, s.want, 0], 'Stufe ' + s.lv + ': Tresor offen, Stueck verbraucht, ' + s.want + ' von ' + s.n + ' Beutestuecken verbrannt, der Rest einpackbar, lost zaehlt nicht als geholt: ' + JSON.stringify(s));
+        t.eq([s.open, s.c4, s.lost, s.left, s.done, s.gd], [true, s.lv === 3 ? 1 : 0, s.want, s.n - s.want, s.want, 0], 'Stufe ' + s.lv + ': Tresor offen, Stueck verbraucht, ' + s.want + ' von ' + s.n + ' Beutestuecken verbrannt, der Rest einpackbar, lost zaehlt nicht als geholt: ' + JSON.stringify(s));
         t.eq(s.pol[1], Math.max(s.pol[2], s.pol[0] - 12), 'Stufe ' + s.lv + ': die Polizei kommt 12 s frueher (mindestens 3 s nach jetzt): ' + JSON.stringify(s.pol));
       }
       t.eq(r.min, 1, 'selbst bei kleinstem Verlust (0,05) verbrennt mindestens ein Stueck, C4 hat immer einen Preis');

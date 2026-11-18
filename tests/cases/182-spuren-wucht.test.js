@@ -7,6 +7,8 @@ async function setup(t) {
 }
 const AT = `(A) => { const m = A.get().me; return [m.x + 300, m.y]; }`;
 
+// Seit Ticket 279 zaehlt TRS auch k (Brocken), n (Kerben), w (Wandruss): diese Tests pruefen die urspruenglichen fuenf Zaehler
+const O5 = (x) => ({ h: x.h, c: x.c, b: x.b, g: x.g, s: x.s });
 module.exports = [
   {
     name: 'Spuren: Einschuss, Blut, Glas und Russ entstehen bei den Ereignissen und veraendern dcv, niedrig malt nur Einschuss und Huelsen',
@@ -20,9 +22,9 @@ module.exports = [
         A.evt('bx', [x + 80, y, 90, 1]); o.bx = [A.tr().s, A.trHash() !== h];
         GFX.set('niedrig'); A.reset(); A.evt('hw', [x, y]); A.evt('hf', [x + 20, y, 5]); A.evt('gl', [x + 40, y]); A.evt('bx', [x + 80, y, 90, 1]); o.low = A.tr();
         GFX.set('niedrig'); return o; })()`);
-      t.eq(r.t0, { h: 0, c: 0, b: 0, g: 0, s: 0 }, 'zu Beginn keine Spuren');
+      t.eq(O5(r.t0), { h: 0, c: 0, b: 0, g: 0, s: 0 }, 'zu Beginn keine Spuren');
       t.eq(r.hw, [1, true], 'Einschuss'); t.eq(r.hf, [1, true], 'Blutlache'); t.eq(r.gl, [1, true], 'Glassplitter'); t.eq(r.bx, [1, true], 'Russfahne');
-      t.eq(r.low, { h: 1, c: 0, b: 0, g: 0, s: 0 }, 'niedrig: nur der Einschuss');
+      t.eq(O5(r.low), { h: 1, c: 0, b: 0, g: 0, s: 0 }, 'niedrig: nur der Einschuss');
     },
   },
   {
@@ -36,7 +38,7 @@ module.exports = [
         A.reset(); o.after = [A.tr(), A.trHash() === blank];
         GFX.set('hoch'); for (let i = 0; i < 900; i++) A.evt('hf', [x + i, y + 400, 5]); o.hoch = A.tr().b; GFX.set('niedrig'); return o; })()`);
       t.eq([r.n.h, r.n.b, r.n.g, r.n.s], [300, 120, 60, 20], 'mittel: Obergrenzen erreicht und nicht ueberschritten');
-      t.ok(r.full && r.same, 'ueber der Grenze malt nichts mehr'); t.eq(r.after[0], { h: 0, c: 0, b: 0, g: 0, s: 0 }, 'reset setzt die Zaehler zurueck'); t.ok(r.after[1], 'dcv ist nach dem neuen Auftrag leer'); t.eq(r.hoch, 260, 'hoch: mehr Blut erlaubt');
+      t.ok(r.full && r.same, 'ueber der Grenze malt nichts mehr'); t.eq(O5(r.after[0]), { h: 0, c: 0, b: 0, g: 0, s: 0 }, 'reset setzt die Zaehler zurueck'); t.ok(r.after[1], 'dcv ist nach dem neuen Auftrag leer'); t.eq(r.hoch, 260, 'hoch: mehr Blut erlaubt');
     },
   },
   {
@@ -47,7 +49,7 @@ module.exports = [
         const [x, y] = AT(A), h0 = [A.trHash(), B.trHash()]; A.evt('hf', [x, y, 5]); A.evt('hw', [x + 30, y]); A.evt('gl', [x + 60, y]); A.evt('bx', [x + 100, y, 90, 1]); G.run(.3);
         o.tr = [A.tr(), B.tr()]; o.hash = [A.trHash() === B.trHash(), A.trHash() !== h0[0], B.trHash() !== h0[1]];
         FXO.set('blood', false); const b0 = B.tr().b; A.evt('hf', [x, y + 100, 5]); G.run(.3); o.blutAus = [A.tr().b, B.tr().b - b0]; FXO.set('blood', true); GFX.set('niedrig'); return o; })()`);
-      t.eq(r.tr[0], r.tr[1], 'gleiche Zaehler'); t.eq(r.tr[1], { h: 1, c: r.tr[1].c, b: 1, g: 1, s: 1 }, 'der Client malt alle vier Spuren: ' + JSON.stringify(r.tr[1]));
+      t.eq(r.tr[0], r.tr[1], 'gleiche Zaehler'); t.eq(O5(r.tr[1]), { h: 1, c: r.tr[1].c, b: 1, g: 1, s: 1 }, 'der Client malt alle vier Spuren: ' + JSON.stringify(r.tr[1]));
       t.eq(r.hash, [true, true, true], 'dcv von Host und Client ist pixelgleich'); t.eq(r.blutAus, [1, 0], 'Blut aus: keine neue Lache (Host-Zaehler bleibt, Client ebenso)');
     },
   },

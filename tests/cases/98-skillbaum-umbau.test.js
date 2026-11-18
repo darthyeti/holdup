@@ -3,7 +3,7 @@
 // k4 hinter k2, offen mit dem Pfad auf 3). Die sechs Gegenstaende sind in B1 noch nicht gebaut (soon, nicht kaufbar), seit B2 bis B5 sind alle da. Zaeh, Verhandler und Fahrer sind kein eigener Knoten mehr, sondern kommen mit Stufe 3
 // von Deckung (V2), Sanitaeter (U1) und Techniker (U2, frueher Schleicher). Punkte lassen sich bis zum Verlassen des Shops zuruecknehmen (nur im aktuellen Besuch gekaufte Stufen, nichts Abhaengiges darauf).
 // Die Zusaetze mit Stufe 3 gibt es in allen sechs Pfaden: Laeufer (Ruhige Hand, Laufen kostet keine Zusatzstreuung), Durchschuss (Durchschlag, die Kugel trifft auch den Beamten dahinter mit halbem Schaden),
-// Materialsammler (Baumeister, jedes Moebelstueck gibt ein Material mehr), dazu Zaeh, Verhandler, Fahrer (Tills Wunsch vom 25. Oktober 2026: Go fuer 1 bis 3 noch oben drauf).
+// (Materialsammler ist mit Skillbaum v2, #287, entfallen, Zaeh steckt im Bollwerk), dazu Zaeh, Verhandler, Fahrer (Tills Wunsch vom 25. Oktober 2026: Go fuer 1 bis 3 noch oben drauf).
 // Fenster: drei Zeilen (Angriff, Verteidigung, Unterstuetzung), links die Wurzel, in der Mitte die zwei Pfade untereinander mit ODER dazwischen, rechts je Pfad der Gegenstand, keine Kreuzlinien; wer einen Knoten
 // anwaehlt, sieht die Kette von der Wurzel bis dorthin leuchten; der gesperrte Nachbarpfad nennt den Grund (verbaut).
 module.exports = [
@@ -24,7 +24,7 @@ module.exports = [
         }
         return out;
       });
-      t.eq(r.names, { A0: 'Munition', A1: 'Ruhige Hand', A2: 'Durchschlag', A3: 'Präzisionsgewehr', A4: 'Granatwerfer', V0: 'Panzerung', V1: 'Baumeister', V2: 'Deckung', V3: 'Barrikaden-Mine', V4: 'Claymore',
+      t.eq(r.names, { A0: 'Waffenkunde', A1: 'Ruhige Hand', A2: 'Durchschlag', A3: 'Präzisionsgewehr', A4: 'Granatwerfer', V0: 'Panzerung', V1: 'Bollwerk', V2: 'Sprengmeister', V3: 'Feldbarrikade', V4: 'Selbstschuss-MG',
         U0: 'Werkzeug', U1: 'Sanitäter', U2: 'Techniker', U3: 'Notfallkoffer', U4: 'C4' }, 'Namen und Zuordnung der Knoten');
       for (const k of ['A', 'V', 'U']) {
         const o = r.trees[k];
@@ -32,8 +32,9 @@ module.exports = [
         t.eq(o.frei, [null, null], k + ': vor der Wahl ist kein Pfad verbaut');
         t.eq(o.nach1, [null, k + '1', false], k + ': der erste Punkt in Pfad 1 sperrt Pfad 2 (verbaut durch ' + k + '1)');
         t.eq([o.kaufB, o.ptsB], [false, 0], k + ': der gesperrte Pfad laesst sich nicht kaufen und kostet nichts');
-        t.eq(o.item, [true, true, false, false], k + ': der Gegenstand hinter Pfad 1 ist kaufbar, der hinter Pfad 2 bleibt durch das Entweder-oder zu');
-        t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, 1, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3, der Gegenstand auf 1');
+        const soon = false;   // Feldbarrikade (V3) ist seit #290 gebaut, nur das MG (V4, Pfad 2, durch Entweder-oder zu) ist noch soon
+        t.eq(o.item, soon ? [false, false, false, false] : [true, true, false, false], k + ': der Gegenstand hinter Pfad 1 ist kaufbar (ausser soon), der hinter Pfad 2 bleibt durch das Entweder-oder zu');
+        t.eq([o.sk[k + '0'], o.sk[k + '1'], o.sk[k + '2'], o.sk[k + '3'], o.sk[k + '4']], [3, 3, undefined, soon ? undefined : 1, undefined], k + ': eine Kette, Wurzel und Pfad 1 auf 3, der Gegenstand auf 1 (ausser soon)');
         t.eq(o.umgekehrt, [k + '2', null, false, false], k + ': mit Pfad 2 zuerst ist Pfad 1 verbaut');
       }
     },
@@ -68,7 +69,7 @@ module.exports = [
       t.eq(r.frei, [null, true], 'A2 ist wieder frei und kaufbar');
       t.eq(r.kit, { A0: 3 }, 'das Kit folgt der Rücknahme');
       t.eq(r.kette, [false, true, false], 'unter der Wurzel steht ein Pfad: erst den Pfad zurücknehmen, dann die Wurzel');
-      t.eq(r.v0, [true, 2, false], 'danach geht die Wurzel (3 auf 2), und die Pfade sind wieder zu');
+      t.eq(r.v0, [true, 2, true], 'danach geht die Wurzel (3 auf 2), die Pfade bleiben offen (Eintritt ab Stufe 1, Skillbaum v2)');
       t.eq(r.leer, [{}, 10], 'alles zurueckgenommen: kein Knoten mehr, alle zehn Punkte wieder da');
       t.eq([r.vorher, r.nachher], [true, [false, false, 1]], 'nach dem Verlassen des Shops (naechste Runde) ist der Kauf endgueltig');
       t.eq(r.ohne, [false, false, false], 'ohne Schnappschuss und bei Unbekanntem passiert nichts');
@@ -79,23 +80,27 @@ module.exports = [
     async run(t) {
       const r = await t.page.evaluate(() => {
         const D = __dbg, o = {}, lv = (id, key) => [1, 2, 3].map(r => D.skv({ sk: { [id]: r } }, id, key));
-        o.run = lv('A1', 'run'); o.pierce = lv('A2', 'pierce'); o.mat = lv('V1', 'mat'); o.lo = lv('V2', 'lo'); o.lf = lv('V2', 'lf'); o.lean = lv('V2', 'lean'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
+        o.run = lv('A1', 'run'); o.pierce = lv('A2', 'pierce'); o.lo = lv('V1', 'lo'); o.lf = lv('V1', 'lf'); o.lean = lv('V1', 'lean'); o.build = lv('V1', 'build'); o.rl = lv('A0', 'rl'); o.cnt = { A3: lv('A3', 'cnt'), A4: lv('A4', 'cnt'), V2: lv('V2', 'cnt'), V3: lv('V3', 'cnt'), V4: lv('V4', 'cnt'), U4: lv('U4', 'cnt') }; o.ear = lv('U2', 'ear'); o.cap = lv('U1', 'cap'); o.heat = lv('U1', 'heat'); o.rev = lv('U1', 'rev'); o.van = lv('U2', 'van'); o.sus = lv('U2', 'sus');
         D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6;
-        o.marker = [0, 1, 2, 3].map(r => D.skv({ sk: { V2: r } }, 'V2', 'lf'));
+        o.marker = [0, 1, 2, 3].map(r => D.skv({ sk: { V1: r } }, 'V1', 'lf')); o.mat = D.CFG.skill.V1.mat;
         o.gone = ['A3', 'A4', 'U3'].map(id => Object.keys(D.CFG.skill[id]).filter(k => Array.isArray(D.CFG.skill[id][k])));
         return o;
       });
       t.eq(r.run, [0, 0, .5], 'Laeufer: erst mit Ruhige Hand 3, die Zusatzstreuung beim Laufen halbiert');
       t.eq(r.pierce, [0, 0, .35], 'Durchschuss: erst mit Durchschlag 3, der Beamte dahinter bekommt 35 %');
-      t.eq(r.mat, [0, 0, 1], 'Materialsammler: erst mit Baumeister 3, ein Material mehr je Moebelstueck');
-      t.eq([r.lo, r.lf], [[0, 0, .35], [0, 0, .3]], 'Zaeh: erst mit Deckung 3, unter 35 % Leben 30 % weniger Schaden');
+      t.eq(r.mat, undefined, 'Sammler entfaellt (Bollwerk uebernimmt Baumeister und Zaeh)');
+      t.eq(r.rl, [.05, .1, .15], 'Waffenkunde: Nachladen 5 / 10 / 15 % schneller');
+      t.eq(r.cnt, { A3: [4, 6, 8], A4: [3, 5, 7], V2: [1, 2, 3], V3: [2, 3, 4], V4: [1, 1, 2], U4: [1, 1, 2] }, 'Stueckzahlen: Gewehr 4/6/8, Werfer 3/5/7, Claymore 1/2/3, Feldbarrikade 2/3/4, MG 1/1/2, C4 1/1/2');
+      t.eq(r.ear, [10, 15, 20], 'Techniker: Funk abhoeren 10 / 15 / 20 s (Wirkung baut #289)');
+      t.eq(r.build, [.2, .35, .5], 'Bollwerk: Barrikaden 20 / 35 / 50 % schneller');
+      t.eq([r.lo, r.lf], [[0, 0, .35], [0, 0, .3]], 'Zaeh: erst mit Bollwerk 3, unter 35 % Leben 30 % weniger Schaden');
       t.eq(r.cap, [0, 0, 10], 'Verhandler: erst mit Sanitaeter 3, 10 s Aufschub');
       t.eq(r.heat, [0, 0, .5], 'Verhandler: erst mit Sanitaeter 3, Fahndung durch Geiseln halbiert');
       t.eq(r.van, [0, 0, 5], 'Fahrer: erst mit Techniker 3, 5 s frueher');
-      t.eq(r.lean, [.25, .4, .45], 'Deckung bringt 25 / 40 / 45 % weniger Schaden beim Lehnen');
+      t.eq(r.lean, [.25, .35, .45], 'Bollwerk bringt 25 / 35 / 45 % weniger Schaden beim Lehnen');
       t.eq(r.rev, [.25, .4, .55], 'Sanitaeter bringt weiter das schnellere Wiederbeleben');
       t.eq(r.sus, [.1, .2, .3], 'Techniker (frueher Schleicher) bringt weiter den langsameren Verdacht');
-      t.eq(r.marker, [0, 0, 0, .3], 'Zaeh (lf) wirkt nur mit Deckung 3');
+      t.eq(r.marker, [0, 0, 0, .3], 'Zaeh (lf) wirkt nur mit Bollwerk 3');
       t.eq(r.gone, [['cnt'], ['cnt'], ['cnt', 'hps']], 'Praezisionsgewehr und Granatwerfer haben nur die Stueckzahl, der Notfallkoffer Stueckzahl und Heilung (hps)');
     },
   },
@@ -123,7 +128,7 @@ module.exports = [
         ctx.fillText = function (s, x, y) { const al = ctx.textAlign, w = ctx.measureText(String(s)).width; log.push({ s: String(s), x0: al === 'center' ? x - w / 2 : al === 'right' ? x - w : x, w, y }); return orig.apply(this, arguments); };
         try { d.draw(); } finally { ctx.fillText = orig; }
         const start = log.findIndex(l => l.s === 'FÄHIGKEITEN'), fenster = start < 0 ? [] : log.slice(start);   // vorher zeichnet der Shop darunter
-        o.oder = fenster.filter(l => l.s === 'ODER').length; o.fenster = fenster.length; o.tags = ['+Läufer', '+Durchschuss', '+Sammler', '+Zäh', '+Verhandler', '+Fahrer'].filter(x => fenster.some(l => l.s === x));
+        o.oder = fenster.filter(l => l.s === 'ODER').length; o.fenster = fenster.length; o.tags = ['+Läufer', '+Durchschuss', '+Markierung', '+Zäh', '+Mine', '+Verhandler', '+Fahrer'].filter(x => fenster.some(l => l.s === x));
         for (const q of all.filter(q => /^sk:/.test(q.id))) { const inn = fenster.filter(l => l.x0 >= q.x - .5 && l.x0 <= q.x + q.w && l.y >= q.y && l.y <= q.y + q.h); if (inn.length < 2) o.bad.push(q.id + ': zu wenig Text im Knoten (' + inn.length + ')'); for (const l of inn) if (l.x0 + l.w > q.x + q.w - 2) o.bad.push(q.id + ': "' + l.s.slice(0, 30) + '" ragt aus dem Knoten'); }
         o.ov = OV.check(d, { modal: true });
         return o;
@@ -131,7 +136,7 @@ module.exports = [
       t.eq(r.bad, [], 'Layout: ' + JSON.stringify(r.bad));
       t.ok(r.fenster > 50, 'das Fenster wurde gezeichnet (' + r.fenster + ' Texte)');
       t.eq(r.oder, 3, 'je Baum ein ODER zwischen den Pfaden');
-      t.eq(r.tags, ['+Läufer', '+Durchschuss', '+Sammler', '+Zäh', '+Verhandler', '+Fahrer'], 'jeder der sechs Pfade mit Zusatz zeigt ihn im Knoten');
+      t.eq(r.tags, ['+Läufer', '+Durchschuss', '+Markierung', '+Zäh', '+Mine', '+Verhandler', '+Fahrer'], 'jeder Knoten mit Zusatz zeigt ihn im Knoten');
       t.eq(r.ov, [], 'Ueberlappungen von Text, Kacheln und Rand: ' + JSON.stringify(r.ov));
     },
   },
@@ -144,7 +149,7 @@ module.exports = [
         const glow = () => d.ui().tiles().filter(q => q.glow).map(q => q.id.slice(3)).sort();
         const texts = () => { const ctx = d.cv.getContext('2d'), orig = ctx.fillText, log = []; ctx.fillText = function (s) { log.push(String(s)); return orig.apply(this, arguments); }; try { d.draw(); } finally { ctx.fillText = orig; } return log; };
         MT.hover(d, 'sk:A3'); o.itemKette = glow(); MT.hover(d, 'sk:A2'); o.pfadKette = glow(); MT.hover(d, 'sk:V0'); o.wurzel = glow(); MT.hover(d, 'sk:U4'); o.uKette = glow();
-        o.itemText = [/Shift: 3 Schuss/, /Shift: 2 Granaten/, /C: 1 Stück/].map(re => texts().some(s => re.test(s)));
+        o.itemText = [/Rechte Maus: 4 Schuss/, /Rechte Maus: 3 Granaten/, /C: 1 Stück/].map(re => texts().some(s => re.test(s)));
         for (let i = 0; i < 3; i++) MT.click(d, 'sk:A0'); MT.click(d, 'sk:A1'); o.gekauft = [Object.assign({}, d.SESSION.sk), d.SESSION.pts];
         MT.hover(d, 'sk:A2'); const tx = texts(); o.grund = tx.filter(s => /verbaut/i.test(s)); o.grundName = tx.some(s => /Ruhige Hand/.test(s));
         o.kette2 = glow(); o.lock = d.ui().tiles().find(q => q.id === 'sk:A2').lock;
@@ -211,22 +216,6 @@ module.exports = [
       t.eq(r.l3.d, [34, 11.9, 0], 'Stufe 3: der erste voll, der zweite mit 35 % Schaden, der dritte nichts (nur einmal durch)');
       t.eq([r.low.dead1, r.low.d[1]], [true, 11.9], 'faellt der erste, fliegt die Kugel trotzdem weiter und trifft den zweiten mit 35 % Schaden');
       t.eq([r.shield.sh > 0, r.shield.d[1], r.shield.d[2]], [true, 0, 0], 'ein Schild haelt die Kugel auf, nichts geht durch');
-    },
-  },
-  {
-    name: 'Zusatz Materialsammler (Baumeister 3): jedes Moebelstueck gibt 2 statt 1 Material (1 Platz in der Tasche je Stueck), begrenzt durch Tasche und Hoechstmenge; mit Stufe 2 bleibt es bei 1',
-    async run(t) {
-      const r = await t.page.evaluate(() => {
-        const D = __dbg, o = {}, take = (lv, pre) => { D.sessReset(); if (lv) D.SESSION.sk.V1 = lv; D.setScenario('bank'); D.setSeedMode('random'); D.setLage([]); D.setTurn('S'); D.buildSeed(5017); D.CFG.policeAt = 1e6; D.CFG.policeForced = 1e6; D.reset(); D.startHeist(false, D.get().me);
-          const g = D.get(), me = g.me, it = g.its.find(i => i.t === 'mat' && i.tx !== undefined); me.mat = 0; me.units = 0; if (pre) pre(me); const u0 = me.units, m0 = me.mat; it.act(me); return [me.mat - m0, +(me.units - u0).toFixed(2), it.done, me.bag]; };
-        o.l2 = take(2); o.l3 = take(3); o.bag = take(3, m => { m.units = m.bag - .5; }); o.cap = take(3, m => { m.mat = 3; m.units = 1.5; }); o.full = take(3, m => { m.units = m.bag; });
-        return o;
-      });
-      t.eq(r.l2.slice(0, 3), [1, .5, true], 'Stufe 2: ein Material, ein halber Platz');
-      t.eq(r.l3.slice(0, 3), [2, 1, true], 'Stufe 3: zwei Material fuer ein Stueck Moebel (ein Platz)');
-      t.eq(r.bag.slice(0, 3), [1, .5, true], 'bei fast voller Tasche nur das, was noch passt');
-      t.eq(r.cap.slice(0, 3), [1, .5, true], 'die Hoechstmenge (4) gilt weiter: bei 3 Material nur eins dazu');
-      t.eq([r.full[0], r.full[2]], [0, false], 'volle Tasche: nichts, das Moebelstueck bleibt');
     },
   },
   {
