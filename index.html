@@ -966,11 +966,11 @@ its.push(mk2('cout',()=>'Aus dem Wäschewagen steigen',()=>K.outT,o=>phase===1&&
 /* Lockdown (Ticket 296, nur Gefaengnis, nur Phase 1): Koerperfund, Verdacht voll (auch durch Kameras) loesen beim ersten Mal keinen Alarm aus, sondern LAY.prison.ld {n Entdeckungen, t Restfrist, x y Ort, off 1 nach dem Abwenden, by Spieler-Id}: Frist CFG.prison.lock.t, Wachen laufen zum Ort, verriegelte Stellen (lsw, pry, rdr, dlx) und die Lieferung bleiben zu. Abwenden: Objekt fnk (Funk in der Wachstube ausschalten). Danach Verdacht und Koerperfund schneller (susX). Jede weitere Entdeckung und der Ablauf der Frist: Alarm. Netz: Schnappschussfeld pl (Restzeit, -1 abgewendet). */
 const ldOn=()=>!!LAY.prison&&!!LAY.prison.ld&&LAY.prison.ld.t>0,ldFind=()=>LAY.prison&&LAY.prison.ld&&LAY.prison.ld.off?CFG.prison.lock.susX:1;
 function ldReset(){LAY.prison.ld={n:0,t:0,x:0,y:0,off:0,by:-1}}
-function detect(by,why,x,y,msg){const R=LAY.prison,D=R&&R.ld;if(!D||phase!==1||ended||D.n>0){if(msg)say(msg+': Alarm!');startHeist(true,by,why);return false}
+function detect(by,why,x,y,msg,kind){const R=LAY.prison,D=R&&R.ld;if(!D||phase!==1||ended||D.n>0){if(msg)say(msg+': Alarm!');startHeist(true,by,why,kind||'Verdacht');return false}
 const C=CFG.prison.lock;D.n=1;D.t=C.t;D.off=0;D.by=by?by.id:-1;D.x=x;D.y=y;sus=Math.min(sus,C.sus);alarmT=0;alarmBy=null;
 say((msg||'Entdeckt')+': Lockdown! Funk in der Wachstube ausschalten, sonst Alarm in '+C.t+' s');ban('LOCKDOWN',2.4);snd('alert');cartOut(null,'Lockdown: Der Gefangene muss aus dem Wäschewagen!');
 if(x!=null)for(const n of npcs){if(n.k!=='grd'||n.st==='away'||n.st==='dead'||n.st==='cower'||n.st==='ko'||n.still)continue;const pa=pathTo(n.x,n.y,Math.floor(x/T),Math.floor(y/T));if(pa.length){n.path=pa;n.wait=C.hold;n.look=null;n.alert=.5}}return true}
-function ldStep(dt){const D=LAY.prison&&LAY.prison.ld;if(!D||D.t<=0)return;if(phase!==1||ended){D.t=0;return}D.t-=dt;if(D.t<=0){D.t=0;say('Lockdown abgelaufen: Die Zentrale schlägt Alarm!');startHeist(true,players[D.by]||null,false)}}
+function ldStep(dt){const D=LAY.prison&&LAY.prison.ld;if(!D||D.t<=0)return;if(phase!==1||ended){D.t=0;return}D.t-=dt;if(D.t<=0){D.t=0;say('Lockdown abgelaufen: Die Zentrale schlägt Alarm!');startHeist(true,players[D.by]||null,false,'Lockdown')}}
 function ldItems(){const R=LAY.prison,C=CFG.prison.lock;for(const it of its)if(['lsw','pry','rdr','dlx'].includes(it.t)){const ok0=it.ok;it.ok=function(o){return!ldOn()&&ok0.call(this,o)}}
 const w=R.rooms.wach;its.push({t:'fnk',x:(w[0]+.5)*T,y:(w[1]+1.5)*T,r:48,pr:0,done:false,sn:()=>'tick',lab:()=>'Funk ausschalten (Lockdown abwenden)',dur:()=>CFG.prison.lock.fkT,ok(o){return!this.done&&ldOn()},act(){const D=R.ld;this.done=true;D.t=0;D.off=1;snd('ev','power');say('Funk ausgeschaltet: Der Lockdown ist abgewendet. Die Wachen bleiben misstrauisch.');ban('Lockdown abgewendet',2.4)}})}
 function prisonSetup(){const R=LAY.prison;if(!PZ.length)PZ=[nPl-1];R.warned=0;R.dl.until=0;R.dv={st:0,t0:0,end:0};R.vs={};R.pgD={};R.pgE={};prDl=false;prLk=0;prInmOut=false;R.cp=null;R.locks.forEach(l=>l.cells.forEach(c=>setc(c[0],c[1],'L')));R.open0.forEach(c=>setc(c[0],c[1],'l'));R.dl.cells.forEach(c=>setc(c[0],c[1],'L'));PZ.forEach((id,i)=>{const o=players[id],sl=R.slots[i];if(!o||!sl)return;o.x=o.dx=o.tx=sl.cell[0];o.y=o.dy=o.ty=sl.cell[1];o.pgw=0;o.bag=0;o.mag=0;o.res=0;o.units=0;o.mat=0})}
@@ -995,7 +995,7 @@ const nbIn=o=>{const z=LAY.nb.zone;return o.x>=z[0]*T&&o.x<(z[2]+1)*T&&o.y>=z[1]
 function nbHole(on){nbOpen=on;const r=LAY.nb.rig;for(let y=0;y<2;y++)for(let x=0;x<2;x++)setc(r[0]+x,r[1]+y,on?'.':'N');paintObjs();flowT=0}
 function nbStop(c,msg){nbd.st=2;nbd.c=c;snd('ev','latch');say(msg);ban('Bohrer steht: '+NB_C[c],2)}
 function nbStep(dt){const R=LAY.nb,C=CFG.nb;if(!R||ended)return;
-if(phase===1&&rT>=C.alarmAt){say('Die Zentrale hat euch bemerkt: Alarm!');startHeist(true,null,false);return}
+if(phase===1&&rT>=C.alarmAt){say('Die Zentrale hat euch bemerkt: Alarm!');startHeist(true,null,false,'Zentrale');return}
 if(phase!==2)return;nbHold(dt);nbStorm(dt);nbPStep(dt);
 if(nbd.st===1){nbd.p=Math.min(1,nbd.p+dt*C.drillF[nbh.D]/C.drillT);const K=R.keller,rg=nbRig();
 if(nbd.p>=1){nbd.st=3;nbHole(true);snd('ev','latch');say('Der Bohrer ist durch: Im Keller klafft ein Loch im Boden. Mit der Beute hinein, das ist der Ausstieg. Wer bleibt, holt mehr, die Polizei wird härter.');ban('Loch offen!',C.banT)}
@@ -1078,7 +1078,7 @@ const atm=(tx,ty)=>({t:'atm',sn:'pry',x:tx*T+16,y:ty*T+16,r:48,pr:0,done:false,l
 const NA=noteAtOf(LAY);its=[];if(!LAY.truck){its=[
 {t:'note',get x(){return NA.k==='mgr'&&nDrop?nDrop.x:NA.x*T+16},get y(){return NA.k==='mgr'&&nDrop?nDrop.y:NA.y*T+16},r:50,pr:0,lab:()=>NOTE_LAB[NA.k],dur:()=>CFG.note.t[NA.k],ok:()=>!code&&LAY.mission.vault==='code'&&(NA.k!=='mgr'||!!nDrop),act(){code=true;snd('ev','paper');say('Tresorcode notiert: '+LAY.mission.code);ban('Tresorcode gefunden',2)}},
 {t:'mon',get x(){return LAY.mon[0]*T+16+noteOff()[0]},get y(){return LAY.mon[1]*T+16+noteOff()[1]},r:50,pr:0,lab:()=>'Überwachungsmonitore prüfen',dur:()=>2.2,ok:()=>!mon,act(){mon=true;snd('ev','monitor');cams.forEach(c=>c.k=true);npcs.forEach(n=>{if(n.route)n.rk=true});say('Kameras und Wachplan aufgedeckt');ban('Sicherheitssystem ausgekundschaftet',2.4)}},
-{t:'vault',x:vaultMid(LAY.vault)[0],y:vaultMid(LAY.vault)[1],r:58,pr:0,keep:true,sn:()=>code?'beep':'drill',lab:()=>LAY.prison?'Tor aufhalten (laut: löst den Alarm aus)':code?'Tresor mit Code öffnen':'Tresor aufbohren',dur:()=>LAY.prison?CFG.prison.drill:code?3:22,ok:o=>!vaultOpen&&(LAY.prison?gateSide(o):(code||phase===2)),act(o){vaultOpen=true;snd('ev','vault');flowT=0;if(LAY.prison){say('Das Tor ist offen');if(phase===1)startHeist(true,o,'hat das Tor aufgebrochen: Alarm!')}else say(code?'Tresor leise geöffnet':'Tresor aufgebohrt')}},
+{t:'vault',x:vaultMid(LAY.vault)[0],y:vaultMid(LAY.vault)[1],r:58,pr:0,keep:true,sn:()=>code?'beep':'drill',lab:()=>LAY.prison?'Tor aufhalten (laut: löst den Alarm aus)':code?'Tresor mit Code öffnen':'Tresor aufbohren',dur:()=>LAY.prison?CFG.prison.drill:code?3:22,ok:o=>!vaultOpen&&(LAY.prison?gateSide(o):(code||phase===2)),act(o){vaultOpen=true;snd('ev','vault');flowT=0;if(LAY.prison){say('Das Tor ist offen');if(phase===1)startHeist(true,o,'hat das Tor aufgebrochen: Alarm!','Tor')}else say(code?'Tresor leise geöffnet':'Tresor aufgebohrt')}},
 {t:'c4',x:vaultMid(LAY.vault)[0],y:vaultMid(LAY.vault)[1],r:58,pr:0,sn:'tick',lab:()=>LAY.prison?'Tor sprengen (C4, laut)':'Tresor sprengen (C4, laut)',dur:()=>CFG.c4.t,ok:o=>!vaultOpen&&!!o&&(o.c4|0)>0&&(!LAY.prison||gateSide(o)),rk:()=>phase===2&&!code?-CFG.c4.rk:CFG.c4.rk,act(o){c4Blast(o,'vault')}},
 ];
 LAY.tills.forEach(c=>{const t=till(c[0],c[1]);t.ops=npcs.filter(q=>q.k==='tel'&&Math.hypot(q.x-t.x,q.y-t.y)<CFG.till.opR).map(q=>q.id);its.push(t)});LAY.atms.forEach(c=>its.push(atm(c[0],c[1])));
@@ -1264,7 +1264,7 @@ else if(c.crew.length){c.ex-=dt;if(c.ex<=0){c.ex=c.bail?CFG.pol.bailGap:CFG.pol.
 function carAt(x,y){const R=CFG.pol.car;for(const c of pcs){if(c.dead)continue;const ca=Math.cos(-c.a),sa=Math.sin(-c.a),dx=x-c.x,dy=y-c.y;if(Math.abs(dx*ca-dy*sa)<R.bx&&Math.abs(dx*sa+dy*ca)<R.by)return c}return null}
 function carHurt(c,d,own,x,y){if(c.dead)return;c.hp-=d;evt('hw',[x,y]);evt('sp',[x,y,5]);if(c.hp<=0)carBlow(c,own);else if(c.crew.length&&!c.bail){c.bail=1;if(c.st==='in'){c.st='park';stampCar(c,c.x,c.y)}c.ex=Math.min(c.ex,CFG.pol.bailGap)}}
 function carBlow(c,own){if(c.dead)return;c.dead=true;c.hp=0;stampCar(c,c.x,c.y);const po=players[own],n=c.crew.length;for(const q of c.crew){kills++;if(po)po.st.k++}c.crew.length=0;if(po)po.st.boom++;
-say((c.civ?'Auto':'Streifenwagen')+' explodiert!'+(n?' ('+n+' im Wagen)':''));blastAt(c.x,c.y,CFG.pol.car,own,1)}
+say((c.civ?'Auto':'Streifenwagen')+' explodiert!'+(n?' ('+n+' im Wagen)':''));blastAt(c.x,c.y,CFG.pol.car,own,1,'Explosion')}
 /* Parkende Autos der Karten als zivile Wagen in pcs (civ, cv = Sprite-Zeile, ohne Besatzung, Zustand park): Sie stempeln ihren Fussabdruck wie ein geparkter Streifenwagen (solide, kugelsperrend), Spielerkugeln machen Schaden (carHurt), bei 0 HP explodieren sie wie ein Streifenwagen (carBlow, blastAt, Kettenreaktion) und bleiben als Wrack. Nur Host und Solo legen sie an (reset), Clients bekommen sie im Schnappschuss (pc). */
 function deriveDecor(lay){const K=c=>c[0]+','+c[1],blk=new Set(),add=a=>a.forEach(c=>blk.add(K(c)));
 add(LANE.slots.flatMap(q=>q.cells));add(LANE.slots.map(q=>q.curb));add(LANE.van.swept);add(LANE.van.rest);add(LANE.exit.cells);if(ALT){add(ALT.lane.van.swept);add(ALT.lane.exit.cells)}
@@ -1326,7 +1326,7 @@ n.x=(b[0]+.5)*T+(((n.id|0)*7)%9-4);n.y=(b[1]+.5)*T+(((n.id|0)*5)%9-4);if(S.hide)
 function koDrop(n){const o=players[n.dr];n.dr=-1;if(o)o.dg=0;stow(n,o)}
 function relBody(o){const n=npcs.find(q=>q.st==='ko'&&q.dr===o.id);if(!n)return false;n.dr=-1;o.dg=0;stow(n,o);return true}
 function koWake(n){const o=n.dr>=0?players[n.dr]:null;n.dr=-1;n.kt=0;n.hid=0;if(o)o.dg=0;n.path=[];n.mvg=false;
-if(phase===1){n.st='idle';n.alert=.5;n.wait=.5;say((n.uc?'Der Zivilfahnder':n.k==='grd'?'Die Wache':n.dlv?'Der Lieferant':'Der Angestellte')+' wacht auf: Alarm!');startHeist(true,players[n.who]||null,false)}else n.st='cower'}
+if(phase===1){n.st='idle';n.alert=.5;n.wait=.5;say((n.uc?'Der Zivilfahnder':n.k==='grd'?'Die Wache':n.dlv?'Der Lieferant':'Der Angestellte')+' wacht auf: Alarm!');startHeist(true,players[n.who]||null,false,'Aufgewacht')}else n.st='cower'}
 /* Manager als Fundort: Sobald er ausgeschaltet oder tot ist, faellt der Zettel an seinen Platz (nDrop, im Schnappschuss als nd) und bleibt dort, auch wenn er aufwacht. Der Zettel geht nie verloren. */
 function noteStep(){if(nDrop||code||LAY.truck||!LAY.noteAt||LAY.noteAt.k!=='mgr')return;const mg=npcs.find(n=>n.k==='mgr');if(mg&&mg.st!=='ko'&&mg.st!=='dead')return;const A=LAY.noteAt;nDrop={x:mg?mg.x:A.x*T+16,y:mg?mg.y:A.y*T+16};evt('sp',[nDrop.x,nDrop.y,8]);snd('ev','paper');say('Dem Manager ist ein Zettel aus der Tasche gefallen.')}
 function koStep(dt){const K=CFG.ko;
@@ -1384,18 +1384,21 @@ function cageItem(c){return{t:'cage',x:c.x,y:c.y,r:c.r||52,pr:0,sn:()=>'tick',la
 act(o){const v=o.chipV,gain=Math.round(v*CFG.casino.chip.pen);o.chipV=0;o.loot+=gain;sndTo(o,'cash');if(phase===1&&v>CFG.casino.chip.big){o.thf=CFG.casino.chip.hot;say((players.length>1?pn(o.id)+': ':'')+'Der Kassierer wird misstrauisch',o.id);ban('Zu viele Chips auf einmal',1.6,o.id)}evt('fx',[o.x,o.y-16,'+'+fmt(gain),1.4]);say((players.length>1?pn(o.id)+': ':'')+'Chips getauscht: +'+fmt(gain),o.id)}}}
 /* Zapfsaeulen (Tile u, LAY.pumps): kugelsperrend, nehmen Treffer von allen Seiten, bei 0 Leben explodieren sie (Radius und Schaden in CFG.gas.pump), Nachbarsaeulen in Reichweite gehen mit hoch. */
 function pumpHit(tx,ty,d,own){const q=(LAY.pumps||[]).find(a=>a.x===tx&&a.y===ty);if(!q||q.hp<=0)return;q.hp-=d;if(q.hp<=0)pumpBlow(q,own)}
-function pumpBlow(q,own){q.hp=0;const po=players[own];if(po)po.st.boom++;setc(q.x,q.y,'o');paintObjs();flowT=0;blastAt(q.x*T+16,q.y*T+16,CFG.gas.pump,own,2)}
+function pumpBlow(q,own){q.hp=0;const po=players[own];if(po)po.st.boom++;setc(q.x,q.y,'o');paintObjs();flowT=0;blastAt(q.x*T+16,q.y*T+16,CFG.gas.pump,own,2,'Explosion')}
 /* Explosion (Zapfsaeule, Streifenwagen): Schaden faellt mit dem Abstand (C.dmg, C.r), trifft Spieler, Beamte und Zivilisten (Abschuesse zaehlen fuer den Schuetzen own), Kettenreaktion auf Zapfsaeulen und Wagen in 70 % des Radius */
-function blastAt(x,y,C,own,k){const po=players[own];evt('bx',[x,y,C.r|0,k|0]);dc.fillStyle='rgba(20,14,8,.55)';dc.beginPath();dc.arc(x,y,C.scorch||26,0,6.283);dc.fill();
+const killName=e=>e.uc?'Zivilfahnder':e.kind==='grd'?'Wachmann':e.kind==='swat'?'SWAT':e.kind==='shield'?'Schild-Beamter':e.kind==='sniper'?'Scharfschütze':'Polizist';
+/* Abschussmeldung: Schuetze (Name, solo DU, -1 der Fahrer des Deals) > echte Waffe (deutsch) > Ziel. Sie geht ueber say (evt), Clients sehen dieselbe Zeile, der Flugschreiber schreibt sie als say. */
+function killSay(id,src,e){say((id===-1?'Fahrer':id<0?'Polizei':players.length>1?pn(id):'DU')+'  >  '+src+'  >  '+killName(e))}
+function blastAt(x,y,C,own,k,src){const po=players[own];evt('bx',[x,y,C.r|0,k|0]);dc.fillStyle='rgba(20,14,8,.55)';dc.beginPath();dc.arc(x,y,C.scorch||26,0,6.283);dc.fill();
 const dm=d=>C.dmg*(1-d/C.r*.6);
 for(const o of actv()){const d=Math.hypot(o.x-x,o.y-y);if(d<C.r)hitPlayer(o,(C.pdmg==null?dm(d):C.pdmg*(1-d/C.r*.6)))}
-for(const e of en){const d=Math.hypot(e.x-x,e.y-y);if(e.hp>0&&d<C.r){e.hp-=dm(d);e.h=.1;if(e.hp<=0){corp.push({x:e.x,y:e.y,a:e.a+3.1,t:14,row:e.row});kills++;if(po)po.st.k++;snd('kill',e.x,e.y)}}}
+for(const e of en){const d=Math.hypot(e.x-x,e.y-y);if(e.hp>0&&d<C.r){e.hp-=dm(d);e.h=.1;if(e.hp<=0){corp.push({x:e.x,y:e.y,a:e.a+3.1,t:14,row:e.row});kills++;if(po)po.st.k++;snd('kill',e.x,e.y);killSay(po?own:-2,src||'Explosion',e)}}}
 for(const n of npcs){const d=Math.hypot(n.x-x,n.y-y);if(n.st!=='dead'&&d<C.r){n.hp-=dm(d);if(n.hp<=0){if(n.st==='hostage'){hostK++;say('Die Geisel ist tot!')}n.st='dead';civKills++;if(po)po.st.civ++;corp.push({x:n.x,y:n.y,a:n.a+3.1,t:30,row:n.row});say('Zivilist getroffen!')}}}
 for(const o of LAY.pumps||[])if(o.hp>0&&Math.hypot(o.x*T+16-x,o.y*T+16-y)<(C.chainR||C.r*.7))o.hp-=(C.hp==null?C.dmg:C.hp)*.5,o.hp<=0&&pumpBlow(o,own);
 for(const o of pcs)if(!o.dead&&Math.hypot(o.x-x,o.y-y)<(C.chainR||C.r*.7)){o.hp-=(C.hp==null?C.dmg:C.hp)*.5;if(o.hp<=0)carBlow(o,own)}}
 const segDist=(px,py,L)=>{const x0=L[0]*T,y0=L[1]*T,dx=L[2]*T-x0,dy=L[3]*T-y0,t=clamp(((px-x0)*dx+(py-y0)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(px-(x0+dx*t),py-(y0+dy*t))};
 /* C4 an Tueren, Gittern und Waenden (Skillbaum v2, Schritt 3, docs/spielsystem.md C4). Eigene E-Objekte nach der E-Auswahl-Regel: c4d je verschlossener Personaltuer (lockItem-Stellen), c4g je Gefaengnis-Gitter und Zellentuer (LAY.prison.locks), c4w eine je Spieler (dynamisch in itsAll angehaengt, Ziel ist die Wandkachel neben dem Spieler). Laut wie C4 am Tresor (c4Loud). */
-function c4Loud(o,msg){if(phase===1)startHeist(true,o,msg);else if(!policeShown){policeAt=Math.max(Math.ceil(tH)+3,policeAt-CFG.c4.pol);say('Der Knall war weit zu hören: Polizei in '+Math.max(0,Math.ceil(policeAt-tH))+' s')}}
+function c4Loud(o,msg){if(phase===1)startHeist(true,o,msg,'C4');else if(!policeShown){policeAt=Math.max(Math.ceil(tH)+3,policeAt-CFG.c4.pol);say('Der Knall war weit zu hören: Polizei in '+Math.max(0,Math.ceil(policeAt-tH))+' s')}}
 function c4Use(o,x,y,z,who){o.c4=Math.max(0,(o.c4|0)-1);o.st.gad++;nutz(o,'c4',x,y,z);evt('bx',[x,y]);evt('sp',[x,y,18]);snd('ev','crash');flowT=0;say((players.length>1?pn(o.id)+' sprengt ':'Du sprengst ')+who+' auf!');ban(who.charAt(0).toUpperCase()+who.slice(1)+' gesprengt',2)}
 function c4Items(){
 LAY.spots.forEach(sp=>{if(!sp.lk)return;its.push({t:'c4d',x:sp.x,y:sp.y,r:56,pr:0,sn:'tick',lab:()=>'Tür sprengen (C4, laut)',dur:()=>CFG.c4.t,ok:o=>!!o&&(o.c4|0)>0&&sp.cells.every(c=>cell(c[0],c[1])==='L'),rk:()=>CFG.c4x.rk,act(o){c4Use(o,sp.x,sp.y,'tür','die Tür');sp.cells.forEach(c=>setc(c[0],c[1],'l'));c4Loud(o,'hat die Tür gesprengt: Alarm!')}})});
@@ -1426,7 +1429,7 @@ sn:o=>ins(o)?'tick':'pry',ok:()=>sp.cells.every(c=>cell(c[0],c[1])==='L'),
 lab:o=>ins(o)?'Riegel zurückschieben':phase===1?'Tür aufbrechen (laut: löst den Alarm aus)':'Tür aufbrechen',
 dur:o=>ins(o)?CFG.lock.inT:CFG.lock.outT,
 pi:o=>ins(o)?{i:'key',c:'g',v:'Entriegeln',n:sp.n}:{i:'axe',c:'r',v:'Aufbrechen',n:sp.n,loud:phase===1},
-act(o){const q=ins(o);sp.cells.forEach(c=>setc(c[0],c[1],'l'));flowT=0;if(q){snd('ev','latch');say(sp.n+': Riegel offen')}else{snd('ev','crash');say(sp.n+' aufgebrochen');if(phase===1)startHeist(true,o,'hat die Tür aufgebrochen: Alarm!')}}}}
+act(o){const q=ins(o);sp.cells.forEach(c=>setc(c[0],c[1],'l'));flowT=0;if(q){snd('ev','latch');say(sp.n+': Riegel offen')}else{snd('ev','crash');say(sp.n+' aufgebrochen');if(phase===1)startHeist(true,o,'hat die Tür aufgebrochen: Alarm!','Tür')}}}}
 /* Barrikaden: Spieler zerlegen Moebel (Material, belegt Taschenplatz) und verbarrikadieren Eingaenge (nur Phase 2, Kachel 'X' solide, sichtdurchlaessig, kugelsperrend; wer F haelt und auf sie zielt, lehnt sich an und schiesst darueber, siehe leanAt).
    Polizei: Sperrfrist (zaehlt, sobald Beamte in der Naehe sind), dann legt ein Beamter eine Sprengladung (Zuendschnur), Knall schadet Spielern im Radius und der Barrikade. */
 function revTarget(o){let b=null,bd=CFG.rev.r;for(const q of players){if(q===o||!q.dead||!(q.dn>0))continue;const d=Math.hypot(q.x-o.x,q.y-o.y);if(d<bd){bd=d;b=q}}return b}
@@ -1472,7 +1475,7 @@ const pool=its.filter(i=>cg?i.t==='tbag'&&!i.done:i.t==='bundle'&&!i.done),k=poo
 if(cg)cargoOpen=true;else{vaultOpen=true;flowT=0}
 evt('bx',[at.x,at.y]);evt('sp',[at.x,at.y,18]);snd('ev','crash');
 const who=players.length>1?pn(o.id)+' sprengt ':'Du sprengst ';say(who+(cg?'den Laderaum':LAY.prison?'das Tor':'den Tresor')+' auf!'+(LAY.prison?'':' '+k+' von '+tot+' Beutestücken sind verbrannt.'));ban((cg?'Laderaum':LAY.prison?'Tor':'Tresor')+' gesprengt',2);
-if(phase===1)startHeist(true,o,cg?'hat den Laderaum gesprengt: Alarm!':LAY.prison?'hat das Tor gesprengt: Alarm!':'hat den Tresor gesprengt: Alarm!');
+if(phase===1)startHeist(true,o,cg?'hat den Laderaum gesprengt: Alarm!':LAY.prison?'hat das Tor gesprengt: Alarm!':'hat den Tresor gesprengt: Alarm!','C4');
 else if(!policeShown){policeAt=Math.max(Math.ceil(tH)+3,policeAt-C.pol);say('Der Knall war weit zu hören: Polizei in '+Math.max(0,Math.ceil(policeAt-tH))+' s')}}
 function tkSync(){if(!tk)return;const D=tkD(),rx=tk.x-D*(TKL/2+16),ry=tk.y;for(const it of its){if(it.t==='ckey'||it.t==='cargo'||it.t==='c4t'){it.x=rx;it.y=ry}else if(it.t==='tbag'){it.x=rx-D*(10+(it.i%3)*14);it.y=ry-18+Math.floor(it.i/3)*18}}}
 /* Ankunft des Wagens: je weiterem Mitspieler kommt er arriveCut s frueher (nicht frueher als arriveMin), solo bleibt die Missionszeit. */
@@ -1495,7 +1498,7 @@ function tkStamp(){const t=tk,x0=Math.floor((t.x-TKL/2+4)/T),x1=Math.floor((t.x+
 for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(cell(x,y)==='o'){setc(x,y,'v');t.cells.push([x,y])}return y0}
 function tkStopped(why){const t=tk,y0=tkStamp();const out=y0*T-14;for(const o of players.concat(en,npcs))if(Math.abs(o.x-t.x)<TKL/2+8&&Math.abs(o.y-t.y)<TKH/2+10)o.y=out;
 flowT=0;snd('skid',t.x,t.y);
-const first=phase===1;if(first)startHeist(false);
+const first=phase===1;if(first)startHeist(false,null,undefined,'Zugriff');
 say(why===1?'Der Wagen bremst vor der Sperre!':why===2?'Der Wagen bremst vor Leuten auf der Fahrbahn!':'Der Wagen rollt aus!');ban('Der Wagen steht! Zugriff!',2.4);
 if(first)jamLate();
 spawnCrew()}
@@ -1505,9 +1508,9 @@ function jamLate(){if(radioDown>0){policeAt+=CFG.truck.jamDelay;say('Funk gestö
    Teile einer Sperre, die nicht fertig ist, oder Spieler auf der Fahrbahn (Zeilen 9 bis 12). Eine Meldung ist ein Alarm (Polizeiuhr), er haelt dann vor dem Ziel. Sieht er nichts, faehrt er durch und ist weg. */
 function vhStamp(){const v=vh,x0=Math.floor((v.x-VHL/2+4)/T),x1=Math.floor((v.x+VHL/2-4)/T),y0=Math.floor((v.y-VHH/2+2)/T),y1=Math.floor((v.y+VHH/2-2)/T);v.cells=[];
 for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(cell(x,y)==='o'){setc(x,y,'v');v.cells.push([x,y])}return y0}
-function vhAlert(why){if(phase!==1)return;say('Die Vorhut meldet '+(why===2?'Teile einer Sperre':'Leute auf der Fahrbahn')+': Alarm!');startHeist(true,null,false);jamLate()}
+function vhAlert(why){if(phase!==1)return;say('Die Vorhut meldet '+(why===2?'Teile einer Sperre':'Leute auf der Fahrbahn')+': Alarm!');startHeist(true,null,false,'Vorhut');jamLate()}
 function vhStopped(why){const v=vh,y0=vhStamp(),out=y0*T-14,V=CFG.truck.var.vorhut,D=tkD();for(const o of players.concat(en,npcs))if(Math.abs(o.x-v.x)<VHL/2+8&&Math.abs(o.y-v.y)<VHH/2+10)o.y=out;
-flowT=0;snd('skid',v.x,v.y);if(why===1&&phase===1){startHeist(false);jamLate()}
+flowT=0;snd('skid',v.x,v.y);if(why===1&&phase===1){startHeist(false,null,undefined,'Vorhut');jamLate()}
 say(why===1?'Der Begleitwagen bremst vor der Sperre!':'Der Begleitwagen hält: Zwei Wachen steigen aus!');ban('Der Begleitwagen steht!',2.4);
 const C=CFG.truck,offs=[[44,-44],[-32,-44],[44,44],[-32,44]];
 for(let i=0;i<V.n;i++){const o=offs[i%4];let x=v.x+D*o[0],y=v.y+o[1];if(blocked(x,y,9)){y=v.y-o[1];if(blocked(x,y,9))y=v.y+(o[1]<0?-34:34)}
@@ -1652,7 +1655,7 @@ for(const n of npcs)if(n.ent&&n.ent.s)entStep(n,dt);
 if(gone)npcs=npcs.filter(q=>q.st!=='dead');
 if(ms.blackoutAt!=null&&!evDone.blk&&phase===1&&rT>=ms.blackoutAt){evDone.blk=1;blk=CFG.ev.blackout;camDown=Math.max(camDown,CFG.ev.blackout);snd('ev','power');ban('Stromausfall!',2.4);say('Stromausfall: Kameras und Licht sind aus.')}
 if(blk>0){blk-=dt;if(blk<=0){blk=0;say('Der Strom ist wieder da.')}}}
-function startHeist(forced,by,why){if(phase!==1||ended)return;phase=2;alarmT=0;alarmBy=null;if(by&&by.st)by.st.alarm=forced?2:1;const who=by&&players.length>1?pn(by.id):null;LAY.spots.forEach(sp=>{if(sp.ex)sp.cells.forEach(c=>{if(cell(c[0],c[1])==='L')setc(c[0],c[1],'l')})});flowT=0;players.forEach(o=>{o.armed=true});tH=0;waveT=0;snd('alarm',forced);ban(LAY.truck?'ÜBERFALL AUF DEN PANZERWAGEN!':(who?who+': ':'')+(forced?'ENTDECKT! ALARM!':'ÜBERFALL! ALLE AUF DEN BODEN!'),2.8);if(who&&why!==false&&!LAY.truck)say(who+' '+(why||(forced?'ist aufgefallen: Alarm!':'hat die Waffe gezogen: Überfall!')));if(!LAY.truck)say('Möbel zerlegen (E) gibt Material für Barrikaden an den Türen.');
+function startHeist(forced,by,why,kind){if(phase!==1||ended)return;phase=2;LOG.ev('ausloeser',[by?by.id:-1,kind||(forced?'Alarm':'F'),!!forced]);alarmT=0;alarmBy=null;if(by&&by.st)by.st.alarm=forced?2:1;const who=by&&players.length>1?pn(by.id):null;LAY.spots.forEach(sp=>{if(sp.ex)sp.cells.forEach(c=>{if(cell(c[0],c[1])==='L')setc(c[0],c[1],'l')})});flowT=0;players.forEach(o=>{o.armed=true});tH=0;waveT=0;snd('alarm',forced);ban(LAY.truck?'ÜBERFALL AUF DEN PANZERWAGEN!':(who?who+': ':'')+(forced?'ENTDECKT! ALARM!':'ÜBERFALL! ALLE AUF DEN BODEN!'),2.8);if(who&&why!==false&&!LAY.truck)say(who+' '+(why||(forced?'ist aufgefallen: Alarm!':'hat die Waffe gezogen: Überfall!')));if(!LAY.truck)say('Möbel zerlegen (E) gibt Material für Barrikaden an den Türen.');
 let ucN=0;const keep=[];for(const n of npcs){if(n.st==='ko'){koDrop(n);keep.push(n)}else if(n.crew&&n.st!=='away')en.push(mkCrew(n.x,n.y,n.ci,n.a));else if(n.k==='grd'){if(n.st==='away')keep.push(n);else convGuard(n)}else if(n.uc){convUc(n);ucN++}else{n.st='cower';n.path=[];n.mvg=false;keep.push(n)}}
 npcs=keep;if(ucN)say(ucN>1?'Zivilfahnder ziehen ihre Pistolen!':'Ein Zivilfahnder zieht seine Pistole!');policeAt=LAY.truck?Math.max(CFG.policeForced,CFG.truck.policeAt-serAt()+lgA('pol')+(LAY.mission.al||0))+(LAY.mission.panne&&radioDown>0?CFG.truck.jamDelay:0)+(vh&&vh.st==='stopped'&&!vh.rep?CFG.truck.var.vorhut.lead:0):forced?CFG.policeForced:Math.max(CFG.policeForced,(LAY.polAt||CFG.policeAt)-serAt()-(LAY.mission.ev.includes('streife')?CFG.ev.streife:0)+lgA('pol'));say(LAY.truck?'Der Fahrer funkt Alarm. Polizei in '+policeAt+' s':forced?'Alarm läuft schon. Polizei in '+policeAt+' s':'Stiller Alarm. Polizei in '+policeAt+' s');flowT=0}
 const vanT=()=>{const L=players.filter(o=>live(o)&&o.kit),l=Math.max(0,...L.map(o=>o.kit.radio|0));return Math.max(8,(l?CFG.shop.tier.radio[l-1]:CFG.vanCall)-Math.max(0,...L.map(o=>skv(o.kit,'U2','van'))))};
@@ -1698,7 +1701,7 @@ for(const m of mgs){m.cd-=dt;if(m.am<=0)continue;let t=null,td=1e9;
 for(const e of en){if(e.hp<=0||!COPK[e.kind]||e.sur||e.cap)continue;const d=Math.hypot(e.x-m.x,e.y-m.y);if(d>C.range||d>=td||angd(m.a,Math.atan2(e.y-m.y,e.x-m.x))>C.cone/2)continue;if(!los(m.x,m.y,e.x,e.y)||!clear(m.x,m.y,e.x,e.y)||smoked(m.x,m.y,e.x,e.y))continue;t=e;td=d}
 if(!t){m.ta=alerp(m.ta,m.a,Math.min(1,dt*C.turn));continue}
 const a=Math.atan2(t.y-m.y,t.x-m.x);m.ta=alerp(m.ta,a,Math.min(1,dt*C.turn));
-if(m.cd<=0&&angd(m.ta,a)<.14){m.cd=C.rate;m.am--;const b=m.ta+(Math.random()-.5)*2*C.spread;bl.push({id:++bid,x:m.x+Math.cos(m.ta)*18,y:m.y+Math.sin(m.ta)*18,vx:Math.cos(b)*C.spd,vy:Math.sin(b)*C.spd,l:(C.range+40)/C.spd,o:1,own:m.own,d:C.dmg});m.fl=.05;evt('mg',[m.id,m.x,m.y,m.ta])}}}
+if(m.cd<=0&&angd(m.ta,a)<.14){m.cd=C.rate;m.am--;const b=m.ta+(Math.random()-.5)*2*C.spread;bl.push({id:++bid,x:m.x+Math.cos(m.ta)*18,y:m.y+Math.sin(m.ta)*18,vx:Math.cos(b)*C.spd,vy:Math.sin(b)*C.spd,l:(C.range+40)/C.spd,o:1,own:m.own,d:C.dmg,src:'Selbstschuss-MG'});m.fl=.05;evt('mg',[m.id,m.x,m.y,m.ta])}}}
 function trapSpot(o,kind,tx,ty){const Q=CFG.trap;let dx=tx-o.x,dy=ty-o.y;const d=Math.hypot(dx,dy)||1,l=Math.min(d,Q.reach);dx/=d;dy/=d;const x=o.x+dx*l,y=o.y+dy*l,r={x,y,ok:true,why:'',bi:-1,k:kind};
 if(kind==='field'||kind==='mg')return fieldSpot(o,r);
 /* Sprengmeister Stufe 3: zielt Taste 3 an eine stehende Barrikade, wird die Claymore zur Barrikaden-Falle (Mine). Sonst liegt sie auf freiem Boden. */
@@ -1721,19 +1724,19 @@ say((players.length>1?pn(o.id)+' legt ':'Du legst ')+(sp.k==='mine'?'eine Barrik
 function trapStep(dt){if(!traps.length)return;for(const t of traps){t.a+=dt;const C=CFG.trap[t.k];if(t.a<C.arm)continue;let boom=false;
 for(const e of en)if(e.hp>0&&e.kind!=='sniper'&&!e.sur&&!e.cap&&Math.hypot(e.x-t.x,e.y-t.y)<C.trig){boom=true;break}
 if(!boom&&t.k==='mine'){const b=bars[t.bi];if(b&&b.st==='fuse')boom=true}
-if(boom){t.dead=1;blastAt(t.x,t.y,{dmg:C.dmg,pdmg:C.pdmg,r:C.r,scorch:C.scorch},t.own);say('Eine '+(t.k==='mine'?'Mine':'Claymore')+' geht hoch!')}}
+if(boom){t.dead=1;blastAt(t.x,t.y,{dmg:C.dmg,pdmg:C.pdmg,r:C.r,scorch:C.scorch},t.own,0,t.k==='mine'?'Mine':'Claymore');say('Eine '+(t.k==='mine'?'Mine':'Claymore')+' geht hoch!')}}
 traps=traps.filter(t=>!t.dead&&(t.k!=='mine'||(bars[t.bi]&&bars[t.bi].lv>0)))}
 /* Besondere Waffen (MRU 1 B4): spwKind sagt, was der Spieler hat (A3 Praezisionsgewehr, A4 Granatwerfer, nie beides: Entweder-oder). fireSpw (Host) schiesst auf einen Zielpunkt: das Gewehr eine schnelle Kugel mit pr (geht durch alle Gegner und an Schilden vorbei, spwMul rechnet den Schaden, die Schleife steht in hostStep), der Werfer eine Granate (gr mit k shell, sie platzt am Ziel oder im Flug am ersten Gegner, shellBoom). Ohne Vorrat tut die Spezialwaffe nichts, auch keine Meldung (die Bedienung, Shift und Klick, steht bei reqSpw). */
 const spwKind=o=>skR(o.kit,'A3')>0?'rifle':skR(o.kit,'A4')>0?'launch':null;
 function fireSpw(o,tx,ty){const k=spwKind(o);if(!k||!(o.sx>0))return;if(phase!==2){sndTo(o,'ev','deny');ban('Nur im Überfall nützlich',1.4,o.id);return}if(!isFinite(tx)||!isFinite(ty))return;
 const Q=CFG.spw[k];if(o.scool>0){sndTo(o,'ev','deny');return}
-if(k==='rifle'){const a=Math.atan2(ty-o.y,tx-o.x);o.sx--;o.scool=Q.cool;o.a=a;o.st.sh++;bl.push({id:++bid,x:o.x+Math.cos(a)*34,y:o.y+Math.sin(a)*34,vx:Math.cos(a)*Q.spd,vy:Math.sin(a)*Q.spd,l:Q.l,o:1,own:o.id,d:Q.dmg,pr:1,mk:skR(o.kit,'A3')===3?1:0,ov:o.ln});evt('sh',[o.id,o.x,o.y,a]);snd('snshot',o.x,o.y);return}
+if(k==='rifle'){const a=Math.atan2(ty-o.y,tx-o.x);o.sx--;o.scool=Q.cool;o.a=a;o.st.sh++;bl.push({id:++bid,x:o.x+Math.cos(a)*34,y:o.y+Math.sin(a)*34,vx:Math.cos(a)*Q.spd,vy:Math.sin(a)*Q.spd,l:Q.l,o:1,own:o.id,d:Q.dmg,pr:1,mk:skR(o.kit,'A3')===3?1:0,ov:o.ln,src:'Präzisionsgewehr'});evt('sh',[o.id,o.x,o.y,a]);snd('snshot',o.x,o.y);return}
 const pt=throwPoint(o,tx,ty,Q.maxD);if(pt.blocked){sndTo(o,'ev','deny');ban('Schuss blockiert: Weg versperrt',1.4,o.id);return}
 const dx=pt.x-o.x,dy=pt.y-o.y,d=Math.max(8,Math.hypot(dx,dy));o.sx--;o.scool=Q.cool;o.a=Math.atan2(dy,dx);o.st.sh++;
 gr.push({id:++bid,k:'shell',x:o.x,y:o.y,vx:dx/d*Q.spd,vy:dy/d*Q.spd,st:'fly',t:d/Q.spd,tm:0,own:o.id});snd('thud',o.x,o.y);
 if(players.length>1)say(pn(o.id)+' feuert eine Granate ab!')}
 function markNext(v,b){let best=null,bd=CFG.spw.rifle.mkR;for(const q of en){if(q.hp<=0||q===v||q.cap||(b.hx&&b.hx.includes(q.id)))continue;const d=Math.hypot(q.x-v.x,q.y-v.y);if(d<bd){bd=d;best=q}}if(best)evt('mk',[best.id,b.own])}
-function shellBoom(q){const Q=CFG.spw.launch;blastAt(q.x,q.y,{dmg:Q.dmg,pdmg:Q.pdmg,r:Q.r,scorch:Q.scorch},q.own)}
+function shellBoom(q){const Q=CFG.spw.launch;blastAt(q.x,q.y,{dmg:Q.dmg,pdmg:Q.pdmg,r:Q.r,scorch:Q.scorch},q.own,0,'Granatwerfer')}
 /* Notfallkoffer (MRU 1 B5): Taste C stellt ihn 22 Pixel vor den Spieler (ist dort kein Platz, an seine Stelle; nur im Ueberfall, mit Vorrat, nicht naeher als CFG.aid.near an einem anderen), aidStep (Host) heilt alle Lebenden im Radius mit der Staerke des Besitzers (hps, aus dem Knoten U3) je Sekunde, nie ueber 100, die Liste aids geht im Schnappschuss (kf) mit. */
 function aidDown(o){if(!(o.ak>0))return;if(phase!==2){sndTo(o,'ev','deny');ban('Nur im Überfall nützlich',1.4,o.id);return}
 let x=o.x+Math.cos(o.a)*22,y=o.y+Math.sin(o.a)*22;if(isSol(Math.floor(x/T),Math.floor(y/T))||!clear(o.x,o.y,x,y)){x=o.x;y=o.y}
@@ -1768,7 +1771,7 @@ if(dl.st===2){dl.t+=dt;if(dl.t>=D.t){dl.dv=null;dl.st=4;say('Der Fahrer steigt w
 dl.sdT-=dt;if(dl.sdT<=0){dl.sdT=1.5;let cs=0,n=0;for(const e of en)if(e.hp>0&&!e.sur&&!e.cap&&Math.hypot(e.x-m[0],e.y-m[1])<CFG.van.r*3){cs+=(ax?e.y:e.x);n++}if(n){const away=cs/n>LANE.van.pos?-1:1,ok=sd=>{const q=LANE.pt(vanX+64,LANE.van.pos+sd*D.side);return!isSol(Math.floor(q[0]/T),Math.floor(q[1]/T))};dl.sd=ok(away)||!ok(-away)?away:-away}}
 let q=LANE.pt(vanX+64,LANE.van.pos+dl.sd*D.side);if(isSol(Math.floor(q[0]/T),Math.floor(q[1]/T))){const q2=LANE.pt(vanX+64,LANE.van.pos-dl.sd*D.side);if(!isSol(Math.floor(q2[0]/T),Math.floor(q2[1]/T)))q=q2;else{let bd=1e9,bq=null;for(let r=24;r<=110&&!bq;r+=12)for(let k=0;k<16;k++){const x=m[0]+Math.cos(k*.3927)*r,y=m[1]+Math.sin(k*.3927)*r;if(!isSol(Math.floor(x/T),Math.floor(y/T))){const d=Math.hypot(x-v.x,y-v.y);if(d<bd){bd=d;bq=[x,y]}}}q=bq||[v.x,v.y]}}gx=q[0];gy=q[1];
 let tg=null,td=1e9;for(const e of en){if(e.hp<=0||e.sur||e.cap)continue;const d=Math.hypot(e.x-v.x,e.y-v.y);if(d<D.range&&d<td&&los(v.x,v.y,e.x,e.y)&&clear(v.x,v.y,e.x,e.y)){tg=e;td=d}}
-if(tg){const a=Math.atan2(tg.y-v.y,tg.x-v.x);v.a=alerp(v.a,a,.3);if(v.cool<=0&&angd(v.a,a)<.35){v.cool=D.rate;for(let i=0;i<D.pel;i++){const b=v.a+(Math.random()-.5)*2*D.spread;bl.push({id:++bid,x:v.x+Math.cos(v.a)*18,y:v.y+Math.sin(v.a)*18,vx:Math.cos(b)*560,vy:Math.sin(b)*560,l:.5,o:1,own:-1,d:D.dmg,dv:1,pc:1})}v.fl=.05;evt('es',[-1,v.x,v.y,'swat'])}}
+if(tg){const a=Math.atan2(tg.y-v.y,tg.x-v.x);v.a=alerp(v.a,a,.3);if(v.cool<=0&&angd(v.a,a)<.35){v.cool=D.rate;for(let i=0;i<D.pel;i++){const b=v.a+(Math.random()-.5)*2*D.spread;bl.push({id:++bid,x:v.x+Math.cos(v.a)*18,y:v.y+Math.sin(v.a)*18,vx:Math.cos(b)*560,vy:Math.sin(b)*560,l:.5,o:1,own:-1,d:D.dmg,dv:1,pc:1,src:'Pistole'})}v.fl=.05;evt('es',[-1,v.x,v.y,'swat'])}}
 else{const a=Math.atan2(gy-v.y,gx-v.x);if(Math.hypot(gx-v.x,gy-v.y)>6)v.a=alerp(v.a,a,.2)}}
 else{dl.f+=dt;gx=m[0];gy=m[1];sp=D.spd*.5;if(dl.f>=D.fall){dl.dv=null;dl.st=4;vanMode=1;vanNv=0;vanHk=0;dl.n++;say('Der Fahrer haut ab, verwundet!');ban('Der Fahrer haut ab!',2.4);snd('van');return}}
 const dx=gx-v.x,dy=gy-v.y,dd=Math.hypot(dx,dy);if(dd>2){const k=Math.min(1,sp*dt/dd);v.x+=dx*k;v.y+=dy*k}const mvd=Math.hypot(v.x-ox,v.y-oy);v.mvg=mvd>.05;v.w+=mvd/9}
@@ -1906,7 +1909,7 @@ function plCombat(o,dt){if(!o.armed)return;const c=o.inp,wp=o.wp,ln=c.ln&&leanAt
 if(o.rl>0){o.rl-=dt;if(o.rl<=0){const tk=Math.min(wp.mag-o.mag,o.res);o.mag+=tk;o.res-=tk;sndTo(o,'reloaded')}}
 if(c.rl&&o.rl<=0&&o.mag<wp.mag&&o.res>0){o.rl=wp.rl*(1-skv(o.kit,'A0','rl'));sndTo(o,'reload')}
 if(c.fire&&o.cool<=0&&o.rl<=0){if(o.mag>0){o.cool=wp.cool;o.mag--;o.st.sh++;const sp=shotSp(o,wp),a=o.a+(Math.random()-.5)*2*sp;o.rec=Math.min(.06,o.rec+wp.rec);
-bl.push({id:++bid,x:o.x+Math.cos(o.a)*34,y:o.y+Math.sin(o.a)*34,vx:Math.cos(a)*720,vy:Math.sin(a)*720,l:.8,o:1,own:o.id,d:wp.dmg,ov:ln});
+bl.push({id:++bid,x:o.x+Math.cos(o.a)*34,y:o.y+Math.sin(o.a)*34,vx:Math.cos(a)*720,vy:Math.sin(a)*720,l:.8,o:1,own:o.id,d:wp.dmg,ov:ln,src:wp.n==='SMG'?'MP':wp.n});
 evt('sh',[o.id,o.x,o.y,o.a])}else if(o.res>0){o.rl=wp.rl*(1-skv(o.kit,'A0','rl'));sndTo(o,'reload')}else{o.cool=.3;o.st.dry++;sndTo(o,'empty')}}}
 function fxStep(dt){if(banner){banner.t-=dt;if(banner.t<=0)banner=null}
 for(const m of mgs)m.fl=Math.max(0,(m.fl||0)-dt);
@@ -1924,10 +1927,10 @@ for(const f of fx){f.t-=dt;f.y-=14*dt}fx=fx.filter(f=>f.t>0);for(const f of feed
 const susScale=()=>1/(1+CFG.susPer*Math.max(0,players.length-1));
 /* Gnadenfrist (CFG.watch): Erreicht der Balken 100, laeuft ein Countdown (grace s, im Coop mit dem Balken laenger: durch susScale, sonst waere der Abbau von 100 auf back bei laengerem Balken zu langsam) statt sofort der Alarm. Faellt der Balken in der Zeit unter back Prozent, ist der Alarm abgewendet (aus dem Blick, Kameras aus,
    Beute weg, Mitspieler lenken ab), sonst startet der erzwungene Ueberfall. Der Countdown geht im Schnappschuss mit (g[24]), das HUD zeigt ihn. */
-let alarmT=0,alarmBy=null;
+let alarmT=0,alarmBy=null,alarmK='';
 function alarmStep(dt,by,k){const W=CFG.watch;
-if(alarmT<=0){if(sus<100)return;if(!(W.grace>0)){detect(by,undefined,by&&by.x,by&&by.y,null);return}alarmT=W.grace/susScale();alarmBy=by;const who=by&&players.length>1?pn(by.id)+': ':'',gs=Math.round(alarmT*10)/10;say(who+'Entdeckt'+(k?' ('+k+')':'')+'! Alarm in '+gs+' s, raus aus dem Blick.');snd('alert');return}
-if(by)alarmBy=by;if(sus<W.back){alarmT=0;alarmBy=null;say('Alarm abgewendet.');ban('Alarm abgewendet',1.8);snd('ev','power');return}alarmT-=dt;if(alarmT<=0){const b=alarmBy;alarmT=0;alarmBy=null;detect(b,undefined,b&&b.x,b&&b.y,null)}}
+if(alarmT<=0){if(sus<100)return;if(!(W.grace>0)){detect(by,undefined,by&&by.x,by&&by.y,null,k?'Verdacht: '+k:'Verdacht');return}alarmT=W.grace/susScale();alarmBy=by;alarmK=k||'';const who=by&&players.length>1?pn(by.id)+': ':'',gs=Math.round(alarmT*10)/10;say(who+'Entdeckt'+(k?' ('+k+')':'')+'! Alarm in '+gs+' s, raus aus dem Blick.');snd('alert');return}
+if(by)alarmBy=by;if(sus<W.back){alarmT=0;alarmBy=null;say('Alarm abgewendet.');ban('Alarm abgewendet',1.8);snd('ev','power');return}alarmT-=dt;if(alarmT<=0){const b=alarmBy;alarmT=0;alarmBy=null;detect(b,undefined,b&&b.x,b&&b.y,null,alarmK?'Verdacht: '+alarmK:'Verdacht')}}
 /* Starren (CFG.watch.stare, cool): Wer einen Spieler nur mit Beute sieht, bleibt stehen und dreht sich zu ihm (look), der Kegel folgt ihm. Dauert die Sicht ohne Luecke laenger als stare s, geht der Beobachter cool s lang wieder seinen Weg und schaut danach erneut hin. stare 0 schaltet die Grenze ab. */
 /* Zivilfahnder (CFG.uc): der lange Blick. Sieht er einen Spieler naeher als lookR im Kegel, bleibt er lookT s stehen und der Kopf folgt dem Spieler, danach lookCool s Ruhe. Hinweis (Funkgeraet): ucHintOn sagt, ob irgendein lebender Spieler naeher als hint ist (nur dann wird gezeichnet, ucHintN zaehlt es fuer Tests). */
 function ucStep(act,dt){const U=CFG.uc;for(const q of npcs){if(!q.uc||q.st!=='idle')continue;q.ucCd=Math.max(0,(q.ucCd||0)-dt);if(q.look&&q.look.t>0&&q.look.o){const o=q.look.o;if(live(o)){q.look.x=o.x;q.look.y=o.y}continue}if(q.ucCd>0||(q.look&&q.look.t>0))continue;
@@ -1940,7 +1943,7 @@ if(live(me)){const c=readInput(dt);movePl(me,c);me.inp=c;stepSnd(me,c)}else me.i
 let act=actv();goalStep();for(const o of act){const q=o.st,c=o.inp;q.t+=dt;if(!c.vx&&!c.vy&&!c.e&&!c.fire&&!c.ln)q.idle+=dt}
 if(phase===1){const act0=act.filter(o=>!o.cv);npcs.forEach((q,i)=>updNpc(q,i,dt));
 if(camDown>0){camDown-=dt;if(camDown<=0){camDown=0;say(LAY.lasers?'Kameras und Laser wieder aktiv':'Kamerasystem startet neu');ban(LAY.lasers?'Laser wieder scharf':'Kameras wieder online',2)}}
-if(LAY.lasers&&camDown<=0)for(const o of act){if(phase!==1)break;if(LAY.lasers.some(L=>segDist(o.x,o.y,L)<CFG.museum.laser.r)){say(pn(o.id)+' hat einen Laser berührt: Alarm!');startHeist(true,o,false);break}}
+if(LAY.lasers&&camDown<=0)for(const o of act){if(phase!==1)break;if(LAY.lasers.some(L=>segDist(o.x,o.y,L)<CFG.museum.laser.r)){say(pn(o.id)+' hat einen Laser berührt: Alarm!');startHeist(true,o,false,'Laser');break}}
 for(const c of cams){c.alert=Math.max(0,c.alert-dt);if(!c.k)for(const o of act)if(Math.hypot(c.x-o.x,c.y-o.y)<300&&angd(o.a,Math.atan2(c.y-o.y,c.x-o.x))<.8&&los(o.x,o.y,c.x,c.y)){c.k=true;snd('found');say('Kamera entdeckt');break}}
 for(const q of npcs)if(q.route&&!q.rk&&q.st!=='away'&&q.st!=='ko')for(const o of act)if(Math.hypot(q.x-o.x,q.y-o.y)<300&&angd(o.a,Math.atan2(q.y-o.y,q.x-o.x))<.8&&los(o.x,o.y,q.x,q.y)){q.seen+=dt;if(q.seen>1.8){q.rk=true;snd('found');say(q.k==='grd'?'Route des Wachmanns eingeprägt':'Route des Managers eingeprägt')}break}
 ucStep(act0,dt);
@@ -2010,7 +2013,7 @@ bl=bl.filter(b=>{b.l-=dt;const ns=b.pr?8:4;for(let k=0;k<ns;k++){b.x+=b.vx*dt/ns
 if(b.o&&tk&&tk.st==='drive'&&Math.abs(b.x-tk.x)<TKL/2&&Math.abs(b.y-tk.y)<TKH/2){tk.tire-=(b.d||34);evt('hw',[b.x,b.y]);evt('sp',[b.x,b.y,6]);if(tk.tire<=0&&!tk.flat){tk.flat=1;say('Reifen getroffen: Der Wagen verliert Fahrt!')}return false}
 if(isBul(Math.floor(b.x/T),Math.floor(b.y/T))){const c0=cell(Math.floor(b.x/T),Math.floor(b.y/T));if(b.ov&&(c0==='X'||c0==='Y'))b.ov=2;else if((b.sn||b.pr)&&c0==='W')breakWin(Math.floor(b.x/T),Math.floor(b.y/T));else if(b.o&&c0==='W'){winShot(Math.floor(b.x/T),Math.floor(b.y/T),b);return false}else{if(c0==='X'&&!b.o)fieldHit(Math.floor(b.x/T),Math.floor(b.y/T),b.dmg||b.d||8);if(c0==='u')pumpHit(Math.floor(b.x/T),Math.floor(b.y/T),b.d||b.dmg||8,b.own);if(c0==='v'&&b.o){const cr=carOfCell(Math.floor(b.x/T),Math.floor(b.y/T),b.x,b.y);if(cr&&!cr.dead){carHurt(cr,b.d||34,b.own,b.x,b.y);return false}}evt('hw',[b.x,b.y]);return false}}else if(b.ov===2)b.ov=0;
 if(b.o){{const cr=carAt(b.x,b.y);if(cr){carHurt(cr,b.d||34,b.own,b.x,b.y);if(!CFG.pol.car.pierce)return false}}for(const e of en){if(e.hp>0&&e.id!==b.px&&!(b.hx&&b.hx.includes(e.id))&&Math.hypot(e.x-b.x,e.y-b.y)<e.r+1){if(!b.dv)(players[b.own]||me).st.ht++;if(e.sh>0&&!b.pr&&angd(e.a,Math.atan2(-b.vy,-b.vx))<CFG.shield.arc){e.sh=Math.max(0,e.sh-(b.d||34)*(1+(b.dv?0:skv((players[b.own]||me).kit,'A2','shield'))));e.sx=1;evt('sk',[b.x,b.y]);if(e.sh<=0){snd('ev','crash');say('Ein Schild ist zerstört!')}return false}e.hp-=b.d||34;e.h=.1;evt('hf',[b.x,b.y,5,b.own+1,Math.round(Math.atan2(b.vy,b.vx)*100)/100,b.pr||b.dv||b.sn?1:0,KIND_I.indexOf(e.kind)]);
-if(e.hp<=0){const sh=players[b.own]||me;corp.push({x:e.x,y:e.y,a:e.a+3.1,t:14,row:e.row});if(!b.dv){kills++;sh.st.k++}if(e.sur&&!e.cap){surKilled++;say('Eine ergebene Wache wurde erschossen!')}if(!b.dv)sh.res+=6;snd('kill',e.x,e.y);say((b.dv?'Fahrer':players.length>1?pn(sh.id):'YOU')+'  >  Rifle  >  '+(e.uc?'Zivilfahnder':e.kind==='grd'?'Wachmann':e.kind==='swat'?'SWAT':e.kind==='shield'?'Schild-Beamter':e.kind==='sniper'?'Scharfschütze':'Polizist'));const rr=Math.random();if(rr<.35)pk.push({x:e.x+8,y:e.y+4,k:5});else if(rr<.5)pk.push({x:e.x+8,y:e.y+4,k:6})}if(b.pr){(b.hx||(b.hx=[])).push(e.id);if(b.mk&&e.hp<=0)markNext(e,b);continue}const pf=b.pc?0:skv((players[b.own]||me).kit,'A2','pierce');if(pf>0){b.pc=1;b.px=e.id;b.d=(b.d||34)*pf;break}return false}}
+if(e.hp<=0){const sh=players[b.own]||me;corp.push({x:e.x,y:e.y,a:e.a+3.1,t:14,row:e.row});if(!b.dv){kills++;sh.st.k++}if(e.sur&&!e.cap){surKilled++;say('Eine ergebene Wache wurde erschossen!')}if(!b.dv)sh.res+=6;snd('kill',e.x,e.y);killSay(b.dv?-1:sh.id,b.src||'Pistole',e);const rr=Math.random();if(rr<.35)pk.push({x:e.x+8,y:e.y+4,k:5});else if(rr<.5)pk.push({x:e.x+8,y:e.y+4,k:6})}if(b.pr){(b.hx||(b.hx=[])).push(e.id);if(b.mk&&e.hp<=0)markNext(e,b);continue}const pf=b.pc?0:skv((players[b.own]||me).kit,'A2','pierce');if(pf>0){b.pc=1;b.px=e.id;b.d=(b.d||34)*pf;break}return false}}
 for(const q of npcs){if(q.st==='dead'||b.dv)continue;if(Math.hypot(q.x-b.x,q.y-b.y)<q.r+1){q.hp-=(b.d||34);evt('hf',[b.x,b.y,5,b.own+1,Math.round(Math.atan2(b.vy,b.vx)*100)/100,b.pr||b.dv||b.sn?1:0]);if(q.hp<=0){if(q.st==='hostage'){hostK++;say('Die Geisel ist tot!')}q.st='dead';civKills++;(players[b.own]||me).st.civ++;snd('kill',q.x,q.y);corp.push({x:q.x,y:q.y,a:q.a+3.1,t:30,row:q.row});say('Zivilist getroffen!');ban('Zivilist getroffen',1.6)}return false}}}
 else{let hit=null;for(const o of act)if(Math.hypot(o.x-b.x,o.y-b.y)<o.r){hit=o;break}if(!hit&&dl.st===2&&dl.dv&&dl.dv.hp>0&&Math.hypot(dl.dv.x-b.x,dl.dv.y-b.y)<dl.dv.r){dvHit(b.dmg||8);evt('hf',[b.x,b.y,4]);return false}const hq=npcs.find(q=>q.st==='hostage'&&Math.hypot(q.x-b.x,q.y-b.y)<q.r+1);if(hq&&(!hit||Math.hypot(hq.x-b.x,hq.y-b.y)<=Math.hypot(hit.x-b.x,hit.y-b.y))){hostHit(hq,b);return false}if(!hit&&mgs.length){const gm=mgs.find(q=>Math.hypot(q.x-b.x,q.y-b.y)<CFG.mg.r);if(gm){mgHit(gm,b.dmg||8);evt('sp',[b.x,b.y,3]);return false}}if(hit){hit.st.tk++;hitPlayer(hit,b.dmg||8);evt('hf',[b.x,b.y,4,-1,Math.round(Math.atan2(b.vy,b.vx)*100)/100,b.sn?1:0]);return false}}}return b.l>0});
 npcs=npcs.filter(q=>q.st!=='dead');en=en.filter(e=>e.hp>0&&!e.cap);
@@ -2370,7 +2373,7 @@ else if(m.t==='nm'){setRoster(c.pid,m.v);bcastRoster()}
 else if(m.t==='lv'){c.left=true;if(scr==='lobby'){const f=c.onclose;c.onclose=null;c.ok=false;try{c.close()}catch(e){}if(f)f()}}   /* in der Lobby ist Verlassen sofort endgueltig */
 else if(m.t==='in'){if(!o||scr!=='play'||ended)return;m.dt=clamp(+m.dt||0,0,.05);m.vx=clamp(+m.vx||0,-1,1);m.vy=clamp(+m.vy||0,-1,1);m.ln=m.ln?1:0;m.a=+m.a||0;m.w=Number.isInteger(m.w)&&m.w>=0&&m.w<itsAll().length?m.w:-1;
 if(live(o)){movePl(o,m);o.ack=m.s}o.inp=m;o.lastIn=performance.now()}
-else if(m.t==='f'){if(scr==='play'&&!noGun(o))startHeist(false,o)}
+else if(m.t==='f'){if(scr==='play'&&!noGun(o))startHeist(false,o,undefined,'F')}
 else if(m.t==='g'){if(scr==='play')callVan()}else if(m.t==='h'){if(scr==='play'){if(phase===2)relHost(o);else if(!relBody(o))relCart(o)}}
 else if(m.t==='u'){if(scr==='play')useGadget(o,m.n|0,+m.x,+m.y)}
 else if(m.t==='rad')radHost(o,m.c,m.x,m.y)
@@ -2548,7 +2551,7 @@ let spwOn=false;const spwCan=()=>!!me&&live(me)&&!ended&&phase===2&&!!spwKind(me
 spwHold=on=>{if(!on){if(spwOn){spwOn=false;SND.ev('latch')}return}if(spwOn||!spwCan())return;aimG=0;spwOn=true;SND.ev('latch')},
 reqSpw=()=>{if(!spwCan())return;const[tx,ty]=aimRaw(),kd=spwKind(me),Q=CFG.spw[kd],cl=NET.role==='client';if(cl&&me.scool>0){SND.ev('deny');return}
 if(kd==='launch'){const a=throwPoint(me,tx,ty,Q.maxD);if(a.blocked){SND.ev('deny');ban('Schuss blockiert: Weg versperrt',1.4,me.id);return}if(cl)me.scool=Q.cool;reqThrow(6,a.x,a.y)}else{if(cl)me.scool=Q.cool;reqThrow(6,tx,ty)}};
-const reqHeist=()=>{if(!live(me))return;if(noGun(me)){ban('Keine Waffe: erst eine Pistole von einer Wache holen',2);return}NET.role==='client'?NET.conn&&NET.conn.send({t:'f'}):startHeist(false,me)},reqRel=()=>{if(!live(me)||(phase!==2&&!me.dg&&!me.cg&&!me.cv))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'h'}):phase===2?relHost(me):relBody(me)||relCart(me)},reqVan=()=>{if(!live(me))return;if(phase===2&&!vanCalled&&!vanArr&&tH<CFG.vanLock){ban('Fahrer noch nicht erreichbar: noch '+tm(CFG.vanLock-tH),1.6,me.id);sndTo(me,'ev','deny');return}NET.role==='client'?NET.conn&&NET.conn.send({t:'g'}):callVan()},reqGadget=n=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'u',n}):useGadget(me,n)};
+const reqHeist=()=>{if(!live(me))return;if(noGun(me)){ban('Keine Waffe: erst eine Pistole von einer Wache holen',2);return}NET.role==='client'?NET.conn&&NET.conn.send({t:'f'}):startHeist(false,me,undefined,'F')},reqRel=()=>{if(!live(me)||(phase!==2&&!me.dg&&!me.cg&&!me.cv))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'h'}):phase===2?relHost(me):relBody(me)||relCart(me)},reqVan=()=>{if(!live(me))return;if(phase===2&&!vanCalled&&!vanArr&&tH<CFG.vanLock){ban('Fahrer noch nicht erreichbar: noch '+tm(CFG.vanLock-tH),1.6,me.id);sndTo(me,'ev','deny');return}NET.role==='client'?NET.conn&&NET.conn.send({t:'g'}):callVan()},reqGadget=n=>{if(!live(me))return;NET.role==='client'?NET.conn&&NET.conn.send({t:'u',n}):useGadget(me,n)};
 const reqRad=c=>{if(NET.role==='solo'||!canRad(me))return;const[x,y]=aimRaw();NET.role==='client'?NET.conn&&NET.conn.send({t:'rad',c,x:Math.round(x),y:Math.round(y)}):radHost(me,c,x,y)};
 function titleCam(){const t=LAY.title;camX=Math.round(t.cx+t.ax*Math.sin(time*.07));camY=Math.round(t.cy+t.ay*Math.sin(time*.05+1))}
 /* Zeichnen: js/draw.js (mkDraw). Der Kontext liest den Spielzustand (Konstanten entpackt, veraenderliche Namen als Getter), geschrieben werden nur camX, camY, kkN, losAll, specChips, ucHintN. Neue Namen im Kontext ergaenzen, sobald draw.js sie braucht. */
